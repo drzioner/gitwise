@@ -1,0 +1,25 @@
+min_version: 2.0.0
+
+hooks:
+  pre-commit:
+    parallel: true
+    commands:
+      ruff-check:
+        glob: "*.py"
+        run: ruff check {staged_files}
+      ruff-format:
+        glob: "*.py"
+        run: ruff format --check {staged_files}
+      shellcheck:
+        glob: "{install.sh,bin/gitwise}"
+        run: shellcheck {staged_files}
+
+  commit-msg:
+    commands:
+      conventional:
+        run: uvx --from commitizen cz check --commit-msg-file {1}
+
+  pre-push:
+    commands:
+      tests:
+        run: uv run pytest --tb=short -q

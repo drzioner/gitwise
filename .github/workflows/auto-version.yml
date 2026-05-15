@@ -1,0 +1,43 @@
+name: Auto Version
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Bump version
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for version bump
+        id: cz
+        run: |
+          uvx commitizen cz bump --dry-run --yes 2>&1 | tee /tmp/cz-dry.txt || true
+          if uvx commitizen cz bump --dry-run --yes 2>/dev/null | grep -q "bump: version"; then
+            echo "should_bump=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_bump=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version and push tag
+        if: steps.cz.outputs.should_bump == 'true'
+        run: |
+          uvx commitizen cz bump --yes --changelog
+          git push
+          git push --tags

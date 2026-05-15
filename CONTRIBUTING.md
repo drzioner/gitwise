@@ -8,6 +8,8 @@ Thanks for your interest! This guide covers everything you need to contribute.
 git clone https://github.com/drzioner/gitwise.git
 cd gitwise
 uv sync                            # create .venv with dev dependencies
+brew install lefthook               # install git hooks manager
+lefthook install                    # install git hooks
 uv run pytest                      # run all tests (115)
 uv run pytest -k test_worktree     # run specific tests
 ```
@@ -22,14 +24,17 @@ python -m gitwise <command>
 
 1. Create a branch: `gitwise worktree new feature/my-thing` (or `git checkout -b`)
 2. Make changes
-3. Run quality checks (all must pass):
+3. Hooks run automatically via lefthook:
+   - **pre-commit**: ruff check + ruff format + shellcheck
+   - **commit-msg**: conventional commit validation via commitizen
+   - **pre-push**: full test suite
+
+   To run manually:
 
 ```bash
-uv run pytest                      # 115 tests must pass
-ruff check gitwise/ tests/         # zero lint errors
-ruff format --check gitwise/ tests/ # zero format errors
-uvx basedpyright                   # zero type errors
-shellcheck install.sh bin/gitwise   # zero shell errors
+lefthook run pre-commit
+lefthook run commit-msg --commit-msg-file .git/COMMIT_EDITMSG
+lefthook run pre-push
 ```
 
 4. Commit with [conventional format](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
@@ -60,6 +65,8 @@ structure. Tests invoke gitwise as a subprocess via `run_gitwise()` in
 - No comments describing what code does — only WHY (non-obvious invariants)
 - No external dependencies — zero-dep runtime is a hard constraint
 - `ruff` handles linting and formatting; config is in `pyproject.toml`
+- `lefthook` manages git hooks; config is in `lefthook.yml`
+- `commitizen` validates commit messages; config is in `pyproject.toml`
 
 ## Key files
 

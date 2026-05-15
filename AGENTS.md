@@ -45,6 +45,7 @@ ruff check gitwise/ tests/         # lint
 ruff format gitwise/ tests/        # format
 uvx basedpyright                   # type check (Python 3.10+, Darwin)
 /opt/homebrew/bin/shellcheck install.sh bin/gitwise   # shell lint
+lefthook run pre-commit            # run all pre-commit hooks
 ```
 
 ## Project Structure
