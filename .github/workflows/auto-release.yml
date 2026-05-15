@@ -10,7 +10,6 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   ci:
@@ -23,11 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     if: "${{ !startsWith(github.event.head_commit.message, 'bump:') && !startsWith(github.event.head_commit.message, 'chore: trigger') }}"
     steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      - uses: astral-sh/setup-uv@08807647e70696848b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: "0.11.x"
           enable-cache: false
@@ -61,30 +67,13 @@ jobs:
 
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           VERSION="${TAG#v}"
-          BUMP_SHA=$(git rev-parse HEAD)
           echo "no_bump=false" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "sha=$BUMP_SHA" >> "$GITHUB_OUTPUT"
 
-      - name: Push bump commit & tag via API
+      - name: Push bump commit & tag
         if: steps.bump.outputs.no_bump == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          SHA="${{ steps.bump.outputs.sha }}"
-          TAG="${{ steps.bump.outputs.tag }}"
-          VERSION="${{ steps.bump.outputs.version }}"
-
-          gh api repos/{owner}/{repo}/git/refs/heads/main \
-            -X PATCH \
-            -f sha="$SHA" \
-            -f force=false
-
-          gh api repos/{owner}/{repo}/git/refs \
-            -X POST \
-            -f ref="refs/tags/$TAG" \
-            -f sha="$SHA"
+        run: git push origin main "refs/tags/${{ steps.bump.outputs.tag }}"
 
       - name: Extract release notes
         if: steps.bump.outputs.no_bump == 'false'
@@ -100,7 +89,7 @@ jobs:
       - name: Create GitHub Release
         if: steps.bump.outputs.no_bump == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh release create "${{ steps.bump.outputs.tag }}" \
             --title "${{ steps.bump.outputs.tag }}" \
