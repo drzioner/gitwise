@@ -79,10 +79,10 @@ jobs:
         if: steps.bump.outputs.no_bump == 'false'
         id: notes
         run: |
-          VERSION="${{ steps.bump.outputs.version }}"
+          TAG="${{ steps.bump.outputs.tag }}"
           {
             echo "release-notes<<EOF"
-            sed -n "/## \[${VERSION}\]/,/## \[/{ /## \[/!p; }" CHANGELOG.md
+            sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
