@@ -1,0 +1,66 @@
+"""Tests for gitwise git helpers — is_repo, repo_root, config, branches."""
+
+import json
+
+from conftest import run_gitwise as _run
+
+
+def test_is_repo_detects_git(tmp_git_repo):
+    result = _run("audit", "--quick", "--json", cwd=tmp_git_repo)
+    assert result.returncode in (0, 1)
+    data = json.loads(result.stdout)
+    assert "summary" in data
+
+
+def test_not_a_git_repo(tmp_path):
+    result = _run("audit", "--json", cwd=tmp_path)
+    assert result.returncode == 1
+    assert (
+        "not a git repository" in result.stderr.lower()
+        or "no es un repositorio" in result.stderr.lower()
+    )
+
+
+def test_repo_root_resolved(tmp_git_repo):
+    result = _run("summarize", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+
+
+def test_git_config_read(tmp_git_repo):
+    result = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "changes" in data
+
+
+def test_stale_branches_empty(tmp_git_repo):
+    result = _run("clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["deletable"] == []
+
+
+def test_stale_branches_detected(tmp_git_repo_with_stale):
+    result = _run("clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo_with_stale)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert len(data["deletable"]) == 3
+
+
+def test_worktree_branches(tmp_git_repo):
+    result = _run("worktree", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+
+
+def test_gpg_status_in_doctor():
+    result = _run("doctor", "--json")
+    assert result.returncode in (0, 1)
+    data = json.loads(result.stdout)
+    assert "gpg" in data
+    gpg = data["gpg"]
+    assert "gpg_binary" in gpg
+    assert "gpgsign_enabled" in gpg
+    assert "signing_key_set" in gpg
+    assert "ready" in gpg
