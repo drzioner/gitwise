@@ -67,7 +67,7 @@ jobs:
 
       - name: Push bump commit & tag
         if: steps.bump.outputs.no_bump == 'false'
-        run: git push && git push --tags
+        run: git push origin main "refs/tags/${{ steps.bump.outputs.tag }}"
 
       - name: Extract release notes
         if: steps.bump.outputs.no_bump == 'false'
