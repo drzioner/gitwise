@@ -93,9 +93,9 @@ def run_<command>(...) -> int:   # returns exit code
 ```
 
 `setup_agents.py` — key functions:
-- `_detect_state(root)` → state dict (a_state, c_state, agents_dir, skills_state, rules_warnings, …)
+- `_detect_state(root)` → state dict (a_state, c_state, agents_dir, skills_state, rules_warnings, supports_symlinks, errors, …)
 - `_resolve_canonical_doc(root, state, ...)` → `(bucket: 1-5, actions, warnings)`
-- `_plan_actions(root, ...)` → `(actions, warnings, errors, bucket)`
+- `_plan_actions(root, ...)` → `(actions, warnings, errors, bucket, state)` — read-only I/O for state detection is acceptable
 - `_execute_actions(root, actions)` — writes files; rolls back on failure via `_undo_partial`
 - `_safe_create_symlink(link, target_relative, root)` — sandbox + TOCTOU-safe
 
@@ -126,7 +126,7 @@ JSON output schema: `v=2`, `v_compat=[1,2]`. Keys: `bucket`, `agents_md_detected
 - Run `uv run pytest` after any change to `setup_agents.py` or its tests
 - Run `ruff check` and `ruff format --check` before committing
 - Use `_safe_create_symlink` for any new symlink creation (sandbox enforced)
-- Keep `_plan_actions` pure (no I/O) — planning and execution are separate phases
+- Keep `_plan_actions` read-only (no write I/O) — state detection reads are acceptable; planning and execution are separate phases
 - Preserve JSON schema backward compat: v1 mandatory keys must remain
 
 **Ask first:**

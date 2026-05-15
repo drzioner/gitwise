@@ -735,6 +735,38 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "conflicto dir/agents",
         "en": "conflict dir/agents",
     },
+    "debug_rollback_symlink": {
+        "es": "rollback: eliminado symlink {file}",
+        "en": "rollback: deleted symlink {file}",
+    },
+    "debug_rollback_restored": {
+        "es": "rollback: restaurado {file} desde {backup}",
+        "en": "rollback: restored {file} from {backup}",
+    },
+    "debug_rollback_restored_skill": {
+        "es": "rollback: restaurado {file} desde {skill}",
+        "en": "rollback: restored {file} from {skill}",
+    },
+    "debug_rollback_deleted": {
+        "es": "rollback: eliminado {file}",
+        "en": "rollback: deleted {file}",
+    },
+    "debug_rollback_failed": {
+        "es": "rollback falló para {file}: {error}",
+        "en": "rollback failed for {file}: {error}",
+    },
+    "debug_skip": {
+        "es": "skip: {file}",
+        "en": "skip: {file}",
+    },
+    "debug_mkdir": {
+        "es": "mkdir: {file}",
+        "en": "mkdir: {file}",
+    },
+    "debug_snapshot_written": {
+        "es": "snapshot escrito en {path}",
+        "en": "snapshot written to {path}",
+    },
 }
 
 

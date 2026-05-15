@@ -59,7 +59,7 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
     tmp = snapshot_path.with_suffix(".tmp")
     tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
     tmp.replace(snapshot_path)
-    debug(f"snapshot escrito en {snapshot_path}")
+    debug(t("debug_snapshot_written", path=str(snapshot_path)))
     return snapshot_path
 
 

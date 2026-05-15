@@ -198,14 +198,14 @@ def _undo_partial(actions_done: list[dict], root: Path) -> None:
         try:
             if act == "symlink-create" and path.is_symlink():
                 path.unlink()
-                debug(f"rollback: eliminado symlink {file_key}")
+                debug(t("debug_rollback_symlink", file=file_key))
             elif act == "claude-md-replace-with-symlink":
                 if path.is_symlink():
                     path.unlink()
                 bak = action.get("backup_path")
                 if bak and Path(bak).exists():
                     Path(bak).rename(path)
-                    debug(f"rollback: restaurado {file_key} desde {Path(bak).name}")
+                    debug(t("debug_rollback_restored", file=file_key, backup=Path(bak).name))
             elif act == "skill-migrate-to-agents":
                 moved_from = action.get("_moved_from")
                 agents_skill_str = action.get("agents_skill")
@@ -215,12 +215,14 @@ def _undo_partial(actions_done: list[dict], root: Path) -> None:
                     import shutil
 
                     shutil.move(str(agents_skill_str), moved_from)
-                    debug(f"rollback: restaurado {file_key} desde {agents_skill_str}")
+                    debug(
+                        t("debug_rollback_restored_skill", file=file_key, skill=agents_skill_str)
+                    )
             elif act in ("create",) and action.get("_created") and path.exists():
                 path.unlink()
-                debug(f"rollback: eliminado {file_key}")
+                debug(t("debug_rollback_deleted", file=file_key))
         except OSError as e:
-            debug(f"rollback falló para {file_key}: {e}")
+            debug(t("debug_rollback_failed", file=file_key, error=str(e)))
 
 
 # --- Managed block helpers ---
@@ -338,7 +340,10 @@ def _plan_managed_block(
             }
         ], []
 
-    current = path.read_text(encoding="utf-8")
+    try:
+        current = path.read_text(encoding="utf-8")
+    except OSError:
+        return [], []
 
     # .gitattributes: warn on semantic conflicts outside the block (fires on all paths)
     # .gitignore: duplicates are harmless — no warning needed
@@ -1066,7 +1071,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
             act: str = action["action"]
 
             if act in ("skip", "symlink-skip", "managed-block-skip"):
-                debug(f"skip: {file_key}")
+                debug(t("debug_skip", file=file_key))
                 actions_done.append(action)
                 continue
 
@@ -1131,7 +1136,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
             elif file_key.startswith(".agents/skills/") and file_key.count("/") == 2:
                 if act == "mkdir":
                     (root / file_key).mkdir(parents=True, exist_ok=True)
-                    debug(f"mkdir: {file_key}")
+                    debug(t("debug_mkdir", file=file_key))
 
             elif file_key.startswith(".claude/skills/") and file_key.count("/") == 2:
                 if act == "symlink-create":

@@ -131,7 +131,9 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
 
     info(t("orphaned_worktrees", count=str(len(orphaned))))
     for wt in orphaned:
-        info(f"  – {wt['path']}  (rama: {wt['branch'] or t('rama_desconocida')})")
+        info(
+            f"  – {wt['path']}  ({t('branch_label', branch=wt['branch'] or t('unknown_branch'))})"
+        )
     info("")
 
     if dry_run:
