@@ -102,7 +102,7 @@ Every change should have a clear, limited objective. If you want to improve some
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
 | `os.path.join()` for path manipulation | Less readable than pathlib | `Path` / operator |
-| `Path.resolve()` for symlink sandbox | Can fail with broken symlinks | `os.path.realpath()` |
+| `Path.resolve()` for symlink sandbox | Inconsistent behavior across OS/filesystem combinations | `os.path.realpath()` |
 | String concatenation: `dir + "/" + file` | Fragile, not portable | `Path` / operator |
 | `open(path_string)` without Path | Inconsistent with project | `Path` always |
 | `os.path.exists()` / `os.path.isdir()` | Pre-Python 3 style | `Path.exists()` / `Path.is_dir()` |

@@ -106,16 +106,41 @@ class PlanExecutionError(Exception):
 
 ### `actions` structure
 
+Actions use typed dictionaries with a `type` discriminator:
+
 ```python
-actions: list[dict[str, Any]] = [
+from typing import Any, Literal, TypedDict
+
+class WriteAction(TypedDict):
+    type: Literal["write"]
+    path: str
+    content: str
+
+class SymlinkAction(TypedDict):
+    type: Literal["symlink"]
+    link: str
+    target_relative: str
+
+class MkdirAction(TypedDict):
+    type: Literal["mkdir"]
+    path: str
+
+class ManagedBlockAction(TypedDict):
+    type: Literal["managed_block"]
+    file: str
+    content: str
+
+Action = WriteAction | SymlinkAction | MkdirAction | ManagedBlockAction
+
+actions: list[Action] = [
     {"type": "write", "path": "CLAUDE.md", "content": "..."},
-    {"type": "symlink", "link": "CLAUDE.md", "target": "AGENTS.md"},
+    {"type": "symlink", "link": "CLAUDE.md", "target_relative": "AGENTS.md"},
     {"type": "mkdir", "path": ".claude/skills/git-audit"},
     {"type": "managed_block", "file": ".gitignore", "content": "..."},
 ]
 ```
 
-Each action is a typed dictionary. `_execute_actions` processes sequentially and rolls back in reverse order on failure.
+`_execute_actions` processes sequentially and rolls back in reverse order on failure.
 
 ---
 
@@ -186,18 +211,19 @@ Symlink creation uses a sandbox to prevent path traversal:
 
 ```python
 def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
-    """Create symlink with sandbox validation."""
-    real_link = os.path.realpath(str(link.parent))
-    real_root = os.path.realpath(str(root))
-    if not real_link.startswith(real_root + os.sep) and real_link != real_root:
-        raise SymlinkConflict(t("symlink_escapa_root", target=target_relative))
+    """Creates a relative symlink safely: idempotency + sandbox + TOCTOU re-check."""
+    # Sandbox: target must not escape root (realpath resolves /var→/private/var etc.)
+    root_real = Path(os.path.realpath(str(root)))
+    target_real = Path(os.path.realpath(str(link.parent / target_relative)))
+    if not target_real.is_relative_to(root_real):
+        raise SymlinkConflict(t("symlink_escapes_root", target=target_relative))
     ...
 ```
 
 ### Rules
 
-- **ALWAYS** use `os.path.realpath` for sandbox validation
-- **NEVER** use `Path.resolve()` for security checks
+- **ALWAYS** use `os.path.realpath()` to resolve symlinks deterministically, then `Path.is_relative_to()` for the sandbox check
+- `os.path.realpath()` resolves `/var` → `/private/var` and similar platform aliases that `Path.resolve()` may handle inconsistently across OS/filesystem combinations
 - **NEVER** create symlinks without going through `_safe_create_symlink`
 - TOCTOU validation is mitigated by realpath checks immediately before creation
 

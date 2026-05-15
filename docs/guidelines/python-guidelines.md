@@ -106,10 +106,12 @@ agents_md = root / "AGENTS.md"
 if agents_md.exists():
     ...
 
-# CORRECT — os.path.realpath ONLY for symlink sandbox checks
+# CORRECT — os.path.realpath for deterministic resolution, Path.is_relative_to for sandbox
 import os
-real_link = os.path.realpath(str(link))
-real_root = os.path.realpath(str(root))
+root_real = Path(os.path.realpath(str(root)))
+target_real = Path(os.path.realpath(str(link.parent / target_relative)))
+if not target_real.is_relative_to(root_real):
+    raise SymlinkConflict(t("symlink_escapes_root", target=target_relative))
 
 # PROHIBITED — os.path for path manipulation
 import os.path
@@ -118,7 +120,7 @@ agents_md = os.path.join(str(repo_root), "AGENTS.md")
 
 ### Why `os.path.realpath` instead of `Path.resolve()`
 
-`Path.resolve()` can fail with broken symlinks or produce incorrect results on certain filesystems. The project uses `os.path.realpath()` in sandbox checks because it needs deterministic resolution without following broken links.
+`Path.resolve()` has inconsistent behavior across OS/filesystem combinations (e.g., `/var` vs `/private/var` on macOS, network mounts on Linux). `os.path.realpath()` provides deterministic resolution that works the same everywhere, which is critical for symlink sandbox checks.
 
 ---
 
@@ -429,8 +431,8 @@ Comments explain non-obvious invariants, not what the code does.
 
 ```python
 # CORRECT — explains WHY
-# os.path.realpath resolves symlinks deterministically;
-# Path.resolve() can fail on broken symlinks.
+# os.path.realpath resolves /var→/private/var and other platform aliases
+# that Path.resolve() may handle inconsistently across OS/filesystems.
 real = os.path.realpath(str(link))
 
 # CORRECT — documents non-obvious invariant
