@@ -10,7 +10,7 @@ cd gitwise
 uv sync                            # create .venv with dev dependencies
 brew install lefthook               # install git hooks manager
 lefthook install                    # install git hooks
-uv run pytest                      # run all tests (115)
+uv run pytest                      # run all tests
 uv run pytest -k test_worktree     # run specific tests
 ```
 

@@ -37,6 +37,7 @@ dev = [
     "pytest-cov>=6.0",
     "ruff>=0.9",
     "commitizen>=4.0",
+    "basedpyright>=1.0",
 ]
 
 [build-system]
@@ -61,7 +62,7 @@ indent-style = "space"
 
 [tool.basedpyright]
 pythonVersion = "3.10"
-pythonPlatform = "Darwin"
+pythonPlatform = "All"
 include = ["gitwise", "tests"]
 typeCheckingMode = "standard"
 

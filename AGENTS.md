@@ -44,7 +44,7 @@ Tests invoke gitwise as a subprocess via `run_gitwise()` in `conftest.py`. No mo
 ruff check gitwise/ tests/         # lint
 ruff format gitwise/ tests/        # format
 uvx basedpyright                   # type check (Python 3.10+, Darwin)
-/opt/homebrew/bin/shellcheck install.sh bin/gitwise   # shell lint
+/opt/homebrew/bin/shellcheck install.sh bin/gitwise   # shell lint (macOS)
 lefthook run pre-commit            # run all pre-commit hooks
 ```
 
@@ -68,6 +68,7 @@ gitwise/             # Python package — one module per subcommand
 share/claude/        # Templates copied/merged into target repos
   CLAUDE.md.template
   settings.json.template
+  rules/gitwise.md
   skills/git-audit/SKILL.md
   skills/git-clean/SKILL.md
   skills/git-optimize/SKILL.md
