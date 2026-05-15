@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.11.x"
           enable-cache: false
       - run: uvx ruff check gitwise/ tests/
       - run: uvx ruff format --check gitwise/ tests/
@@ -30,6 +31,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.11.x"
           enable-cache: false
       - run: uv sync
       - run: uv run basedpyright
@@ -49,6 +51,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.11.x"
           cache-suffix: "${{ matrix.os }}-${{ matrix.python-version }}"
       - run: uv sync
       - run: uv run pytest --tb=short -q
@@ -68,6 +71,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.11.x"
           enable-cache: false
       - run: uv sync
       - run: uvx pip-audit --desc
