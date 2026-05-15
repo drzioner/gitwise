@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [0.1.0]: https://github.com/drzioner/gitwise/releases/tag/v0.1.0
 
+## v0.2.1 (2026-05-15)
+
+### Fix
+
+- match commitizen changelog format in release notes extraction
+
 ## v0.2.0 (2026-05-15)
 
 ### Feat
