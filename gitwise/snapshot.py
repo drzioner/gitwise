@@ -48,13 +48,13 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
     stash = git_run(["stash", "list"], cwd=root, check=False)
     if stash.returncode == 0 and stash.stdout.strip():
         stash_count = len(stash.stdout.strip().splitlines())
-        lines += [f"## Stashes: {stash_count}", ""]
+        lines += [t("stashes_section", count=str(stash_count)), ""]
 
     worktrees = git_run(["worktree", "list", "--porcelain"], cwd=root, check=False)
     if worktrees.returncode == 0:
         wt_count = worktrees.stdout.count("worktree ")
         if wt_count > 1:
-            lines += [f"## Worktrees activos: {wt_count}", ""]
+            lines += [t("worktrees_active", count=str(wt_count)), ""]
 
     tmp = snapshot_path.with_suffix(".tmp")
     tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")

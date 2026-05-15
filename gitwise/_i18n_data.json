@@ -842,5 +842,33 @@
   "debug_snapshot_written": {
     "es": "snapshot escrito en {path}",
     "en": "snapshot written to {path}"
+  },
+  "conventions_heading": {
+    "es": "## Convenciones git para este proyecto",
+    "en": "## Git conventions for this project"
+  },
+  "conventions_pointer": {
+    "es": "\n\n@AGENTS.md\n",
+    "en": "\n\n@AGENTS.md\n"
+  },
+  "worktrees_active": {
+    "es": "## Worktrees activos: {count}",
+    "en": "## Active worktrees: {count}"
+  },
+  "stashes_section": {
+    "es": "## Stashes: {count}",
+    "en": "## Stashes: {count}"
+  },
+  "step_commit_graph": {
+    "es": "git commit-graph write --reachable --changed-paths",
+    "en": "git commit-graph write --reachable --changed-paths"
+  },
+  "step_repack": {
+    "es": "git repack -A -d --write-bitmap-index",
+    "en": "git repack -A -d --write-bitmap-index"
+  },
+  "step_prune": {
+    "es": "git prune (elimina objetos no referenciados)",
+    "en": "git prune (remove unreachable objects)"
   }
 }
