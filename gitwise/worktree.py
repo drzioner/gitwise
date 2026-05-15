@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .git import is_repo, repo_root
 from .git import run as git_run
+from .i18n import t
 from .output import error, info, ok, print_json
 
 
@@ -43,15 +44,14 @@ def _find_orphaned(cwd: Path) -> list[dict]:
 def _worktree_new(branch: str, cwd: Path) -> int:
     root = repo_root(cwd)
     if root is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
-    # Place worktree as sibling directory of repo root; sanitize branch name for filesystem
     safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
     wt_path = root.parent / (safe_name or "worktree")
 
     if wt_path.exists():
-        error(f"el directorio ya existe: {wt_path}")
+        error(t("directorio_existe", path=str(wt_path)))
         return 1
 
     branch_exists = (
@@ -69,12 +69,12 @@ def _worktree_new(branch: str, cwd: Path) -> int:
         r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=cwd, check=False)
 
     if r.returncode != 0:
-        error(f"no se pudo crear worktree: {r.stderr.strip()}")
+        error(t("worktree_fallo", error=r.stderr.strip()))
         return 1
 
-    ok(f"worktree creado: {wt_path}")
-    info(f"  rama: {branch}")
-    info(f"  para usarlo: cd {wt_path}")
+    ok(t("worktree_creado", path=str(wt_path)))
+    info(t("worktree_rama", branch=branch))
+    info(t("worktree_usar", path=str(wt_path)))
     return 0
 
 
@@ -126,20 +126,20 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
     orphaned = _find_orphaned(cwd)
 
     if not orphaned:
-        ok("no hay worktrees huérfanos" + (" (dry-run)" if dry_run else ""))
+        ok(t("no_worktrees_huerfanos", suffix=" (dry-run)" if dry_run else ""))
         return 0
 
-    info(f"worktrees huérfanos detectados ({len(orphaned)}) — directorio inexistente:")
+    info(t("worktrees_huerfanos", count=str(len(orphaned))))
     for wt in orphaned:
-        info(f"  – {wt['path']}  (rama: {wt['branch'] or 'desconocida'})")
+        info(f"  – {wt['path']}  (rama: {wt['branch'] or t('rama_desconocida')})")
     info("")
 
     if dry_run:
-        info("modo dry-run — no se limpiará nada")
+        info(t("dry_run_no_clean"))
         return 0
 
     git_run(["worktree", "prune"], cwd=cwd, check=False)
-    ok(f"limpiados {len(orphaned)} worktree(s) huérfano(s)")
+    ok(t("worktrees_limpiados", count=str(len(orphaned))))
     return 0
 
 
@@ -151,17 +151,17 @@ def run_worktree(
     as_json: bool = False,
 ) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     if action == "new":
         if not branch:
-            error("uso: gitwise worktree new <branch>")
+            error(t("worktree_uso"))
             return 1
         if as_json:
             rc, data = _worktree_new_json(branch, cwd)
@@ -173,5 +173,5 @@ def run_worktree(
         return _worktree_clean(cwd, dry_run=dry_run)
 
     else:
-        error("uso: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]")
+        error(t("worktree_uso_completo"))
         return 1

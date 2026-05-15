@@ -9,6 +9,7 @@ from typing import Any
 
 from .git import git_dir, gpg_status, is_repo, repo_root, stale_branches
 from .git import run as git_run
+from .i18n import t
 from .output import bat_pipe, error, ok, print_json
 
 _STALE_DAYS = 30
@@ -119,10 +120,10 @@ def _check_gpg_findings(gpg: dict) -> list[dict]:
             {
                 "type": "gpg_binary_missing",
                 "severity": "high",
-                "message": "commit.gpgsign=true pero gpg no instalado — los commits fallarán",
-                "fix": "brew install gnupg",
-                "cost_of_fix": "trivial",
-                "cost_of_ignore": "ningún git commit funcionará hasta instalarlo",
+                "message": t("gpg_binary_missing_audit"),
+                "fix": t("gpg_binary_missing_fix"),
+                "cost_of_fix": t("trivial"),
+                "cost_of_ignore": t("gpg_binary_missing_cost"),
             }
         ]
     if gpg["gpgsign_enabled"] and not gpg["signing_key_set"]:
@@ -130,10 +131,10 @@ def _check_gpg_findings(gpg: dict) -> list[dict]:
             {
                 "type": "gpg_key_missing",
                 "severity": "high",
-                "message": "commit.gpgsign=true pero user.signingkey no configurado",
-                "fix": "git config user.signingkey <key-id>",
-                "cost_of_fix": "trivial",
-                "cost_of_ignore": "ningún git commit funcionará",
+                "message": t("gpg_key_missing_audit"),
+                "fix": t("gpg_key_missing_fix"),
+                "cost_of_fix": t("trivial"),
+                "cost_of_ignore": t("gpg_key_missing_cost"),
             }
         ]
     if not gpg["gpgsign_enabled"]:
@@ -141,10 +142,10 @@ def _check_gpg_findings(gpg: dict) -> list[dict]:
             {
                 "type": "gpg_not_configured",
                 "severity": "info",
-                "message": "GPG no configurado — commits sin firma digital",
-                "fix": "brew install gnupg  →  git config --global commit.gpgsign true",
-                "cost_of_fix": "requiere crear llave GPG (~5 min)",
-                "cost_of_ignore": "commits no verificables criptográficamente",
+                "message": t("gpg_not_configured_audit"),
+                "fix": t("gpg_not_configured_fix"),
+                "cost_of_fix": t("gpg_not_configured_fix_cost"),
+                "cost_of_ignore": t("gpg_not_configured_cost"),
             }
         ]
     return []
@@ -155,12 +156,12 @@ _SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "
 
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     findings: list[dict[str, Any]] = []
@@ -176,10 +177,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 "severity": "medium",
                 "count": len(stale),
                 "branches": stale,
-                "message": f"{len(stale)} rama(s) con upstream eliminado ([gone])",
-                "fix": "gitwise clean --branches --dry-run",
-                "cost_of_fix": "trivial",
-                "cost_of_ignore": "clutter en `git branch`; confunde agentes Claude",
+                "message": t("stale_branches_audit", count=str(len(stale))),
+                "fix": t("clean_fix"),
+                "cost_of_fix": t("stale_branches_fix_cost"),
+                "cost_of_ignore": t("stale_branches_cost"),
             }
         )
 
@@ -189,10 +190,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             {
                 "type": "missing_commit_graph",
                 "severity": "medium",
-                "message": "commit-graph ausente — git log puede ser 2-10x más lento",
-                "fix": "gitwise optimize --yes",
-                "cost_of_fix": "trivial (segundos)",
-                "cost_of_ignore": "latencia acumulada en cada sesión de Claude",
+                "message": t("commit_graph_ausente"),
+                "fix": t("commit_graph_fix"),
+                "cost_of_fix": t("commit_graph_fix_cost"),
+                "cost_of_ignore": t("commit_graph_cost"),
             }
         )
 
@@ -202,10 +203,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 {
                     "type": "fsmonitor_disabled",
                     "severity": "low",
-                    "message": "core.fsmonitor desactivado — git status más lento en repos grandes",
-                    "fix": "gitwise setup --yes",
-                    "cost_of_fix": "trivial",
-                    "cost_of_ignore": "~50ms extra por git status en repos medianos",
+                    "message": t("fsmonitor_desactivado"),
+                    "fix": t("fsmonitor_fix"),
+                    "cost_of_fix": t("fsmonitor_fix_cost"),
+                    "cost_of_ignore": t("fsmonitor_cost"),
                 }
             )
 
@@ -217,10 +218,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 "severity": "low",
                 "count": len(old_stashes),
                 "stashes": old_stashes,
-                "message": f"{len(old_stashes)} stash(es) con más de {_STALE_DAYS} días",
-                "fix": "git stash drop stash@{N}  o  git stash clear",
-                "cost_of_fix": "irreversible — revisar antes",
-                "cost_of_ignore": "acumulación de WIP probablemente irrelevante",
+                "message": t("stashes_viejos", count=str(len(old_stashes)), days=str(_STALE_DAYS)),
+                "fix": t("stash_fix"),
+                "cost_of_fix": t("stash_fix_cost"),
+                "cost_of_ignore": t("stash_cost"),
             }
         )
 
@@ -234,10 +235,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                     "severity": "low",
                     "count": len(large_blobs),
                     "blobs": large_blobs,
-                    "message": f"{len(large_blobs)} archivo(s) grandes (≥1MB) en HEAD",
-                    "fix": "considerar git-lfs o eliminación de la historia",
-                    "cost_of_fix": "depende del archivo",
-                    "cost_of_ignore": "lentitud en clone y fetch",
+                    "message": t("large_blobs", count=str(len(large_blobs))),
+                    "fix": t("large_blobs_fix"),
+                    "cost_of_fix": t("large_blobs_fix_cost"),
+                    "cost_of_ignore": t("large_blobs_cost"),
                 }
             )
 
@@ -246,10 +247,10 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             {
                 "type": "mixed_staging",
                 "severity": "info",
-                "message": "hay archivos staged y unstaged — el commit no sería atómico",
-                "fix": "revisar con git diff --staged antes de commitear",
-                "cost_of_fix": "n/a",
-                "cost_of_ignore": "commits no atómicos dificultan el historial",
+                "message": t("mixed_staging"),
+                "fix": t("mixed_staging_fix"),
+                "cost_of_fix": t("mixed_staging_fix_cost"),
+                "cost_of_ignore": t("mixed_staging_cost"),
             }
         )
 
@@ -276,11 +277,11 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         return 0 if not has_issues else 1
 
     if not findings:
-        ok(f"repositorio en buen estado{'  (quick)' if quick else ''}")
+        ok(t("repo_buen_estado", suffix="  (quick)" if quick else ""))
         return 0
 
     lines = [
-        f"{'Diagnóstico rápido' if quick else 'Diagnóstico'} — {len(findings)} observación(es):",
+        t("diagnostico", suffix=" rápido" if quick else "", count=str(len(findings))),
         "",
     ]
     for f in findings:

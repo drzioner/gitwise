@@ -4,17 +4,18 @@ import subprocess
 
 from .git import is_repo, repo_root
 from .git import run as git_run
+from .i18n import t
 from .output import HAS_DELTA, IS_TTY, bat_pipe, debug, error, info, ok, print_json, warn
 
 
 def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int = 10) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     branch_r = git_run(["branch", "--show-current"], cwd=cwd, check=False)
@@ -51,38 +52,38 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         print_json(result)
         output_size = len(json.dumps(result))
         if output_size > 8192:
-            warn(f"output {output_size} bytes supera 8KB — usa --max-commits menor")
+            warn(t("output_superior_8kb", size=str(output_size)))
         return 0
 
     # Human output
-    info(f"rama: {branch}")
+    info(t("rama", branch=branch))
     info("")
 
     if status_lines:
-        info(f"estado ({len(status_lines)} archivos modificados):")
+        info(t("estado_archivos", count=str(len(status_lines))))
         bat_pipe("\n".join(status_lines), language="plain")
         info("")
     else:
-        ok("working tree limpio")
+        ok(t("working_tree_limpio"))
         info("")
 
     if log_lines:
-        info(f"últimos {len(log_lines)} commits:")
+        info(t("ultimos_commits", count=str(len(log_lines))))
         bat_pipe("\n".join(log_lines), language="plain")
         info("")
     else:
-        info("sin commits aún")
+        info(t("sin_commits"))
         info("")
 
     if shortstat:
-        info(f"diff: {shortstat}")
+        info(t("diff_prefix", stat=shortstat))
         info("")
 
     if diff:
         diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
         if diff_r.stdout:
             if HAS_DELTA and IS_TTY:
-                debug("usando delta para mostrar diff")
+                debug(t("usando_delta"))
                 try:
                     delta = subprocess.Popen(["delta"], stdin=subprocess.PIPE, text=True)
                     delta.communicate(input=diff_r.stdout)

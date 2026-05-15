@@ -7,6 +7,7 @@ import sys
 from . import __version__
 from .git import gpg_status
 from .git import version as git_version
+from .i18n import t
 from .output import info, ok, print_json, warn
 
 MIN_GIT = (2, 29, 0)
@@ -61,23 +62,23 @@ def run_doctor(*, as_json: bool = False) -> int:
     git_str = ".".join(str(n) for n in git_ver)
     min_str = ".".join(str(n) for n in MIN_GIT)
     if git_ok:
-        ok(f"git {git_str} (≥ {min_str} requerido)")
+        ok(t("git_version_ok", ver=git_str, min=min_str))
     else:
-        warn(f"git {git_str} demasiado antiguo — se requiere ≥ {min_str}")
+        warn(t("git_demasiado_antiguo", ver=git_str, min=min_str))
 
     py_str = ".".join(str(n) for n in python_ver)
     if python_ok:
-        ok(f"Python {py_str}")
+        ok(t("python_version_ok", ver=py_str))
     else:
-        warn(f"Python {py_str} demasiado antiguo — se requiere ≥ 3.9")
+        warn(t("python_demasiado_antiguo", ver=py_str))
 
-    ok(f"plataforma: {platform_name}")
+    ok(t("plataforma", name=platform_name))
 
     if not fsmonitor_supported:
-        warn("fsmonitor integrado no está soportado en Linux (solo macOS y Windows)")
+        warn(t("fsmonitor_no_soportado"))
 
     info("")
-    info("herramientas opcionales:")
+    info(t("herramientas_opcionales"))
     for tool, found in optional.items():
         if found:
             info(f"  ✓ {tool}")
@@ -87,17 +88,17 @@ def run_doctor(*, as_json: bool = False) -> int:
             info(f"      → {install}")
 
     info("")
-    info("GPG (firma de commits):")
+    info(t("gpg_titulo"))
     if gpg["ready"]:
-        ok("  GPG listo — commit.gpgsign=true, llave y binario configurados")
+        ok(t("gpg_listo"))
     elif not gpg["gpg_binary"]:
-        warn("  gpg no instalado — commits no se firmarán")
+        warn(t("gpg_no_instalado"))
         info("      → brew install gnupg")
     elif not gpg["gpgsign_enabled"]:
-        info("  gpg instalado pero commit.gpgsign no activado")
+        info(t("gpg_no_activado"))
         info("      → git config --global commit.gpgsign true")
     elif not gpg["signing_key_set"]:
-        warn("  commit.gpgsign=true pero user.signingkey no configurado")
+        warn(t("gpg_no_key"))
         info("      → git config --global user.signingkey <key-id>")
 
     return 0 if result["ok"] else 1
