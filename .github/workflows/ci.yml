@@ -4,6 +4,11 @@ on:
   pull_request:
     branches: [main]
   workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -12,31 +17,37 @@ jobs:
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'bump:') }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: "0.11.x"
-          enable-cache: false
-      - run: uvx ruff check gitwise/ tests/
-      - run: uvx ruff format --check gitwise/ tests/
+          enable-cache: true
+      - run: uvx ruff@0.11.0 check gitwise/ tests/
+      - run: uvx ruff@0.11.0 format --check gitwise/ tests/
 
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: "0.11.x"
-          enable-cache: false
+          enable-cache: true
       - run: uv sync
       - run: uv run basedpyright
 
   test:
     name: Tests (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -44,30 +55,39 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: "0.11.x"
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
           cache-suffix: "${{ matrix.os }}-${{ matrix.python-version }}"
       - run: uv sync
-      - run: uv run pytest --tb=short -q
+      - run: uv run pytest --tb=short -q --cov=gitwise --cov-fail-under=10
 
   shellcheck:
     name: Shell Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Run shellcheck
         run: shellcheck install.sh bin/gitwise
 
   audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           version: "0.11.x"
-          enable-cache: false
+          enable-cache: true
       - run: uv sync
-      - run: uvx pip-audit --desc
+      - run: uv run pip-audit --desc
