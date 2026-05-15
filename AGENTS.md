@@ -54,13 +54,15 @@ lefthook run pre-commit            # run all pre-commit hooks
 gitwise/             # Python package — one module per subcommand
   __main__.py        # argparse router → dispatches to run_<cmd>()
   setup_agents.py    # entry point: run_setup_agents → _run_setup_local/global
-  _sa_state.py       # state detection (_classify_path, _detect_state, _detect_rules)
-  _sa_plan.py        # planning (_resolve_canonical_doc, _plan_*, managed blocks, 5-bucket model)
+  _sa_state.py       # state detection (_classify_path, _detect_state, _detect_rules, reset_caches)
+  _sa_plan.py        # planning orchestrator (_resolve_canonical_doc, _plan_actions, _plan_actions_global)
+  _sa_plan_skills.py # skills planning (plan_skills, plan_global_skills, _plan_single_skill)
+  _sa_plan_gitfiles.py # managed blocks (plan_managed_block, gitignore/gitattributes generators)
   _sa_exec.py        # execution (_execute_actions, _safe_create_symlink, _undo_partial)
-  i18n.py            # t(), confirm_responses() — loads strings from _i18n_data.json
-  _i18n_data.json    # i18n string catalog (es/en)
-  git.py             # git subprocess helpers (is_repo, repo_root, config, run)
-  output.py          # ok/warn/error/info/debug/print_json
+  i18n.py            # t(), confirm_responses(), reset_cache() — loads from _i18n_data.json
+  _i18n_data.json    # i18n string catalog (es/en, 220+ keys)
+  git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
+  output.py          # ok/warn/error/info/debug/print_json/bat_pipe, _reinit()
   snapshot.py        # generates .claude/git-snapshot.md
   doctor.py          # environment checks
   audit.py           # repo diagnostics
