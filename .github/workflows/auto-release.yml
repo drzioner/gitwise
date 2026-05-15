@@ -29,6 +29,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.11.x"
           enable-cache: false
 
       - run: uv sync
@@ -58,11 +59,6 @@ jobs:
             exit 1
           fi
 
-          if git diff --quiet; then
-            echo "no_bump=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           VERSION="${TAG#v}"
           echo "no_bump=false" >> "$GITHUB_OUTPUT"
@@ -71,7 +67,7 @@ jobs:
 
       - name: Push bump commit & tag
         if: steps.bump.outputs.no_bump == 'false'
-        run: git push && git push --tags
+        run: git push origin main "refs/tags/${{ steps.bump.outputs.tag }}"
 
       - name: Extract release notes
         if: steps.bump.outputs.no_bump == 'false'
