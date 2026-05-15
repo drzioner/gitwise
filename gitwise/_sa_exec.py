@@ -19,7 +19,14 @@ class PlanExecutionError(Exception):
 
 
 def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
-    """Creates a relative symlink safely: idempotency + sandbox + TOCTOU re-check."""
+    """Creates a relative symlink safely: idempotency + sandbox + TOCTOU re-check.
+
+    Note: The sandbox check (os.path.realpath) and the os.symlink() call are not
+    atomic. In a concurrent scenario (two gitwise processes), a TOCTOU race exists.
+    This is acceptable because: (a) gitwise is a single-user CLI, (b) the idempotency
+    check at the top prevents double-creation, (c) symlink targets are always relative
+    paths within the repo root.
+    """
     if link.is_symlink():
         existing = os.readlink(link)
         if existing == target_relative:

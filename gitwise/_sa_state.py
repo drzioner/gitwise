@@ -100,6 +100,10 @@ def _detect_rules(root: Path) -> list[str]:
     return warnings
 
 
+def reset_caches() -> None:
+    _supports_symlinks_cache.clear()
+
+
 def _detect_state(root: Path) -> dict[str, Any]:
     agents_md = root / _AGENTS_MD
     claude_md = root / _CLAUDE_MD

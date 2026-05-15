@@ -36,6 +36,15 @@ def _detect_theme() -> str:
     return "dark"
 
 
+def _reinit() -> None:
+    global _THEME, _USE_COLOR, IS_TTY, DEBUG, _C
+    _THEME = _detect_theme()
+    _USE_COLOR = _should_color()
+    IS_TTY = sys.stdout.isatty()
+    DEBUG = os.environ.get("GITWISE_DEBUG", "").lower() in ("1", "true")
+    _C = _COLORS_DARK if _THEME == "dark" else _COLORS_LIGHT
+
+
 _THEME = _detect_theme()
 _USE_COLOR = _should_color()
 IS_TTY = sys.stdout.isatty()
