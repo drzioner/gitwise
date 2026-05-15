@@ -17,7 +17,7 @@ hooks:
   commit-msg:
     commands:
       conventional:
-        run: uvx --from commitizen cz check --commit-msg-file {1}
+        run: uvx --from 'commitizen>=4.0,<5' cz check --commit-msg-file {1}
 
   pre-push:
     commands:

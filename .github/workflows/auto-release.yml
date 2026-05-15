@@ -3,24 +3,34 @@ name: Auto Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Run bump without pushing"
+        type: boolean
+        default: false
 
 concurrency:
   group: auto-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   ci:
     name: Run CI
+    if: "${{ !startsWith(github.event.head_commit.message, 'bump:') }}"
     uses: ./.github/workflows/ci.yml
 
   release:
     name: Bump Version & Release
     needs: ci
     runs-on: ubuntu-latest
-    if: "${{ !startsWith(github.event.head_commit.message, 'bump:') && !startsWith(github.event.head_commit.message, 'chore: trigger') }}"
+    timeout-minutes: 10
+    if: "${{ !startsWith(github.event.head_commit.message, 'bump:') }}"
+    permissions:
+      contents: write
     steps:
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
@@ -31,6 +41,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
           token: ${{ steps.app-token.outputs.token }}
 
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -49,10 +60,8 @@ jobs:
       - name: Bump version
         id: bump
         run: |
-          set +e
-          uv run cz bump --yes --changelog
-          BUMP_EXIT=$?
-          set -e
+          BUMP_EXIT=0
+          uv run cz bump --yes --changelog || BUMP_EXIT=$?
 
           if [ "$BUMP_EXIT" -eq 21 ]; then
             echo "no_bump=true" >> "$GITHUB_OUTPUT"
@@ -72,26 +81,21 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Push bump commit & tag
-        if: steps.bump.outputs.no_bump == 'false'
-        run: git push origin main "refs/tags/${{ steps.bump.outputs.tag }}"
+        if: steps.bump.outputs.no_bump == 'false' && inputs.dry-run == false
+        run: git push --atomic origin main "refs/tags/${{ steps.bump.outputs.tag }}"
 
       - name: Extract release notes
         if: steps.bump.outputs.no_bump == 'false'
-        id: notes
         run: |
           TAG="${{ steps.bump.outputs.tag }}"
-          {
-            echo "release-notes<<EOF"
-            sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+          sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md > /tmp/release-notes.txt
 
       - name: Create GitHub Release
-        if: steps.bump.outputs.no_bump == 'false'
+        if: steps.bump.outputs.no_bump == 'false' && inputs.dry-run == false
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh release create "${{ steps.bump.outputs.tag }}" \
             --title "${{ steps.bump.outputs.tag }}" \
-            --notes "${{ steps.notes.outputs.release-notes }}" \
+            --notes-file /tmp/release-notes.txt \
             --verify-tag

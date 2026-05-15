@@ -38,6 +38,7 @@ dev = [
     "ruff>=0.9",
     "commitizen>=4.0",
     "basedpyright>=1.0",
+    "pip-audit>=0.0.13",
 ]
 
 [build-system]
