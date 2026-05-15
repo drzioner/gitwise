@@ -129,7 +129,7 @@ def _run_update(args: argparse.Namespace) -> int:
 
     install_dir = Path(__file__).parent.parent
     if args.dry_run:
-        print(f"would run: git pull --ff-only in {install_dir}")
+        print(t("update_dry_run", dir=str(install_dir)))
         return 0
     print(t("updating_from", dir=str(install_dir)))
     r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)

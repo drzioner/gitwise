@@ -679,6 +679,62 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "# Backups from gitwise setup-agents",
         "en": "# Backups from gitwise setup-agents",
     },
+    "tool_bat_desc": {
+        "es": "visualización de archivos con syntax highlighting",
+        "en": "file viewing with syntax highlighting",
+    },
+    "tool_delta_desc": {
+        "es": "diffs con syntax highlighting",
+        "en": "diffs with syntax highlighting",
+    },
+    "tool_rg_desc": {
+        "es": "búsqueda rápida en código (ripgrep)",
+        "en": "fast code search (ripgrep)",
+    },
+    "tool_eza_desc": {
+        "es": "listado de directorios moderno",
+        "en": "modern directory listing",
+    },
+    "tool_git_sizer_desc": {
+        "es": "análisis de tamaño e historia del repo",
+        "en": "repo size and history analysis",
+    },
+    "tool_watchman_desc": {
+        "es": "fsmonitor nativo — acelera git status",
+        "en": "native fsmonitor — speeds up git status",
+    },
+    "gpg_install_instruction": {
+        "es": "      → brew install gnupg",
+        "en": "      → brew install gnupg",
+    },
+    "gpg_enable_instruction": {
+        "es": "      → git config --global commit.gpgsign true",
+        "en": "      → git config --global commit.gpgsign true",
+    },
+    "gpg_key_instruction": {
+        "es": "      → git config --global user.signingkey <key-id>",
+        "en": "      → git config --global user.signingkey <key-id>",
+    },
+    "update_dry_run": {
+        "es": "ejecutaría: git pull --ff-only en {dir}",
+        "en": "would run: git pull --ff-only in {dir}",
+    },
+    "migrated_skill": {
+        "es": "migrado: {file} → {target} (symlink)",
+        "en": "migrated: {file} → {target} (symlink)",
+    },
+    "managed_block_created": {
+        "es": "creado bloque managed: {file}",
+        "en": "created managed block: {file}",
+    },
+    "managed_block_updated": {
+        "es": "actualizado bloque managed: {file}",
+        "en": "updated managed block: {file}",
+    },
+    "conflict_dir_agents": {
+        "es": "conflicto dir/agents",
+        "en": "conflict dir/agents",
+    },
 }
 
 

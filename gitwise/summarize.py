@@ -55,7 +55,6 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
             warn(t("output_superior_8kb", size=str(output_size)))
         return 0
 
-    # Human output
     info(t("branch_label", branch=branch))
     info("")
 

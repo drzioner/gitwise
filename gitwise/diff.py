@@ -63,7 +63,6 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
             info(f"  {f['path']}  {f['changes']}")
         return 0
 
-    # name-status mode (default and --staged)
     if not lines:
         if as_json:
             print_json({"files": [], "count": 0})

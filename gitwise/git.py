@@ -114,5 +114,7 @@ def version() -> tuple[int, int, int]:
                 int(nums[2]) if len(nums) > 2 else 0,
             )
         except (ValueError, IndexError):
-            pass
+            from .output import debug as _debug
+
+            _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)

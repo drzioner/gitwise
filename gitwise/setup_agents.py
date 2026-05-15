@@ -23,8 +23,8 @@ _MARKER_RE = re.compile(
     re.MULTILINE,
 )
 _POINTER_TEMPLATE = "## Convenciones git para este proyecto\n\n@AGENTS.md\n"
-_GITIGNORE_MARKER_START = "# >>> gitwise managed (do not edit between markers) >>>"
-_GITIGNORE_MARKER_END = "# <<< gitwise managed <<<"
+_MANAGED_MARKER_START = "# >>> gitwise managed (do not edit between markers) >>>"
+_MANAGED_MARKER_END = "# <<< gitwise managed <<<"
 
 _supports_symlinks_cache: dict[Path, bool] = {}
 
@@ -228,7 +228,7 @@ def _undo_partial(actions_done: list[dict], root: Path) -> None:
 
 def _gitignore_block_basic() -> str:
     lines = [
-        _GITIGNORE_MARKER_START,
+        _MANAGED_MARKER_START,
         "# Claude Code local/personal files (do not commit)",
         ".claude/settings.local.json",
         ".claude/.credentials.json",
@@ -237,14 +237,14 @@ def _gitignore_block_basic() -> str:
         "# Backups from gitwise setup-agents",
         "*.bak",
         "CLAUDE.md.bak*",
-        _GITIGNORE_MARKER_END,
+        _MANAGED_MARKER_END,
     ]
     return "\n".join(lines) + "\n"
 
 
 def _gitignore_block_extended(has_agents_md: bool) -> str:
     lines = [
-        _GITIGNORE_MARKER_START,
+        _MANAGED_MARKER_START,
         "# Claude Code local/personal files (do not commit)",
         ".claude/settings.local.json",
         ".claude/.credentials.json",
@@ -256,26 +256,26 @@ def _gitignore_block_extended(has_agents_md: bool) -> str:
     ]
     if has_agents_md:
         lines.append("AGENTS.md.bak*")
-    lines.append(_GITIGNORE_MARKER_END)
+    lines.append(_MANAGED_MARKER_END)
     return "\n".join(lines) + "\n"
 
 
 def _gitattributes_block_basic() -> str:
     lines = [
-        _GITIGNORE_MARKER_START,
+        _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
         ".claude/git-snapshot.md merge=ours linguist-generated=true",
         "# Convention files: force LF for cross-platform consistency",
         "CLAUDE.md text=auto eol=lf",
         ".claude/skills/**/SKILL.md text=auto eol=lf",
-        _GITIGNORE_MARKER_END,
+        _MANAGED_MARKER_END,
     ]
     return "\n".join(lines) + "\n"
 
 
 def _gitattributes_block_extended(has_agents_md: bool, has_agents_dir: bool) -> str:
     lines = [
-        _GITIGNORE_MARKER_START,
+        _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
         ".claude/git-snapshot.md merge=ours linguist-generated=true",
         "# Convention files: force LF for cross-platform consistency",
@@ -286,7 +286,7 @@ def _gitattributes_block_extended(has_agents_md: bool, has_agents_dir: bool) -> 
     lines.append(".claude/skills/**/SKILL.md text=auto eol=lf")
     if has_agents_dir:
         lines.append(".agents/skills/**/SKILL.md text=auto eol=lf")
-    lines.append(_GITIGNORE_MARKER_END)
+    lines.append(_MANAGED_MARKER_END)
     return "\n".join(lines) + "\n"
 
 
@@ -294,7 +294,7 @@ def _gitattributes_conflicts(existing_text: str, desired_block: str) -> list[str
     """Warns on .gitattributes entries outside the managed block that conflict
     (same path pattern, different attributes). Exact path-key match only —
     glob overlaps are not detected. Only scans content before the managed block."""
-    block_start = existing_text.find(_GITIGNORE_MARKER_START)
+    block_start = existing_text.find(_MANAGED_MARKER_START)
     outside_text = existing_text[:block_start] if block_start != -1 else existing_text
 
     def _parse(text: str) -> dict[str, str]:
@@ -304,7 +304,7 @@ def _gitattributes_conflicts(existing_text: str, desired_block: str) -> list[str
             if not s or s.startswith("#"):
                 continue
             parts = s.split(None, 1)
-            if len(parts) > 1:  # skip bare paths with no attributes to compare
+            if len(parts) > 1:
                 result[parts[0]] = s
         return result
 
@@ -346,7 +346,7 @@ def _plan_managed_block(
         _gitattributes_conflicts(current, desired_block) if file_key == ".gitattributes" else []
     )
 
-    if _GITIGNORE_MARKER_START not in current:
+    if _MANAGED_MARKER_START not in current:
         return [
             {
                 "file": file_key,
@@ -357,12 +357,12 @@ def _plan_managed_block(
             }
         ], conflict_warnings
 
-    start_idx = current.index(_GITIGNORE_MARKER_START)
-    end_marker_idx = current.find(_GITIGNORE_MARKER_END, start_idx)
+    start_idx = current.index(_MANAGED_MARKER_START)
+    end_marker_idx = current.find(_MANAGED_MARKER_END, start_idx)
     if end_marker_idx == -1:
         return [], [t("managed_block_unclosed", file=file_key)] + conflict_warnings
 
-    end_idx = end_marker_idx + len(_GITIGNORE_MARKER_END)
+    end_idx = end_marker_idx + len(_MANAGED_MARKER_END)
     existing_block = current[start_idx:end_idx]
 
     if existing_block.rstrip() == desired_block.rstrip():
@@ -661,17 +661,15 @@ def _plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
                     warnings.append(t("global_skill_symlink_broken", skill=skill))
                 else:  # regular dir — auto-migrate to .agents/ since ~/.agents/ is present
                     if agents_skill.exists():
-                        # Target already exists; skip with warning
                         warnings.append(t("skill_conflict_dir_agents", skill=skill))
                         actions.append(
                             {
                                 "file": skill_file,
                                 "action": "skip",
-                                "reason": "conflicto dir/agents",
+                                "reason": t("conflict_dir_agents"),
                             }
                         )
                     else:
-                        # Move existing dir to .agents/skills/ and create symlink
                         actions.append(
                             {
                                 "file": f".claude/skills/{skill}",
@@ -892,10 +890,9 @@ def _resolve_canonical_doc(
         except OSError:
             link_target = ""
         # Check if it already points to AGENTS.md (by string or resolved path)
-        points_to_agents = (
-            link_target == _AGENTS_MD
-            or (claude_md.parent / link_target).resolve() == agents_md.resolve()
-        )
+        points_to_agents = link_target == _AGENTS_MD or Path(
+            os.path.realpath(str(claude_md.parent / link_target))
+        ) == Path(os.path.realpath(str(agents_md)))
         if points_to_agents:
             # Bucket 3: idempotent
             return (
@@ -1151,7 +1148,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                     shutil.move(str(skill_link), str(agents_skill))
                     action["_moved_from"] = str(skill_link)
                     _safe_create_symlink(skill_link, action["target_relative"], root)
-                    ok(f"migrado: {file_key} → {action['target_relative']} (symlink)")
+                    ok(t("migrated_skill", file=file_key, target=action["target_relative"]))
 
             elif file_key.startswith(".claude/skills/") and file_key.endswith("/SKILL.md"):
                 rel = Path(file_key).relative_to(".claude")
@@ -1176,8 +1173,12 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
 
             elif act in ("managed-block-create", "managed-block-replace"):
                 _apply_managed_block(action)
-                verb = "creado" if act == "managed-block-create" else "actualizado"
-                ok(f"{verb} bloque managed: {file_key}")
+                msg_key = (
+                    "managed_block_created"
+                    if act == "managed-block-create"
+                    else "managed_block_updated"
+                )
+                ok(t(msg_key, file=file_key))
 
             else:
                 warn(t("unknown_action", action=act, file=file_key))

@@ -117,7 +117,8 @@ def bat_pipe(text: str, language: str = "plain") -> None:
     if HAS_BAT and IS_TTY:
         import subprocess
 
-        cmd = ["bat", "--style=plain", "--pager=never", "--color=always"]
+        color_flag = "always" if _USE_COLOR else "never"
+        cmd = ["bat", "--style=plain", "--pager=never", f"--color={color_flag}"]
         if language and language != "plain":
             cmd += ["--language", language]
         try:

@@ -51,7 +51,7 @@ def _repack(cwd: Path) -> bool:
     # Try with bitmap index (faster future reads); fall back if unsupported
     r = git_run(["repack", "-A", "-d", "--write-bitmap-index"], cwd=cwd, check=False)
     if r.returncode != 0:
-        debug("repack --write-bitmap-index falló, reintentando sin bitmap")
+        debug(t("repack_fallo_bitmap"))
         r = git_run(["repack", "-A", "-d"], cwd=cwd, check=False)
     return r.returncode == 0
 

@@ -10,7 +10,7 @@ from typing import Any
 from .git import git_dir, gpg_status, is_repo, repo_root, stale_branches
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, ok, print_json
+from .output import bat_pipe, debug, error, ok, print_json
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -53,12 +53,12 @@ def _find_old_stashes(cwd: Path) -> list[dict]:
             if age >= _STALE_DAYS:
                 old.append({"ref": ref.strip(), "age_days": age, "subject": subject.strip()})
         except (ValueError, TypeError):
+            debug(f"stash date parse failed: {line!r}")
             continue
     return old
 
 
 def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
-    # Abort if no commits yet
     if git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode != 0:
         return []
     r = git_run(["ls-tree", "-r", "--long", "HEAD"], cwd=cwd, check=False)
@@ -75,6 +75,7 @@ def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
             if size >= _LARGE_BLOB_MIN_BYTES:
                 blobs.append({"path": path, "size": size, "size_mb": round(size / 1_048_576, 2)})
         except (ValueError, IndexError):
+            debug(f"ls-tree line parse failed: {line!r}")
             continue
     blobs.sort(key=lambda b: b["size"], reverse=True)
     return blobs[:top_n]

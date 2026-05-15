@@ -91,7 +91,6 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                 }
             )
 
-    # core.hooksPath: install gitwise hooks (pre-commit + commit-msg)
     hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
     current = git_config("core.hooksPath", cwd=cwd)
     if str(hooks_dir) != current:
