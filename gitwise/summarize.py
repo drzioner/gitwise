@@ -61,7 +61,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
 
     if status_lines:
         info(t("estado_archivos", count=str(len(status_lines))))
-        bat_pipe("\n".join(status_lines), language="plain")
+        print("\n".join(status_lines))
         info("")
     else:
         ok(t("working_tree_limpio"))
@@ -69,7 +69,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
 
     if log_lines:
         info(t("ultimos_commits", count=str(len(log_lines))))
-        bat_pipe("\n".join(log_lines), language="plain")
+        print("\n".join(log_lines))
         info("")
     else:
         info(t("sin_commits"))
