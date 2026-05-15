@@ -16,7 +16,7 @@ def _run_local(*args: str, cwd: Path, env: dict | None = None) -> subprocess.Com
     """
     # Isolated fake home: no real global skills can interfere
     clean_home = cwd.parent / f"_fakehome_{cwd.name}"
-    base_env: dict = {"HOME": str(clean_home)}
+    base_env: dict = {"HOME": str(clean_home), "GITWISE_LANG": "es"}
     if env:
         base_env.update(
             env
@@ -28,7 +28,12 @@ def _run_global(
     *args: str, fake_home: Path, cwd: Path | None = None
 ) -> subprocess.CompletedProcess:
     """Run setup-agents in global mode with a fake HOME directory."""
-    return _run("setup-agents", *args, cwd=cwd or fake_home, env={"HOME": str(fake_home)})
+    return _run(
+        "setup-agents",
+        *args,
+        cwd=cwd or fake_home,
+        env={"HOME": str(fake_home), "GITWISE_LANG": "es"},
+    )
 
 
 def _parse_frontmatter(text: str) -> dict[str, str]:

@@ -6,113 +6,110 @@ import time
 from pathlib import Path
 
 from . import __version__
+from .i18n import t
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gitwise",
-        description="CLI personal para optimizar git + Claude Code",
+        description="CLI for optimizing git + Claude Code workflows",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"gitwise {__version__}")
+    parser.add_argument(
+        "--lang",
+        choices=["es", "en"],
+        default=None,
+        help="output language (default: auto-detect from locale)",
+    )
 
-    sub = parser.add_subparsers(dest="command", metavar="COMANDO")
+    sub = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    # doctor
-    p = sub.add_parser("doctor", help="verifica requisitos y entorno")
+    p = sub.add_parser("doctor", help="check requirements and environment")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    # setup-agents
     p = sub.add_parser(
         "setup-agents",
-        help="instala skills/rules/settings en ~/.claude/ (default) o en el repo actual (--local)",
+        help="install skills/rules/settings into ~/.claude/ (default) or current repo (--local)",
     )
     p.add_argument(
         "--local",
         action="store_true",
-        help="instala en .claude/ del repo actual en lugar de ~/.claude/ global",
+        help="install into .claude/ of current repo instead of global ~/.claude/",
     )
     p.add_argument(
         "--no-skills",
         action="store_true",
         dest="no_skills",
-        help="no instalar skills (solo aplica en modo global)",
+        help="skip skills installation (global mode only)",
     )
-    p.add_argument("--dry-run", action="store_true", help="muestra acciones sin ejecutar")
-    p.add_argument("--yes", "-y", action="store_true", help="no pide confirmación")
+    p.add_argument("--dry-run", action="store_true", help="show actions without executing")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--json", action="store_true", help="output JSON")
     p.add_argument(
         "--no-symlinks",
         action="store_true",
-        help="forzar fallback @AGENTS.md import (sin symlinks) — solo con --local",
+        help="force @AGENTS.md import fallback (no symlinks) — --local only",
     )
     p.add_argument(
         "--strict",
         action="store_true",
-        help="convertir warnings en errores (CI) — solo con --local",
+        help="treat warnings as errors (CI) — --local only",
     )
     p.add_argument(
         "--replace-claude-with-symlink",
         action="store_true",
         dest="replace_claude_with_symlink",
-        help="bucket 4: reemplaza CLAUDE.md por symlink a AGENTS.md — solo con --local",
+        help="bucket 4: replace CLAUDE.md with symlink to AGENTS.md — --local only",
     )
     p.add_argument(
         "--frozen-time",
         action="store_true",
         dest="frozen_time",
-        help="congela timestamp del snapshot — solo con --local",
+        help="freeze snapshot timestamp — --local only",
     )
     p.add_argument(
         "--no-git-files",
         action="store_true",
         dest="no_git_files",
-        help="no tocar .gitignore ni .gitattributes — solo con --local",
+        help="don't touch .gitignore or .gitattributes — --local only",
     )
 
-    # setup [Fase 1]
-    p = sub.add_parser("setup", help="aplica defaults modernos de git [Fase 1]")
+    p = sub.add_parser("setup", help="apply modern git defaults")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    # audit [Fase 1]
-    p = sub.add_parser("audit", help="diagnóstico del repositorio [Fase 1]")
+    p = sub.add_parser("audit", help="repository diagnostics")
     p.add_argument("--quick", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    # summarize [Fase 1]
-    p = sub.add_parser("summarize", help="status + log compacto [Fase 1]")
+    p = sub.add_parser("summarize", help="compact status + log")
     p.add_argument("--json", action="store_true")
     p.add_argument("--diff", action="store_true")
     p.add_argument("--max-commits", type=int, default=10, dest="max_commits")
 
-    # snapshot [Fase 1]
-    p = sub.add_parser("snapshot", help="genera .claude/git-snapshot.md [Fase 1]")
+    p = sub.add_parser("snapshot", help="generate .claude/git-snapshot.md")
     p.add_argument("--json", action="store_true")
 
-    # clean [Fase 2]
-    p = sub.add_parser("clean", help="limpia ramas stale y refs [Fase 2]")
+    p = sub.add_parser("clean", help="clean up stale branches and refs")
     p.add_argument("--branches", action="store_true")
     p.add_argument("--refs", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    # optimize [Fase 2]
-    p = sub.add_parser("optimize", help="optimiza el repositorio [Fase 2]")
+    p = sub.add_parser("optimize", help="optimize the repository")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    # worktree [Fase 2]
-    p = sub.add_parser("worktree", help="helpers de worktree para agentes Claude [Fase 2]")
+    p = sub.add_parser("worktree", help="worktree helpers for Claude agents")
     p.add_argument("action", choices=["new", "clean"], nargs="?", metavar="new|clean")
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    # diff
     p = sub.add_parser("diff", help="changed file list (git diff --name-status HEAD)")
     diff_group = p.add_mutually_exclusive_group()
     diff_group.add_argument("--staged", action="store_true", help="show staged changes only")
@@ -121,8 +118,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    # update
-    p = sub.add_parser("update", help="actualiza gitwise (git pull en directorio de instalación)")
+    p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
     p.add_argument("--dry-run", action="store_true")
 
     return parser
@@ -135,22 +131,27 @@ def _run_update(args: argparse.Namespace) -> int:
     if args.dry_run:
         print(f"would run: git pull --ff-only in {install_dir}")
         return 0
-    print(f"actualizando desde {install_dir}...")
+    print(t("actualizando_desde", dir=str(install_dir)))
     r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
     if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
         print(r.stdout.strip())
     elif r.returncode != 0:
-        print(r.stderr.strip() or "error al actualizar", file=sys.stderr)
+        print(r.stderr.strip() or t("error_actualizar"), file=sys.stderr)
     return r.returncode
 
 
 def main() -> int:
+    from .i18n import set_locale
+
     parser = _build_parser()
     args = parser.parse_args()
 
     if args.command is None:
         parser.print_usage(sys.stderr)
         return 1
+
+    if args.lang:
+        set_locale(args.lang)
 
     start = time.monotonic()
 
@@ -233,7 +234,7 @@ def main() -> int:
     elapsed = time.monotonic() - start
     as_json = getattr(args, "json", False)
     if not as_json and elapsed > 0.2 and args.command not in ("doctor",):
-        print(f"\ncompletado en {elapsed:.1f}s")
+        print(t("completado_en", elapsed=f"{elapsed:.1f}"))
 
     return ret
 

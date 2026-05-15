@@ -8,6 +8,7 @@ from .git import git_dir as get_git_dir
 from .git import is_repo, repo_root
 from .git import run as git_run
 from .git import version as git_version
+from .i18n import t
 from .output import confirm, debug, error, info, ok, print_json, warn
 
 
@@ -68,16 +69,16 @@ _STEPS = [
 
 def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     if _gc_is_running(cwd):
-        warn("git gc/maintenance ya está en ejecución — esperá a que termine")
+        warn(t("gc_en_ejecucion"))
         return 1
 
     if as_json:
@@ -92,46 +93,46 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     size_before = _repo_size_kb(cwd)
-    info(f"optimizando: {cwd}")
+    info(t("optimizando", root=str(cwd)))
     info("")
     for _, desc in _STEPS:
         info(f"  › {desc}")
     info("")
 
     if dry_run:
-        info("modo dry-run — no se ejecutará nada")
+        info(t("dry_run_no_exec"))
         return 0
 
     if not yes:
-        if not confirm("¿ejecutar optimizaciones? [s/N] "):
-            info("cancelado.")
+        if not confirm(t("confirm_optimizar")):
+            info(t("cancelado"))
             return 0
         info("")
 
     graph_ok = _write_commit_graph(cwd)
     if graph_ok:
-        ok("commit-graph actualizado")
+        ok(t("commit_graph_actualizado"))
     else:
-        warn("commit-graph: falló (repo puede estar vacío)")
+        warn(t("commit_graph_fallo"))
 
     repack_ok = _repack(cwd)
     if repack_ok:
-        ok("repack completado")
+        ok(t("repack_completado"))
     else:
-        warn("repack: falló")
+        warn(t("repack_fallo"))
 
     prune_ok = _prune(cwd)
     if prune_ok:
-        ok("prune completado")
+        ok(t("prune_completado"))
     else:
-        warn("prune: no crítico, continuando")
+        warn(t("prune_no_critico"))
 
     size_after = _repo_size_kb(cwd)
     saved = size_before - size_after
     info("")
     if saved > 0:
-        ok(f"espacio liberado: {saved}KB  ({size_before}KB → {size_after}KB)")
+        ok(t("espacio_liberado", saved=str(saved), before=str(size_before), after=str(size_after)))
     else:
-        ok(f"tamaño del repo: {size_after}KB")
+        ok(t("tamano_repo", size=str(size_after)))
 
     return 0 if (graph_ok or repack_ok) else 1

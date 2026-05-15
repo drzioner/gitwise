@@ -8,6 +8,7 @@ from .git import config as git_config
 from .git import is_repo, repo_root
 from .git import run as git_run
 from .git import version as git_version
+from .i18n import t
 from .output import confirm, error, info, ok, print_json, warn
 
 # Modern git defaults (GitButler list, Chacon feb 2025)
@@ -62,7 +63,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
 
     for key, desired in _BASE_CONFIGS:
         if key in _PROTECTED_KEYS:
-            raise ValueError(f"Intento de modificar clave protegida: {key}")
+            raise ValueError(t("clave_protegida", name=key))
         current = git_config(key, cwd=cwd)
         if current != desired:
             changes.append({"key": key, "desired": desired, "current": current})
@@ -115,12 +116,12 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
 
 def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     gpg_warnings = _check_gpg_state(cwd)
@@ -145,14 +146,16 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         info("")
 
     if not changes:
-        ok("configuración de git ya está actualizada")
+        ok(t("config_actualizada"))
         return 0
 
-    info(f"cambios planificados ({len(changes)}):")
+    info(t("cambios_planificados", count=str(len(changes))))
     info("")
     for c in changes:
         note = f"  [{c['note']}]" if c.get("note") else ""
-        current_str = f" (actual: {c['current']})" if c.get("current") else " (no configurado)"
+        current_str = (
+            t("actual", current=c["current"]) if c.get("current") else t("no_configurado")
+        )
         info(f"  git config {c['key']} {c['desired']}{current_str}{note}")
     info("")
 
@@ -160,8 +163,8 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         return 0
 
     if not yes:
-        if not confirm("¿aplicar estos cambios? [s/N] "):
-            info("cancelado.")
+        if not confirm(t("confirm_setup")):
+            info(t("cancelado"))
             return 0
         info("")
 
@@ -170,8 +173,8 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         if r.returncode == 0:
             ok(f"git config {c['key']} = {c['desired']}")
         else:
-            warn(f"config {c['key']}: falló (continuando)")
+            warn(t("config_fallo", name=c["key"]))
 
     info("")
-    ok("setup completado")
+    ok(t("setup_completado"))
     return 0

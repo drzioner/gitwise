@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .git import is_repo, repo_root
 from .git import run as git_run
+from .i18n import t
 from .output import error, info, print_json
 
 
@@ -13,19 +14,19 @@ def _has_commits(cwd: Path) -> bool:
 
 def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     if not staged and not _has_commits(cwd):
         if as_json:
-            print_json({"files": [], "count": 0, "note": "no commits yet"})
+            print_json({"files": [], "count": 0, "note": t("sin_commits")})
             return 0
-        info("no commits yet")
+        info(t("sin_commits"))
         return 0
 
     if stat:
@@ -36,7 +37,7 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
         r = git_run(["--no-pager", "diff", "--name-status", "HEAD"], cwd=cwd, check=False)
 
     if r.returncode != 0:
-        error(f"git diff failed: {r.stderr.strip()}")
+        error(t("git_diff_failed", error=r.stderr.strip()))
         return 1
 
     lines = [line for line in r.stdout.splitlines() if line.strip()]
@@ -52,12 +53,12 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
             if as_json:
                 print_json({"files": [], "count": 0})
                 return 0
-            info("no uncommitted changes")
+            info(t("no_uncommitted_changes"))
             return 0
         if as_json:
             print_json({"files": files, "count": len(files)})
             return 0
-        info(f"changed files: ({len(files)})")
+        info(t("changed_files", count=str(len(files))))
         for f in files:
             info(f"  {f['path']}  {f['changes']}")
         return 0
@@ -68,9 +69,9 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
             print_json({"files": [], "count": 0})
             return 0
         if staged:
-            info("nothing staged")
+            info(t("nothing_staged"))
         else:
-            info("no uncommitted changes  (tip: --staged for staged files)")
+            info(t("tip_staged"))
         return 0
 
     files = []
@@ -83,7 +84,7 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
         print_json({"files": files, "count": len(files)})
         return 0
 
-    info(f"changed files: ({len(files)})")
+    info(t("changed_files", count=str(len(files))))
     for f in files:
         info(f"  {f['status']}  {f['path']}")
     return 0

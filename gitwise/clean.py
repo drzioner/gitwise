@@ -12,6 +12,7 @@ from .git import (
 from .git import (
     run as git_run,
 )
+from .i18n import t
 from .output import confirm, error, info, ok, print_json, warn
 
 _DEFAULT_PROTECTED: frozenset[str] = frozenset(
@@ -32,11 +33,11 @@ def _categorize(
 
     for branch in stale_branches(cwd):
         if branch in protected:
-            skipped.append({"branch": branch, "reason": "protegida (lista por defecto)"})
+            skipped.append({"branch": branch, "reason": t("protegida")})
         elif branch == checked_out:
-            skipped.append({"branch": branch, "reason": "rama actual (checked out)"})
+            skipped.append({"branch": branch, "reason": t("rama_actual")})
         elif branch in active_wt:
-            skipped.append({"branch": branch, "reason": "activa en un worktree"})
+            skipped.append({"branch": branch, "reason": t("activa_worktree")})
         else:
             deletable.append(branch)
 
@@ -52,20 +53,20 @@ def run_clean(
     as_json: bool = False,
 ) -> int:
     if refs:
-        error("'clean --refs' no está implementado")
+        error(t("clean_refs_no_impl"))
         return 1
 
     if not branches:
-        error("especifica --branches  (o --refs)")
+        error(t("clean_especifica"))
         return 1
 
     if not is_repo():
-        error("no es un repositorio git")
+        error(t("no_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error("no se pudo determinar la raíz del repositorio")
+        error(t("no_root"))
         return 1
 
     deletable, skipped = _categorize(cwd)
@@ -83,32 +84,32 @@ def run_clean(
         return 0
 
     if not deletable and not skipped:
-        ok("no hay ramas stale ([gone])")
+        ok(t("no_ramas_stale"))
         return 0
 
     if skipped:
-        info(f"ramas stale protegidas ({len(skipped)}) — no se tocarán:")
+        info(t("ramas_protegidas", count=str(len(skipped))))
         for s in skipped:
             info(f"  – {s['branch']}  ({s['reason']})")
         info("")
 
     if not deletable:
-        ok("no hay ramas eliminables")
+        ok(t("no_ramas_eliminables"))
         return 0
 
-    info(f"ramas stale a eliminar ({len(deletable)}):")
+    info(t("ramas_a_eliminar", count=str(len(deletable))))
     for branch in deletable:
         info(f"  – {branch}")
     info("")
 
     if dry_run:
-        info("modo dry-run — no se eliminará nada")
-        info("para eliminar: gitwise clean --branches --yes")
+        info(t("dry_run_no_delete"))
+        info(t("clean_para_eliminar"))
         return 0
 
     if not yes:
-        if not confirm(f"¿eliminar {len(deletable)} rama(s)? [s/N] "):
-            info("cancelado.")
+        if not confirm(t("confirm_eliminar", count=str(len(deletable)))):
+            info(t("cancelado"))
             return 0
         info("")
 
@@ -116,13 +117,13 @@ def run_clean(
     for branch in deletable:
         r = git_run(["branch", "-D", branch], cwd=cwd, check=False)
         if r.returncode == 0:
-            ok(f"eliminada: {branch}")
+            ok(t("eliminada", branch=branch))
         else:
             errors.append(branch)
-            warn(f"no se pudo eliminar: {branch}  ({r.stderr.strip()})")
+            warn(t("no_se_pudo_eliminar", branch=branch, error=r.stderr.strip()))
 
     if errors:
         return 1
     info("")
-    ok(f"eliminadas {len(deletable)} rama(s) stale")
+    ok(t("eliminadas_count", count=str(len(deletable))))
     return 0
