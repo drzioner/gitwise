@@ -319,7 +319,7 @@
     "es": "diff: {stat}",
     "en": "diff: {stat}"
   },
-  "output_superior_8kb": {
+  "output_exceeds_8kb": {
     "es": "output {size} bytes supera 8KB — usa --max-commits menor",
     "en": "output {size} bytes exceeds 8KB — use smaller --max-commits"
   },

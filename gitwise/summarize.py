@@ -52,7 +52,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         print_json(result)
         output_size = len(json.dumps(result))
         if output_size > 8192:
-            warn(t("output_superior_8kb", size=str(output_size)))
+            warn(t("output_exceeds_8kb", size=str(output_size)))
         return 0
 
     info(t("branch_label", branch=branch))
@@ -60,7 +60,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
 
     if status_lines:
         info(t("modified_files_status", count=str(len(status_lines))))
-        print("\n".join(status_lines))
+        bat_pipe("\n".join(status_lines), language="plain")
         info("")
     else:
         ok(t("working_tree_clean"))
@@ -68,7 +68,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
 
     if log_lines:
         info(t("last_commits", count=str(len(log_lines))))
-        print("\n".join(log_lines))
+        bat_pipe("\n".join(log_lines), language="plain")
         info("")
     else:
         info(t("no_commits_yet"))

@@ -284,7 +284,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         return 0
 
     lines = [
-        t("diagnostic", suffix=" rápido" if quick else "", count=str(len(findings))),
+        t("diagnostic", suffix=" quick" if quick else "", count=str(len(findings))),
         "",
     ]
     for f in findings:
