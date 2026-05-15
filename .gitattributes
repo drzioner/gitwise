@@ -1,0 +1,8 @@
+# >>> gitwise managed (do not edit between markers) >>>
+# Snapshot generado: evitar conflicts en merge
+.claude/git-snapshot.md merge=ours linguist-generated=true
+# Convenciones: forzar LF para cross-platform
+CLAUDE.md text=auto eol=lf
+AGENTS.md text=auto eol=lf
+.claude/skills/**/SKILL.md text=auto eol=lf
+# <<< gitwise managed <<<

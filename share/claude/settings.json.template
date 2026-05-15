@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gitwise *)",
+      "Bash(python -m gitwise *)",
+      "Bash(git status*)",
+      "Bash(git --no-pager log*)",
+      "Bash(git --no-pager diff --stat*)",
+      "Bash(git --no-pager diff --name-status*)",
+      "Bash(git --no-pager diff --shortstat*)",
+      "Bash(git diff --staged*)",
+      "Bash(git show*)",
+      "Bash(git blame*)",
+      "Bash(git for-each-ref*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-files*)",
+      "Bash(git branch*)",
+      "Bash(git worktree*)",
+      "Bash(git add*)",
+      "Bash(git commit -S*)",
+      "Bash(git commit -m*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git rebase*)",
+      "Bash(git reset*)",
+      "Bash(git commit --amend*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git filter-branch*)",
+      "Bash(git clean -fdx*)",
+      "Bash(git commit --no-gpg-sign*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit --allow-empty*)",
+      "Bash(git -c commit.gpgsign=false*)",
+      "Bash(git -c gpg.format=*)",
+      "Bash(git -c core.hooksPath*)",
+      "Read(./.env*)",
+      "Read(./secrets/**)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)"
+    ]
+  }
+}

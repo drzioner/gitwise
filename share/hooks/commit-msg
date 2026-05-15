@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# gitwise commit-msg hook: verifies conventional commit format
+# Installed by: gitwise setup (via core.hooksPath)
+set -euo pipefail
+
+# Skip format check for git-generated merge/revert/squash/cherry-pick commits
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || true)"
+[ -f "${GIT_DIR}/MERGE_HEAD" ] && exit 0
+[ -f "${GIT_DIR}/REBASE_HEAD" ] && exit 0
+[ -f "${GIT_DIR}/CHERRY_PICK_HEAD" ] && exit 0
+[ -f "${GIT_DIR}/SQUASH_MSG" ] && exit 0
+
+MSG="$(cat "$1")"
+PATTERN="^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?: .{1,72}"
+
+if ! printf '%s\n' "$MSG" | grep -qE "$PATTERN"; then
+    printf 'gitwise: el mensaje no sigue el formato de conventional commits\n' >&2
+    printf '  Esperado: feat: desc  |  fix(scope): desc  |  docs: corrección\n' >&2
+    printf '  Ejemplos: docs: corrige typo en README  |  fix: maneja nil en parse\n' >&2
+    printf '  Recibido: %s\n' "$MSG" >&2
+    exit 1
+fi

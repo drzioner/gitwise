@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# gitwise pre-commit hook: verifies GPG signing configuration
+# Installed by: gitwise setup (via core.hooksPath)
+set -euo pipefail
+
+gpgsign_val=$(git config --get commit.gpgsign 2>/dev/null || true)
+if [ "$gpgsign_val" = "true" ]; then
+    if ! git config --get user.signingkey > /dev/null 2>&1; then
+        printf 'gitwise: GPG signing activo pero sin user.signingkey configurado\n' >&2
+        printf '  Ejecuta: git config user.signingkey <tu-key-id>\n' >&2
+        exit 1
+    fi
+    signing_key="$(git config user.signingkey)"
+    if ! gpg --list-secret-keys "$signing_key" > /dev/null 2>&1; then
+        printf 'gitwise: GPG key no encontrada en el keyring: %s\n' "$signing_key" >&2
+        printf '  Verifica con: gpg --list-secret-keys\n' >&2
+        exit 1
+    fi
+fi

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# gitwise entry-point — resolves symlinks before setting PYTHONPATH
+set -euo pipefail
+
+_self="${BASH_SOURCE[0]}"
+while [ -L "$_self" ]; do
+    _dir="$(cd "$(dirname "$_self")" && pwd -P)"
+    _self="$(readlink "$_self")"
+    [[ "$_self" != /* ]] && _self="$_dir/$_self"
+done
+SCRIPT_DIR="$(cd "$(dirname "$_self")" && pwd -P)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PYTHONPATH="$PROJECT_ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m gitwise "$@"

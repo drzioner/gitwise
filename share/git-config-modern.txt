@@ -1,0 +1,48 @@
+# Subset of GitButler "How Core Git Devs Configure Git" (Chacon, feb 2025)
+# Applied by: gitwise setup
+# Reference: https://blog.gitbutler.com/how-git-core-devs-configure-git/
+
+[core]
+    # macOS/Windows only — gitwise setup detects platform before applying
+    # fsmonitor = true
+    untrackedCache = true
+    preloadindex = true
+
+[fetch]
+    prune = true
+    prunetags = true
+    all = true
+
+[merge]
+    conflictstyle = zdiff3
+
+[diff]
+    algorithm = histogram
+    colorMoved = default
+
+[rerere]
+    enabled = true
+    autoupdate = true
+
+[branch]
+    sort = -committerdate
+
+[tag]
+    sort = -version:refname
+
+[push]
+    default = current
+    autoSetupRemote = true
+
+[commit]
+    verbose = true
+
+[maintenance]
+    auto = false
+    strategy = incremental
+
+# Excluded (matter of taste per GitButler):
+# pull.rebase = true
+
+# Gated on git >= 2.40:
+# feature.manyFiles = true
