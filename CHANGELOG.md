@@ -28,3 +28,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI with ruff, pytest, basedpyright, shellcheck, pip-audit
 
 [0.1.0]: https://github.com/drzioner/gitwise/releases/tag/v0.1.0
+
+## v0.2.0 (2026-05-15)
+
+### Feat
+
+- add automated release via commitizen bump on merge to main
+- apply i18n to all modules — replace 200+ hardcoded Spanish strings
+- add adaptive terminal colors with dark/light theme detection
+- add i18n system with es/en string catalog
+
+### Fix
+
+- correct setup-uv pinned SHA in auto-release
+- use GitHub App token for auto-release push to protected branch
+- push bump via Git Data API to bypass repository rules
+- auto-release bump bug, harden CI workflows, eliminate double CI
+- address PR review — template format bug, redundant logic, missed string
+- eliminate cache race condition in CI
+
+## v0.1.0 (2026-05-15)
+
+### Feat
+
+- add lefthook hooks, commitizen versioning, fix CI
+- initial release v0.1.0
+
+### Fix
+
+- resolve CI failures, add dependabot, harden release workflow
