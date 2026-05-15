@@ -1099,8 +1099,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                 if act == "create":
                     ok(t("creado", file=".claude/settings.json"))
                 else:
-                    verb = "actualizado (deny rules merged)"
-                    ok(f"{verb}: .claude/settings.json")
+                    ok(t("settings_actualizado_merged"))
 
             elif file_key == ".claude/skills":
                 if act == "symlink-create":

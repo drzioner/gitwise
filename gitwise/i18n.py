@@ -83,7 +83,7 @@ _STRINGS: dict[str, dict[Locale, str]] = {
     },
     "acciones_realizar": {"es": "acciones a realizar:", "en": "actions to perform:"},
     "continuar": {"es": "¿continuar? [s/N] ", "en": "continue? [y/N] "},
-    "completado_en": {"es": "completado en {elapsed:.1f}s", "en": "completed in {elapsed:.1f}s"},
+    "completado_en": {"es": "completado en {elapsed}s", "en": "completed in {elapsed}s"},
     "setup_completado": {"es": "setup completado", "en": "setup complete"},
     "config_actualizada": {
         "es": "configuración de git ya está actualizada",
@@ -392,6 +392,10 @@ _STRINGS: dict[str, dict[Locale, str]] = {
     "settings_sin_gpg_deny": {
         "es": "settings.json no tiene reglas deny para GPG bypass — revisar manualmente",
         "en": "settings.json missing deny rules for GPG bypass — check manually",
+    },
+    "settings_actualizado_merged": {
+        "es": "actualizado (deny rules merged): .claude/settings.json",
+        "en": "updated (deny rules merged): .claude/settings.json",
     },
     "skill_global_disponible": {
         "es": ".claude/skills/{skill}: skill ya disponible globalmente "

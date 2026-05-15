@@ -33,9 +33,6 @@ def _detect_theme() -> str:
             if bg in ("0", "8", "16"):
                 return "dark"
             return "light"
-    term_program = os.environ.get("TERM_PROGRAM", "").lower()
-    if term_program in ("warpterminal", "iterm.app", "kitty", "wezterm", "alacritty"):
-        return "dark"
     return "dark"
 
 
