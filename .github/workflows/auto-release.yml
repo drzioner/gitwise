@@ -1,0 +1,95 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Bump Version & Release
+    needs: ci
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.event.head_commit.message, 'bump:') }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: false
+
+      - run: uv sync
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config commit.gpgsign false
+
+      - name: Bump version
+        id: bump
+        run: |
+          set +e
+          uv run cz bump --yes --changelog
+          BUMP_EXIT=$?
+          set -e
+
+          if [ "$BUMP_EXIT" -eq 21 ]; then
+            echo "no_bump=true" >> "$GITHUB_OUTPUT"
+            echo "No version increment needed"
+            exit 0
+          fi
+
+          if [ "$BUMP_EXIT" -ne 0 ]; then
+            echo "cz bump failed with exit code $BUMP_EXIT"
+            exit 1
+          fi
+
+          if git diff --quiet; then
+            echo "no_bump=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          VERSION="${TAG#v}"
+          echo "no_bump=false" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Push bump commit & tag
+        if: steps.bump.outputs.no_bump == 'false'
+        run: git push && git push --tags
+
+      - name: Extract release notes
+        if: steps.bump.outputs.no_bump == 'false'
+        id: notes
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+          {
+            echo "release-notes<<EOF"
+            sed -n "/## \[${VERSION}\]/,/## \[/{ /## \[/!p; }" CHANGELOG.md
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.no_bump == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.bump.outputs.tag }}" \
+            --title "${{ steps.bump.outputs.tag }}" \
+            --notes "${{ steps.notes.outputs.release-notes }}" \
+            --verify-tag
