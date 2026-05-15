@@ -131,12 +131,12 @@ def _run_update(args: argparse.Namespace) -> int:
     if args.dry_run:
         print(f"would run: git pull --ff-only in {install_dir}")
         return 0
-    print(t("actualizando_desde", dir=str(install_dir)))
+    print(t("updating_from", dir=str(install_dir)))
     r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
     if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
         print(r.stdout.strip())
     elif r.returncode != 0:
-        print(r.stderr.strip() or t("error_actualizar"), file=sys.stderr)
+        print(r.stderr.strip() or t("error_updating"), file=sys.stderr)
     return r.returncode
 
 
@@ -234,7 +234,7 @@ def main() -> int:
     elapsed = time.monotonic() - start
     as_json = getattr(args, "json", False)
     if not as_json and elapsed > 0.2 and args.command not in ("doctor",):
-        print(t("completado_en", elapsed=f"{elapsed:.1f}"))
+        print(t("completed_in", elapsed=f"{elapsed:.1f}"))
 
     return ret
 

@@ -64,21 +64,21 @@ def run_doctor(*, as_json: bool = False) -> int:
     if git_ok:
         ok(t("git_version_ok", ver=git_str, min=min_str))
     else:
-        warn(t("git_demasiado_antiguo", ver=git_str, min=min_str))
+        warn(t("git_too_old", ver=git_str, min=min_str))
 
     py_str = ".".join(str(n) for n in python_ver)
     if python_ok:
         ok(t("python_version_ok", ver=py_str))
     else:
-        warn(t("python_demasiado_antiguo", ver=py_str))
+        warn(t("python_too_old", ver=py_str))
 
-    ok(t("plataforma", name=platform_name))
+    ok(t("platform_label", name=platform_name))
 
     if not fsmonitor_supported:
-        warn(t("fsmonitor_no_soportado"))
+        warn(t("fsmonitor_not_supported"))
 
     info("")
-    info(t("herramientas_opcionales"))
+    info(t("optional_tools"))
     for tool, found in optional.items():
         if found:
             info(f"  ✓ {tool}")
@@ -88,17 +88,17 @@ def run_doctor(*, as_json: bool = False) -> int:
             info(f"      → {install}")
 
     info("")
-    info(t("gpg_titulo"))
+    info(t("gpg_title"))
     if gpg["ready"]:
-        ok(t("gpg_listo"))
+        ok(t("gpg_ready_msg"))
     elif not gpg["gpg_binary"]:
-        warn(t("gpg_no_instalado"))
+        warn(t("gpg_not_installed"))
         info("      → brew install gnupg")
     elif not gpg["gpgsign_enabled"]:
-        info(t("gpg_no_activado"))
+        info(t("gpg_not_enabled"))
         info("      → git config --global commit.gpgsign true")
     elif not gpg["signing_key_set"]:
-        warn(t("gpg_no_key"))
+        warn(t("gpg_no_signing_key"))
         info("      → git config --global user.signingkey <key-id>")
 
     return 0 if result["ok"] else 1

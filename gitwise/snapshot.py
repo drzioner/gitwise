@@ -24,7 +24,7 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
     branch = git_run(["branch", "--show-current"], cwd=root, check=False)
     if branch.returncode == 0:
         lines += [
-            t("seccion_rama_actual"),
+            t("section_current_branch"),
             "```",
             branch.stdout.strip() or "(detached HEAD)",
             "```",
@@ -34,16 +34,16 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
     status = git_run(["status", "--short"], cwd=root, check=False)
     if status.returncode == 0:
         lines += [
-            t("seccion_estado"),
+            t("section_status"),
             "```",
-            status.stdout.strip() or t("estado_limpio"),
+            status.stdout.strip() or t("status_clean"),
             "```",
             "",
         ]
 
     log = git_run(["--no-pager", "log", "--oneline", "-n", "10"], cwd=root, check=False)
     if log.returncode == 0 and log.stdout.strip():
-        lines += [t("seccion_ultimos_commits"), "```", log.stdout.strip(), "```", ""]
+        lines += [t("section_last_commits"), "```", log.stdout.strip(), "```", ""]
 
     stash = git_run(["stash", "list"], cwd=root, check=False)
     if stash.returncode == 0 and stash.stdout.strip():
@@ -65,12 +65,12 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
 
 def run_snapshot(*, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     root = repo_root()
     if root is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     path = generate_snapshot(root)
@@ -79,5 +79,5 @@ def run_snapshot(*, as_json: bool = False) -> int:
         print_json({"v": 1, "path": str(path), "ok": True})
         return 0
 
-    ok(t("snapshot_generado", path=str(path.relative_to(root))))
+    ok(t("snapshot_generated", path=str(path.relative_to(root))))
     return 0

@@ -75,7 +75,7 @@ def info(msg: str) -> None:
 
 
 def warn(msg: str) -> None:
-    prefix = t("advertencia")
+    prefix = t("warning_label")
     colored_prefix = f"{_color('warning')}{prefix}:{_color('reset')}"
     print(f"{colored_prefix} {msg}", file=sys.stderr)
 

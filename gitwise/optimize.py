@@ -69,16 +69,16 @@ _STEPS = [
 
 def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     if _gc_is_running(cwd):
-        warn(t("gc_en_ejecucion"))
+        warn(t("gc_already_running"))
         return 1
 
     if as_json:
@@ -93,7 +93,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     size_before = _repo_size_kb(cwd)
-    info(t("optimizando", root=str(cwd)))
+    info(t("optimizing", root=str(cwd)))
     info("")
     for _, desc in _STEPS:
         info(f"  › {desc}")
@@ -104,35 +104,35 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     if not yes:
-        if not confirm(t("confirm_optimizar")):
-            info(t("cancelado"))
+        if not confirm(t("confirm_optimize")):
+            info(t("cancelled"))
             return 0
         info("")
 
     graph_ok = _write_commit_graph(cwd)
     if graph_ok:
-        ok(t("commit_graph_actualizado"))
+        ok(t("commit_graph_updated"))
     else:
-        warn(t("commit_graph_fallo"))
+        warn(t("commit_graph_failed"))
 
     repack_ok = _repack(cwd)
     if repack_ok:
-        ok(t("repack_completado"))
+        ok(t("repack_complete"))
     else:
-        warn(t("repack_fallo"))
+        warn(t("repack_failed"))
 
     prune_ok = _prune(cwd)
     if prune_ok:
-        ok(t("prune_completado"))
+        ok(t("prune_complete"))
     else:
-        warn(t("prune_no_critico"))
+        warn(t("prune_not_critical"))
 
     size_after = _repo_size_kb(cwd)
     saved = size_before - size_after
     info("")
     if saved > 0:
-        ok(t("espacio_liberado", saved=str(saved), before=str(size_before), after=str(size_after)))
+        ok(t("space_freed", saved=str(saved), before=str(size_before), after=str(size_after)))
     else:
-        ok(t("tamano_repo", size=str(size_after)))
+        ok(t("repo_size", size=str(size_after)))
 
     return 0 if (graph_ok or repack_ok) else 1

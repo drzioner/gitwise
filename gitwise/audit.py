@@ -156,12 +156,12 @@ _SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "
 
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     findings: list[dict[str, Any]] = []
@@ -203,7 +203,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 {
                     "type": "fsmonitor_disabled",
                     "severity": "low",
-                    "message": t("fsmonitor_desactivado"),
+                    "message": t("fsmonitor_disabled"),
                     "fix": t("fsmonitor_fix"),
                     "cost_of_fix": t("fsmonitor_fix_cost"),
                     "cost_of_ignore": t("fsmonitor_cost"),
@@ -218,7 +218,9 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 "severity": "low",
                 "count": len(old_stashes),
                 "stashes": old_stashes,
-                "message": t("stashes_viejos", count=str(len(old_stashes)), days=str(_STALE_DAYS)),
+                "message": t(
+                    "old_stashes_msg", count=str(len(old_stashes)), days=str(_STALE_DAYS)
+                ),
                 "fix": t("stash_fix"),
                 "cost_of_fix": t("stash_fix_cost"),
                 "cost_of_ignore": t("stash_cost"),
@@ -277,11 +279,11 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         return 0 if not has_issues else 1
 
     if not findings:
-        ok(t("repo_buen_estado", suffix="  (quick)" if quick else ""))
+        ok(t("repo_good_shape", suffix="  (quick)" if quick else ""))
         return 0
 
     lines = [
-        t("diagnostico", suffix=" rápido" if quick else "", count=str(len(findings))),
+        t("diagnostic", suffix=" rápido" if quick else "", count=str(len(findings))),
         "",
     ]
     for f in findings:

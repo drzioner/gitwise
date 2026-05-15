@@ -14,19 +14,19 @@ def _has_commits(cwd: Path) -> bool:
 
 def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     if not staged and not _has_commits(cwd):
         if as_json:
-            print_json({"files": [], "count": 0, "note": t("sin_commits")})
+            print_json({"files": [], "count": 0, "note": t("no_commits_yet")})
             return 0
-        info(t("sin_commits"))
+        info(t("no_commits_yet"))
         return 0
 
     if stat:

@@ -486,7 +486,7 @@ def test_no_git_files_skips_gitignore(tmp_git_repo):
 def test_gitattributes_no_conflict_fresh_repo(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert not any(".gitattributes" in w and "conflicto" in w for w in data["warnings"])
+    assert not any(".gitattributes" in w and "conflict" in w for w in data["warnings"])
 
 
 def test_gitattributes_warns_on_conflicting_rule(tmp_git_repo):
@@ -494,7 +494,9 @@ def test_gitattributes_warns_on_conflicting_rule(tmp_git_repo):
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md text=auto eol=crlf\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert any("CLAUDE.md" in w and "conflicto" in w for w in data["warnings"])
+    assert any(
+        "CLAUDE.md" in w and ("conflict" in w or "conflicto" in w) for w in data["warnings"]
+    )
 
 
 def test_gitattributes_no_warning_when_same_rule(tmp_git_repo):
@@ -502,7 +504,7 @@ def test_gitattributes_no_warning_when_same_rule(tmp_git_repo):
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md text=auto eol=lf\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert not any("CLAUDE.md" in w and "conflicto" in w for w in data["warnings"])
+    assert not any("CLAUDE.md" in w and "conflict" in w for w in data["warnings"])
 
 
 def test_gitattributes_no_false_positive_on_second_run(tmp_git_repo):
@@ -510,7 +512,7 @@ def test_gitattributes_no_false_positive_on_second_run(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert not any("conflicto" in w for w in data["warnings"])
+    assert not any("conflict" in w for w in data["warnings"])
 
 
 def test_gitattributes_no_warning_for_bare_path_entry(tmp_git_repo):
@@ -518,7 +520,7 @@ def test_gitattributes_no_warning_for_bare_path_entry(tmp_git_repo):
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert not any("CLAUDE.md" in w and "conflicto" in w for w in data["warnings"])
+    assert not any("CLAUDE.md" in w and "conflict" in w for w in data["warnings"])
 
 
 # ── gitwise rule file ────────────────────────────────────────────────────────

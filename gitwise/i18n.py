@@ -56,12 +56,12 @@ def set_mode(mode: OutputMode) -> None:
 
 
 _STRINGS: dict[str, dict[Locale, str]] = {
-    "advertencia": {"es": "advertencia", "en": "warning"},
+    "warning_label": {"es": "advertencia", "en": "warning"},
     "error": {"es": "error", "en": "error"},
     "ok_prefix": {"es": "✓", "en": "✓"},
-    "cancelado": {"es": "cancelado.", "en": "cancelled."},
-    "no_repo": {"es": "no es un repositorio git", "en": "not a git repository"},
-    "no_root": {
+    "cancelled": {"es": "cancelado.", "en": "cancelled."},
+    "not_a_git_repo": {"es": "no es un repositorio git", "en": "not a git repository"},
+    "no_repo_root": {
         "es": "no se pudo determinar la raíz del repositorio",
         "en": "could not determine repository root",
     },
@@ -81,62 +81,68 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "modo dry-run — no se limpiará nada",
         "en": "dry-run mode — nothing will be cleaned",
     },
-    "acciones_realizar": {"es": "acciones a realizar:", "en": "actions to perform:"},
-    "continuar": {"es": "¿continuar? [s/N] ", "en": "continue? [y/N] "},
-    "completado_en": {"es": "completado en {elapsed}s", "en": "completed in {elapsed}s"},
-    "setup_completado": {"es": "setup completado", "en": "setup complete"},
-    "config_actualizada": {
+    "actions_to_perform": {"es": "acciones a realizar:", "en": "actions to perform:"},
+    "continue_prompt": {"es": "¿continuar? [s/N] ", "en": "continue? [y/N] "},
+    "completed_in": {"es": "completado en {elapsed}s", "en": "completed in {elapsed}s"},
+    "setup_complete": {"es": "setup completado", "en": "setup complete"},
+    "config_up_to_date": {
         "es": "configuración de git ya está actualizada",
         "en": "git config is already up to date",
     },
-    "cambios_planificados": {
+    "planned_changes": {
         "es": "cambios planificados ({count}):",
         "en": "planned changes ({count}):",
     },
-    "no_configurado": {"es": " (no configurado)", "en": " (not configured)"},
-    "actual": {"es": " (actual: {current})", "en": " (current: {current})"},
-    "confirm_setup": {"es": "¿aplicar estos cambios? [s/N] ", "en": "apply these changes? [y/N] "},
-    "config_fallo": {
+    "not_configured": {"es": " (no configurado)", "en": " (not configured)"},
+    "current_value": {"es": " (actual: {current})", "en": " (current: {current})"},
+    "confirm_setup_changes": {
+        "es": "¿aplicar estos cambios? [s/N] ",
+        "en": "apply these changes? [y/N] ",
+    },
+    "config_failed": {
         "es": "config {name}: falló (continuando)",
         "en": "config {name}: failed (continuing)",
     },
-    "setup_agents_completado": {
+    "setup_agents_complete": {
         "es": "setup-agents completado",
         "en": "setup-agents complete",
     },
-    "setup_agents_global_completado": {
+    "setup_agents_global_complete": {
         "es": "setup-agents global completado",
         "en": "setup-agents global complete",
     },
-    "config_agentes_en": {
+    "configuring_agents_in": {
         "es": "configurando agentes en: {root}",
         "en": "configuring agents in: {root}",
     },
-    "config_agentes_global": {
+    "configuring_agents_global": {
         "es": "configurando agentes globalmente en: {path}",
         "en": "configuring agents globally in: {path}",
     },
-    "config_agentes_actualizado": {
+    "updated_git_conventions": {
         "es": "actualizado: {file} (convenciones git agregadas)",
         "en": "updated: {file} (git conventions added)",
     },
-    "creado": {"es": "creado: {file}", "en": "created: {file}"},
-    "symlink": {"es": "symlink: {file} → {target}", "en": "symlink: {file} → {target}"},
-    "reemplazado": {
+    "created": {"es": "creado: {file}", "en": "created: {file}"},
+    "symlink_created_msg": {
+        "es": "symlink: {file} → {target}",
+        "en": "symlink: {file} → {target}",
+    },
+    "replaced": {
         "es": "reemplazado: {file} (backup: {backup})",
         "en": "replaced: {file} (backup: {backup})",
     },
-    "ya_contiene": {
+    "already_contains_conventions": {
         "es": "ya contiene convenciones git",
         "en": "already contains git conventions",
     },
-    "ya_existe": {"es": "ya existe", "en": "already exists"},
-    "instalado_globalmente": {"es": "instalado globalmente", "en": "installed globally"},
-    "setup_agents_fallo": {
+    "already_exists": {"es": "ya existe", "en": "already exists"},
+    "installed_globally": {"es": "instalado globalmente", "en": "installed globally"},
+    "setup_agents_failed": {
         "es": "setup-agents falló: {error}",
         "en": "setup-agents failed: {error}",
     },
-    "setup_agents_global_fallo": {
+    "setup_agents_global_failed": {
         "es": "setup-agents (global) falló: {error}",
         "en": "setup-agents (global) failed: {error}",
     },
@@ -144,135 +150,138 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "--strict: warnings tratados como errores",
         "en": "--strict: warnings treated as errors",
     },
-    "actualizando_desde": {
+    "updating_from": {
         "es": "actualizando desde {dir}...",
         "en": "updating from {dir}...",
     },
-    "error_actualizar": {"es": "error al actualizar", "en": "error updating"},
-    "repo_buen_estado": {
+    "error_updating": {"es": "error al actualizar", "en": "error updating"},
+    "repo_good_shape": {
         "es": "repositorio en buen estado{suffix}",
         "en": "repository in good shape{suffix}",
     },
-    "diagnostico": {
+    "diagnostic": {
         "es": "Diagnóstico{suffix} — {count} observación(es):",
         "en": "Diagnostic{suffix} — {count} finding(s):",
     },
     "fix_label": {"es": "fix", "en": "fix"},
     "ignora_label": {"es": "ignora", "en": "ignore"},
-    "herramientas_opcionales": {
+    "optional_tools": {
         "es": "herramientas opcionales:",
         "en": "optional tools:",
     },
-    "gpg_titulo": {"es": "GPG (firma de commits):", "en": "GPG (commit signing):"},
-    "gpg_listo": {
+    "gpg_title": {"es": "GPG (firma de commits):", "en": "GPG (commit signing):"},
+    "gpg_ready_msg": {
         "es": "  GPG listo — commit.gpgsign=true, llave y binario configurados",
         "en": "  GPG ready — commit.gpgsign=true, key and binary configured",
     },
-    "gpg_no_instalado": {
+    "gpg_not_installed": {
         "es": "  gpg no instalado — commits no se firmarán",
         "en": "  gpg not installed — commits won't be signed",
     },
-    "gpg_no_activado": {
+    "gpg_not_enabled": {
         "es": "  gpg instalado pero commit.gpgsign no activado",
         "en": "  gpg installed but commit.gpgsign not enabled",
     },
-    "gpg_no_key": {
+    "gpg_no_signing_key": {
         "es": "  commit.gpgsign=true pero user.signingkey no configurado",
         "en": "  commit.gpgsign=true but user.signingkey not configured",
     },
-    "git_demasiado_antiguo": {
+    "git_too_old": {
         "es": "git {ver} demasiado antiguo — se requiere ≥ {min}",
         "en": "git {ver} too old — ≥ {min} required",
     },
-    "python_demasiado_antiguo": {
+    "python_too_old": {
         "es": "Python {ver} demasiado antiguo — se requiere ≥ 3.9",
         "en": "Python {ver} too old — ≥ 3.9 required",
     },
-    "fsmonitor_no_soportado": {
+    "fsmonitor_not_supported": {
         "es": "fsmonitor integrado no está soportado en Linux (solo macOS y Windows)",
         "en": "built-in fsmonitor not supported on Linux (macOS and Windows only)",
     },
-    "clean_refs_no_impl": {
+    "clean_refs_not_implemented": {
         "es": "'clean --refs' no está implementado",
         "en": "'clean --refs' is not implemented",
     },
-    "clean_especifica": {
+    "clean_specify_flag": {
         "es": "especifica --branches  (o --refs)",
         "en": "specify --branches  (or --refs)",
     },
-    "no_ramas_stale": {
+    "no_stale_branches": {
         "es": "no hay ramas stale ([gone])",
         "en": "no stale branches ([gone])",
     },
-    "ramas_protegidas": {
+    "protected_stale_branches": {
         "es": "ramas stale protegidas ({count}) — no se tocarán:",
         "en": "protected stale branches ({count}) — won't be touched:",
     },
-    "ramas_a_eliminar": {
+    "branches_to_delete": {
         "es": "ramas stale a eliminar ({count}):",
         "en": "stale branches to delete ({count}):",
     },
-    "clean_para_eliminar": {
+    "clean_to_delete": {
         "es": "para eliminar: gitwise clean --branches --yes",
         "en": "to delete: gitwise clean --branches --yes",
     },
-    "confirm_eliminar": {
+    "confirm_delete_branches": {
         "es": "¿eliminar {count} rama(s)? [s/N] ",
         "en": "delete {count} branch(es)? [y/N] ",
     },
-    "eliminada": {"es": "eliminada: {branch}", "en": "deleted: {branch}"},
-    "no_se_pudo_eliminar": {
+    "branch_deleted": {"es": "eliminada: {branch}", "en": "deleted: {branch}"},
+    "could_not_delete": {
         "es": "no se pudo eliminar: {branch}  ({error})",
         "en": "could not delete: {branch}  ({error})",
     },
-    "eliminadas_count": {
+    "deleted_count": {
         "es": "eliminadas {count} rama(s) stale",
         "en": "deleted {count} stale branch(es)",
     },
-    "no_ramas_eliminables": {
+    "no_deletable_branches": {
         "es": "no hay ramas eliminables",
         "en": "no branches to delete",
     },
-    "protegida": {"es": "protegida (lista por defecto)", "en": "protected (default list)"},
-    "rama_actual": {"es": "rama actual (checked out)", "en": "current branch (checked out)"},
-    "activa_worktree": {"es": "activa en un worktree", "en": "active in a worktree"},
-    "gc_en_ejecucion": {
+    "protected_branch": {"es": "protegida (lista por defecto)", "en": "protected (default list)"},
+    "current_branch_msg": {
+        "es": "rama actual (checked out)",
+        "en": "current branch (checked out)",
+    },
+    "active_in_worktree": {"es": "activa en un worktree", "en": "active in a worktree"},
+    "gc_already_running": {
         "es": "git gc/maintenance ya está en ejecución — esperá a que termine",
         "en": "git gc/maintenance already running — wait for it to finish",
     },
-    "optimizando": {"es": "optimizando: {root}", "en": "optimizing: {root}"},
-    "commit_graph_actualizado": {
+    "optimizing": {"es": "optimizando: {root}", "en": "optimizing: {root}"},
+    "commit_graph_updated": {
         "es": "commit-graph actualizado",
         "en": "commit-graph updated",
     },
-    "commit_graph_fallo": {
+    "commit_graph_failed": {
         "es": "commit-graph: falló (repo puede estar vacío)",
         "en": "commit-graph: failed (repo may be empty)",
     },
-    "repack_completado": {"es": "repack completado", "en": "repack complete"},
-    "repack_fallo": {"es": "repack: falló", "en": "repack: failed"},
-    "prune_completado": {"es": "prune completado", "en": "prune complete"},
-    "prune_no_critico": {
+    "repack_complete": {"es": "repack completado", "en": "repack complete"},
+    "repack_failed": {"es": "repack: falló", "en": "repack: failed"},
+    "prune_complete": {"es": "prune completado", "en": "prune complete"},
+    "prune_not_critical": {
         "es": "prune: no crítico, continuando",
         "en": "prune: not critical, continuing",
     },
-    "espacio_liberado": {
+    "space_freed": {
         "es": "espacio liberado: {saved}KB  ({before}KB → {after}KB)",
         "en": "space freed: {saved}KB  ({before}KB → {after}KB)",
     },
-    "tamano_repo": {"es": "tamaño del repo: {size}KB", "en": "repo size: {size}KB"},
-    "confirm_optimizar": {
+    "repo_size": {"es": "tamaño del repo: {size}KB", "en": "repo size: {size}KB"},
+    "confirm_optimize": {
         "es": "¿ejecutar optimizaciones? [s/N] ",
         "en": "run optimizations? [y/N] ",
     },
-    "rama": {"es": "rama: {branch}", "en": "branch: {branch}"},
-    "estado_archivos": {
+    "branch_label": {"es": "rama: {branch}", "en": "branch: {branch}"},
+    "modified_files_status": {
         "es": "estado ({count} archivos modificados):",
         "en": "status ({count} modified files):",
     },
-    "working_tree_limpio": {"es": "working tree limpio", "en": "working tree clean"},
-    "ultimos_commits": {"es": "últimos {count} commits:", "en": "last {count} commits:"},
-    "sin_commits": {"es": "sin commits aún", "en": "no commits yet"},
+    "working_tree_clean": {"es": "working tree limpio", "en": "working tree clean"},
+    "last_commits": {"es": "últimos {count} commits:", "en": "last {count} commits:"},
+    "no_commits_yet": {"es": "sin commits aún", "en": "no commits yet"},
     "diff_prefix": {"es": "diff: {stat}", "en": "diff: {stat}"},
     "output_superior_8kb": {
         "es": "output {size} bytes supera 8KB — usa --max-commits menor",
@@ -288,60 +297,64 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "no uncommitted changes  (tip: --staged for staged files)",
         "en": "no uncommitted changes  (tip: --staged for staged files)",
     },
-    "snapshot_generado": {
+    "snapshot_generated": {
         "es": "snapshot generado: {path}",
         "en": "snapshot generated: {path}",
     },
-    "seccion_rama_actual": {"es": "## Rama actual", "en": "## Current branch"},
-    "seccion_estado": {"es": "## Estado", "en": "## Status"},
-    "seccion_ultimos_commits": {
+    "section_current_branch": {"es": "## Rama actual", "en": "## Current branch"},
+    "section_status": {"es": "## Estado", "en": "## Status"},
+    "section_last_commits": {
         "es": "## Últimos 10 commits",
         "en": "## Last 10 commits",
     },
-    "estado_limpio": {"es": "(limpio)", "en": "(clean)"},
-    "worktree_creado": {"es": "worktree creado: {path}", "en": "worktree created: {path}"},
-    "worktree_rama": {"es": "  rama: {branch}", "en": "  branch: {branch}"},
-    "worktree_usar": {"es": "  para usarlo: cd {path}", "en": "  to use: cd {path}"},
-    "directorio_existe": {
+    "status_clean": {"es": "(limpio)", "en": "(clean)"},
+    "worktree_created": {"es": "worktree creado: {path}", "en": "worktree created: {path}"},
+    "worktree_branch_msg": {"es": "  rama: {branch}", "en": "  branch: {branch}"},
+    "worktree_to_use": {"es": "  para usarlo: cd {path}", "en": "  to use: cd {path}"},
+    "directory_exists": {
         "es": "el directorio ya existe: {path}",
         "en": "directory already exists: {path}",
     },
-    "worktree_fallo": {
+    "worktree_failed": {
         "es": "no se pudo crear worktree: {error}",
         "en": "could not create worktree: {error}",
     },
-    "no_worktrees_huerfanos": {
+    "no_orphaned_worktrees": {
         "es": "no hay worktrees huérfanos{suffix}",
         "en": "no orphaned worktrees{suffix}",
     },
-    "worktrees_huerfanos": {
+    "orphaned_worktrees": {
         "es": "worktrees huérfanos detectados ({count}) — directorio inexistente:",
         "en": "orphaned worktrees detected ({count}) — missing directory:",
     },
-    "rama_desconocida": {"es": "desconocida", "en": "unknown"},
-    "worktrees_limpiados": {
+    "worktrees_to_clean": {
+        "es": "worktrees a limpiar:",
+        "en": "worktrees to clean:",
+    },
+    "unknown_branch": {"es": "desconocida", "en": "unknown"},
+    "worktrees_cleaned": {
         "es": "limpiados {count} worktree(s) huérfano(s)",
         "en": "cleaned {count} orphaned worktree(s)",
     },
-    "worktree_uso": {
+    "worktree_usage": {
         "es": "uso: gitwise worktree new <branch>",
         "en": "usage: gitwise worktree new <branch>",
     },
-    "worktree_uso_completo": {
+    "worktree_usage_full": {
         "es": "uso: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]",
         "en": "usage: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]",
     },
     "git_diff_failed": {"es": "git diff failed: {error}", "en": "git diff failed: {error}"},
-    "gpg_signing_activo_sin_key": {
+    "gpg_signing_active_no_key": {
         "es": "GPG signing activo pero sin user.signingkey — "
         "ejecuta: git config user.signingkey <id>",
         "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",
     },
-    "gpg_signing_no_config": {
+    "gpg_signing_not_configured": {
         "es": "GPG signing no configurado — si lo deseas: git config commit.gpgsign true",
         "en": "GPG signing not configured — if desired: git config commit.gpgsign true",
     },
-    "gpg_activo_sin_key_repo": {
+    "gpg_active_no_key_repo": {
         "es": "GPG signing activo pero sin user.signingkey — "
         "ejecuta: git config user.signingkey <id>",
         "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",
@@ -349,23 +362,23 @@ _STRINGS: dict[str, dict[Locale, str]] = {
     "gitwise": {"es": "gitwise", "en": "gitwise"},
     "yes_response": {"es": "s", "en": "y"},
     "no_commits_yet_note": {"es": "no commits yet", "en": "no commits yet"},
-    "skills_ya_configurados": {
+    "skills_already_configured": {
         "es": "skills ({count}): ya configurados",
         "en": "skills ({count}): already configured",
     },
-    "bloque_managed_sin_cierre": {
+    "managed_block_unclosed": {
         "es": "{file}: bloque managed sin marcador de cierre — se dejará intacto",
         "en": "{file}: managed block missing closing marker — will be left intact",
     },
-    "symlink_fuera_repo": {
+    "symlink_outside_repo": {
         "es": ".claude/rules/{name}: symlink fuera del repo — ignorado",
         "en": ".claude/rules/{name}: symlink outside repo — ignored",
     },
-    "archivo_demasiado_grande": {
+    "file_too_large": {
         "es": ".claude/rules/{name}: archivo demasiado grande — no validado",
         "en": ".claude/rules/{name}: file too large — not validated",
     },
-    "falta_globs_frontmatter": {
+    "missing_globs_frontmatter": {
         "es": ".claude/rules/{name}: falta 'globs:' en frontmatter — la regla no se activará",
         "en": ".claude/rules/{name}: missing 'globs:' in frontmatter — rule won't activate",
     },
@@ -381,11 +394,11 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "{file} es un archivo regular — no se sobreescribirá automáticamente",
         "en": "{file} is a regular file — won't be overwritten automatically",
     },
-    "symlink_escapa_root": {
+    "symlink_escapes_root": {
         "es": "Symlink target escapa del root del repositorio: {target}",
         "en": "Symlink target escapes repository root: {target}",
     },
-    "json_invalido": {
+    "invalid_json": {
         "es": ".claude/settings.json existente tiene JSON inválido — se sobreescribirá",
         "en": "existing .claude/settings.json has invalid JSON — will be overwritten",
     },
@@ -393,33 +406,33 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "settings.json no tiene reglas deny para GPG bypass — revisar manualmente",
         "en": "settings.json missing deny rules for GPG bypass — check manually",
     },
-    "settings_actualizado_merged": {
+    "settings_updated_merged": {
         "es": "actualizado (deny rules merged): .claude/settings.json",
         "en": "updated (deny rules merged): .claude/settings.json",
     },
-    "skill_global_disponible": {
+    "skill_globally_available": {
         "es": ".claude/skills/{skill}: skill ya disponible globalmente "
         "(~/.claude/skills/) — se omite creación local (prioridad user > project)",
         "en": ".claude/skills/{skill}: skill already available globally "
         "(~/.claude/skills/) — skipping local creation (user > project priority)",
     },
-    "skill_symlink_diferente": {
+    "skill_symlink_different": {
         "es": ".claude/skills/{skill} es symlink a '{existing}', "
         "no a '{expected}' — se mantiene como está",
         "en": ".claude/skills/{skill} is symlink to '{existing}', "
         "not '{expected}' — keeping as is",
     },
-    "skill_symlink_roto": {
+    "skill_symlink_broken": {
         "es": ".claude/skills/{skill} es un symlink roto — arréglalo manualmente",
         "en": ".claude/skills/{skill} is a broken symlink — fix it manually",
     },
-    "skill_dir_regular_con_agents": {
+    "skill_dir_regular_with_agents": {
         "es": ".claude/skills/{skill} es un directorio regular aunque .agents/ existe — "
         "gitwise escribe SKILL.md directamente",
         "en": ".claude/skills/{skill} is a regular directory even though .agents/ exists — "
         "gitwise writes SKILL.md directly",
     },
-    "skill_conflicto_dir_agents": {
+    "skill_conflict_dir_agents": {
         "es": "~/.claude/skills/{skill} es dir regular y ~/.agents/skills/{skill} "
         "también existe — sin cambios. Consolida manualmente.",
         "en": "~/.claude/skills/{skill} is a regular dir and ~/.agents/skills/{skill} "
@@ -433,7 +446,7 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "now using .claude/skills/{skill}/SKILL.md. "
         "Delete the old .md manually.",
     },
-    "claude_md_symlink_otro": {
+    "claude_md_symlink_other": {
         "es": "{file} es symlink a '{existing}', no a '{expected}'. "
         "Revisa manualmente. Para reemplazar: "
         "`gitwise setup-agents --replace-claude-with-symlink`",
@@ -441,15 +454,15 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "Review manually. To replace: "
         "`gitwise setup-agents --replace-claude-with-symlink`",
     },
-    "claude_md_reemplazado": {
+    "claude_md_replaced": {
         "es": "{file} reemplazado por symlink a {target} (backup: {backup})",
         "en": "{file} replaced by symlink to {target} (backup: {backup})",
     },
-    "claude_md_contenido_identico": {
+    "claude_md_identical_content": {
         "es": "contenido idéntico a AGENTS.md",
         "en": "identical content to AGENTS.md",
     },
-    "claude_md_separados": {
+    "claude_md_separate": {
         "es": "{c} y {a} son archivos separados con contenido distinto. "
         "Para unificar: revisa `diff {c} {a}`, mueve contenido relevante "
         "manualmente, luego ejecuta `gitwise setup-agents --replace-claude-with-symlink`.",
@@ -457,33 +470,33 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "To unify: review `diff {c} {a}`, move relevant content "
         "manually, then run `gitwise setup-agents --replace-claude-with-symlink`.",
     },
-    "ya_apunta_agents": {
+    "already_points_to_agents": {
         "es": "ya apunta a AGENTS.md",
         "en": "already points to AGENTS.md",
     },
-    "global_skill_symlink_diferente": {
+    "global_skill_symlink_different": {
         "es": "~/.claude/skills/{skill} es symlink a '{existing}', "
         "no a '{expected}' — se mantiene como está",
         "en": "~/.claude/skills/{skill} is symlink to '{existing}', "
         "not '{expected}' — keeping as is",
     },
-    "global_skill_symlink_roto": {
+    "global_skill_symlink_broken": {
         "es": "~/.claude/skills/{skill} es un symlink roto — arréglalo manualmente",
         "en": "~/.claude/skills/{skill} is a broken symlink — fix it manually",
     },
-    "accion_desconocida": {
+    "unknown_action": {
         "es": "acción desconocida: {action} en {file}",
         "en": "unknown action: {action} on {file}",
     },
-    "accion_fallo": {
+    "action_failed": {
         "es": "acción falló: {error} — revirtiendo {count} acciones previas",
         "en": "action failed: {error} — rolling back {count} previous actions",
     },
-    "hook_instala": {
+    "hook_installs": {
         "es": "instala hooks GPG + conventional commits",
         "en": "installs GPG + conventional commit hooks",
     },
-    "gitattributes_conflicto": {
+    "gitattributes_conflict": {
         "es": ".gitattributes: '{pattern}' tiene regla existente '{existing}' "
         "que puede entrar en conflicto con la de gitwise '{desired}'. "
         "Elimina la línea fuera del bloque managed para evitar duplicados.",
@@ -491,7 +504,7 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "that may conflict with gitwise's '{desired}'. "
         "Remove the line outside the managed block to avoid duplicates.",
     },
-    "template_no_encontrado": {
+    "template_not_found": {
         "es": "template no encontrado: {path}",
         "en": "template not found: {path}",
     },
@@ -504,16 +517,16 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "en": "git {ver} (≥ {min} required)",
     },
     "python_version_ok": {"es": "Python {ver}", "en": "Python {ver}"},
-    "plataforma": {"es": "plataforma: {name}", "en": "platform: {name}"},
+    "platform_label": {"es": "plataforma: {name}", "en": "platform: {name}"},
     "commit_graph_ausente": {
         "es": "commit-graph ausente — git log puede ser 2-10x más lento",
         "en": "commit-graph missing — git log can be 2-10x slower",
     },
-    "fsmonitor_desactivado": {
+    "fsmonitor_disabled": {
         "es": "core.fsmonitor desactivado — git status más lento en repos grandes",
         "en": "core.fsmonitor disabled — slower git status in large repos",
     },
-    "stashes_viejos": {
+    "old_stashes_msg": {
         "es": "{count} stash(es) con más de {days} días",
         "en": "{count} stash(es) older than {days} days",
     },
@@ -545,7 +558,7 @@ _STRINGS: dict[str, dict[Locale, str]] = {
         "es": "repack --write-bitmap-index falló, reintentando sin bitmap",
         "en": "repack --write-bitmap-index failed, retrying without bitmap",
     },
-    "usando_delta": {"es": "usando delta para mostrar diff", "en": "using delta to display diff"},
+    "using_delta": {"es": "usando delta para mostrar diff", "en": "using delta to display diff"},
     "commit_graph_fix": {
         "es": "gitwise optimize --yes",
         "en": "gitwise optimize --yes",
@@ -633,11 +646,11 @@ _STRINGS: dict[str, dict[Locale, str]] = {
     "stale_branches_fix_cost": {"es": "trivial", "en": "trivial"},
     "gpg_binary_fix_cost": {"es": "trivial", "en": "trivial"},
     "gpg_key_fix_cost": {"es": "trivial", "en": "trivial"},
-    "clave_protegida": {
+    "protected_key": {
         "es": "Intento de modificar clave protegida: {name}",
         "en": "Attempt to modify protected key: {name}",
     },
-    "gpg_signing_activo_global": {
+    "gpg_signing_active_global": {
         "es": "GPG signing activo pero sin user.signingkey — "
         "ejecuta: git config user.signingkey <id>",
         "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",

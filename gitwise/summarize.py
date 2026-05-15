@@ -10,12 +10,12 @@ from .output import HAS_DELTA, IS_TTY, bat_pipe, debug, error, info, ok, print_j
 
 def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int = 10) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     branch_r = git_run(["branch", "--show-current"], cwd=cwd, check=False)
@@ -56,23 +56,23 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         return 0
 
     # Human output
-    info(t("rama", branch=branch))
+    info(t("branch_label", branch=branch))
     info("")
 
     if status_lines:
-        info(t("estado_archivos", count=str(len(status_lines))))
+        info(t("modified_files_status", count=str(len(status_lines))))
         print("\n".join(status_lines))
         info("")
     else:
-        ok(t("working_tree_limpio"))
+        ok(t("working_tree_clean"))
         info("")
 
     if log_lines:
-        info(t("ultimos_commits", count=str(len(log_lines))))
+        info(t("last_commits", count=str(len(log_lines))))
         print("\n".join(log_lines))
         info("")
     else:
-        info(t("sin_commits"))
+        info(t("no_commits_yet"))
         info("")
 
     if shortstat:
@@ -83,7 +83,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
         if diff_r.stdout:
             if HAS_DELTA and IS_TTY:
-                debug(t("usando_delta"))
+                debug(t("using_delta"))
                 try:
                     delta = subprocess.Popen(["delta"], stdin=subprocess.PIPE, text=True)
                     delta.communicate(input=diff_r.stdout)

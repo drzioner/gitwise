@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from .git import config as git_config
 from .git import is_repo, repo_root
-from .i18n import t
+from .i18n import confirm_responses, t
 from .output import debug, error, info, ok, print_json, warn
 
 _SHARE_DIR = Path(__file__).parent.parent / "share" / "claude"
@@ -40,7 +40,7 @@ class PlanExecutionError(Exception):
 def _read_template(name: str) -> str:
     path = _SHARE_DIR / name
     if not path.exists():
-        raise FileNotFoundError(t("template_no_encontrado", path=str(path)))
+        raise FileNotFoundError(t("template_not_found", path=str(path)))
     return path.read_text(encoding="utf-8")
 
 
@@ -105,11 +105,11 @@ def _detect_rules(root: Path) -> list[str]:
     for f in sorted(rules_dir.glob("*.md")):
         f_real = Path(os.path.realpath(str(f)))
         if not f_real.is_relative_to(root_real):
-            warnings.append(t("symlink_fuera_repo", name=f.name))
+            warnings.append(t("symlink_outside_repo", name=f.name))
             continue
         try:
             if f.stat().st_size > 64_000:
-                warnings.append(t("archivo_demasiado_grande", name=f.name))
+                warnings.append(t("file_too_large", name=f.name))
                 continue
         except OSError:
             continue
@@ -121,7 +121,7 @@ def _detect_rules(root: Path) -> list[str]:
         fm_end = text.find("\n---\n", 4) if has_frontmatter else -1
         has_globs = "globs:" in text[4:fm_end] if fm_end > 0 else False
         if not (has_frontmatter and has_globs):
-            warnings.append(t("falta_globs_frontmatter", name=f.name))
+            warnings.append(t("missing_globs_frontmatter", name=f.name))
     return warnings
 
 
@@ -183,7 +183,7 @@ def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
     root_real = Path(os.path.realpath(str(root)))
     target_real = Path(os.path.realpath(str(link.parent / target_relative)))
     if not target_real.is_relative_to(root_real):
-        raise SymlinkConflict(t("symlink_escapa_root", target=target_relative))
+        raise SymlinkConflict(t("symlink_escapes_root", target=target_relative))
 
     link.parent.mkdir(parents=True, exist_ok=True)
     os.symlink(target_relative, link)
@@ -315,7 +315,7 @@ def _gitattributes_conflicts(existing_text: str, desired_block: str) -> list[str
         if pattern in outside and outside[pattern] != block_line:
             warnings.append(
                 t(
-                    "gitattributes_conflicto",
+                    "gitattributes_conflict",
                     pattern=pattern,
                     existing=outside[pattern],
                     desired=block_line,
@@ -360,7 +360,7 @@ def _plan_managed_block(
     start_idx = current.index(_GITIGNORE_MARKER_START)
     end_marker_idx = current.find(_GITIGNORE_MARKER_END, start_idx)
     if end_marker_idx == -1:
-        return [], [t("bloque_managed_sin_cierre", file=file_key)] + conflict_warnings
+        return [], [t("managed_block_unclosed", file=file_key)] + conflict_warnings
 
     end_idx = end_marker_idx + len(_GITIGNORE_MARKER_END)
     existing_block = current[start_idx:end_idx]
@@ -394,7 +394,7 @@ def _plan_settings_json(root: Path) -> tuple[list[dict], list[str]]:
         except json.JSONDecodeError:
             return [
                 {"file": ".claude/settings.json", "action": "create", "data": settings_template}
-            ], [t("json_invalido")]
+            ], [t("invalid_json")]
         existing_deny: list = existing_settings.get("permissions", {}).get("deny", [])
         new_deny: list = settings_template.get("permissions", {}).get("deny", [])
         merged_deny = list(dict.fromkeys(existing_deny + new_deny))
@@ -433,10 +433,12 @@ def _plan_skills(
             skill_file = f".claude/skills/{skill}/SKILL.md"
             if skill in global_skills:
                 actions.append(
-                    {"file": skill_file, "action": "skip", "reason": t("instalado_globalmente")}
+                    {"file": skill_file, "action": "skip", "reason": t("installed_globally")}
                 )
             elif (claude_skills / skill / "SKILL.md").exists():
-                actions.append({"file": skill_file, "action": "skip", "reason": t("ya_existe")})
+                actions.append(
+                    {"file": skill_file, "action": "skip", "reason": t("already_exists")}
+                )
             else:
                 actions.append(
                     {
@@ -458,7 +460,7 @@ def _plan_skills(
 
                 if c_skill_state == "absent":
                     if skill in global_skills:
-                        warnings.append(t("skill_global_disponible", skill=skill))
+                        warnings.append(t("skill_globally_available", skill=skill))
                     else:
                         if not agents_skill.exists():
                             actions.append({"file": f".agents/skills/{skill}", "action": "mkdir"})
@@ -484,7 +486,11 @@ def _plan_skills(
                     if existing_target == target_rel:
                         if (claude_skill / "SKILL.md").exists():
                             actions.append(
-                                {"file": skill_file, "action": "skip", "reason": t("ya_existe")}
+                                {
+                                    "file": skill_file,
+                                    "action": "skip",
+                                    "reason": t("already_exists"),
+                                }
                             )
                         else:
                             actions.append(
@@ -504,12 +510,12 @@ def _plan_skills(
                             )
                         )
                 elif c_skill_state == "symlink_broken":
-                    warnings.append(t("skill_symlink_roto", skill=skill))
+                    warnings.append(t("skill_symlink_broken", skill=skill))
                 else:  # regular
-                    warnings.append(t("skill_dir_regular_con_agents", skill=skill))
+                    warnings.append(t("skill_dir_regular_with_agents", skill=skill))
                     if (claude_skill / "SKILL.md").exists():
                         actions.append(
-                            {"file": skill_file, "action": "skip", "reason": t("ya_existe")}
+                            {"file": skill_file, "action": "skip", "reason": t("already_exists")}
                         )
                     else:
                         actions.append(
@@ -521,17 +527,17 @@ def _plan_skills(
                         )
             else:
                 if skill in global_skills and not (claude_skill / "SKILL.md").exists():
-                    warnings.append(t("skill_global_disponible", skill=skill))
+                    warnings.append(t("skill_globally_available", skill=skill))
                     actions.append(
                         {
                             "file": skill_file,
                             "action": "skip",
-                            "reason": t("instalado_globalmente"),
+                            "reason": t("installed_globally"),
                         }
                     )
                 elif (claude_skill / "SKILL.md").exists():
                     actions.append(
-                        {"file": skill_file, "action": "skip", "reason": t("ya_existe")}
+                        {"file": skill_file, "action": "skip", "reason": t("already_exists")}
                     )
                 else:
                     actions.append(
@@ -555,7 +561,7 @@ def _plan_rules(root: Path) -> tuple[list[dict], list[str]]:
     rule_path = root / ".claude" / "rules" / "gitwise.md"
     if rule_path.exists():
         return [
-            {"file": ".claude/rules/gitwise.md", "action": "skip", "reason": t("ya_existe")}
+            {"file": ".claude/rules/gitwise.md", "action": "skip", "reason": t("already_exists")}
         ], []
     return [
         {
@@ -582,7 +588,9 @@ def _plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
         for skill in _SKILLS:
             skill_file = f".claude/skills/{skill}/SKILL.md"
             if (claude_skills / skill / "SKILL.md").exists():
-                actions.append({"file": skill_file, "action": "skip", "reason": t("ya_existe")})
+                actions.append(
+                    {"file": skill_file, "action": "skip", "reason": t("already_exists")}
+                )
             else:
                 actions.append(
                     {
@@ -626,7 +634,11 @@ def _plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
                     if existing_target == target_rel:
                         if (claude_skill / "SKILL.md").exists():
                             actions.append(
-                                {"file": skill_file, "action": "skip", "reason": t("ya_existe")}
+                                {
+                                    "file": skill_file,
+                                    "action": "skip",
+                                    "reason": t("already_exists"),
+                                }
                             )
                         else:
                             actions.append(
@@ -646,11 +658,11 @@ def _plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
                             )
                         )
                 elif c_skill_state == "symlink_broken":
-                    warnings.append(t("global_skill_symlink_roto", skill=skill))
+                    warnings.append(t("global_skill_symlink_broken", skill=skill))
                 else:  # regular dir — auto-migrate to .agents/ since ~/.agents/ is present
                     if agents_skill.exists():
                         # Target already exists; skip with warning
-                        warnings.append(t("skill_conflicto_dir_agents", skill=skill))
+                        warnings.append(t("skill_conflict_dir_agents", skill=skill))
                         actions.append(
                             {
                                 "file": skill_file,
@@ -671,7 +683,7 @@ def _plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
             else:
                 if (claude_skill / "SKILL.md").exists():
                     actions.append(
-                        {"file": skill_file, "action": "skip", "reason": t("ya_existe")}
+                        {"file": skill_file, "action": "skip", "reason": t("already_exists")}
                     )
                 else:
                     actions.append(
@@ -758,7 +770,7 @@ def _run_setup_global(
         )
         return 0
 
-    info(t("config_agentes_global", path=str(home / ".claude")))
+    info(t("configuring_agents_global", path=str(home / ".claude")))
     info("")
 
     for w in warnings:
@@ -776,28 +788,28 @@ def _run_setup_global(
         return 0
 
     if not yes:
-        info(t("acciones_realizar"))
+        info(t("actions_to_perform"))
         for a in actions:
             if a["action"] not in ("skip", "symlink-skip", "managed-block-skip"):
                 info(f"  [{a['action'].upper()}] {a['file']}")
         info("")
         try:
-            resp = input(t("continuar")).strip().lower()
+            resp = input(t("continue_prompt")).strip().lower()
         except (EOFError, KeyboardInterrupt):
             resp = ""
-        if resp not in ("s", "si", "sí", "y", "yes"):
-            info(t("cancelado"))
+        if resp not in confirm_responses():
+            info(t("cancelled"))
             return 0
         info("")
 
     try:
         _execute_actions(home, actions)
     except PlanExecutionError as e:
-        error(t("setup_agents_global_fallo", error=str(e)))
+        error(t("setup_agents_global_failed", error=str(e)))
         return 1
 
     info("")
-    ok(t("setup_agents_global_completado"))
+    ok(t("setup_agents_global_complete"))
     return 0
 
 
@@ -849,7 +861,7 @@ def _resolve_canonical_doc(
                         {
                             "file": _CLAUDE_MD,
                             "action": "skip",
-                            "reason": t("ya_contiene"),
+                            "reason": t("already_contains_conventions"),
                         }
                     ],
                     [],
@@ -893,7 +905,7 @@ def _resolve_canonical_doc(
                     {
                         "file": _CLAUDE_MD,
                         "action": "symlink-skip",
-                        "reason": t("ya_apunta_agents"),
+                        "reason": t("already_points_to_agents"),
                     }
                 ],
                 [],
@@ -944,7 +956,7 @@ def _resolve_canonical_doc(
                     {
                         "file": _CLAUDE_MD,
                         "action": "skip",
-                        "reason": t("claude_md_contenido_identico"),
+                        "reason": t("claude_md_identical_content"),
                     }
                 ],
                 [],
@@ -954,7 +966,7 @@ def _resolve_canonical_doc(
         return (
             4,
             agents_actions,
-            [t("claude_md_separados", c=_CLAUDE_MD, a=_AGENTS_MD)],
+            [t("claude_md_separate", c=_CLAUDE_MD, a=_AGENTS_MD)],
         )
 
     # symlink_broken already caught by _detect_state → bucket 5
@@ -1066,20 +1078,20 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                 if act == "create":
                     path.write_text(action["content"], encoding="utf-8")
                     action["_created"] = True
-                    ok(t("creado", file=_CLAUDE_MD))
+                    ok(t("created", file=_CLAUDE_MD))
                 elif act == "append":
                     existing = path.read_text(encoding="utf-8")
                     sep = "\n" if existing.endswith("\n") else "\n\n"
                     path.write_text(existing + sep + action["content"], encoding="utf-8")
-                    ok(t("config_agentes_actualizado", file=_CLAUDE_MD))
+                    ok(t("updated_git_conventions", file=_CLAUDE_MD))
                 elif act == "symlink-create":
                     _safe_create_symlink(path, action["target_relative"], root)
-                    ok(t("symlink", file=_CLAUDE_MD, target=action["target_relative"]))
+                    ok(t("symlink_created_msg", file=_CLAUDE_MD, target=action["target_relative"]))
                 elif act == "claude-md-replace-with-symlink":
                     backup = Path(action["backup_path"])
                     path.rename(backup)
                     _safe_create_symlink(path, action["target_relative"], root)
-                    ok(t("reemplazado", file=_CLAUDE_MD, backup=backup.name))
+                    ok(t("replaced", file=_CLAUDE_MD, backup=backup.name))
 
             elif file_key == _AGENTS_MD:
                 path = root / _AGENTS_MD
@@ -1087,7 +1099,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                     existing = path.read_text(encoding="utf-8")
                     sep = "\n" if existing.endswith("\n") else "\n\n"
                     path.write_text(existing + sep + action["content"], encoding="utf-8")
-                    ok(t("config_agentes_actualizado", file=_AGENTS_MD))
+                    ok(t("updated_git_conventions", file=_AGENTS_MD))
 
             elif file_key == ".claude/settings.json":
                 path = root / ".claude" / "settings.json"
@@ -1097,9 +1109,9 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                     encoding="utf-8",
                 )
                 if act == "create":
-                    ok(t("creado", file=".claude/settings.json"))
+                    ok(t("created", file=".claude/settings.json"))
                 else:
-                    ok(t("settings_actualizado_merged"))
+                    ok(t("settings_updated_merged"))
 
             elif file_key == ".claude/skills":
                 if act == "symlink-create":
@@ -1111,7 +1123,13 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                     _safe_create_symlink(
                         root / ".claude" / "skills", action["target_relative"], root
                     )
-                    ok(t("symlink", file=".claude/skills", target=action["target_relative"]))
+                    ok(
+                        t(
+                            "symlink_created_msg",
+                            file=".claude/skills",
+                            target=action["target_relative"],
+                        )
+                    )
 
             elif file_key.startswith(".agents/skills/") and file_key.count("/") == 2:
                 if act == "mkdir":
@@ -1123,7 +1141,7 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                     skill_link = root / file_key
                     skill_link.parent.mkdir(parents=True, exist_ok=True)
                     _safe_create_symlink(skill_link, action["target_relative"], root)
-                    ok(t("symlink", file=file_key, target=action["target_relative"]))
+                    ok(t("symlink_created_msg", file=file_key, target=action["target_relative"]))
                 elif act == "skill-migrate-to-agents":
                     import shutil
 
@@ -1141,20 +1159,20 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 # write_text follows symlinks (handles cortex-api pattern)
                 target.write_text(action["content"], encoding="utf-8")
-                ok(t("creado", file=file_key))
+                ok(t("created", file=file_key))
 
             elif file_key.startswith(".claude/rules/") and file_key.endswith(".md"):
                 path = root / file_key
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(action["content"], encoding="utf-8")
                 action["_created"] = True
-                ok(t("creado", file=file_key))
+                ok(t("created", file=file_key))
 
             elif file_key == ".claude/git-snapshot.md":
                 from .snapshot import generate_snapshot as _gen_snapshot
 
                 _gen_snapshot(root, frozen_time=action.get("frozen_time", False))
-                ok(t("snapshot_generado", path=".claude/git-snapshot.md"))
+                ok(t("snapshot_generated", path=".claude/git-snapshot.md"))
 
             elif act in ("managed-block-create", "managed-block-replace"):
                 _apply_managed_block(action)
@@ -1162,12 +1180,12 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                 ok(f"{verb} bloque managed: {file_key}")
 
             else:
-                warn(t("accion_desconocida", action=act, file=file_key))
+                warn(t("unknown_action", action=act, file=file_key))
 
             actions_done.append(action)
 
     except (SymlinkConflict, OSError) as exc:
-        warn(t("accion_fallo", error=str(exc), count=str(len(actions_done))))
+        warn(t("action_failed", error=str(exc), count=str(len(actions_done))))
         _undo_partial(actions_done, root)
         raise PlanExecutionError(str(exc))
 
@@ -1187,12 +1205,12 @@ def _run_setup_local(
     cwd = target or Path.cwd()
 
     if not is_repo(cwd):
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     root = repo_root(cwd)
     if root is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     gpgsign = git_config("commit.gpgsign", cwd=root)
@@ -1200,7 +1218,7 @@ def _run_setup_local(
     if gpgsign == "true":
         signing_key = git_config("user.signingkey", cwd=root)
         if not signing_key:
-            gpg_warnings.append(t("gpg_activo_sin_key_repo"))
+            gpg_warnings.append(t("gpg_active_no_key_repo"))
 
     try:
         actions, warnings, plan_errors, bucket, state = _plan_actions(
@@ -1292,7 +1310,7 @@ def _run_setup_local(
             error(e["reason"])
         return 1
 
-    info(t("config_agentes_en", root=str(root)))
+    info(t("configuring_agents_in", root=str(root)))
     info("")
 
     for w in all_warnings:
@@ -1315,24 +1333,24 @@ def _run_setup_local(
         return 0
 
     if not yes:
-        info(t("acciones_realizar"))
+        info(t("actions_to_perform"))
         for a in actions:
             if a["action"] not in ("skip", "symlink-skip", "managed-block-skip"):
                 info(f"  [{a['action'].upper()}] {a['file']}")
         info("")
         try:
-            resp = input(t("continuar")).strip().lower()
+            resp = input(t("continue_prompt")).strip().lower()
         except (EOFError, KeyboardInterrupt):
             resp = ""
-        if resp not in ("s", "si", "sí", "y", "yes"):
-            info(t("cancelado"))
+        if resp not in confirm_responses():
+            info(t("cancelled"))
             return 0
         info("")
 
     try:
         _execute_actions(root, actions)
     except PlanExecutionError as e:
-        error(t("setup_agents_fallo", error=str(e)))
+        error(t("setup_agents_failed", error=str(e)))
         return 1
 
     skills_skipped = sum(
@@ -1343,10 +1361,10 @@ def _run_setup_local(
         and a.get("file", "").endswith("/SKILL.md")
     )
     if skills_skipped == len(_SKILLS):
-        ok(t("skills_ya_configurados", count=str(len(_SKILLS))))
+        ok(t("skills_already_configured", count=str(len(_SKILLS))))
 
     info("")
-    ok(t("setup_agents_completado"))
+    ok(t("setup_agents_complete"))
 
     if strict and all_warnings:
         return 2
