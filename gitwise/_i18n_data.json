@@ -870,5 +870,77 @@
   "step_prune": {
     "es": "git prune (elimina objetos no referenciados)",
     "en": "git prune (remove unreachable objects)"
+  },
+  "commit_amend_protected": {
+    "es": "no se puede hacer --amend en rama protegida: {branch}",
+    "en": "cannot --amend on protected branch: {branch}"
+  },
+  "commit_amend_pushed": {
+    "es": "no se puede hacer --amend: {branch} ya fue pusheada (requeriría force-push)",
+    "en": "cannot --amend: {branch} already pushed (would require force-push)"
+  },
+  "commit_no_message": {
+    "es": "usa -m para proveer un mensaje de commit",
+    "en": "use -m to provide a commit message"
+  },
+  "commit_invalid_format": {
+    "es": "el mensaje no sigue conventional commits: tipo(scope): descripción",
+    "en": "message does not follow conventional commits: type(scope): description"
+  },
+  "gpg_not_installed_commit": {
+    "es": "GPG no instalado — no se pueden firmar commits",
+    "en": "GPG not installed — cannot sign commits"
+  },
+  "log_no_commits": {
+    "es": "sin commits aún",
+    "en": "no commits yet"
+  },
+  "branches_ahead": {
+    "es": "adelantada",
+    "en": "ahead"
+  },
+  "branches_behind": {
+    "es": "atrasada",
+    "en": "behind"
+  },
+  "branches_merged": {
+    "es": "merged",
+    "en": "merged"
+  },
+  "branches_worktree": {
+    "es": "worktree",
+    "en": "worktree"
+  },
+  "branches_current": {
+    "es": "actual",
+    "en": "current"
+  },
+  "branches_stale_label": {
+    "es": "stale [gone]",
+    "en": "stale [gone]"
+  },
+  "branches_remote_label": {
+    "es": "remotas",
+    "en": "remote"
+  },
+  "branches_sort_label": {
+    "es": "ordenar por: {sort}",
+    "en": "sort by: {sort}"
+  },
+  "show_ref_not_found": {
+    "es": "referencia no encontrada: {ref}",
+    "en": "ref not found: {ref}"
+  },
+  "commit_type_invalid": {
+    "es": "tipo inválido: {type}. Válidos: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert",
+    "en": "invalid type: {type}. Valid: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert"
+  },
+  "commit_scope_hint": {
+    "es": "ámbito: {scope}",
+    "en": "scope: {scope}"
+  },
+  "commit_breaking_hint": {
+    "es": "breaking change",
+    "en": "breaking change"
   }
 }
