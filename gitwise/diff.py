@@ -5,14 +5,20 @@ from pathlib import Path
 from .git import is_repo, repo_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, print_json
+from .output import HAS_DELTA, bat_pipe, error, info, print_json
 
 
 def _has_commits(cwd: Path) -> bool:
     return git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode == 0
 
 
-def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False) -> int:
+def run_diff(
+    *,
+    staged: bool = False,
+    stat: bool = False,
+    full: bool = False,
+    as_json: bool = False,
+) -> int:
     if not is_repo():
         error(t("not_a_git_repo"))
         return 1
@@ -27,6 +33,19 @@ def run_diff(*, staged: bool = False, stat: bool = False, as_json: bool = False)
             print_json({"files": [], "count": 0, "note": t("no_commits_yet")})
             return 0
         info(t("no_commits_yet"))
+        return 0
+
+    if full:
+        r = git_run(["--no-pager", "diff", "HEAD"], cwd=cwd, check=False)
+        if r.returncode != 0:
+            error(t("git_diff_failed", error=r.stderr.strip()))
+            return 1
+        if as_json:
+            print_json({"diff": r.stdout, "ok": True})
+        else:
+            if HAS_DELTA:
+                info(t("using_delta"))
+            bat_pipe(r.stdout, language="diff")
         return 0
 
     if stat:

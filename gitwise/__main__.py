@@ -116,6 +116,9 @@ def _build_parser() -> argparse.ArgumentParser:
     diff_group.add_argument(
         "--stat", action="store_true", help="show insertions/deletions per file"
     )
+    diff_group.add_argument(
+        "--full", action="store_true", help="show full diff with delta integration"
+    )
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("log", help="pretty git log with filters")
@@ -146,6 +149,25 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
     p.add_argument("--remote", action="store_true", help="show remote branches")
     p.add_argument("--sort", type=str, default="refname", help="sort field")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("sync", help="remote fetch, safe pull/push")
+    p.add_argument("--pull", action="store_true", help="pull --ff-only after fetch")
+    p.add_argument("--push", action="store_true", help="push unpushed commits")
+    p.add_argument("--dry-run", action="store_true", help="show planned actions")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("pr", help="GitHub PR wrapper (requires gh)")
+    p.add_argument(
+        "action", nargs="?", default="list", choices=["list", "checks"], help="pr action"
+    )
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("undo", help="reflog-based undo")
+    p.add_argument("ref", nargs="?", default=None, help="target ref (default: HEAD~1)")
+    p.add_argument("--soft", action="store_true", help="soft reset (keep working tree)")
+    p.add_argument("--steps", type=int, default=1, help="number of steps back")
+    p.add_argument("--dry-run", action="store_true", help="show without resetting")
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
@@ -252,7 +274,7 @@ def main() -> int:
     elif args.command == "diff":
         from .diff import run_diff
 
-        ret = run_diff(staged=args.staged, stat=args.stat, as_json=args.json)
+        ret = run_diff(staged=args.staged, stat=args.stat, full=args.full, as_json=args.json)
 
     elif args.command == "log":
         from .log import run_log
@@ -290,6 +312,23 @@ def main() -> int:
         from .branches import run_branches
 
         ret = run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
+
+    elif args.command == "sync":
+        from .sync import run_sync
+
+        ret = run_sync(pull=args.pull, push=args.push, dry_run=args.dry_run, as_json=args.json)
+
+    elif args.command == "pr":
+        from .pr import run_pr
+
+        ret = run_pr(action=args.action, as_json=args.json)
+
+    elif args.command == "undo":
+        from .undo import run_undo
+
+        ret = run_undo(
+            ref=args.ref, soft=args.soft, steps=args.steps, dry_run=args.dry_run, as_json=args.json
+        )
 
     elif args.command == "update":
         ret = _run_update(args)

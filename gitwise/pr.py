@@ -1,0 +1,77 @@
+"""gitwise pr — GitHub PR wrapper via gh CLI."""
+
+import json
+import shutil
+import sys
+
+from .git import is_repo, repo_root
+from .i18n import t
+
+
+def _gh_available() -> bool:
+    return bool(shutil.which("gh"))
+
+
+def _gh(args: list[str], cwd, check: bool = True) -> tuple[int, str, str]:
+    import subprocess
+
+    r = subprocess.run(
+        ["gh"] + args,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if check and r.returncode != 0:
+        return r.returncode, r.stdout.strip(), r.stderr.strip()
+    return r.returncode, r.stdout.strip(), r.stderr.strip()
+
+
+def run_pr(
+    *,
+    action: str = "list",
+    as_json: bool = False,
+) -> int:
+    if not _gh_available():
+        print(t("pr_gh_required"), file=sys.stderr)
+        return 1
+    if not is_repo():
+        print(t("not_a_git_repo"), file=sys.stderr)
+        return 1
+    root = repo_root()
+    if root is None:
+        print(t("no_repo_root"), file=sys.stderr)
+        return 1
+
+    if action == "list":
+        rc, out, err = _gh(["pr", "list", "--json", "number,title,state,headRefName"], cwd=root)
+        if rc != 0:
+            print(err, file=sys.stderr)
+            return 1
+        if as_json:
+            print(out)
+        else:
+            prs = json.loads(out) if out else []
+            if not prs:
+                print(t("pr_none"))
+                return 0
+            for pr in prs:
+                print(f"  #{pr['number']} {pr['title']} ({pr['state']}) ← {pr['headRefName']}")
+        return 0
+
+    if action == "checks":
+        rc, out, err = _gh(["pr", "checks"], cwd=root)
+        if rc != 0:
+            print(err, file=sys.stderr)
+            return 1
+        if as_json:
+            rc2, out2, _ = _gh(
+                ["pr", "view", "--json", "statusCheckRollup"], cwd=root, check=False
+            )
+            print(out2 if rc2 == 0 else "{}")
+        else:
+            print(out)
+        return 0
+
+    print(t("pr_unknown_action", action=action), file=sys.stderr)
+    return 1
