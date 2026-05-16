@@ -52,8 +52,7 @@ def _build_message(staged_files: list[str], additions: int, deletions: int) -> s
     if len(staged_files) == 1:
         filename = staged_files[0].rsplit("/", 1)[-1]
         return f"{commit_type}{scope_str}: update {filename}"
-    dir_name = staged_files[0].split("/")[0] if "/" in staged_files[0] else "files"
-    return f"{commit_type}{scope_str}: update {dir_name} ({len(staged_files)} files)"
+    return f"{commit_type}{scope_str}: update {len(staged_files)} files"
 
 
 def run_suggest(*, as_json: bool = False) -> int:

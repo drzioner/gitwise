@@ -31,8 +31,8 @@ def _conflict_markers(root: Path, filepath: str) -> int:
 
 def run_conflicts(
     *,
-    ours: str | None = None,
-    theirs: str | None = None,
+    ours: bool = False,
+    theirs: bool = False,
     as_json: bool = False,
 ) -> int:
     if not is_repo():
@@ -87,7 +87,7 @@ def run_conflicts(
 
     warn(t("conflicts_found", count=str(len(conflicts))))
     for d in details:
-        print(f"  {d['file']}  ({d['markers']} markers)")
+        print(f"  {d['file']}  ({d['markers']} {t('markers_label')})")
     print()
     print(t("conflicts_hint"))
     return 1

@@ -1198,5 +1198,9 @@
   "pick_aborted": {
     "es": "Pick abortado",
     "en": "Pick aborted"
+  },
+  "markers_label": {
+    "es": "marcadores",
+    "en": "markers"
   }
 }

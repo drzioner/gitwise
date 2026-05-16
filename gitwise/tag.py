@@ -72,7 +72,6 @@ def run_tag(
     *,
     bump: str | None = None,
     message: str | None = None,
-    delete: bool = False,
     dry_run: bool = False,
     yes: bool = False,
     as_json: bool = False,
