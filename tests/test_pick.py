@@ -1,6 +1,8 @@
 """Tests for gitwise pick command."""
 
-from conftest import run_gitwise
+import json
+
+from conftest import _git, run_gitwise
 
 
 def test_pick_no_refs(tmp_git_repo):
@@ -16,3 +18,23 @@ def test_pick_not_git(tmp_path):
 def test_pick_dry_run(tmp_git_repo):
     r = run_gitwise("pick", "HEAD", "--dry-run", cwd=tmp_git_repo)
     assert r.returncode == 0
+
+
+def test_pick_cherry_pick(tmp_git_repo):
+    _git(["checkout", "-b", "source"], cwd=tmp_git_repo)
+    (tmp_git_repo / "picked.txt").write_text("cherry\n")
+    _git(["add", "."], cwd=tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "feat: add picked"], cwd=tmp_git_repo)
+    sha = _git(["rev-parse", "HEAD"], cwd=tmp_git_repo).stdout.strip()
+    _git(["checkout", "main"], cwd=tmp_git_repo)
+    r = run_gitwise("pick", sha, cwd=tmp_git_repo)
+    assert r.returncode == 0
+    assert (tmp_git_repo / "picked.txt").exists()
+
+
+def test_pick_dry_run_json(tmp_git_repo):
+    r = run_gitwise("pick", "HEAD", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["ok"] is True
+    assert data["dry_run"] is True
