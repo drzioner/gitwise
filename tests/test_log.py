@@ -45,3 +45,8 @@ def test_log_json_empty_repo(tmp_path: Path) -> None:
 def test_log_author_filter(tmp_git_repo: Path) -> None:
     r = run_gitwise("log", "--author=NonExistent", cwd=tmp_git_repo)
     assert r.returncode == 0
+
+
+def test_log_graph(tmp_git_repo: Path) -> None:
+    r = run_gitwise("log", "--graph", cwd=tmp_git_repo)
+    assert r.returncode == 0

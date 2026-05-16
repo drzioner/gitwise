@@ -14,14 +14,15 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
         if not line.strip():
             continue
         parts = line.split("\t")
-        if len(parts) < 3:
+        if len(parts) < 4:
             continue
         name = parts[0].removeprefix("* ").strip()
         is_current = parts[0].startswith("*")
         sha = parts[1]
         subject = parts[2]
-        tracking = parts[3] if len(parts) > 3 else ""
-        upstream = parts[4] if len(parts) > 4 else ""
+        age = parts[3]
+        tracking = parts[4] if len(parts) > 4 else ""
+        upstream = parts[5] if len(parts) > 5 else ""
 
         ahead = behind = ""
         if "[ahead" in tracking:
@@ -35,6 +36,7 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
                 "current": str(is_current).lower(),
                 "sha": sha,
                 "subject": subject,
+                "age": age,
                 "upstream": upstream,
                 "ahead": ahead,
                 "behind": behind,
@@ -49,7 +51,8 @@ def _format_branch(b: dict[str, str], show_remote: bool = False) -> str:
     name = b["name"]
     current = " * " if b["current"] == "true" else "   "
     sha = b["sha"][:8]
-    subject = b["subject"][:50]
+    subject = b["subject"][:40]
+    age = b.get("age", "")
 
     flags: list[str] = []
     if b.get("ahead"):
@@ -61,7 +64,9 @@ def _format_branch(b: dict[str, str], show_remote: bool = False) -> str:
     flag_str = " ".join(flags)
     flag_display = f" [{flag_str}]" if flag_str else ""
 
-    return f"{current}{name:30s} {sha} {subject}{flag_display}"
+    age_display = f" ({age})" if age else ""
+
+    return f"{current}{name:25s} {sha} {subject}{age_display}{flag_display}"
 
 
 def run_branches(
@@ -96,7 +101,7 @@ def run_branches(
     wt_branches = worktree_branches(cwd=root)
 
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
-    fmt = "%(refname:short)\t%(objectname:short)\t%(subject)\t%(upstream:track)\t%(upstream:short)"
+    fmt = "%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
 
     r = git_run(
         ["for-each-ref", f"--sort={sort}", f"--format={fmt}", ref_pattern],

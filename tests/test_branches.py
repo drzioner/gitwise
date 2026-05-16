@@ -1,5 +1,6 @@
 """Tests for gitwise branches."""
 
+import json
 from pathlib import Path
 
 from conftest import run_gitwise
@@ -44,3 +45,11 @@ def test_branches_stale_json(tmp_git_repo_with_stale: Path) -> None:
 def test_branches_remote(tmp_git_repo_with_stale: Path) -> None:
     r = run_gitwise("branches", "--remote", cwd=tmp_git_repo_with_stale)
     assert r.returncode == 0
+
+
+def test_branches_json_has_age(tmp_git_repo: Path) -> None:
+    r = run_gitwise("branches", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["count"] >= 1
+    assert "age" in data["branches"][0]

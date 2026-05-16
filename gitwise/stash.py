@@ -1,4 +1,4 @@
-"""gitwise stash — manage stashes by index or age (list/show/pop/drop/clean)."""
+"""gitwise stash — manage stashes by index or age (list/show/pop/drop/clear)."""
 
 import sys
 from pathlib import Path
@@ -43,9 +43,12 @@ def _cmd_list(root: Path, *, as_json: bool) -> int:
     return 0
 
 
-def _cmd_show(root: Path, index: int, *, as_json: bool) -> int:
+def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> int:
     ref = f"stash@{{{index}}}"
-    r = git_run(["stash", "show", "--stat", ref], cwd=root, check=False)
+    stat_args = ["stash", "show", "--stat", ref]
+    if patch:
+        stat_args = ["stash", "show", "-p", ref]
+    r = git_run(stat_args, cwd=root, check=False)
     if r.returncode != 0:
         print(t("stash_not_found", index=str(index)), file=sys.stderr)
         return 1
@@ -117,6 +120,7 @@ def run_stash(
     as_json: bool = False,
     yes: bool = False,
     dry_run: bool = False,
+    patch: bool = False,
 ) -> int:
     if not is_repo():
         print(t("not_a_git_repo"), file=sys.stderr)
@@ -129,12 +133,12 @@ def run_stash(
     if action == "list":
         return _cmd_list(root, as_json=as_json)
     if action == "show":
-        return _cmd_show(root, index, as_json=as_json)
+        return _cmd_show(root, index, as_json=as_json, patch=patch)
     if action == "pop":
         return _cmd_pop(root, index, as_json=as_json)
     if action == "drop":
         return _cmd_drop(root, index, as_json=as_json, yes=yes)
-    if action == "clean":
+    if action in ("clean", "clear"):
         return _cmd_clean(root, as_json=as_json, yes=yes, dry_run=dry_run)
     print(t("stash_unknown_action", action=action), file=sys.stderr)
     return 1

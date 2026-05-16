@@ -32,3 +32,19 @@ def test_stash_clean_dry(tmp_git_repo):
 def test_stash_not_git(tmp_path):
     r = run_gitwise("stash", cwd=tmp_path)
     assert r.returncode == 1
+
+
+def test_stash_clear_alias(tmp_git_repo):
+    r = run_gitwise("stash", "clear", "--dry-run", cwd=tmp_git_repo)
+    assert r.returncode == 0
+
+
+def test_stash_show_patch(tmp_git_repo):
+    from conftest import _git
+
+    (tmp_git_repo / "new.txt").write_text("stashme\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+    r = run_gitwise("stash", "show", "--patch", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    assert "diff" in r.stdout or "stash@" in r.stdout
