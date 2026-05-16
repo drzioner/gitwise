@@ -171,6 +171,21 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation for --hard")
     p.add_argument("--json", action="store_true", help="output JSON")
 
+    p = sub.add_parser("context", help="enriched repo snapshot for LLMs")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("health", help="repo health score (0-100)")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("stash", help="manage stashes (list/show/pop/drop/clean)")
+    p.add_argument(
+        "action", nargs="?", default="list", choices=["list", "show", "pop", "drop", "clean"]
+    )
+    p.add_argument("--index", type=int, default=0, help="stash index (default: 0)")
+    p.add_argument("--dry-run", action="store_true", help="dry run (clean only)")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
     p.add_argument("--dry-run", action="store_true")
 
@@ -334,6 +349,27 @@ def main() -> int:
             dry_run=args.dry_run,
             yes=args.yes,
             as_json=args.json,
+        )
+
+    elif args.command == "context":
+        from .context import run_context
+
+        ret = run_context(as_json=args.json)
+
+    elif args.command == "health":
+        from .health import run_health
+
+        ret = run_health(as_json=args.json)
+
+    elif args.command == "stash":
+        from .stash import run_stash
+
+        ret = run_stash(
+            action=args.action,
+            index=args.index,
+            as_json=args.json,
+            yes=args.yes,
+            dry_run=args.dry_run,
         )
 
     elif args.command == "update":
