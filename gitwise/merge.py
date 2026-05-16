@@ -65,7 +65,7 @@ def run_merge(
         if as_json:
             print_json(
                 {
-                    "v": 1,
+                    "v": 2,
                     "dry_run": True,
                     "action": "rebase" if rebase else "merge",
                     "branch": branch,
@@ -73,6 +73,7 @@ def run_merge(
                     "ahead": ahead_count,
                     "behind": behind_count,
                     "warnings": warnings,
+                    "ok": True,
                 }
             )
             return 0
@@ -108,7 +109,7 @@ def run_merge(
         return 1
 
     if as_json:
-        print_json({"v": 1, "merged": branch, "into": cur, "ok": True})
+        print_json({"v": 2, "merged": branch, "into": cur, "ok": True})
         return 0
     label = (
         t("merge_rebased", branch=branch, into=cur)

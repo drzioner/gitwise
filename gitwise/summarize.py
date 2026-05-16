@@ -41,7 +41,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         import json
 
         result = {
-            "v": 1,
+            "v": 2,
             "ok": True,
             "branch": branch,
             "status": status_lines,

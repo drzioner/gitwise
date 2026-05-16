@@ -9,7 +9,7 @@ def test_health_json(tmp_git_repo):
     r = run_gitwise("health", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert 0 <= data["score"] <= 100
     assert data["grade"] in ("A", "B", "C", "D", "F")
     assert isinstance(data["breakdown"], dict)

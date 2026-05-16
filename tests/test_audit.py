@@ -12,7 +12,7 @@ def test_audit_json_structure(tmp_git_repo):
     result = _run("audit", "--json", cwd=tmp_git_repo)
     assert result.returncode in (0, 1)  # 0=ok, 1=has issues
     data = json.loads(result.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert "ok" in data
     assert "findings" in data
     assert "summary" in data

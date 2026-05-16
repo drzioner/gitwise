@@ -87,7 +87,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     if as_json:
         print_json(
             {
-                "v": 1,
+                "v": 2,
                 "dry_run": dry_run,
                 "steps": [{"name": n, "desc": d} for n, d in steps],
                 "ok": True,

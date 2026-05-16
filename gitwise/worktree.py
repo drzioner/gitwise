@@ -167,7 +167,7 @@ def run_worktree(
             return 1
         if as_json:
             rc, data = _worktree_new_json(branch, cwd)
-            print_json({"v": 1, **data})
+            print_json({"v": 2, **data})
             return rc
         return _worktree_new(branch, cwd)
 

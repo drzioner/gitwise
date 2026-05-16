@@ -15,7 +15,7 @@ def test_stash_list_json(tmp_git_repo):
     r = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert data["count"] == 0
 
 

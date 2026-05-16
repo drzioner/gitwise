@@ -18,7 +18,7 @@ def test_worktree_new_json_output(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "new", "feature/json-test", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert data["ok"] is True
     assert "path" in data
     assert data["branch"] == "feature/json-test"

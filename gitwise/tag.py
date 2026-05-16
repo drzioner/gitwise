@@ -87,7 +87,7 @@ def run_tag(
     if action == "list":
         tags = _list_tags(root)
         if as_json:
-            print_json({"v": 1, "tags": tags, "count": len(tags)})
+            print_json({"v": 2, "tags": tags, "count": len(tags), "ok": True})
             return 0
         if not tags:
             ok(t("tag_empty"))
@@ -99,7 +99,7 @@ def run_tag(
     if action == "latest":
         latest = _latest_semver(root)
         if as_json:
-            print_json({"v": 1, "latest": latest})
+            print_json({"v": 2, "latest": latest, "ok": True})
             return 0
         if latest:
             print(f"  {latest['name']}  {latest['sha']}")
@@ -132,7 +132,7 @@ def run_tag(
             print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
-            print_json({"v": 1, "created": tag_name, "ok": True})
+            print_json({"v": 2, "created": tag_name, "ok": True})
             return 0
         ok(t("tag_created", name=tag_name))
         return 0
@@ -152,7 +152,7 @@ def run_tag(
             print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
-            print_json({"v": 1, "deleted": name, "ok": True})
+            print_json({"v": 2, "deleted": name, "ok": True})
             return 0
         ok(t("tag_deleted", name=name))
         return 0

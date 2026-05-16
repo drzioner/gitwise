@@ -9,7 +9,7 @@ def test_context_json(tmp_git_repo):
     r = run_gitwise("context", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert isinstance(data["tree"], list)
     assert isinstance(data["contributors"], list)
     assert isinstance(data["file_types"], dict)

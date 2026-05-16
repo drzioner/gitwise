@@ -47,7 +47,7 @@ def run_conflicts(
 
     if not conflicts:
         if as_json:
-            print_json({"v": 1, "conflicts": [], "count": 0})
+            print_json({"v": 2, "conflicts": [], "count": 0, "ok": True})
             return 0
         ok(t("conflicts_none"))
         return 0
@@ -59,7 +59,7 @@ def run_conflicts(
             return 1
         git_run(["add"] + conflicts, cwd=root, check=False)
         if as_json:
-            print_json({"v": 1, "resolved": len(conflicts), "strategy": "ours", "ok": True})
+            print_json({"v": 2, "resolved": len(conflicts), "strategy": "ours", "ok": True})
             return 0
         ok(t("conflicts_resolved_ours", count=str(len(conflicts))))
         return 0
@@ -71,7 +71,7 @@ def run_conflicts(
             return 1
         git_run(["add"] + conflicts, cwd=root, check=False)
         if as_json:
-            print_json({"v": 1, "resolved": len(conflicts), "strategy": "theirs", "ok": True})
+            print_json({"v": 2, "resolved": len(conflicts), "strategy": "theirs", "ok": True})
             return 0
         ok(t("conflicts_resolved_theirs", count=str(len(conflicts))))
         return 0
@@ -82,7 +82,7 @@ def run_conflicts(
         details.append({"file": f, "markers": markers})
 
     if as_json:
-        print_json({"v": 1, "conflicts": details, "count": len(conflicts)})
+        print_json({"v": 2, "conflicts": details, "count": len(conflicts), "ok": False})
         return 0
 
     warn(t("conflicts_found", count=str(len(conflicts))))

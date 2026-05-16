@@ -76,7 +76,7 @@ def run_snapshot(*, as_json: bool = False) -> int:
     path = generate_snapshot(root)
 
     if as_json:
-        print_json({"v": 1, "path": str(path), "ok": True})
+        print_json({"v": 2, "path": str(path), "ok": True})
         return 0
 
     ok(t("snapshot_generated", path=str(path.relative_to(root))))

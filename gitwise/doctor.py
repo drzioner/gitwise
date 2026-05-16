@@ -38,7 +38,7 @@ def run_doctor(*, as_json: bool = False) -> int:
     gpg = gpg_status()
 
     result = {
-        "v": 1,
+        "v": 2,
         "gitwise_version": __version__,
         "git_version": ".".join(str(n) for n in git_ver),
         "git_version_ok": git_ok,

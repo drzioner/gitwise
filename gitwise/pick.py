@@ -31,7 +31,7 @@ def run_pick(
             print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
-            print_json({"v": 1, "continued": True, "ok": True})
+            print_json({"v": 2, "continued": True, "ok": True})
             return 0
         ok(t("pick_continued"))
         return 0
@@ -42,7 +42,7 @@ def run_pick(
             print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
-            print_json({"v": 1, "aborted": True, "ok": True})
+            print_json({"v": 2, "aborted": True, "ok": True})
             return 0
         ok(t("pick_aborted"))
         return 0
@@ -55,7 +55,7 @@ def run_pick(
 
     if dry_run:
         if as_json:
-            print_json({"v": 1, "dry_run": True, "action": action, "refs": refs})
+            print_json({"v": 2, "dry_run": True, "action": action, "refs": refs, "ok": True})
             return 0
         ok(t("pick_dry", action=action, refs=", ".join(refs)))
         return 0
@@ -70,7 +70,7 @@ def run_pick(
         return 1
 
     if as_json:
-        print_json({"v": 1, "action": action, "refs": refs, "ok": True})
+        print_json({"v": 2, "action": action, "refs": refs, "ok": True})
         return 0
     ok(t("pick_ok", action=action, refs=", ".join(refs)))
     return 0

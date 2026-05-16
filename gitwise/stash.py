@@ -28,7 +28,7 @@ def _stash_list(root: Path) -> list[dict[str, str]]:
 def _cmd_list(root: Path, *, as_json: bool) -> int:
     stashes = _stash_list(root)
     if as_json:
-        print_json({"v": 1, "stashes": stashes, "count": len(stashes)})
+        print_json({"v": 2, "stashes": stashes, "count": len(stashes), "ok": True})
         return 0
     if not stashes:
         ok(t("stash_empty"))
@@ -50,7 +50,7 @@ def _cmd_show(root: Path, index: int, *, as_json: bool) -> int:
         print(t("stash_not_found", index=str(index)), file=sys.stderr)
         return 1
     if as_json:
-        print_json({"v": 1, "ref": ref, "stat": r.stdout.strip()})
+        print_json({"v": 2, "ref": ref, "stat": r.stdout.strip(), "ok": True})
         return 0
     print(r.stdout.strip())
     return 0
@@ -63,7 +63,7 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
         print(r.stderr.strip(), file=sys.stderr)
         return 1
     if as_json:
-        print_json({"v": 1, "popped": ref, "ok": True})
+        print_json({"v": 2, "popped": ref, "ok": True})
         return 0
     ok(t("stash_popped", ref=ref))
     return 0
@@ -79,7 +79,7 @@ def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> in
         print(r.stderr.strip(), file=sys.stderr)
         return 1
     if as_json:
-        print_json({"v": 1, "dropped": ref, "ok": True})
+        print_json({"v": 2, "dropped": ref, "ok": True})
         return 0
     ok(t("stash_dropped", ref=ref))
     return 0
@@ -92,7 +92,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         return 0
     if dry_run:
         if as_json:
-            print_json({"v": 1, "would_drop": len(stashes), "dry_run": True})
+            print_json({"v": 2, "would_drop": len(stashes), "dry_run": True, "ok": True})
             return 0
         ok(t("stash_clean_dry", count=str(len(stashes))))
         return 0
@@ -104,7 +104,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         print(r.stderr.strip(), file=sys.stderr)
         return 1
     if as_json:
-        print_json({"v": 1, "dropped": len(stashes), "ok": True})
+        print_json({"v": 2, "dropped": len(stashes), "ok": True})
         return 0
     ok(t("stash_cleaned", count=str(len(stashes))))
     return 0
