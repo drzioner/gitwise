@@ -32,7 +32,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
 fi
 
 mkdir -p "$BIN_DIR"
-ln -sf "$SOURCE" "$TARGET"
+ln -snf "$SOURCE" "$TARGET"
 chmod +x "$SOURCE"
 
 echo "✓ gitwise instalado en: $TARGET"

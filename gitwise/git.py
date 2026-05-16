@@ -7,15 +7,25 @@ from pathlib import Path
 
 _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 
+_DEFAULT_TIMEOUT = 120
+
+
+def _get_timeout() -> int:
+    val = os.environ.get("GITWISE_GIT_TIMEOUT", "")
+    if val.isdigit():
+        return int(val)
+    return _DEFAULT_TIMEOUT
+
 
 def run(
     args: list[str],
     cwd: Path | None = None,
     check: bool = True,
-    timeout: int = 120,
+    timeout: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     from .output import debug
 
+    actual_timeout = timeout if timeout is not None else _get_timeout()
     debug(f"git {' '.join(args)}")
     return subprocess.run(
         ["git"] + args,
@@ -26,7 +36,7 @@ def run(
         cwd=cwd,
         check=check,
         env=_GIT_ENV,
-        timeout=timeout,
+        timeout=actual_timeout,
     )
 
 
@@ -114,5 +124,7 @@ def version() -> tuple[int, int, int]:
                 int(nums[2]) if len(nums) > 2 else 0,
             )
         except (ValueError, IndexError):
-            pass
+            from .output import debug as _debug
+
+            _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)

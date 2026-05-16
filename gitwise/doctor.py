@@ -15,12 +15,12 @@ MIN_GIT = (2, 29, 0)
 _OPTIONAL_TOOLS = ["bat", "delta", "rg", "eza", "git-sizer", "watchman"]
 
 _TOOL_INFO: dict[str, tuple[str, str]] = {
-    "bat": ("visualización de archivos con syntax highlighting", "brew install bat"),
-    "delta": ("diffs con syntax highlighting", "brew install git-delta"),
-    "rg": ("búsqueda rápida en código (ripgrep)", "brew install ripgrep"),
-    "eza": ("listado de directorios moderno", "brew install eza"),
-    "git-sizer": ("análisis de tamaño e historia del repo", "brew install git-sizer"),
-    "watchman": ("fsmonitor nativo — acelera git status", "brew install watchman"),
+    "bat": ("tool_bat_desc", "brew install bat"),
+    "delta": ("tool_delta_desc", "brew install git-delta"),
+    "rg": ("tool_rg_desc", "brew install ripgrep"),
+    "eza": ("tool_eza_desc", "brew install eza"),
+    "git-sizer": ("tool_git_sizer_desc", "brew install git-sizer"),
+    "watchman": ("tool_watchman_desc", "brew install watchman"),
 }
 
 
@@ -64,41 +64,42 @@ def run_doctor(*, as_json: bool = False) -> int:
     if git_ok:
         ok(t("git_version_ok", ver=git_str, min=min_str))
     else:
-        warn(t("git_demasiado_antiguo", ver=git_str, min=min_str))
+        warn(t("git_too_old", ver=git_str, min=min_str))
 
     py_str = ".".join(str(n) for n in python_ver)
     if python_ok:
         ok(t("python_version_ok", ver=py_str))
     else:
-        warn(t("python_demasiado_antiguo", ver=py_str))
+        warn(t("python_too_old", ver=py_str))
 
-    ok(t("plataforma", name=platform_name))
+    ok(t("platform_label", name=platform_name))
 
     if not fsmonitor_supported:
-        warn(t("fsmonitor_no_soportado"))
+        warn(t("fsmonitor_not_supported"))
 
     info("")
-    info(t("herramientas_opcionales"))
+    info(t("optional_tools"))
     for tool, found in optional.items():
         if found:
             info(f"  ✓ {tool}")
         else:
-            desc, install = _TOOL_INFO.get(tool, ("", f"brew install {tool}"))
+            desc_key, install = _TOOL_INFO.get(tool, ("", f"brew install {tool}"))
+            desc = t(desc_key) if desc_key else ""
             info(f"  – {tool}  ({desc})")
             info(f"      → {install}")
 
     info("")
-    info(t("gpg_titulo"))
+    info(t("gpg_title"))
     if gpg["ready"]:
-        ok(t("gpg_listo"))
+        ok(t("gpg_ready_msg"))
     elif not gpg["gpg_binary"]:
-        warn(t("gpg_no_instalado"))
-        info("      → brew install gnupg")
+        warn(t("gpg_not_installed"))
+        info(t("gpg_install_instruction"))
     elif not gpg["gpgsign_enabled"]:
-        info(t("gpg_no_activado"))
-        info("      → git config --global commit.gpgsign true")
+        info(t("gpg_not_enabled"))
+        info(t("gpg_enable_instruction"))
     elif not gpg["signing_key_set"]:
-        warn(t("gpg_no_key"))
-        info("      → git config --global user.signingkey <key-id>")
+        warn(t("gpg_no_signing_key"))
+        info(t("gpg_key_instruction"))
 
     return 0 if result["ok"] else 1

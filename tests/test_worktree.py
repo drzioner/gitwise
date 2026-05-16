@@ -36,7 +36,7 @@ def test_worktree_new_directory_exists(tmp_git_repo: Path) -> None:
     target.mkdir()
     result = run_gitwise("worktree", "new", "feature/conflict", cwd=tmp_git_repo)
     assert result.returncode == 1
-    assert "already exists" in result.stderr
+    assert "already exists" in result.stderr or "ya existe" in result.stderr
 
 
 def test_worktree_new_sanitizes_dot_prefix(tmp_git_repo: Path) -> None:
@@ -49,7 +49,7 @@ def test_worktree_new_sanitizes_dot_prefix(tmp_git_repo: Path) -> None:
 def test_worktree_clean_no_orphans(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "clean", cwd=tmp_git_repo)
     assert result.returncode == 0
-    assert "orphaned worktrees" in result.stdout
+    assert "orphaned worktrees" in result.stdout or "worktrees huérfanos" in result.stdout
 
 
 def test_worktree_clean_dry_run(tmp_git_repo: Path) -> None:

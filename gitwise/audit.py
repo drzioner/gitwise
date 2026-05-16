@@ -10,7 +10,7 @@ from typing import Any
 from .git import git_dir, gpg_status, is_repo, repo_root, stale_branches
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, ok, print_json
+from .output import bat_pipe, debug, error, ok, print_json
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -53,12 +53,12 @@ def _find_old_stashes(cwd: Path) -> list[dict]:
             if age >= _STALE_DAYS:
                 old.append({"ref": ref.strip(), "age_days": age, "subject": subject.strip()})
         except (ValueError, TypeError):
+            debug(f"stash date parse failed: {line!r}")
             continue
     return old
 
 
 def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
-    # Abort if no commits yet
     if git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode != 0:
         return []
     r = git_run(["ls-tree", "-r", "--long", "HEAD"], cwd=cwd, check=False)
@@ -75,6 +75,7 @@ def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
             if size >= _LARGE_BLOB_MIN_BYTES:
                 blobs.append({"path": path, "size": size, "size_mb": round(size / 1_048_576, 2)})
         except (ValueError, IndexError):
+            debug(f"ls-tree line parse failed: {line!r}")
             continue
     blobs.sort(key=lambda b: b["size"], reverse=True)
     return blobs[:top_n]
@@ -156,12 +157,12 @@ _SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "
 
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     findings: list[dict[str, Any]] = []
@@ -203,7 +204,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 {
                     "type": "fsmonitor_disabled",
                     "severity": "low",
-                    "message": t("fsmonitor_desactivado"),
+                    "message": t("fsmonitor_disabled"),
                     "fix": t("fsmonitor_fix"),
                     "cost_of_fix": t("fsmonitor_fix_cost"),
                     "cost_of_ignore": t("fsmonitor_cost"),
@@ -218,7 +219,9 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 "severity": "low",
                 "count": len(old_stashes),
                 "stashes": old_stashes,
-                "message": t("stashes_viejos", count=str(len(old_stashes)), days=str(_STALE_DAYS)),
+                "message": t(
+                    "old_stashes_msg", count=str(len(old_stashes)), days=str(_STALE_DAYS)
+                ),
                 "fix": t("stash_fix"),
                 "cost_of_fix": t("stash_fix_cost"),
                 "cost_of_ignore": t("stash_cost"),
@@ -277,11 +280,11 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         return 0 if not has_issues else 1
 
     if not findings:
-        ok(t("repo_buen_estado", suffix="  (quick)" if quick else ""))
+        ok(t("repo_good_shape", suffix="  (quick)" if quick else ""))
         return 0
 
     lines = [
-        t("diagnostico", suffix=" rápido" if quick else "", count=str(len(findings))),
+        t("diagnostic", suffix=" quick" if quick else "", count=str(len(findings))),
         "",
     ]
     for f in findings:

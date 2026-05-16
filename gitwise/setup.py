@@ -44,16 +44,9 @@ def _check_gpg_state(cwd: Path) -> list[str]:
 
     if gpgsign == "true":
         if not signingkey:
-            warnings.append(
-                "GPG signing activo pero sin user.signingkey — "
-                "ejecuta: git config user.signingkey <id>"
-            )
-        # else: OK, nothing to report
+            warnings.append(t("gpg_signing_active_no_key"))
     elif gpgsign is None:
-        warnings.append(
-            "GPG signing no configurado — si lo deseas: git config commit.gpgsign true"
-        )
-    # If gpgsign == "false" or other value: don't touch, don't warn loudly
+        warnings.append(t("gpg_signing_not_configured"))
     return warnings
 
 
@@ -63,7 +56,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
 
     for key, desired in _BASE_CONFIGS:
         if key in _PROTECTED_KEYS:
-            raise ValueError(t("clave_protegida", name=key))
+            raise ValueError(t("protected_key", name=key))
         current = git_config(key, cwd=cwd)
         if current != desired:
             changes.append({"key": key, "desired": desired, "current": current})
@@ -98,7 +91,6 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                 }
             )
 
-    # core.hooksPath: install gitwise hooks (pre-commit + commit-msg)
     hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
     current = git_config("core.hooksPath", cwd=cwd)
     if str(hooks_dir) != current:
@@ -116,12 +108,12 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
 
 def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
     if not is_repo():
-        error(t("no_repo"))
+        error(t("not_a_git_repo"))
         return 1
 
     cwd = repo_root()
     if cwd is None:
-        error(t("no_root"))
+        error(t("no_repo_root"))
         return 1
 
     gpg_warnings = _check_gpg_state(cwd)
@@ -146,15 +138,15 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         info("")
 
     if not changes:
-        ok(t("config_actualizada"))
+        ok(t("config_up_to_date"))
         return 0
 
-    info(t("cambios_planificados", count=str(len(changes))))
+    info(t("planned_changes", count=str(len(changes))))
     info("")
     for c in changes:
         note = f"  [{c['note']}]" if c.get("note") else ""
         current_str = (
-            t("actual", current=c["current"]) if c.get("current") else t("no_configurado")
+            t("current_value", current=c["current"]) if c.get("current") else t("not_configured")
         )
         info(f"  git config {c['key']} {c['desired']}{current_str}{note}")
     info("")
@@ -163,8 +155,8 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         return 0
 
     if not yes:
-        if not confirm(t("confirm_setup")):
-            info(t("cancelado"))
+        if not confirm(t("confirm_setup_changes")):
+            info(t("cancelled"))
             return 0
         info("")
 
@@ -173,8 +165,8 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         if r.returncode == 0:
             ok(f"git config {c['key']} = {c['desired']}")
         else:
-            warn(t("config_fallo", name=c["key"]))
+            warn(t("config_failed", name=c["key"]))
 
     info("")
-    ok(t("setup_completado"))
+    ok(t("setup_complete"))
     return 0

@@ -36,6 +36,15 @@ def _detect_theme() -> str:
     return "dark"
 
 
+def _reinit() -> None:
+    global _THEME, _USE_COLOR, IS_TTY, DEBUG, _C
+    _THEME = _detect_theme()
+    _USE_COLOR = _should_color()
+    IS_TTY = sys.stdout.isatty()
+    DEBUG = os.environ.get("GITWISE_DEBUG", "").lower() in ("1", "true")
+    _C = _COLORS_DARK if _THEME == "dark" else _COLORS_LIGHT
+
+
 _THEME = _detect_theme()
 _USE_COLOR = _should_color()
 IS_TTY = sys.stdout.isatty()
@@ -75,7 +84,7 @@ def info(msg: str) -> None:
 
 
 def warn(msg: str) -> None:
-    prefix = t("advertencia")
+    prefix = t("warning_label")
     colored_prefix = f"{_color('warning')}{prefix}:{_color('reset')}"
     print(f"{colored_prefix} {msg}", file=sys.stderr)
 
@@ -117,7 +126,8 @@ def bat_pipe(text: str, language: str = "plain") -> None:
     if HAS_BAT and IS_TTY:
         import subprocess
 
-        cmd = ["bat", "--style=plain", "--pager=never", "--color=always"]
+        color_flag = "always" if _USE_COLOR else "never"
+        cmd = ["bat", "--style=plain", "--pager=never", f"--color={color_flag}"]
         if language and language != "plain":
             cmd += ["--language", language]
         try:
