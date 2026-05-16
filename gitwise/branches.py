@@ -66,7 +66,7 @@ def _format_branch(b: dict[str, str], show_remote: bool = False) -> str:
 
     age_display = f" ({age})" if age else ""
 
-    return f"{current}{name:25s} {sha} {subject}{age_display}{flag_display}"
+    return f"{current}{name:25s} {sha} {subject:40s}{age_display}{flag_display}"
 
 
 def run_branches(
