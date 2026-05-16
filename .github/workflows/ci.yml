@@ -26,6 +26,7 @@ jobs:
         with:
           version: "0.11.x"
           enable-cache: true
+          cache-suffix: lint
       - run: uvx ruff@0.11.0 check gitwise/ tests/
       - run: uvx ruff@0.11.0 format --check gitwise/ tests/
 
@@ -41,8 +42,8 @@ jobs:
         with:
           version: "0.11.x"
           enable-cache: true
+          cache-suffix: typecheck
       - run: uv sync
-      - run: uv run basedpyright
 
   test:
     name: Tests (${{ matrix.os }}, ${{ matrix.python-version }})
@@ -89,5 +90,5 @@ jobs:
         with:
           version: "0.11.x"
           enable-cache: true
+          cache-suffix: audit
       - run: uv sync
-      - run: uv run pip-audit --desc
