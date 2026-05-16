@@ -942,5 +942,57 @@
   "commit_breaking_hint": {
     "es": "breaking change",
     "en": "breaking change"
+  },
+  "sync_fetch_failed": {
+    "es": "fetch falló: {error}",
+    "en": "fetch failed: {error}"
+  },
+  "sync_pull_diverged": {
+    "es": "pull falló: el branch local y el remoto han divergido (usa merge o rebase)",
+    "en": "pull failed: local and remote have diverged (use merge or rebase)"
+  },
+  "sync_push_protected": {
+    "es": "no se puede hacer push a rama protegida: {branch}",
+    "en": "cannot push to protected branch: {branch}"
+  },
+  "sync_push_failed": {
+    "es": "push falló: {error}",
+    "en": "push failed: {error}"
+  },
+  "sync_complete": {
+    "es": "sync completado: {branch} ↑{ahead} ↓{behind}",
+    "en": "sync complete: {branch} ↑{ahead} ↓{behind}"
+  },
+  "pr_gh_required": {
+    "es": "gh CLI no encontrado — instala: brew install gh",
+    "en": "gh CLI not found — install: brew install gh"
+  },
+  "pr_none": {
+    "es": "no hay pull requests abiertos",
+    "en": "no open pull requests"
+  },
+  "pr_unknown_action": {
+    "es": "acción desconocida: {action}. Usa: list, checks",
+    "en": "unknown action: {action}. Use: list, checks"
+  },
+  "undo_reflog_failed": {
+    "es": "no se pudo leer el reflog",
+    "en": "could not read reflog"
+  },
+  "undo_no_entries": {
+    "es": "no hay entradas en el reflog",
+    "en": "no reflog entries"
+  },
+  "undo_not_enough_history": {
+    "es": "no hay suficiente historial para retroceder {steps} pasos",
+    "en": "not enough history to go back {steps} steps"
+  },
+  "undo_complete": {
+    "es": "undo completado: HEAD ahora en {ref}",
+    "en": "undo complete: HEAD now at {ref}"
+  },
+  "undo_confirm_hard": {
+    "es": "¿reset --hard a {ref}? Esto descartará cambios sin commit [s/N] ",
+    "en": "reset --hard to {ref}? This will discard uncommitted changes [y/N] "
   }
 }
