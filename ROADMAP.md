@@ -3,150 +3,163 @@
 Documento vivo con las funcionalidades propuestas para transformar gitwise de herramienta
 diagnóstica/setup en el hub central de git para humanos y agentes AI.
 
-## Estado Actual
+## Estado Actual (v0.6.0)
 
-gitwise cubre: `doctor`, `setup-agents`, `setup`, `audit`, `summarize`, `snapshot`,
-`clean`, `optimize`, `worktree`, `diff`, `update`.
+gitwise cubre 25 comandos: `doctor`, `setup-agents`, `setup`, `audit`, `summarize`, `snapshot`,
+`clean`, `optimize`, `worktree`, `diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`,
+`undo`, `context`, `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest`, `pick`, `update`.
 
-**Gap principal**: No hay operaciones de escritura diaria (commit, branch, push/pull).
-
----
-
-## Phase 1 — Core Daily Ops
-
-Transforma gitwise en herramienta de uso diario.
-
-### 1.1 `gitwise log` — Pretty log con delta + JSON
-
-- `git log` con defaults sensatos (graph, decorate, -n 20)
-- Filtros: `--author`, `--grep`, `--since`, `--until`, `--file`
-- Delta automático cuando `HAS_DELTA` + `IS_TTY`
-- `--json` con commits estructurados (hash, author, date, subject, files, +/-)
-- `--oneline` para vista compacta
-
-**Status**: Pendiente
-**Complejidad**: small (~80 líneas)
-
-### 1.2 `gitwise show` — Inspector de commits
-
-- `git show [ref]` con delta automático
-- `--json` con full commit data (message, author, date, diff stats, changed files)
-- `--stat` para vista de estadísticas sin diff completo
-
-**Status**: Pendiente
-**Complejidad**: small (~60 líneas)
-
-### 1.3 `gitwise commit` — Conventional commit + GPG enforcer
-
-- Validación de formato conventional: `^(feat|fix|refactor|docs|chore|test|perf|ci|build|style)(\(.+\))?: .{1,72}`
-- Firma GPG obligatoria (-S), rechaza `--no-gpg-sign`
-- Preview de archivos staged antes de commit
-- `--amend` con seguridad (rechaza si commit ya fue pusheado)
-- `--dry-run` para validación sin commit
-- `--type` y `--scope` como flags alternativos a mensaje completo
-- `--breaking` para agregar `!` al tipo
-
-**Status**: Pendiente
-**Complejidad**: medium (~120 líneas)
-
-### 1.4 `gitwise branches` — Dashboard de branches
-
-- Lista branches con: ahead/behind, last commit age, merged status, worktree association
-- `--sort date|name` (default: date, usa branch.sort config)
-- `--stale` para mostrar solo branches con upstream gone
-- `--remote` para incluir remote branches
-- `--json` con metadata completa por branch
-
-**Status**: Pendiente
-**Complejidad**: medium (~100 líneas)
+**Phases 1-4 completadas.** 222 tests, 301 i18n keys (es/en), 5,312 LOC.
 
 ---
 
-## Phase 2 — Sync + GitHub Integration
+## Phase 1 — Core Daily Ops (MERGED)
 
-### 2.1 `gitwise sync` — Remote sync + safe pull/push
+`log`, `show`, `commit`, `branches` — PR #7
 
-- `git fetch --all --prune` + ahead/behind por branch
-- Safe pull (`--ff-only`) con detección de divergencia
-- Push con protección (rechaza force a main/master)
-- `--dry-run` + `--json`
-- Muestra commits unpushed
+## Phase 2 — Sync + GitHub Integration (MERGED)
 
-### 2.2 `gitwise pr` — GitHub PR via gh
+`sync`, `pr`, `undo`, `diff --full` — PR #8
 
-- Wrapper de `gh pr create/list/merge/checks`
-- Solo funciona si `gh` instalado (shutil.which)
-- `--json` con PR data estructurada
-- CI status integration
+## Phase 3 — AI Enhancements (MERGED)
 
-### 2.3 `gitwise undo` — Reflog-based undo
+`context`, `health`, `stash`, audit mejorado — PR #9
 
-- Lista últimas N operaciones del reflog
-- Permite revertir a cualquier punto con `--soft`
-- `--dry-run` + `--json`
+## Phase 4 — Advanced Workflows (MERGED)
 
-### 2.4 `gitwise diff --full` — Delta integration en diff existente
-
-- Nueva flag `--full` en diff.py que muestra diff completo con delta
-- Reutiliza patrón de summarize.py (HAS_DELTA + subprocess.Popen)
+`tag`, `merge`, `conflicts`, `suggest`, `pick` — PR #10
 
 ---
 
-## Phase 3 — AI Enhancements
+## Phase 5 — Polish & UX (Post-Audit)
 
-### 3.1 `gitwise context` — Snapshot enriquecido para LLMs
+Resultado de auditoria con 10 perfiles profesionales + 4 iteraciones autoresearch.
 
-- Extiende snapshot.py: directory tree (depth-limited)
-- Top-10 contributors
-- Branch topology graph
-- File-type breakdown
-- TODO/FIXME counts
+### 5.1 `gitwise status` — El comando faltante
 
-### 3.2 `gitwise health` — Score numérico de salud
+- Wrapper de `git status` con formato mejorado + `--json`
+- El comando #1 que cualquier usuario intenta primero
+- Muestra: branch, ahead/behind, staged/unstaged/untracked counts, archivos modificados
 
-- Score 0-100 calculado de findings de audit
-- JSON: `{"score": 85, "grade": "B", "breakdown": {...}}`
-- Cada finding tiene peso configurable
+**Status**: Pendiente
+**Severidad**: CRITICAL (consenso UX + PM + Junior + Git Power User)
 
-### 3.3 `gitwise stash` — Gestión de stashes
+### 5.2 Unificar schema JSON
 
-- Extiende `_find_old_stashes()` de audit.py
-- list/show/clean/pop/drop por index o edad
-- `--older-than Nd` para cleanup
+- Todos los comandos output `v: 2`, siempre incluyen `ok`
+- `update` necesita `--json`
+- Consistencia para agentes AI y pipelines CI/CD
 
-### 3.4 Audit mejorado
+**Status**: Pendiente
+**Severidad**: HIGH
 
-- Remote health check como finding adicional
-- Health score incluido en output JSON
+### 5.3 `context --json` incluir health score
+
+- Agentes necesitan contexto + salud en una sola call
+- `context --json` agrega campo `health: {score, grade}` reutilizando `compute_health()`
+
+**Status**: Pendiente
+**Severidad**: MEDIUM
+
+### 5.4 `diff` default a diffstat
+
+- Default actual (`name-status`) es MENOS útil que `git diff`
+- Nuevo default: diffstat (insertions/deletions por archivo)
+- `--name-only` para lista simple, `--full` para patch completo
+
+**Status**: Pendiente
+**Severidad**: HIGH
+
+### 5.5 `log --json` agregar file stats por commit
+
+- JSON output no incluye files changed, insertions, deletions por commit
+- Agentes necesitan esto para summarization
+
+**Status**: Pendiente
+**Severidad**: MEDIUM
+
+### 5.6 Tests de integracion para Phase 4
+
+- `merge`: test de merge/rebase real (no solo dry-run)
+- `pick`: test de cherry-pick/revert real
+- `conflicts`: test de --ours/--theirs con conflictos reales
+- `sync --push`: test de push real
+- `tag --bump`: test de bump major/minor/patch
+
+**Status**: Pendiente
+**Severidad**: CRITICAL
+
+### 5.7 Mejoras menores de UX
+
+- `branches`: agregar last-commit-date/age
+- `log`: agregar `--graph`
+- `stash show`: agregar `--patch`
+- `sync`: agregar `--remote` flag para scope
+- Help text: agregar ejemplos a top 5 comandos
+- `diff --full` help: mencionar "patch view"
+
+**Status**: Pendiente
+**Severidad**: MEDIUM
+
+### 5.8 Documentacion actualizada
+
+- README.md: listar los 25 comandos con descripciones
+- CHANGELOG: formato user-friendly (no solo commit messages)
+- CONTRIBUTING.md: actualizar con nuevo flujo
+
+**Status**: Pendiente
+**Severidad**: HIGH
 
 ---
 
-## Phase 4 — Advanced Workflows
+## Nombres a revisar
 
-### 4.1 `gitwise tag` — Semver-aware tag management
-### 4.2 `gitwise merge` — Merge/rebase con pre-flight checks
-### 4.3 `gitwise conflicts` — Conflict detection + resolution helper
-### 4.4 `gitwise suggest` — Heuristic commit message from staged diff
-### 4.5 `gitwise pick` — Cherry-pick/revert helper
-### 4.6 fzf interactive mode (-i flag en branches/stash/log)
+| Comando actual | Problema | Alternativa propuesta | Severidad |
+|---|---|---|---|
+| `clean` | Colisiona con `git clean` (elimina archivos untracked) | `branch-clean` o alias `prune-branches` | HIGH |
+| `stash clean` | Inconsistente con `git stash clear` | `stash clear` | MEDIUM |
+| `pick` | Ambiguo — podria ser cherry-pick, revert, interactive rebase | `cherry-pick` (con `--revert` flag) | MEDIUM |
+| `diff --full` | "full" no es terminologia git | Considerar `--patch` como alias | LOW |
+| `suggest` | No queda claro que sugiere | `commit-suggest` | LOW |
+
+---
+
+## Mejoras a comandos existentes
+
+| Comando | Mejora | Fase | Status |
+|---|---|---|---|
+| `diff --full` | Delta integration | Phase 2 | Done |
+| `audit` | Remote health check + health score | Phase 3 | Done |
+| `summarize` | Ahead/behind vs remote | Phase 3 | Done |
+| `diff` | Default a diffstat | Phase 5 | Pendiente |
+| `log` | `--graph` flag | Phase 5 | Pendiente |
+| `branches` | last-commit-date | Phase 5 | Pendiente |
+| `log --json` | file stats por commit | Phase 5 | Pendiente |
+| `context --json` | incluir health score | Phase 5 | Pendiente |
+| `update` | `--json` support | Phase 5 | Pendiente |
 
 ---
 
 ## Principios de Diseño
 
 1. **Zero-dep**: Solo stdlib + git subprocess. `shutil.which()` para detectar herramientas opcionales
-2. **`--json` en todo**: Para agentes AI
-3. **`--dry-run` en destructivos**: commit, sync, clean, stash drop
+2. **`--json` en todo**: Para agentes AI (schema unificado v:2)
+3. **`--dry-run` en destructivos**: commit, sync, clean, stash drop, merge, tag delete
 4. **Delta automático**: Si `HAS_DELTA` + `IS_TTY`
 5. **i18n**: Strings via `t()` con keys en `_i18n_data.json`
 6. **Patrón**: `run_<command>(*, as_json=False) -> int`
 7. **Arquitectura**: validate → plan → dry-run → confirm → execute
+8. **Nombres claros**: Evitar colisiones con git builtins, usar terminologia consistente
 
-## Mejoras a comandos existentes
+---
 
-| Comando | Mejora | Fase |
-|---|---|---|
-| `diff --full` | Delta integration | Phase 2 |
-| `audit` | Remote health check + health score | Phase 3 |
-| `summarize` | Ahead/behind vs remote | Phase 3 |
-| `setup` | Lefthook detection + delegation | Phase 4 |
+## Deprioritized
+
+| Idea | Razón |
+|---|---|
+| `gitwise init` | `setup` ya cubre la mayoria |
+| `gitwise remote` | Baja frecuencia, `git remote` es suficiente |
+| `gitwise ignore` | Baja frecuencia, edicion manual es suficiente |
+| Streaming JSON | Complejidad alta, beneficio bajo |
+| Manpage | `--help` es suficiente por ahora |
+| fzf interactive mode | Complejidad alta, requiere dependencia opcional |
