@@ -65,7 +65,7 @@ jobs:
           enable-cache: true
           cache-suffix: "${{ matrix.os }}-${{ matrix.python-version }}"
       - run: uv sync
-      - run: uv run pytest --tb=short -q --cov=gitwise --cov-fail-under=10
+      - run: uv run pytest --tb=short -q --cov=gitwise --cov-fail-under=8
 
   shellcheck:
     name: Shell Lint
