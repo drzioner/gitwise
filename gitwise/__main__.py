@@ -186,6 +186,43 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--json", action="store_true", help="output JSON")
 
+    p = sub.add_parser("tag", help="semver-aware tag management")
+    p.add_argument(
+        "action", nargs="?", default="list", choices=["list", "latest", "create", "delete"]
+    )
+    p.add_argument("name", nargs="?", help="tag name (for create/delete)")
+    p.add_argument("--bump", choices=["major", "minor", "patch"], help="bump semver part")
+    p.add_argument("-m", "--message", type=str, help="annotated tag message")
+    p.add_argument("--dry-run", action="store_true", help="show without executing")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("merge", help="merge/rebase with pre-flight checks")
+    p.add_argument("branch", help="branch to merge/rebase from")
+    p.add_argument("--rebase", action="store_true", help="rebase instead of merge")
+    p.add_argument("--no-ff", action="store_true", help="force no-fast-forward")
+    p.add_argument("--dry-run", action="store_true", help="show checks without merging")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("conflicts", help="conflict detection and resolution helper")
+    p.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
+    p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("suggest", help="suggest commit message from staged diff")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("pick", help="cherry-pick or revert commits")
+    p.add_argument("refs", nargs="*", help="commit refs to pick/revert")
+    p.add_argument("--revert", action="store_true", help="revert instead of cherry-pick")
+    p.add_argument(
+        "--continue", dest="continue_", action="store_true", help="continue after conflict"
+    )
+    p.add_argument("--abort", action="store_true", help="abort in-progress pick/revert")
+    p.add_argument("--dry-run", action="store_true", help="show without executing")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
     p.add_argument("--dry-run", action="store_true")
 
@@ -370,6 +407,53 @@ def main() -> int:
             as_json=args.json,
             yes=args.yes,
             dry_run=args.dry_run,
+        )
+
+    elif args.command == "tag":
+        from .tag import run_tag
+
+        ret = run_tag(
+            action=args.action,
+            name=getattr(args, "name", None),
+            bump=args.bump,
+            message=args.message,
+            dry_run=args.dry_run,
+            yes=args.yes,
+            as_json=args.json,
+        )
+
+    elif args.command == "merge":
+        from .merge import run_merge
+
+        ret = run_merge(
+            args.branch,
+            rebase=args.rebase,
+            no_ff=args.no_ff,
+            dry_run=args.dry_run,
+            yes=args.yes,
+            as_json=args.json,
+        )
+
+    elif args.command == "conflicts":
+        from .conflicts import run_conflicts
+
+        ret = run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
+
+    elif args.command == "suggest":
+        from .suggest import run_suggest
+
+        ret = run_suggest(as_json=args.json)
+
+    elif args.command == "pick":
+        from .pick import run_pick
+
+        ret = run_pick(
+            args.refs,
+            revert=args.revert,
+            continue_=args.continue_,
+            abort=args.abort,
+            dry_run=args.dry_run,
+            as_json=args.json,
         )
 
     elif args.command == "update":

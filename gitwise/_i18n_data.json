@@ -1070,5 +1070,137 @@
   "health_label": {
     "es": "Salud: {score}/100  Nota: {grade}",
     "en": "Health: {score}/100  Grade: {grade}"
+  },
+  "tag_empty": {
+    "es": "No hay tags",
+    "en": "No tags"
+  },
+  "tag_no_semver": {
+    "es": "No se encontro tag semver",
+    "en": "No semver tag found"
+  },
+  "tag_name_required": {
+    "es": "Se requiere nombre de tag",
+    "en": "Tag name required"
+  },
+  "tag_create_dry": {
+    "es": "Se crearia tag {name}",
+    "en": "Would create tag {name}"
+  },
+  "tag_created": {
+    "es": "Tag {name} creado",
+    "en": "Tag {name} created"
+  },
+  "tag_delete_dry": {
+    "es": "Se eliminaria tag {name}",
+    "en": "Would delete tag {name}"
+  },
+  "tag_deleted": {
+    "es": "Tag {name} eliminado",
+    "en": "Tag {name} deleted"
+  },
+  "confirm_tag_delete": {
+    "es": "¿Eliminar tag {name}? (y/N)",
+    "en": "Delete tag {name}? (y/N)"
+  },
+  "tag_unknown_action": {
+    "es": "Accion desconocida: {action}",
+    "en": "Unknown action: {action}"
+  },
+  "merge_detached_head": {
+    "es": "HEAD desacoplado, no se puede mezclar",
+    "en": "Detached HEAD, cannot merge"
+  },
+  "merge_branch_not_found": {
+    "es": "Branch {branch} no encontrada",
+    "en": "Branch {branch} not found"
+  },
+  "merge_same_branch": {
+    "es": "No se puede mezclar una branch consigo misma",
+    "en": "Cannot merge a branch into itself"
+  },
+  "merge_uncommitted": {
+    "es": "Hay cambios sin commitear",
+    "en": "There are uncommitted changes"
+  },
+  "merge_diverged": {
+    "es": "Branches divergidas (ahead: {ahead}, behind: {behind})",
+    "en": "Branches diverged (ahead: {ahead}, behind: {behind})"
+  },
+  "merge_proceed": {
+    "es": "¿Continuar con la mezcla? (y/N)",
+    "en": "Proceed with merge? (y/N)"
+  },
+  "merge_conflicts": {
+    "es": "Conflictos detectados durante la mezcla",
+    "en": "Conflicts detected during merge"
+  },
+  "merge_ok": {
+    "es": "Mezcla completada: {branch} → {into}",
+    "en": "Merge completed: {branch} → {into}"
+  },
+  "merge_rebased": {
+    "es": "Rebase completado: {branch} → {into}",
+    "en": "Rebase completed: {branch} → {into}"
+  },
+  "conflicts_none": {
+    "es": "No hay conflictos",
+    "en": "No conflicts"
+  },
+  "conflicts_found": {
+    "es": "{count} archivo(s) en conflicto",
+    "en": "{count} file(s) in conflict"
+  },
+  "conflicts_hint": {
+    "es": "Usa --ours o --theirs para resolver automaticamente",
+    "en": "Use --ours or --theirs to auto-resolve"
+  },
+  "conflicts_resolved_ours": {
+    "es": "{count} conflicto(s) resuelto(s) con ours",
+    "en": "{count} conflict(s) resolved with ours"
+  },
+  "conflicts_resolved_theirs": {
+    "es": "{count} conflicto(s) resuelto(s) con theirs",
+    "en": "{count} conflict(s) resolved with theirs"
+  },
+  "suggest_diff_failed": {
+    "es": "No se pudo obtener diff staged",
+    "en": "Failed to get staged diff"
+  },
+  "suggest_no_staged": {
+    "es": "No hay archivos staged",
+    "en": "No staged files"
+  },
+  "suggest_message": {
+    "es": "Sugerencia: {message}",
+    "en": "Suggestion: {message}"
+  },
+  "pick_no_refs": {
+    "es": "Se requieren refs de commits",
+    "en": "Commit refs required"
+  },
+  "pick_dry": {
+    "es": "Se ejecutaria {action} en: {refs}",
+    "en": "Would {action}: {refs}"
+  },
+  "pick_conflicts": {
+    "es": "Conflictos durante pick",
+    "en": "Conflicts during pick"
+  },
+  "pick_ok": {
+    "es": "{action} completado: {refs}",
+    "en": "{action} completed: {refs}"
+  },
+  "pick_continued": {
+    "es": "Pick continuado",
+    "en": "Pick continued"
+  },
+  "pick_aborted": {
+    "es": "Pick abortado",
+    "en": "Pick aborted"
+  },
+  "markers_label": {
+    "es": "marcadores",
+    "en": "markers"
   }
 }
