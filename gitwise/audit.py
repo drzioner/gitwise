@@ -7,22 +7,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .git import git_dir, gpg_status, is_repo, repo_root, stale_branches
+from .git import (
+    gpg_status,
+    has_commit_graph,
+    has_remote,
+    has_upstream,
+    is_repo,
+    repo_root,
+    stale_branches,
+)
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, debug, error, ok, print_json
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
-
-
-def _check_commit_graph(cwd: Path) -> bool:
-    gd = git_dir(cwd)
-    if gd is None:
-        return False
-    return (gd / "objects" / "info" / "commit-graph").exists() or (
-        gd / "objects" / "info" / "commit-graphs" / "commit-graph-chain"
-    ).exists()
 
 
 def _check_fsmonitor(cwd: Path) -> bool:
@@ -185,8 +184,8 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             }
         )
 
-    has_commit_graph = _check_commit_graph(cwd)
-    if not has_commit_graph:
+    has_commit_graph_val = has_commit_graph(cwd)
+    if not has_commit_graph_val:
         findings.append(
             {
                 "type": "missing_commit_graph",
@@ -260,14 +259,9 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     sizer = _run_git_sizer(cwd) if not quick else None
     has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
-    has_remote = bool(git_run(["remote"], cwd=cwd, check=False).stdout.strip())
-    has_upstream = (
-        git_run(
-            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd, check=False
-        ).returncode
-        == 0
-    )
-    if has_remote and not has_upstream:
+    _has_remote = has_remote(cwd)
+    _has_upstream = has_upstream(cwd)
+    if _has_remote and not _has_upstream:
         findings.append(
             {
                 "type": "no_upstream",
@@ -291,7 +285,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         "findings": findings,
         "summary": {
             "stale_branches": len(stale),
-            "commit_graph": has_commit_graph,
+            "commit_graph": has_commit_graph_val,
             "old_stashes": len(old_stashes),
             "large_blobs": len(large_blobs),
             "gpg_ready": gpg["ready"],

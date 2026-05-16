@@ -128,3 +128,22 @@ def version() -> tuple[int, int, int]:
 
             _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)
+
+
+def has_remote(cwd: Path | None = None) -> bool:
+    r = run(["remote"], cwd=cwd, check=False)
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
+def has_upstream(cwd: Path | None = None) -> bool:
+    r = run(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd, check=False)
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
+def has_commit_graph(cwd: Path | None = None) -> bool:
+    gd = git_dir(cwd)
+    if gd is None:
+        return False
+    return (gd / "objects" / "info" / "commit-graph").exists() or (
+        gd / "objects" / "info" / "commit-graphs" / "commit-graph-chain"
+    ).exists()

@@ -1042,5 +1042,33 @@
   "no_upstream_cost": {
     "es": "push/pull podrían fallar sin upstream",
     "en": "push/pull may fail without upstream"
+  },
+  "ctx_directory_tree": {
+    "es": "## Arbol de directorios",
+    "en": "## Directory Tree"
+  },
+  "ctx_more_entries": {
+    "es": "  ... ({count} entradas mas)",
+    "en": "  ... ({count} more entries)"
+  },
+  "ctx_top_contributors": {
+    "es": "## Top contribuidores",
+    "en": "## Top Contributors"
+  },
+  "ctx_file_types": {
+    "es": "## Tipos de archivo",
+    "en": "## File Types"
+  },
+  "ctx_todo_fixme": {
+    "es": "## TODO/FIXME: {todo} TODO, {fixme} FIXME",
+    "en": "## TODO/FIXME: {todo} TODO, {fixme} FIXME"
+  },
+  "ctx_branches": {
+    "es": "## Ramas: {local} local, {remote} remota(s)",
+    "en": "## Branches: {local} local, {remote} remote"
+  },
+  "health_label": {
+    "es": "Salud: {score}/100  Nota: {grade}",
+    "en": "Health: {score}/100  Grade: {grade}"
   }
 }

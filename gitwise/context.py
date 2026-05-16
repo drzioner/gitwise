@@ -68,30 +68,33 @@ def _file_type_breakdown(root: Path) -> dict[str, int]:
 
 
 def _todo_fixme_counts(root: Path) -> dict[str, int]:
-    r = git_run(["grep", "-c", "-E", r"TODO|FIXME", "HEAD", "--", "."], cwd=root, check=False)
-    if r.returncode != 0:
-        return {"todo": 0, "fixme": 0}
-    todo = fixme = 0
-    for line in r.stdout.splitlines():
-        if ":TODO:" in line.upper() or line.upper().endswith(":TODO"):
-            todo += 1
-        if ":FIXME:" in line.upper() or line.upper().endswith(":FIXME"):
-            fixme += 1
-    return {"todo": todo, "fixme": fixme}
+    def _grep_count(pattern: str) -> int:
+        res = git_run(["grep", "-c", pattern, "HEAD", "--", "."], cwd=root, check=False)
+        if res.returncode != 0:
+            return 0
+        total = 0
+        for line in res.stdout.splitlines():
+            try:
+                total += int(line.rsplit(":", 1)[-1])
+            except (ValueError, IndexError):
+                continue
+        return total
+
+    return {"todo": _grep_count("TODO"), "fixme": _grep_count("FIXME")}
 
 
 def _branch_topology(root: Path) -> dict[str, list[str]]:
-    r = git_run(["branch", "-a", "--format=%(refname:short)"], cwd=root, check=False)
+    r = git_run(["branch", "-a", "--format=%(refname)"], cwd=root, check=False)
     if r.returncode != 0:
         return {"local": [], "remote": []}
     local: list[str] = []
     remote: list[str] = []
     for line in r.stdout.splitlines():
-        name = line.strip()
-        if "/" in name and not name.startswith("("):
-            remote.append(name)
-        elif name and not name.startswith("("):
-            local.append(name)
+        ref = line.strip()
+        if ref.startswith("refs/heads/"):
+            local.append(ref.removeprefix("refs/heads/"))
+        elif ref.startswith("refs/remotes/"):
+            remote.append(ref.removeprefix("refs/remotes/"))
     return {"local": local, "remote": remote}
 
 
@@ -122,25 +125,33 @@ def run_context(*, as_json: bool = False) -> int:
             }
         )
     else:
-        print("## Directory Tree")
+        print(t("ctx_directory_tree"))
         for ln in tree[:50]:
             print(f"  {ln}")
         if len(tree) > 50:
-            print(f"  ... ({len(tree) - 50} more entries)")
+            print(t("ctx_more_entries", count=str(len(tree) - 50)))
         print()
         if contributors:
-            print("## Top Contributors")
+            print(t("ctx_top_contributors"))
             for c in contributors:
                 print(f"  {c['commits']:>5}  {c['author']}")
             print()
         if file_types:
-            print("## File Types")
+            print(t("ctx_file_types"))
             for ext, count in list(file_types.items())[:10]:
                 print(f"  .{ext}: {count}")
             print()
         if todo_fixme["todo"] or todo_fixme["fixme"]:
-            print(f"## TODO/FIXME: {todo_fixme['todo']} TODO, {todo_fixme['fixme']} FIXME")
+            print(
+                t("ctx_todo_fixme", todo=str(todo_fixme["todo"]), fixme=str(todo_fixme["fixme"]))
+            )
             print()
-        print(f"## Branches: {len(topology['local'])} local, {len(topology['remote'])} remote")
+        print(
+            t(
+                "ctx_branches",
+                local=str(len(topology["local"])),
+                remote=str(len(topology["remote"])),
+            )
+        )
 
     return 0

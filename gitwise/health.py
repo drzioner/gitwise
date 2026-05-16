@@ -3,22 +3,18 @@
 import sys
 from pathlib import Path
 
-from .git import git_dir, gpg_status, is_repo, repo_root, stale_branches
+from .git import (
+    gpg_status,
+    has_commit_graph,
+    has_remote,
+    has_upstream,
+    is_repo,
+    repo_root,
+    stale_branches,
+)
 from .git import run as git_run
 from .i18n import t
 from .output import print_json
-
-
-def _has_remote(cwd: Path) -> bool:
-    r = git_run(["remote"], cwd=cwd, check=False)
-    return r.returncode == 0 and bool(r.stdout.strip())
-
-
-def _has_upstream(cwd: Path) -> bool:
-    r = git_run(
-        ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd, check=False
-    )
-    return r.returncode == 0 and bool(r.stdout.strip())
 
 
 def _untracked_count(cwd: Path) -> int:
@@ -34,15 +30,6 @@ def _stash_count(cwd: Path) -> int:
 def _commit_count(cwd: Path) -> int:
     r = git_run(["rev-list", "--count", "HEAD"], cwd=cwd, check=False)
     return int(r.stdout.strip()) if r.returncode == 0 else 0
-
-
-def _has_commit_graph(cwd: Path) -> bool:
-    gd = git_dir(cwd)
-    if gd is None:
-        return False
-    return (gd / "objects" / "info" / "commit-graph").exists() or (
-        gd / "objects" / "info" / "commit-graphs" / "commit-graph-chain"
-    ).exists()
 
 
 def _branch_count(cwd: Path) -> int:
@@ -64,13 +51,13 @@ def compute_health(root: Path) -> dict:
     score = 100
     breakdown: dict[str, int] = {}
 
-    has_remote = _has_remote(root)
-    if not has_remote:
+    _has_remote = has_remote(root)
+    if not _has_remote:
         score -= 20
         breakdown["remote"] = -20
 
-    has_upstream = _has_upstream(root) if has_remote else False
-    if has_remote and not has_upstream:
+    _has_upstream = has_upstream(root) if _has_remote else False
+    if _has_remote and not _has_upstream:
         score -= 10
         breakdown["upstream"] = -10
 
@@ -85,7 +72,7 @@ def compute_health(root: Path) -> dict:
         score -= penalty
         breakdown["stale_branches"] = -penalty
 
-    if not _has_commit_graph(root):
+    if not has_commit_graph(root):
         score -= 5
         breakdown["commit_graph"] = -5
 
@@ -118,15 +105,15 @@ def compute_health(root: Path) -> dict:
         "grade": _grade(score),
         "breakdown": breakdown,
         "details": {
-            "has_remote": has_remote,
-            "has_upstream": has_upstream,
+            "has_remote": _has_remote,
+            "has_upstream": _has_upstream,
             "gpg_ready": gpg["ready"],
             "stale_branches": len(stale),
             "stashes": stashes,
             "untracked": untracked,
             "commits": commits,
             "branches": branches,
-            "commit_graph": _has_commit_graph(root),
+            "commit_graph": has_commit_graph(root),
         },
     }
 
@@ -145,7 +132,7 @@ def run_health(*, as_json: bool = False) -> int:
     if as_json:
         print_json({"v": 1, **h})
     else:
-        print(f"Health: {h['score']}/100  Grade: {h['grade']}")
+        print(t("health_label", score=str(h["score"]), grade=h["grade"]))
         if h["breakdown"]:
             for key, delta in h["breakdown"].items():
                 print(f"  {key}: {delta}")
