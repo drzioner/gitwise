@@ -8,10 +8,6 @@ from .i18n import t
 from .output import ok, print_json
 
 
-def _count_by_prefix(lines: list[str], prefix: str) -> int:
-    return sum(1 for line in lines if line and line[0] == prefix)
-
-
 def run_status(*, as_json: bool = False) -> int:
     if not is_repo():
         print(t("not_a_git_repo"), file=sys.stderr)
@@ -30,10 +26,20 @@ def run_status(*, as_json: bool = False) -> int:
     unstaged = [ln for ln in status_lines if ln and ln[1] not in (" ", "?")]
     untracked = [ln for ln in status_lines if ln and ln.startswith("??")]
 
-    ahead_r = git_run(["rev-list", "--count", "@{u}..HEAD"], cwd=root, check=False)
-    behind_r = git_run(["rev-list", "--count", "HEAD..@{u}"], cwd=root, check=False)
-    ahead = int(ahead_r.stdout.strip()) if ahead_r.returncode == 0 else 0
-    behind = int(behind_r.stdout.strip()) if behind_r.returncode == 0 else 0
+    ahead = behind = 0
+    if has_upstream(root):
+        ab_r = git_run(
+            ["rev-list", "--left-right", "--count", "HEAD...@{u}"],
+            cwd=root,
+            check=False,
+        )
+        if ab_r.returncode == 0:
+            parts = ab_r.stdout.strip().split()
+            if len(parts) == 2:
+                try:
+                    ahead, behind = int(parts[0]), int(parts[1])
+                except ValueError:
+                    pass
 
     if as_json:
         print_json(
