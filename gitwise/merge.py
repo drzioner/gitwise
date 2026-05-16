@@ -1,0 +1,119 @@
+"""gitwise merge — merge/rebase with pre-flight checks."""
+
+import sys
+from pathlib import Path
+
+from .git import current_branch, is_repo, repo_root
+from .git import run as git_run
+from .i18n import t
+from .output import confirm, ok, print_json, warn
+
+
+def _has_uncommitted(root: Path) -> bool:
+    r = git_run(["status", "--porcelain"], cwd=root, check=False)
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
+def _branch_exists(root: Path, name: str) -> bool:
+    r = git_run(["rev-parse", "--verify", name], cwd=root, check=False)
+    return r.returncode == 0
+
+
+def run_merge(
+    branch: str,
+    *,
+    rebase: bool = False,
+    no_ff: bool = False,
+    dry_run: bool = False,
+    yes: bool = False,
+    as_json: bool = False,
+) -> int:
+    if not is_repo():
+        print(t("not_a_git_repo"), file=sys.stderr)
+        return 1
+    root = repo_root()
+    if root is None:
+        print(t("no_repo_root"), file=sys.stderr)
+        return 1
+
+    cur = current_branch(root)
+    if cur is None:
+        print(t("merge_detached_head"), file=sys.stderr)
+        return 1
+
+    if not _branch_exists(root, branch):
+        print(t("merge_branch_not_found", branch=branch), file=sys.stderr)
+        return 1
+
+    if branch == cur:
+        print(t("merge_same_branch"), file=sys.stderr)
+        return 1
+
+    warnings: list[str] = []
+    if _has_uncommitted(root):
+        warnings.append(t("merge_uncommitted"))
+
+    ahead = git_run(["rev-list", "--count", f"{branch}..HEAD"], cwd=root, check=False)
+    behind = git_run(["rev-list", "--count", f"HEAD..{branch}"], cwd=root, check=False)
+    ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 else 0
+    behind_count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
+
+    if ahead_count > 0 and behind_count > 0:
+        warnings.append(t("merge_diverged", ahead=str(ahead_count), behind=str(behind_count)))
+
+    if dry_run:
+        if as_json:
+            print_json(
+                {
+                    "v": 1,
+                    "dry_run": True,
+                    "action": "rebase" if rebase else "merge",
+                    "branch": branch,
+                    "current": cur,
+                    "ahead": ahead_count,
+                    "behind": behind_count,
+                    "warnings": warnings,
+                }
+            )
+            return 0
+        action = "rebase" if rebase else "merge"
+        print(f"  {action}: {branch} → {cur}")
+        if ahead_count or behind_count:
+            print(f"  ahead: {ahead_count}  behind: {behind_count}")
+        for w in warnings:
+            print(f"  ⚠ {w}")
+        return 0
+
+    if warnings:
+        for w in warnings:
+            warn(w)
+        if not yes and not confirm(t("merge_proceed")):
+            warn(t("aborted"))
+            return 1
+
+    if rebase:
+        args = ["rebase", branch]
+    else:
+        args = ["merge"]
+        if no_ff:
+            args.append("--no-ff")
+        args.append(branch)
+
+    r = git_run(args, cwd=root, check=False)
+    if r.returncode != 0:
+        if "CONFLICT" in r.stdout or "CONFLICT" in r.stderr:
+            print(t("merge_conflicts"), file=sys.stderr)
+        else:
+            print(r.stderr.strip(), file=sys.stderr)
+        return 1
+
+    if as_json:
+        print_json({"v": 1, "merged": branch, "into": cur, "ok": True})
+        return 0
+    label = (
+        t("merge_rebased", branch=branch, into=cur)
+        if rebase
+        else t("merge_ok", branch=branch, into=cur)
+    )
+    ok(label)
+    return 0
