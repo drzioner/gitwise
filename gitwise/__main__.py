@@ -168,6 +168,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--soft", action="store_true", help="soft reset (keep working tree)")
     p.add_argument("--steps", type=int, default=1, help="number of steps back")
     p.add_argument("--dry-run", action="store_true", help="show without resetting")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation for --hard")
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
@@ -327,7 +328,12 @@ def main() -> int:
         from .undo import run_undo
 
         ret = run_undo(
-            ref=args.ref, soft=args.soft, steps=args.steps, dry_run=args.dry_run, as_json=args.json
+            ref=args.ref,
+            soft=args.soft,
+            steps=args.steps,
+            dry_run=args.dry_run,
+            yes=args.yes,
+            as_json=args.json,
         )
 
     elif args.command == "update":

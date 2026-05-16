@@ -5,7 +5,7 @@ import sys
 from .git import is_repo, repo_root
 from .git import run as git_run
 from .i18n import t
-from .output import print_json
+from .output import confirm, print_json
 
 
 def _parse_reflog(raw: str) -> list[dict[str, str]]:
@@ -30,6 +30,7 @@ def run_undo(
     soft: bool = False,
     steps: int = 1,
     dry_run: bool = False,
+    yes: bool = False,
     as_json: bool = False,
 ) -> int:
     if not is_repo():
@@ -72,6 +73,11 @@ def run_undo(
             mode = "--soft" if soft else "--hard"
             print(f"  git reset {mode} {target[:12]}")
         return 0
+
+    if not soft and not yes:
+        if not confirm(t("undo_confirm_hard", ref=target[:12])):
+            print(t("cancelled"))
+            return 0
 
     args = ["reset"]
     if soft:

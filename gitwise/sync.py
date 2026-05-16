@@ -49,10 +49,10 @@ def run_sync(
         return 1
 
     branch = current_branch(cwd=root) or ""
-    ab = _ahead_behind(root)
-    unpushed = _unpushed_commits(root)
 
     if dry_run:
+        ab = _ahead_behind(root)
+        unpushed = _unpushed_commits(root)
         if as_json:
             print_json(
                 {
@@ -66,7 +66,6 @@ def run_sync(
             )
         else:
             print(t("dry_run_no_exec"))
-            print("  fetch --all --prune")
             for action in _planned_actions(pull, push, ab, unpushed):
                 print(f"  {action}")
         return 0

@@ -12,7 +12,7 @@ def _gh_available() -> bool:
     return bool(shutil.which("gh"))
 
 
-def _gh(args: list[str], cwd, check: bool = True) -> tuple[int, str, str]:
+def _gh(args: list[str], cwd) -> tuple[int, str, str]:
     import subprocess
 
     r = subprocess.run(
@@ -22,8 +22,6 @@ def _gh(args: list[str], cwd, check: bool = True) -> tuple[int, str, str]:
         text=True,
         check=False,
     )
-    if check and r.returncode != 0:
-        return r.returncode, r.stdout.strip(), r.stderr.strip()
     return r.returncode, r.stdout.strip(), r.stderr.strip()
 
 
@@ -65,9 +63,7 @@ def run_pr(
             print(err, file=sys.stderr)
             return 1
         if as_json:
-            rc2, out2, _ = _gh(
-                ["pr", "view", "--json", "statusCheckRollup"], cwd=root, check=False
-            )
+            rc2, out2, _ = _gh(["pr", "view", "--json", "statusCheckRollup"], cwd=root)
             print(out2 if rc2 == 0 else "{}")
         else:
             print(out)

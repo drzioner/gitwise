@@ -990,5 +990,9 @@
   "undo_complete": {
     "es": "undo completado: HEAD ahora en {ref}",
     "en": "undo complete: HEAD now at {ref}"
+  },
+  "undo_confirm_hard": {
+    "es": "¿reset --hard a {ref}? Esto descartará cambios sin commit [s/N] ",
+    "en": "reset --hard to {ref}? This will discard uncommitted changes [y/N] "
   }
 }
