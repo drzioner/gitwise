@@ -16,6 +16,7 @@ def run_diff(
     *,
     staged: bool = False,
     stat: bool = False,
+    name_only: bool = False,
     full: bool = False,
     as_json: bool = False,
 ) -> int:
@@ -48,10 +49,13 @@ def run_diff(
             bat_pipe(r.stdout, language="diff")
         return 0
 
-    if stat:
+    use_stat = stat or (not staged and not name_only and not full)
+    if use_stat:
         r = git_run(["--no-pager", "diff", "--stat", "HEAD"], cwd=cwd, check=False)
     elif staged:
         r = git_run(["--no-pager", "diff", "--name-status", "--staged"], cwd=cwd, check=False)
+    elif name_only:
+        r = git_run(["--no-pager", "diff", "--name-only", "HEAD"], cwd=cwd, check=False)
     else:
         r = git_run(["--no-pager", "diff", "--name-status", "HEAD"], cwd=cwd, check=False)
 
@@ -61,7 +65,7 @@ def run_diff(
 
     lines = [line for line in r.stdout.splitlines() if line.strip()]
 
-    if stat:
+    if use_stat:
         file_lines = [line for line in lines if "|" in line]
         files = []
         for fl in file_lines:

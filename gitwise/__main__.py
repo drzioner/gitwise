@@ -110,15 +110,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("diff", help="changed file list (git diff --name-status HEAD)")
+    p = sub.add_parser("diff", help="changed files with diffstat (default), or patch view")
     diff_group = p.add_mutually_exclusive_group()
     diff_group.add_argument("--staged", action="store_true", help="show staged changes only")
+    diff_group.add_argument("--name-only", action="store_true", help="show only file names")
     diff_group.add_argument(
-        "--stat", action="store_true", help="show insertions/deletions per file"
+        "--full", action="store_true", help="show full patch with delta integration"
     )
-    diff_group.add_argument(
-        "--full", action="store_true", help="show full diff with delta integration"
-    )
+    p.add_argument("--stat", action="store_true", help="show diffstat (default behavior)")
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("log", help="pretty git log with filters")
@@ -225,23 +224,41 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("status", help="enhanced git status for humans and AI")
+    p.add_argument("--json", action="store_true", help="output JSON")
 
     return parser
 
 
 def _run_update(args: argparse.Namespace) -> int:
     from .git import run as git_run
+    from .output import print_json
 
     install_dir = Path(__file__).parent.parent
     if args.dry_run:
+        if getattr(args, "json", False):
+            print_json({"v": 2, "ok": True, "dry_run": True, "dir": str(install_dir)})
+            return 0
         print(t("update_dry_run", dir=str(install_dir)))
         return 0
     print(t("updating_from", dir=str(install_dir)))
     r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
     if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
+        if getattr(args, "json", False):
+            print_json({"v": 2, "ok": True, "updated": True, "output": r.stdout.strip()})
+            return 0
         print(r.stdout.strip())
     elif r.returncode != 0:
+        if getattr(args, "json", False):
+            print_json({"v": 2, "ok": False, "error": r.stderr.strip() or t("error_updating")})
+            return 1
         print(r.stderr.strip() or t("error_updating"), file=sys.stderr)
+        return r.returncode
+    elif getattr(args, "json", False):
+        print_json({"v": 2, "ok": True, "updated": False, "output": "Already up to date."})
+        return 0
     return r.returncode
 
 
@@ -327,7 +344,13 @@ def main() -> int:
     elif args.command == "diff":
         from .diff import run_diff
 
-        ret = run_diff(staged=args.staged, stat=args.stat, full=args.full, as_json=args.json)
+        ret = run_diff(
+            staged=args.staged,
+            stat=args.stat,
+            name_only=args.name_only,
+            full=args.full,
+            as_json=args.json,
+        )
 
     elif args.command == "log":
         from .log import run_log
@@ -458,6 +481,11 @@ def main() -> int:
 
     elif args.command == "update":
         ret = _run_update(args)
+
+    elif args.command == "status":
+        from .status import run_status
+
+        ret = run_status(as_json=args.json)
 
     else:
         parser.print_help()

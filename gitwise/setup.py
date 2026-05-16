@@ -122,7 +122,7 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
     if as_json:
         print_json(
             {
-                "v": 1,
+                "v": 2,
                 "dry_run": dry_run,
                 "root": str(cwd),
                 "changes": changes,

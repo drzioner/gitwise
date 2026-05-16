@@ -89,6 +89,22 @@ def _parse_log_json(raw: str) -> list[dict[str, str]]:
     return commits
 
 
+def _enrich_with_stats(commits: list[dict[str, str]], cwd: object) -> None:
+    from pathlib import Path
+
+    assert isinstance(cwd, Path)
+    for c in commits:
+        r = git_run(
+            ["diff-tree", "--no-commit-id", "--stat", "-r", c["hash"]],
+            cwd=cwd,
+            check=False,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            c["stats"] = r.stdout.strip()
+        else:
+            c["stats"] = ""
+
+
 def run_log(
     *,
     as_json: bool = False,
@@ -115,12 +131,13 @@ def run_log(
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
             if "does not have any commits yet" in r.stderr:
-                print_json({"commits": [], "count": 0})
+                print_json({"v": 2, "ok": True, "commits": [], "count": 0})
                 return 0
             print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         commits = _parse_log_json(r.stdout)
-        print_json({"commits": commits, "count": len(commits)})
+        _enrich_with_stats(commits, root)
+        print_json({"v": 2, "ok": True, "commits": commits, "count": len(commits)})
     else:
         args = _build_log_args(
             oneline=oneline,

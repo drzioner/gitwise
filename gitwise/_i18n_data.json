@@ -1202,5 +1202,17 @@
   "markers_label": {
     "es": "marcadores",
     "en": "markers"
+  },
+  "status_staged": {
+    "es": "{count} archivo(s) en staging",
+    "en": "{count} file(s) staged"
+  },
+  "status_unstaged": {
+    "es": "{count} archivo(s) modificado(s)",
+    "en": "{count} file(s) modified"
+  },
+  "status_untracked": {
+    "es": "{count} archivo(s) sin trackear",
+    "en": "{count} untracked file(s)"
   }
 }

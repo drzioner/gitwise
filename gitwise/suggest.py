@@ -90,11 +90,12 @@ def run_suggest(*, as_json: bool = False) -> int:
     if as_json:
         print_json(
             {
-                "v": 1,
+                "v": 2,
                 "message": message,
                 "files": staged_files,
                 "additions": additions,
                 "deletions": deletions,
+                "ok": True,
             }
         )
         return 0

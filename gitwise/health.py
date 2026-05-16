@@ -130,7 +130,7 @@ def run_health(*, as_json: bool = False) -> int:
     h = compute_health(root)
 
     if as_json:
-        print_json({"v": 1, **h})
+        print_json({"v": 2, "ok": True, **h})
     else:
         print(t("health_label", score=str(h["score"]), grade=h["grade"]))
         if h["breakdown"]:

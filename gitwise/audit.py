@@ -279,7 +279,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     health = compute_health(cwd)
 
     result: dict[str, Any] = {
-        "v": 1,
+        "v": 2,
         "ok": not has_issues,
         "quick": quick,
         "findings": findings,

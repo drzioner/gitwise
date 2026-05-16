@@ -140,10 +140,188 @@ gitwise worktree clean --dry-run
 
 ### `gitwise diff`
 
-Focused changed-file list — alias for `git diff --name-status HEAD`.
+Changed files with diffstat (default). Supports `--staged`, `--name-only`, `--full`
+(patch with delta integration).
 
 ```bash
-gitwise diff
+gitwise diff                   # diffstat (default)
+gitwise diff --stat            # explicit diffstat
+gitwise diff --staged          # staged changes only
+gitwise diff --name-only       # file names only
+gitwise diff --full            # full patch (delta if available)
+gitwise diff --json
+```
+
+### `gitwise status`
+
+Enhanced git status with staged/unstaged/untracked counts and ahead/behind info.
+
+```bash
+gitwise status
+gitwise status --json
+```
+
+### `gitwise log`
+
+Pretty git log with filters and JSON output. Each JSON commit includes file stats.
+
+```bash
+gitwise log                           # formatted log
+gitwise log --oneline                 # compact view
+gitwise log --author "user"           # filter by author
+gitwise log --grep "fix"              # search commit messages
+gitwise log --since "2024-01-01"      # date range
+gitwise log --file src/main.py        # file history
+gitwise log --json
+```
+
+### `gitwise show`
+
+Show commit details with optional diff.
+
+```bash
+gitwise show              # latest commit
+gitwise show abc123       # specific commit
+gitwise show --json
+```
+
+### `gitwise commit`
+
+Smart commit with conventional format validation.
+
+```bash
+gitwise commit -m "feat: add new feature"
+gitwise commit --dry-run -m "fix: resolve bug"
+gitwise commit --json -m "chore: cleanup"
+```
+
+### `gitwise branches`
+
+List branches with last commit info.
+
+```bash
+gitwise branches
+gitwise branches --json
+```
+
+### `gitwise sync`
+
+Pull with rebase + push in one step.
+
+```bash
+gitwise sync              # pull --rebase + push
+gitwise sync --dry-run
+gitwise sync --json
+```
+
+### `gitwise pr`
+
+Create a GitHub pull request with smart defaults.
+
+```bash
+gitwise pr                # create PR from current branch
+gitwise pr --draft
+gitwise pr --json
+```
+
+### `gitwise undo`
+
+Undo the last commit (soft reset, keeps changes staged).
+
+```bash
+gitwise undo
+gitwise undo --hard       # discard changes
+gitwise undo --json
+```
+
+### `gitwise context`
+
+Enriched directory snapshot for AI agents: tree, contributors, file types,
+TODO/FIXME counts, branch topology. JSON output includes health score.
+
+```bash
+gitwise context
+gitwise context --json    # includes health.score + health.grade
+```
+
+### `gitwise health`
+
+Repo health score (0-100) with grade A-F and penalty breakdown.
+
+```bash
+gitwise health
+gitwise health --json
+```
+
+### `gitwise stash`
+
+Stash management: list, show, pop, drop, clean.
+
+```bash
+gitwise stash list
+gitwise stash show         # latest stash diff
+gitwise stash pop
+gitwise stash drop         # drop latest stash
+gitwise stash clean        # drop all stashes
+gitwise stash clean --dry-run
+gitwise stash list --json
+```
+
+### `gitwise tag`
+
+Semver-aware tag management with `--bump`.
+
+```bash
+gitwise tag list                    # list all tags
+gitwise tag create v1.0.0           # create tag
+gitwise tag create --bump minor     # bump from latest
+gitwise tag create --bump major -m "Release 2.0"
+gitwise tag list --json
+```
+
+### `gitwise merge`
+
+Merge/rebase with pre-flight checks (uncommitted changes, diverged branches).
+
+```bash
+gitwise merge feature-branch        # merge branch
+gitwise merge feature-branch --rebase
+gitwise merge feature-branch --no-ff
+gitwise merge feature-branch --dry-run
+gitwise merge feature-branch --json
+```
+
+### `gitwise conflicts`
+
+Detect merge conflicts with marker counts. Supports `--ours`/`--theirs` auto-resolve.
+
+```bash
+gitwise conflicts                   # list conflicting files
+gitwise conflicts --ours            # resolve with ours
+gitwise conflicts --theirs          # resolve with theirs
+gitwise conflicts --json
+```
+
+### `gitwise suggest`
+
+Heuristic commit message from staged diff (type/scope inference).
+
+```bash
+gitwise suggest                     # suggest message
+gitwise suggest --json
+```
+
+### `gitwise pick`
+
+Cherry-pick or revert with `--continue`/`--abort`/`--dry-run`.
+
+```bash
+gitwise pick abc123                 # cherry-pick
+gitwise pick abc123 def456          # multiple refs
+gitwise pick abc123 --dry-run
+gitwise pick --revert abc123
+gitwise pick --continue
+gitwise pick --abort
 ```
 
 ### `gitwise update`
@@ -152,6 +330,7 @@ Updates gitwise by running `git pull` in the installation directory.
 
 ```bash
 gitwise update
+gitwise update --json
 ```
 
 ## GPG protection

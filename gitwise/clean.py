@@ -74,7 +74,7 @@ def run_clean(
     if as_json:
         print_json(
             {
-                "v": 1,
+                "v": 2,
                 "dry_run": dry_run,
                 "deletable": deletable,
                 "skipped": skipped,

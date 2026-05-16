@@ -29,7 +29,7 @@ def test_json_output_no_color_codes(tmp_git_repo):
 def test_json_output_is_valid(tmp_git_repo):
     result = _run("summarize", "--json", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert "branch" in data
     assert "ok" in data
 

@@ -15,7 +15,7 @@ def test_doctor_json_structure():
     result = run_gitwise("doctor", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert "git_version_ok" in data
     assert "python_version_ok" in data
     assert "platform" in data

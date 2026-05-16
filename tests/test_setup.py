@@ -54,7 +54,7 @@ def test_setup_json_structure(tmp_git_repo):
     r = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert "changes" in data
     assert "warnings" in data
     assert "ok" in data

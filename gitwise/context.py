@@ -114,14 +114,19 @@ def run_context(*, as_json: bool = False) -> int:
     topology = _branch_topology(root)
 
     if as_json:
+        from .health import compute_health
+
+        h = compute_health(root)
         print_json(
             {
-                "v": 1,
+                "v": 2,
+                "ok": True,
                 "tree": tree,
                 "contributors": contributors,
                 "file_types": file_types,
                 "todo_fixme": todo_fixme,
                 "branches": topology,
+                "health": {"score": h["score"], "grade": h["grade"]},
             }
         )
     else:

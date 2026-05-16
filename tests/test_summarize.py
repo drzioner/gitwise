@@ -11,7 +11,7 @@ def test_summarize_json_ok(tmp_git_repo):
     result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 1
+    assert data["v"] == 2
     assert data["ok"] is True
     assert "branch" in data
     assert "status" in data
