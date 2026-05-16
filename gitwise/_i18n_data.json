@@ -994,5 +994,53 @@
   "undo_confirm_hard": {
     "es": "¿reset --hard a {ref}? Esto descartará cambios sin commit [s/N] ",
     "en": "reset --hard to {ref}? This will discard uncommitted changes [y/N] "
+  },
+  "stash_empty": {
+    "es": "No hay stashes",
+    "en": "No stashes"
+  },
+  "stash_not_found": {
+    "es": "stash@{{{index}}} no encontrado",
+    "en": "stash@{{{index}}} not found"
+  },
+  "stash_popped": {
+    "es": "Stash {ref} restaurado",
+    "en": "Stash {ref} restored"
+  },
+  "stash_dropped": {
+    "es": "Stash {ref} eliminado",
+    "en": "Stash {ref} dropped"
+  },
+  "confirm_stash_drop": {
+    "es": "¿Eliminar {ref}? (y/N)",
+    "en": "Drop {ref}? (y/N)"
+  },
+  "confirm_stash_clean": {
+    "es": "¿Limpiar {count} stash(es)? (y/N)",
+    "en": "Clear {count} stash(es)? (y/N)"
+  },
+  "stash_clean_dry": {
+    "es": "Se eliminarían {count} stash(es)",
+    "en": "Would drop {count} stash(es)"
+  },
+  "stash_cleaned": {
+    "es": "{count} stash(es) eliminados",
+    "en": "{count} stash(es) cleared"
+  },
+  "stash_unknown_action": {
+    "es": "Acción desconocida: {action}",
+    "en": "Unknown action: {action}"
+  },
+  "no_upstream_audit": {
+    "es": "Branch sin upstream configurado",
+    "en": "Branch has no upstream configured"
+  },
+  "no_upstream_fix": {
+    "es": "git branch --set-upstream-to=origin/<branch>",
+    "en": "git branch --set-upstream-to=origin/<branch>"
+  },
+  "no_upstream_cost": {
+    "es": "push/pull podrían fallar sin upstream",
+    "en": "push/pull may fail without upstream"
   }
 }

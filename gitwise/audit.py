@@ -260,6 +260,30 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     sizer = _run_git_sizer(cwd) if not quick else None
     has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
+    has_remote = bool(git_run(["remote"], cwd=cwd, check=False).stdout.strip())
+    has_upstream = (
+        git_run(
+            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd, check=False
+        ).returncode
+        == 0
+    )
+    if has_remote and not has_upstream:
+        findings.append(
+            {
+                "type": "no_upstream",
+                "severity": "low",
+                "message": t("no_upstream_audit"),
+                "fix": t("no_upstream_fix"),
+                "cost_of_fix": t("trivial"),
+                "cost_of_ignore": t("no_upstream_cost"),
+            }
+        )
+        has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
+
+    from .health import compute_health
+
+    health = compute_health(cwd)
+
     result: dict[str, Any] = {
         "v": 1,
         "ok": not has_issues,
@@ -273,6 +297,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             "gpg_ready": gpg["ready"],
         },
         "git_sizer": sizer,
+        "health": {"score": health["score"], "grade": health["grade"]},
     }
 
     if as_json:
