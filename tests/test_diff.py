@@ -139,3 +139,12 @@ def test_diff_full_json(tmp_git_repo):
     result = _run("diff", "--full", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert '"diff"' in result.stdout
+
+
+def test_diff_patch_alias(tmp_git_repo):
+    (tmp_git_repo / "README.md").write_text("changed content\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "chore: modify readme"], tmp_git_repo)
+    (tmp_git_repo / "README.md").write_text("more changes\n")
+    result = _run("diff", "--patch", cwd=tmp_git_repo)
+    assert result.returncode == 0

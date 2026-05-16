@@ -115,7 +115,7 @@ def _build_parser() -> argparse.ArgumentParser:
     diff_group.add_argument("--staged", action="store_true", help="show staged changes only")
     diff_group.add_argument("--name-only", action="store_true", help="show only file names")
     diff_group.add_argument(
-        "--full", action="store_true", help="show full patch with delta integration"
+        "--full", "--patch", action="store_true", help="show full patch with delta integration"
     )
     p.add_argument("--stat", action="store_true", help="show diffstat (default behavior)")
     p.add_argument("--json", action="store_true", help="output JSON")
@@ -123,6 +123,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("log", help="pretty git log with filters")
     p.add_argument("--json", action="store_true", help="output JSON")
     p.add_argument("--oneline", action="store_true", help="one line per commit")
+    p.add_argument("--graph", action="store_true", help="show branch topology graph")
     p.add_argument("--author", type=str, default=None, help="filter by author")
     p.add_argument("--grep", type=str, default=None, help="filter by message pattern")
     p.add_argument("--since", type=str, default=None, help="show commits since date")
@@ -176,13 +177,17 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("health", help="repo health score (0-100)")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("stash", help="manage stashes (list/show/pop/drop/clean)")
+    p = sub.add_parser("stash", help="manage stashes (list/show/pop/drop/clear)")
     p.add_argument(
-        "action", nargs="?", default="list", choices=["list", "show", "pop", "drop", "clean"]
+        "action",
+        nargs="?",
+        default="list",
+        choices=["list", "show", "pop", "drop", "clear", "clean"],
     )
     p.add_argument("--index", type=int, default=0, help="stash index (default: 0)")
-    p.add_argument("--dry-run", action="store_true", help="dry run (clean only)")
+    p.add_argument("--dry-run", action="store_true", help="dry run (clear only)")
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
+    p.add_argument("--patch", action="store_true", help="show full patch (show only)")
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("tag", help="semver-aware tag management")
@@ -212,7 +217,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("suggest", help="suggest commit message from staged diff")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("pick", help="cherry-pick or revert commits")
+    p = sub.add_parser("pick", help="cherry-pick or revert commits", aliases=["cherry-pick"])
     p.add_argument("refs", nargs="*", help="commit refs to pick/revert")
     p.add_argument("--revert", action="store_true", help="revert instead of cherry-pick")
     p.add_argument(
@@ -358,6 +363,7 @@ def main() -> int:
         ret = run_log(
             as_json=args.json,
             oneline=args.oneline,
+            graph=args.graph,
             author=args.author,
             grep=args.grep,
             since=args.since,
@@ -430,6 +436,7 @@ def main() -> int:
             as_json=args.json,
             yes=args.yes,
             dry_run=args.dry_run,
+            patch=args.patch,
         )
 
     elif args.command == "tag":
@@ -467,7 +474,7 @@ def main() -> int:
 
         ret = run_suggest(as_json=args.json)
 
-    elif args.command == "pick":
+    elif args.command in ("pick", "cherry-pick"):
         from .pick import run_pick
 
         ret = run_pick(

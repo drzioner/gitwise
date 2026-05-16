@@ -38,3 +38,8 @@ def test_pick_dry_run_json(tmp_git_repo):
     data = json.loads(r.stdout)
     assert data["ok"] is True
     assert data["dry_run"] is True
+
+
+def test_cherry_pick_alias(tmp_git_repo):
+    r = run_gitwise("cherry-pick", "HEAD", "--dry-run", cwd=tmp_git_repo)
+    assert r.returncode == 0

@@ -16,9 +16,12 @@ def _build_log_args(
     until: str | None = None,
     file: str | None = None,
     oneline: bool = False,
+    graph: bool = False,
     max_count: int = 20,
 ) -> list[str]:
     args = ["log", f"--max-count={max_count}"]
+    if graph:
+        args.append("--graph")
     if oneline:
         args.append("--oneline")
     else:
@@ -109,6 +112,7 @@ def run_log(
     *,
     as_json: bool = False,
     oneline: bool = False,
+    graph: bool = False,
     author: str | None = None,
     grep: str | None = None,
     since: str | None = None,
@@ -141,6 +145,7 @@ def run_log(
     else:
         args = _build_log_args(
             oneline=oneline,
+            graph=graph,
             author=author,
             grep=grep,
             since=since,
