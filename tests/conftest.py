@@ -16,6 +16,8 @@ _GIT_ENV = {
     "GIT_AUTHOR_EMAIL": "test@example.com",
     "GIT_COMMITTER_NAME": "Test User",
     "GIT_COMMITTER_EMAIL": "test@example.com",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
 }
 
 PROJECT_ROOT = Path(__file__).parent.parent

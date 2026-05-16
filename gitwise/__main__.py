@@ -118,6 +118,36 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="output JSON")
 
+    p = sub.add_parser("log", help="pretty git log with filters")
+    p.add_argument("--json", action="store_true", help="output JSON")
+    p.add_argument("--oneline", action="store_true", help="one line per commit")
+    p.add_argument("--author", type=str, default=None, help="filter by author")
+    p.add_argument("--grep", type=str, default=None, help="filter by message pattern")
+    p.add_argument("--since", type=str, default=None, help="show commits since date")
+    p.add_argument("--until", type=str, default=None, help="show commits until date")
+    p.add_argument("--file", type=str, default=None, help="show commits for file")
+    p.add_argument("--max-count", type=int, default=20, dest="max_count", help="max commits")
+
+    p = sub.add_parser("show", help="commit inspector")
+    p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")
+    p.add_argument("--stat", action="store_true", help="show diffstat")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("commit", help="smart conventional commit")
+    p.add_argument("-m", "--message", type=str, default=None, help="commit message")
+    p.add_argument("--type", type=str, default=None, help="commit type (feat/fix/etc)")
+    p.add_argument("--scope", type=str, default=None, help="commit scope")
+    p.add_argument("--breaking", action="store_true", help="breaking change (!)")
+    p.add_argument("--amend", action="store_true", help="amend last commit")
+    p.add_argument("--dry-run", action="store_true", help="show without committing")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
+    p = sub.add_parser("branches", help="branch intelligence dashboard")
+    p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
+    p.add_argument("--remote", action="store_true", help="show remote branches")
+    p.add_argument("--sort", type=str, default="refname", help="sort field")
+    p.add_argument("--json", action="store_true", help="output JSON")
+
     p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
     p.add_argument("--dry-run", action="store_true")
 
@@ -223,6 +253,43 @@ def main() -> int:
         from .diff import run_diff
 
         ret = run_diff(staged=args.staged, stat=args.stat, as_json=args.json)
+
+    elif args.command == "log":
+        from .log import run_log
+
+        ret = run_log(
+            as_json=args.json,
+            oneline=args.oneline,
+            author=args.author,
+            grep=args.grep,
+            since=args.since,
+            until=args.until,
+            file=args.file,
+            max_count=args.max_count,
+        )
+
+    elif args.command == "show":
+        from .show import run_show
+
+        ret = run_show(ref=args.ref, stat=args.stat, as_json=args.json)
+
+    elif args.command == "commit":
+        from .commit import run_commit
+
+        ret = run_commit(
+            message=args.message,
+            type=args.type,
+            scope=args.scope,
+            breaking=args.breaking,
+            amend=args.amend,
+            dry_run=args.dry_run,
+            as_json=args.json,
+        )
+
+    elif args.command == "branches":
+        from .branches import run_branches
+
+        ret = run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
 
     elif args.command == "update":
         ret = _run_update(args)
