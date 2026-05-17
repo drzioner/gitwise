@@ -17,7 +17,7 @@ def run_status(*, as_json: bool = False) -> int:
         print(t("no_repo_root"), file=sys.stderr)
         return 1
 
-    branch = current_branch(root) or "(detached HEAD)"
+    branch = current_branch(root) or t("detached_head")
 
     status_r = git_run(["status", "--porcelain"], cwd=root, check=False)
     status_lines = status_r.stdout.splitlines() if status_r.returncode == 0 else []
@@ -86,7 +86,7 @@ def run_status(*, as_json: bool = False) -> int:
         for line in untracked[:10]:
             print(f"    {line[3:]}")
         if len(untracked) > 10:
-            print(f"    ... +{len(untracked) - 10} more")
+            print(f"    {t('status_more_files', count=str(len(untracked) - 10))}")
         print()
 
     return 0

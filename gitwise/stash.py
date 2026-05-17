@@ -107,7 +107,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         print(r.stderr.strip(), file=sys.stderr)
         return 1
     if as_json:
-        print_json({"v": 2, "dropped": len(stashes), "ok": True})
+        print_json({"v": 2, "cleared": len(stashes), "ok": True})
         return 0
     ok(t("stash_cleaned", count=str(len(stashes))))
     return 0

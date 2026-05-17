@@ -5,7 +5,7 @@ import sys
 from .git import current_branch, is_repo, repo_root
 from .git import run as git_run
 from .i18n import t
-from .output import print_json
+from .output import debug, print_json
 
 
 def _ahead_behind(cwd) -> dict[str, int]:
@@ -16,10 +16,14 @@ def _ahead_behind(cwd) -> dict[str, int]:
         ["rev-list", "--left-right", "--count", branch + "@{u}...HEAD"], cwd=cwd, check=False
     )
     if r.returncode != 0:
+        debug(f"ahead_behind failed: {r.stderr.strip()}")
         return {"ahead": 0, "behind": 0}
     parts = r.stdout.strip().split()
     if len(parts) == 2:
-        return {"behind": int(parts[0]), "ahead": int(parts[1])}
+        try:
+            return {"behind": int(parts[0]), "ahead": int(parts[1])}
+        except ValueError:
+            debug(f"ahead_behind parse failed: {r.stdout.strip()!r}")
     return {"ahead": 0, "behind": 0}
 
 
@@ -29,6 +33,7 @@ def _unpushed_commits(cwd) -> list[str]:
         return []
     r = git_run(["log", "--oneline", branch + "@{u}..HEAD"], cwd=cwd, check=False)
     if r.returncode != 0:
+        debug(f"unpushed_commits failed: {r.stderr.strip()}")
         return []
     return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()]
 
@@ -75,22 +80,38 @@ def run_sync(
 
     r = git_run(["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False)
     if r.returncode != 0:
-        print(t("sync_fetch_failed", error=r.stderr.strip()), file=sys.stderr)
+        if as_json:
+            print_json(
+                {"v": 2, "ok": False, "error": t("sync_fetch_failed", error=r.stderr.strip())}
+            )
+        else:
+            print(t("sync_fetch_failed", error=r.stderr.strip()), file=sys.stderr)
         return 1
 
     if pull:
         r = git_run(["pull", "--ff-only"], cwd=root, check=False)
         if r.returncode != 0:
-            print(t("sync_pull_diverged"), file=sys.stderr)
+            if as_json:
+                print_json({"v": 2, "ok": False, "error": t("sync_pull_diverged")})
+            else:
+                print(t("sync_pull_diverged"), file=sys.stderr)
             return 1
 
     if push:
         if branch in ("main", "master", "release"):
-            print(t("sync_push_protected", branch=branch), file=sys.stderr)
+            if as_json:
+                print_json({"v": 2, "ok": False, "error": t("sync_push_protected", branch=branch)})
+            else:
+                print(t("sync_push_protected", branch=branch), file=sys.stderr)
             return 1
         r = git_run(["push"], cwd=root, check=False)
         if r.returncode != 0:
-            print(t("sync_push_failed", error=r.stderr.strip()), file=sys.stderr)
+            if as_json:
+                print_json(
+                    {"v": 2, "ok": False, "error": t("sync_push_failed", error=r.stderr.strip())}
+                )
+            else:
+                print(t("sync_push_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
 
     ab = _ahead_behind(root)

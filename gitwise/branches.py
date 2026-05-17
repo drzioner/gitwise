@@ -109,7 +109,7 @@ def run_branches(
         check=False,
     )
     if r.returncode != 0:
-        print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
+        print(t("git_ref_failed", error=r.stderr.strip()), file=sys.stderr)
         return 1
 
     if not r.stdout.strip():

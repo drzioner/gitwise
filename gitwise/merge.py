@@ -55,8 +55,11 @@ def run_merge(
 
     ahead = git_run(["rev-list", "--count", f"{branch}..HEAD"], cwd=root, check=False)
     behind = git_run(["rev-list", "--count", f"HEAD..{branch}"], cwd=root, check=False)
-    ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 else 0
-    behind_count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
+    try:
+        ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 else 0
+        behind_count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
+    except ValueError:
+        ahead_count = behind_count = 0
 
     if ahead_count > 0 and behind_count > 0:
         warnings.append(t("merge_diverged", ahead=str(ahead_count), behind=str(behind_count)))
@@ -102,10 +105,15 @@ def run_merge(
 
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
-        if "CONFLICT" in r.stdout or "CONFLICT" in r.stderr:
-            print(t("merge_conflicts"), file=sys.stderr)
+        err = (
+            t("merge_conflicts")
+            if ("CONFLICT" in r.stdout or "CONFLICT" in r.stderr)
+            else r.stderr.strip()
+        )
+        if as_json:
+            print_json({"v": 2, "ok": False, "error": err})
         else:
-            print(r.stderr.strip(), file=sys.stderr)
+            print(err, file=sys.stderr)
         return 1
 
     if as_json:

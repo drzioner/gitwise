@@ -89,7 +89,10 @@ def run_commit(
 
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
-        print(r.stderr.strip(), file=sys.stderr)
+        if as_json:
+            print_json({"v": 2, "ok": False, "error": r.stderr.strip()})
+        else:
+            print(r.stderr.strip(), file=sys.stderr)
         return 1
 
     if as_json:

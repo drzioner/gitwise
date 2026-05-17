@@ -129,7 +129,10 @@ def run_tag(
             return 0
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            print(r.stderr.strip(), file=sys.stderr)
+            if as_json:
+                print_json({"v": 2, "ok": False, "error": r.stderr.strip()})
+            else:
+                print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
             print_json({"v": 2, "created": tag_name, "ok": True})
@@ -149,7 +152,10 @@ def run_tag(
             return 0
         r = git_run(["tag", "-d", name], cwd=root, check=False)
         if r.returncode != 0:
-            print(r.stderr.strip(), file=sys.stderr)
+            if as_json:
+                print_json({"v": 2, "ok": False, "error": r.stderr.strip()})
+            else:
+                print(r.stderr.strip(), file=sys.stderr)
             return 1
         if as_json:
             print_json({"v": 2, "deleted": name, "ok": True})
