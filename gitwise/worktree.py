@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .git import repo_root, require_root
+from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, info, ok, print_json
@@ -41,12 +41,8 @@ def _find_orphaned(cwd: Path) -> list[dict]:
     return [wt for wt in _list_worktrees(cwd) if not Path(wt["path"]).exists()]
 
 
-def _worktree_create(branch: str, cwd: Path) -> tuple[int, str | None, dict]:
+def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
     """Core worktree creation logic. Returns (rc, path, error_or_data)."""
-    root = repo_root(cwd)
-    if root is None:
-        return 1, None, {"ok": False, "error": t("no_repo_root")}
-
     safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
     wt_path = root.parent / (safe_name or "worktree")
 
@@ -56,16 +52,16 @@ def _worktree_create(branch: str, cwd: Path) -> tuple[int, str | None, dict]:
     branch_exists = (
         git_run(
             ["rev-parse", "--verify", f"refs/heads/{branch}"],
-            cwd=cwd,
+            cwd=root,
             check=False,
         ).returncode
         == 0
     )
 
     if branch_exists:
-        r = git_run(["worktree", "add", str(wt_path), branch], cwd=cwd, check=False)
+        r = git_run(["worktree", "add", str(wt_path), branch], cwd=root, check=False)
     else:
-        r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=cwd, check=False)
+        r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=root, check=False)
 
     if r.returncode != 0:
         return 1, None, {"ok": False, "error": r.stderr.strip()}
@@ -73,8 +69,8 @@ def _worktree_create(branch: str, cwd: Path) -> tuple[int, str | None, dict]:
     return 0, str(wt_path), {"ok": True, "path": str(wt_path), "branch": branch}
 
 
-def _worktree_new(branch: str, cwd: Path) -> int:
-    rc, path, data = _worktree_create(branch, cwd)
+def _worktree_new(branch: str, root: Path) -> int:
+    rc, path, data = _worktree_create(branch, root)
     if rc != 0:
         error(data.get("error", t("worktree_failed", error="unknown")))
         return rc
@@ -84,8 +80,8 @@ def _worktree_new(branch: str, cwd: Path) -> int:
     return 0
 
 
-def _worktree_new_json(branch: str, cwd: Path) -> tuple[int, dict]:
-    rc, _path, data = _worktree_create(branch, cwd)
+def _worktree_new_json(branch: str, root: Path) -> tuple[int, dict]:
+    rc, _path, data = _worktree_create(branch, root)
     return rc, data
 
 
@@ -136,20 +132,19 @@ def run_worktree(
     if err:
         return err
     assert root is not None
-    cwd: Path = root
 
     if action == "new":
         if not branch:
             error(t("worktree_usage"))
             return 1
         if as_json:
-            rc, data = _worktree_new_json(branch, cwd)
+            rc, data = _worktree_new_json(branch, root)
             print_json({"v": 2, **data})
             return rc
-        return _worktree_new(branch, cwd)
+        return _worktree_new(branch, root)
 
     elif action == "clean":
-        return _worktree_clean(cwd, dry_run=dry_run)
+        return _worktree_clean(root, dry_run=dry_run)
 
     else:
         error(t("worktree_usage_full"))
