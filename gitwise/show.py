@@ -62,7 +62,7 @@ def run_show(
         args = _build_show_json_args(ref)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
+            print(t("git_show_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         data = _parse_show_json(r.stdout)
         data["v"] = 2
@@ -72,7 +72,7 @@ def run_show(
         args = _build_show_args(ref, stat)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
+            print(t("git_show_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         if HAS_DELTA:
             info(t("using_delta"))

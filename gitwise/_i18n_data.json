@@ -1214,5 +1214,37 @@
   "status_untracked": {
     "es": "{count} archivo(s) sin trackear",
     "en": "{count} untracked file(s)"
+  },
+  "detached_head": {
+    "es": "(HEAD desacoplado)",
+    "en": "(detached HEAD)"
+  },
+  "already_up_to_date": {
+    "es": "Ya está actualizado.",
+    "en": "Already up to date."
+  },
+  "git_command_failed": {
+    "es": "Error al ejecutar {cmd}: {error}",
+    "en": "Failed to run {cmd}: {error}"
+  },
+  "git_ref_failed": {
+    "es": "Error al listar refs: {error}",
+    "en": "Failed to list refs: {error}"
+  },
+  "stash_cleared_count": {
+    "es": "{count} stash(es) eliminados",
+    "en": "{count} stash(es) cleared"
+  },
+  "status_more_files": {
+    "es": "... +{count} más",
+    "en": "... +{count} more"
+  },
+  "git_log_failed": {
+    "es": "Error al obtener log: {error}",
+    "en": "Failed to get log: {error}"
+  },
+  "git_show_failed": {
+    "es": "Error al mostrar commit: {error}",
+    "en": "Failed to show commit: {error}"
   }
 }

@@ -270,7 +270,7 @@ def _run_update(args: argparse.Namespace) -> int:
         print(r.stderr.strip() or t("error_updating"), file=sys.stderr)
         return r.returncode
     elif getattr(args, "json", False):
-        print_json({"v": 2, "ok": True, "updated": False, "output": "Already up to date."})
+        print_json({"v": 2, "ok": True, "updated": False, "output": t("already_up_to_date")})
         return 0
     return r.returncode
 

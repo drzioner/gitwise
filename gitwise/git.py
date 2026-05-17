@@ -20,7 +20,7 @@ def _get_timeout() -> int:
 def run(
     args: list[str],
     cwd: Path | None = None,
-    check: bool = True,
+    check: bool = False,
     timeout: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     from .output import debug

@@ -137,7 +137,7 @@ def run_log(
             if "does not have any commits yet" in r.stderr:
                 print_json({"v": 2, "ok": True, "commits": [], "count": 0})
                 return 0
-            print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
+            print(t("git_log_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         commits = _parse_log_json(r.stdout)
         _enrich_with_stats(commits, root)
@@ -158,7 +158,7 @@ def run_log(
             if r.stderr and "does not have any commits yet" in r.stderr:
                 print(t("no_commits_yet"))
                 return 0
-            print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
+            print(t("git_log_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         if not r.stdout.strip():
             print(t("no_commits_yet"))
