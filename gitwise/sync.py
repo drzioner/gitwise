@@ -37,6 +37,7 @@ def run_sync(
     *,
     pull: bool = False,
     push: bool = False,
+    remote: str | None = None,
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
@@ -56,21 +57,23 @@ def run_sync(
         if as_json:
             print_json(
                 {
+                    "v": 2,
+                    "ok": True,
                     "branch": branch,
                     "ahead": ab["ahead"],
                     "behind": ab["behind"],
                     "unpushed": unpushed,
-                    "actions": _planned_actions(pull, push, ab, unpushed),
+                    "actions": _planned_actions(pull, push, ab, unpushed, remote),
                     "dry_run": True,
                 }
             )
         else:
             print(t("dry_run_no_exec"))
-            for action in _planned_actions(pull, push, ab, unpushed):
+            for action in _planned_actions(pull, push, ab, unpushed, remote):
                 print(f"  {action}")
         return 0
 
-    r = git_run(["fetch", "--all", "--prune"], cwd=root, check=False)
+    r = git_run(["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False)
     if r.returncode != 0:
         print(t("sync_fetch_failed", error=r.stderr.strip()), file=sys.stderr)
         return 1
@@ -94,11 +97,12 @@ def run_sync(
     if as_json:
         print_json(
             {
+                "v": 2,
+                "ok": True,
                 "branch": branch,
                 "ahead": ab["ahead"],
                 "behind": ab["behind"],
                 "unpushed": _unpushed_commits(root),
-                "ok": True,
             }
         )
     else:
@@ -106,8 +110,11 @@ def run_sync(
     return 0
 
 
-def _planned_actions(pull: bool, push: bool, ab: dict, unpushed: list) -> list[str]:
-    actions = ["fetch --all --prune"]
+def _planned_actions(
+    pull: bool, push: bool, ab: dict, unpushed: list, remote: str | None = None
+) -> list[str]:
+    fetch_cmd = f"fetch {remote}" if remote else "fetch --all --prune"
+    actions = [fetch_cmd]
     if pull and ab["behind"] > 0:
         actions.append("pull --ff-only")
     if push and unpushed:

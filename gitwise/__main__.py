@@ -148,12 +148,18 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("branches", help="branch intelligence dashboard")
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
     p.add_argument("--remote", action="store_true", help="show remote branches")
-    p.add_argument("--sort", type=str, default="refname", help="sort field")
+    p.add_argument(
+        "--sort",
+        type=str,
+        default="refname",
+        help="sort field: refname, committerdate, -committerdate",
+    )
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("sync", help="remote fetch, safe pull/push")
     p.add_argument("--pull", action="store_true", help="pull --ff-only after fetch")
     p.add_argument("--push", action="store_true", help="push unpushed commits")
+    p.add_argument("--remote", type=str, default=None, help="specific remote (default: all)")
     p.add_argument("--dry-run", action="store_true", help="show planned actions")
     p.add_argument("--json", action="store_true", help="output JSON")
 
@@ -400,7 +406,13 @@ def main() -> int:
     elif args.command == "sync":
         from .sync import run_sync
 
-        ret = run_sync(pull=args.pull, push=args.push, dry_run=args.dry_run, as_json=args.json)
+        ret = run_sync(
+            pull=args.pull,
+            push=args.push,
+            remote=args.remote,
+            dry_run=args.dry_run,
+            as_json=args.json,
+        )
 
     elif args.command == "pr":
         from .pr import run_pr

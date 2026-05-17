@@ -30,7 +30,7 @@ def _build_show_json_args(ref: str = "HEAD") -> list[str]:
     ]
 
 
-def _parse_show_json(raw: str) -> dict[str, str | list[str]]:
+def _parse_show_json(raw: str) -> dict[str, str | list[str] | int | bool]:
     lines = [ln for ln in raw.strip().splitlines() if ln.strip()]
     if len(lines) >= 6:
         return {
@@ -65,6 +65,8 @@ def run_show(
             print(t("git_diff_failed", error=r.stderr.strip()), file=sys.stderr)
             return 1
         data = _parse_show_json(r.stdout)
+        data["v"] = 2
+        data["ok"] = True
         print_json(data)
     else:
         args = _build_show_args(ref, stat)
