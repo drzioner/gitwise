@@ -57,6 +57,8 @@ def run_sync(
         if as_json:
             print_json(
                 {
+                    "v": 2,
+                    "ok": True,
                     "branch": branch,
                     "ahead": ab["ahead"],
                     "behind": ab["behind"],
@@ -95,11 +97,12 @@ def run_sync(
     if as_json:
         print_json(
             {
+                "v": 2,
+                "ok": True,
                 "branch": branch,
                 "ahead": ab["ahead"],
                 "behind": ab["behind"],
                 "unpushed": _unpushed_commits(root),
-                "ok": True,
             }
         )
     else:

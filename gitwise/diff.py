@@ -31,7 +31,7 @@ def run_diff(
 
     if not staged and not _has_commits(cwd):
         if as_json:
-            print_json({"files": [], "count": 0, "note": t("no_commits_yet")})
+            print_json({"v": 2, "ok": True, "files": [], "count": 0, "note": t("no_commits_yet")})
             return 0
         info(t("no_commits_yet"))
         return 0
@@ -42,7 +42,7 @@ def run_diff(
             error(t("git_diff_failed", error=r.stderr.strip()))
             return 1
         if as_json:
-            print_json({"diff": r.stdout, "ok": True})
+            print_json({"v": 2, "ok": True, "diff": r.stdout})
         else:
             if HAS_DELTA:
                 info(t("using_delta"))
@@ -74,12 +74,12 @@ def run_diff(
                 files.append({"path": parts[0].strip(), "changes": parts[1].strip()})
         if not files:
             if as_json:
-                print_json({"files": [], "count": 0})
+                print_json({"v": 2, "ok": True, "files": [], "count": 0})
                 return 0
             info(t("no_uncommitted_changes"))
             return 0
         if as_json:
-            print_json({"files": files, "count": len(files)})
+            print_json({"v": 2, "ok": True, "files": files, "count": len(files)})
             return 0
         info(t("changed_files", count=str(len(files))))
         for f in files:
@@ -88,7 +88,7 @@ def run_diff(
 
     if not lines:
         if as_json:
-            print_json({"files": [], "count": 0})
+            print_json({"v": 2, "ok": True, "files": [], "count": 0})
             return 0
         if staged:
             info(t("nothing_staged"))
@@ -103,7 +103,7 @@ def run_diff(
             files.append({"status": parts[0].strip(), "path": parts[1].strip()})
 
     if as_json:
-        print_json({"files": files, "count": len(files)})
+        print_json({"v": 2, "ok": True, "files": files, "count": len(files)})
         return 0
 
     info(t("changed_files", count=str(len(files))))

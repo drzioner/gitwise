@@ -66,7 +66,14 @@ def run_undo(
     if dry_run:
         if as_json:
             print_json(
-                {"target": target, "soft": soft, "dry_run": True, "entries": entries[: steps + 1]}
+                {
+                    "v": 2,
+                    "ok": True,
+                    "target": target,
+                    "soft": soft,
+                    "dry_run": True,
+                    "entries": entries[: steps + 1],
+                }
             )
         else:
             print(t("dry_run_no_exec"))
@@ -92,7 +99,7 @@ def run_undo(
         return 1
 
     if as_json:
-        print_json({"ok": True, "target": target, "soft": soft})
+        print_json({"v": 2, "ok": True, "target": target, "soft": soft})
     else:
         print(t("undo_complete", ref=target[:12]))
     return 0

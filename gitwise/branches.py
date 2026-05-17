@@ -90,7 +90,7 @@ def run_branches(
             print(t("no_stale_branches"))
             return 0
         if as_json:
-            print_json({"stale_branches": names, "count": len(names)})
+            print_json({"v": 2, "ok": True, "stale_branches": names, "count": len(names)})
         else:
             print(t("branches_to_delete", count=str(len(names))))
             for n in names:
@@ -119,7 +119,7 @@ def run_branches(
     branches = _parse_branches(r.stdout, wt_branches)
 
     if as_json:
-        print_json({"branches": branches, "count": len(branches)})
+        print_json({"v": 2, "ok": True, "branches": branches, "count": len(branches)})
     else:
         for b in branches:
             print(_format_branch(b, show_remote=remote))
