@@ -1,6 +1,5 @@
 """gitwise health — repo health score (0-100) with grade and breakdown."""
 
-import sys
 from pathlib import Path
 
 from .git import (
@@ -8,8 +7,7 @@ from .git import (
     has_commit_graph,
     has_remote,
     has_upstream,
-    is_repo,
-    repo_root,
+    require_root,
     stale_branches,
 )
 from .git import run as git_run
@@ -119,13 +117,10 @@ def compute_health(root: Path) -> dict:
 
 
 def run_health(*, as_json: bool = False) -> int:
-    if not is_repo():
-        print(t("not_a_git_repo"), file=sys.stderr)
-        return 1
-    root = repo_root()
-    if root is None:
-        print(t("no_repo_root"), file=sys.stderr)
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
 
     h = compute_health(root)
 

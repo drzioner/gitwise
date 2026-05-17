@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .git import is_repo, repo_root
+from .git import repo_root, require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, info, ok, print_json
@@ -41,18 +41,17 @@ def _find_orphaned(cwd: Path) -> list[dict]:
     return [wt for wt in _list_worktrees(cwd) if not Path(wt["path"]).exists()]
 
 
-def _worktree_new(branch: str, cwd: Path) -> int:
+def _worktree_create(branch: str, cwd: Path) -> tuple[int, str | None, dict]:
+    """Core worktree creation logic. Returns (rc, path, error_or_data)."""
     root = repo_root(cwd)
     if root is None:
-        error(t("no_repo_root"))
-        return 1
+        return 1, None, {"ok": False, "error": t("no_repo_root")}
 
     safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
     wt_path = root.parent / (safe_name or "worktree")
 
     if wt_path.exists():
-        error(t("directory_exists", path=str(wt_path)))
-        return 1
+        return 1, None, {"ok": False, "error": t("directory_exists", path=str(wt_path))}
 
     branch_exists = (
         git_run(
@@ -69,44 +68,25 @@ def _worktree_new(branch: str, cwd: Path) -> int:
         r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=cwd, check=False)
 
     if r.returncode != 0:
-        error(t("worktree_failed", error=r.stderr.strip()))
-        return 1
+        return 1, None, {"ok": False, "error": r.stderr.strip()}
 
-    ok(t("worktree_created", path=str(wt_path)))
+    return 0, str(wt_path), {"ok": True, "path": str(wt_path), "branch": branch}
+
+
+def _worktree_new(branch: str, cwd: Path) -> int:
+    rc, path, data = _worktree_create(branch, cwd)
+    if rc != 0:
+        error(data.get("error", t("worktree_failed", error="unknown")))
+        return rc
+    ok(t("worktree_created", path=path or ""))
     info(t("worktree_branch_msg", branch=branch))
-    info(t("worktree_to_use", path=str(wt_path)))
+    info(t("worktree_to_use", path=path or ""))
     return 0
 
 
 def _worktree_new_json(branch: str, cwd: Path) -> tuple[int, dict]:
-    root = repo_root(cwd)
-    if root is None:
-        return 1, {"ok": False, "error": t("no_repo_root")}
-
-    safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
-    wt_path = root.parent / (safe_name or "worktree")
-
-    if wt_path.exists():
-        return 1, {"ok": False, "error": t("directory_exists", path=str(wt_path))}
-
-    branch_exists = (
-        git_run(
-            ["rev-parse", "--verify", f"refs/heads/{branch}"],
-            cwd=cwd,
-            check=False,
-        ).returncode
-        == 0
-    )
-
-    if branch_exists:
-        r = git_run(["worktree", "add", str(wt_path), branch], cwd=cwd, check=False)
-    else:
-        r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=cwd, check=False)
-
-    if r.returncode != 0:
-        return 1, {"ok": False, "error": r.stderr.strip()}
-
-    return 0, {"ok": True, "path": str(wt_path), "branch": branch}
+    rc, _path, data = _worktree_create(branch, cwd)
+    return rc, data
 
 
 def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
@@ -152,14 +132,11 @@ def run_worktree(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd: Path = root
 
     if action == "new":
         if not branch:

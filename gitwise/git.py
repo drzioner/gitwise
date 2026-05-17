@@ -3,6 +3,7 @@
 import functools
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
@@ -128,6 +129,20 @@ def version() -> tuple[int, int, int]:
 
             _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)
+
+
+def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, int]:
+    """Validate git repo and return (root, None) or (None, exit_code)."""
+    from .i18n import t
+
+    if not is_repo(path):
+        print(t("not_a_git_repo"), file=sys.stderr)
+        return None, 1
+    root = repo_root(path)
+    if root is None:
+        print(t("no_repo_root"), file=sys.stderr)
+        return None, 1
+    return root, None
 
 
 def has_remote(cwd: Path | None = None) -> bool:

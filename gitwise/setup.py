@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Any
 
 from .git import config as git_config
-from .git import is_repo, repo_root
+from .git import require_root
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
-from .output import confirm, error, info, ok, print_json, warn
+from .output import confirm, info, ok, print_json, warn
 
 # Modern git defaults (GitButler list, Chacon feb 2025)
 _BASE_CONFIGS: list[tuple[str, str]] = [
@@ -107,14 +107,11 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
 
 
 def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd = root
 
     gpg_warnings = _check_gpg_state(cwd)
     changes = _plan_changes(cwd)

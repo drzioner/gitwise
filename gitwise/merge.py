@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 
-from .git import current_branch, is_repo, repo_root
+from .git import current_branch, require_root
 from .git import run as git_run
 from .i18n import t
 from .output import confirm, ok, print_json, warn
@@ -28,13 +28,10 @@ def run_merge(
     yes: bool = False,
     as_json: bool = False,
 ) -> int:
-    if not is_repo():
-        print(t("not_a_git_repo"), file=sys.stderr)
-        return 1
-    root = repo_root()
-    if root is None:
-        print(t("no_repo_root"), file=sys.stderr)
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
 
     cur = current_branch(root)
     if cur is None:

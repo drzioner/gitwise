@@ -12,13 +12,12 @@ from .git import (
     has_commit_graph,
     has_remote,
     has_upstream,
-    is_repo,
-    repo_root,
+    require_root,
     stale_branches,
 )
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, debug, error, ok, print_json
+from .output import bat_pipe, debug, ok, print_json
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -155,14 +154,11 @@ _SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "
 
 
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd = root
 
     findings: list[dict[str, Any]] = []
 
