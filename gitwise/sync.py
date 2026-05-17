@@ -37,6 +37,7 @@ def run_sync(
     *,
     pull: bool = False,
     push: bool = False,
+    remote: str | None = None,
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
@@ -70,7 +71,7 @@ def run_sync(
                 print(f"  {action}")
         return 0
 
-    r = git_run(["fetch", "--all", "--prune"], cwd=root, check=False)
+    r = git_run(["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False)
     if r.returncode != 0:
         print(t("sync_fetch_failed", error=r.stderr.strip()), file=sys.stderr)
         return 1

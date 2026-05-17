@@ -75,7 +75,7 @@ def run_commit(
 
     if dry_run:
         if as_json:
-            print_json({"message": full_msg, "amend": amend, "dry_run": True})
+            print_json({"v": 2, "ok": True, "message": full_msg, "amend": amend, "dry_run": True})
         else:
             print(t("dry_run_no_exec"))
             print(f"  git commit -m {full_msg!r}")
@@ -93,5 +93,5 @@ def run_commit(
         return 1
 
     if as_json:
-        print_json({"ok": True, "message": full_msg, "amend": amend})
+        print_json({"v": 2, "ok": True, "message": full_msg, "amend": amend})
     return 0
