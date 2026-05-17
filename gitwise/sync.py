@@ -63,13 +63,13 @@ def run_sync(
                     "ahead": ab["ahead"],
                     "behind": ab["behind"],
                     "unpushed": unpushed,
-                    "actions": _planned_actions(pull, push, ab, unpushed),
+                    "actions": _planned_actions(pull, push, ab, unpushed, remote),
                     "dry_run": True,
                 }
             )
         else:
             print(t("dry_run_no_exec"))
-            for action in _planned_actions(pull, push, ab, unpushed):
+            for action in _planned_actions(pull, push, ab, unpushed, remote):
                 print(f"  {action}")
         return 0
 
@@ -110,8 +110,11 @@ def run_sync(
     return 0
 
 
-def _planned_actions(pull: bool, push: bool, ab: dict, unpushed: list) -> list[str]:
-    actions = ["fetch --all --prune"]
+def _planned_actions(
+    pull: bool, push: bool, ab: dict, unpushed: list, remote: str | None = None
+) -> list[str]:
+    fetch_cmd = f"fetch {remote}" if remote else "fetch --all --prune"
+    actions = [fetch_cmd]
     if pull and ab["behind"] > 0:
         actions.append("pull --ff-only")
     if push and unpushed:
