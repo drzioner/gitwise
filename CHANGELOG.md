@@ -7,13 +7,6 @@ All notable changes to gitwise are documented here. Format follows [Keep a Chang
 ### Added
 - `branch-clean` alias for `clean` command (avoids collision with `git clean`)
 - `commit-suggest` alias for `suggest` command
-
-### Changed
-- ROADMAP.md fully updated — all completed phases and items marked Done
-
-## [0.7.0] — 2025-05-16 (Phase 6)
-
-### Added
 - `cherry-pick` alias for `pick` command (argparse aliases)
 - `--patch` alias for `diff --full`
 - `--graph` flag for `gitwise log` (branch topology)
@@ -22,6 +15,7 @@ All notable changes to gitwise are documented here. Format follows [Keep a Chang
 - 6 new tests (241 total)
 
 ### Changed
+- ROADMAP.md fully updated — all completed phases and items marked Done
 - `stash clean` now accepts `stash clear` as well (backward-compatible)
 - `branches` dashboard uses fixed-width columns for readability
 
