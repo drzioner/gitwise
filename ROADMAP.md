@@ -3,124 +3,71 @@
 Documento vivo con las funcionalidades propuestas para transformar gitwise de herramienta
 diagnóstica/setup en el hub central de git para humanos y agentes AI.
 
-## Estado Actual (v0.6.0)
+## Estado Actual (v0.7.0)
 
-gitwise cubre 25 comandos: `doctor`, `setup-agents`, `setup`, `audit`, `summarize`, `snapshot`,
-`clean`, `optimize`, `worktree`, `diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`,
-`undo`, `context`, `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest`, `pick`, `update`.
+gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `audit`,
+`summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`, `diff`, `log`,
+`show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`, `health`, `stash`, `tag`,
+`merge`, `conflicts`, `suggest` (`commit-suggest`), `pick` (`cherry-pick`), `status`, `update`.
 
-**Phases 1-4 completadas.** 222 tests, 301 i18n keys (es/en), 5,312 LOC.
-
----
-
-## Phase 1 — Core Daily Ops (MERGED)
-
-`log`, `show`, `commit`, `branches` — PR #7
-
-## Phase 2 — Sync + GitHub Integration (MERGED)
-
-`sync`, `pr`, `undo`, `diff --full` — PR #8
-
-## Phase 3 — AI Enhancements (MERGED)
-
-`context`, `health`, `stash`, audit mejorado — PR #9
-
-## Phase 4 — Advanced Workflows (MERGED)
-
-`tag`, `merge`, `conflicts`, `suggest`, `pick` — PR #10
+**Phases 1-7 completadas.** 241 tests, 304 i18n keys (es/en), zero deps.
 
 ---
 
-## Phase 5 — Polish & UX (Post-Audit)
+## Phase 1 — Core Daily Ops (MERGED, PR #7)
 
-Resultado de auditoria con 10 perfiles profesionales + 4 iteraciones autoresearch.
+`log`, `show`, `commit`, `branches`
 
-### 5.1 `gitwise status` — El comando faltante
+## Phase 2 — Sync + GitHub Integration (MERGED, PR #8)
 
-- Wrapper de `git status` con formato mejorado + `--json`
-- El comando #1 que cualquier usuario intenta primero
-- Muestra: branch, ahead/behind, staged/unstaged/untracked counts, archivos modificados
+`sync`, `pr`, `undo`, `diff --full`
 
-**Status**: Pendiente
-**Severidad**: CRITICAL (consenso UX + PM + Junior + Git Power User)
+## Phase 3 — AI Enhancements (MERGED, PR #9)
 
-### 5.2 Unificar schema JSON
+`context`, `health`, `stash`, audit mejorado
 
-- Todos los comandos output `v: 2`, siempre incluyen `ok`
-- `update` necesita `--json`
-- Consistencia para agentes AI y pipelines CI/CD
+## Phase 4 — Advanced Workflows (MERGED, PR #10)
 
-**Status**: Pendiente
-**Severidad**: HIGH
+`tag`, `merge`, `conflicts`, `suggest`, `pick`
 
-### 5.3 `context --json` incluir health score
+## Phase 5 — Polish & UX (MERGED, PR #11)
 
-- Agentes necesitan contexto + salud en una sola call
-- `context --json` agrega campo `health: {score, grade}` reutilizando `compute_health()`
+- `gitwise status` — enhanced git status with staged/unstaged/untracked counts, ahead/behind
+- Unified JSON schema: all commands output `v:2` with `ok` field
+- `context --json` includes `health.score` + `health.grade`
+- `diff` default changed to diffstat; added `--name-only`
+- `log --json` enriched with per-commit file stats
+- `update --json` support
+- Phase 4 integration tests (10 new)
+- README updated with all 27 commands
 
-**Status**: Pendiente
-**Severidad**: MEDIUM
+## Phase 6 — Naming Cleanup & UX (MERGED, PR #12)
 
-### 5.4 `diff` default a diffstat
+- `stash clean` → `stash clear` (backward-compatible alias)
+- `pick` → `cherry-pick` alias (argparse aliases)
+- `diff --full` → `--patch` alias
+- `branches` — last-commit age (`committerdate:relative`)
+- `log --graph` flag for branch topology
+- `stash show --patch` for full diff output
 
-- Default actual (`name-status`) es MENOS útil que `git diff`
-- Nuevo default: diffstat (insertions/deletions por archivo)
-- `--name-only` para lista simple, `--full` para patch completo
+## Phase 7 — Final Aliases & Changelog (THIS PR)
 
-**Status**: Pendiente
-**Severidad**: HIGH
-
-### 5.5 `log --json` agregar file stats por commit
-
-- JSON output no incluye files changed, insertions, deletions por commit
-- Agentes necesitan esto para summarization
-
-**Status**: Pendiente
-**Severidad**: MEDIUM
-
-### 5.6 Tests de integracion para Phase 4
-
-- `merge`: test de merge/rebase real (no solo dry-run)
-- `pick`: test de cherry-pick/revert real
-- `conflicts`: test de --ours/--theirs con conflictos reales
-- `sync --push`: test de push real
-- `tag --bump`: test de bump major/minor/patch
-
-**Status**: Pendiente
-**Severidad**: CRITICAL
-
-### 5.7 Mejoras menores de UX
-
-- `branches`: agregar last-commit-date/age
-- `log`: agregar `--graph`
-- `stash show`: agregar `--patch`
-- `sync`: agregar `--remote` flag para scope
-- Help text: agregar ejemplos a top 5 comandos
-- `diff --full` help: mencionar "patch view"
-
-**Status**: Pendiente
-**Severidad**: MEDIUM
-
-### 5.8 Documentacion actualizada
-
-- README.md: listar los 25 comandos con descripciones
-- CHANGELOG: formato user-friendly (no solo commit messages)
-- CONTRIBUTING.md: actualizar con nuevo flujo
-
-**Status**: Pendiente
-**Severidad**: HIGH
+- `clean` → `branch-clean` alias
+- `suggest` → `commit-suggest` alias
+- ROADMAP.md updated (all items marked Done)
+- CHANGELOG.md generated
 
 ---
 
-## Nombres a revisar
+## Nombres resueltos
 
-| Comando actual | Problema | Alternativa propuesta | Severidad |
-|---|---|---|---|
-| `clean` | Colisiona con `git clean` (elimina archivos untracked) | `branch-clean` o alias `prune-branches` | HIGH |
-| `stash clean` | Inconsistente con `git stash clear` | `stash clear` | MEDIUM |
-| `pick` | Ambiguo — podria ser cherry-pick, revert, interactive rebase | `cherry-pick` (con `--revert` flag) | MEDIUM |
-| `diff --full` | "full" no es terminologia git | Considerar `--patch` como alias | LOW |
-| `suggest` | No queda claro que sugiere | `commit-suggest` | LOW |
+| Comando | Alias | Status |
+|---|---|---|
+| `clean` | `branch-clean` | Done (Phase 7) |
+| `stash clean` | `stash clear` | Done (Phase 6) |
+| `pick` | `cherry-pick` | Done (Phase 6) |
+| `diff --full` | `--patch` | Done (Phase 6) |
+| `suggest` | `commit-suggest` | Done (Phase 7) |
 
 ---
 
@@ -131,12 +78,12 @@ Resultado de auditoria con 10 perfiles profesionales + 4 iteraciones autoresearc
 | `diff --full` | Delta integration | Phase 2 | Done |
 | `audit` | Remote health check + health score | Phase 3 | Done |
 | `summarize` | Ahead/behind vs remote | Phase 3 | Done |
-| `diff` | Default a diffstat | Phase 5 | Pendiente |
-| `log` | `--graph` flag | Phase 5 | Pendiente |
-| `branches` | last-commit-date | Phase 5 | Pendiente |
-| `log --json` | file stats por commit | Phase 5 | Pendiente |
-| `context --json` | incluir health score | Phase 5 | Pendiente |
-| `update` | `--json` support | Phase 5 | Pendiente |
+| `diff` | Default a diffstat | Phase 5 | Done |
+| `log` | `--graph` flag | Phase 6 | Done |
+| `branches` | last-commit-date | Phase 6 | Done |
+| `log --json` | file stats por commit | Phase 5 | Done |
+| `context --json` | incluir health score | Phase 5 | Done |
+| `update` | `--json` support | Phase 5 | Done |
 
 ---
 
