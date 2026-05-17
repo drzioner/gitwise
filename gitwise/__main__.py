@@ -92,7 +92,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("snapshot", help="generate .claude/git-snapshot.md")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("clean", help="clean up stale branches and refs")
+    p = sub.add_parser("clean", help="clean up stale branches and refs", aliases=["branch-clean"])
     p.add_argument("--branches", action="store_true")
     p.add_argument("--refs", action="store_true")
     p.add_argument("--dry-run", action="store_true")
@@ -214,7 +214,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("suggest", help="suggest commit message from staged diff")
+    p = sub.add_parser(
+        "suggest", help="suggest commit message from staged diff", aliases=["commit-suggest"]
+    )
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser("pick", help="cherry-pick or revert commits", aliases=["cherry-pick"])
@@ -323,7 +325,7 @@ def main() -> int:
 
         ret = run_snapshot(as_json=args.json)
 
-    elif args.command == "clean":
+    elif args.command in ("clean", "branch-clean"):
         from .clean import run_clean
 
         ret = run_clean(
@@ -469,7 +471,7 @@ def main() -> int:
 
         ret = run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
 
-    elif args.command == "suggest":
+    elif args.command in ("suggest", "commit-suggest"):
         from .suggest import run_suggest
 
         ret = run_suggest(as_json=args.json)
