@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.10.1 (2026-05-17)
+
+### Fix
+
+- Phase 9 — Cross-verification fixes from multi-review audit (#15)
+
 ## v0.10.0 (2026-05-17)
 
 ### Feat
