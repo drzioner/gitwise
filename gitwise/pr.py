@@ -4,7 +4,7 @@ import json
 import shutil
 import sys
 
-from .git import is_repo, repo_root
+from .git import require_root
 from .i18n import t
 
 
@@ -33,13 +33,10 @@ def run_pr(
     if not _gh_available():
         print(t("pr_gh_required"), file=sys.stderr)
         return 1
-    if not is_repo():
-        print(t("not_a_git_repo"), file=sys.stderr)
-        return 1
-    root = repo_root()
-    if root is None:
-        print(t("no_repo_root"), file=sys.stderr)
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
 
     if action == "list":
         rc, out, err = _gh(["pr", "list", "--json", "number,title,state,headRefName"], cwd=root)

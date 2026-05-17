@@ -130,6 +130,21 @@ def version() -> tuple[int, int, int]:
     return (0, 0, 0)
 
 
+def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, int]:
+    """Validate git repo and return (root, None) or (None, exit_code)."""
+    from .i18n import t
+    from .output import error
+
+    if not is_repo(path):
+        error(t("not_a_git_repo"))
+        return None, 1
+    root = repo_root(path)
+    if root is None:
+        error(t("no_repo_root"))
+        return None, 1
+    return root, None
+
+
 def has_remote(cwd: Path | None = None) -> bool:
     r = run(["remote"], cwd=cwd, check=False)
     return r.returncode == 0 and bool(r.stdout.strip())

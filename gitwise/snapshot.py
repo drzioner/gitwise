@@ -3,10 +3,10 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .git import is_repo, repo_root
+from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import debug, error, ok, print_json
+from .output import debug, ok, print_json
 
 
 def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
@@ -64,14 +64,10 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
 
 
 def run_snapshot(*, as_json: bool = False) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    root = repo_root()
-    if root is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
 
     path = generate_snapshot(root)
 

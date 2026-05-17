@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from .git import is_repo, repo_root
+from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import HAS_DELTA, bat_pipe, error, info, print_json
@@ -20,14 +20,11 @@ def run_diff(
     full: bool = False,
     as_json: bool = False,
 ) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd = root
 
     if not staged and not _has_commits(cwd):
         if as_json:

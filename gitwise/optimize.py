@@ -6,11 +6,11 @@ import time
 from pathlib import Path
 
 from .git import git_dir as get_git_dir
-from .git import is_repo, repo_root
+from .git import require_root
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
-from .output import confirm, debug, error, info, ok, print_json, warn
+from .output import confirm, debug, info, ok, print_json, warn
 
 
 def _gc_is_running(cwd: Path) -> bool:
@@ -70,14 +70,11 @@ def _get_steps() -> list[tuple[str, str]]:
 
 
 def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd = root
 
     if _gc_is_running(cwd):
         warn(t("gc_already_running"))

@@ -2,7 +2,7 @@
 
 import sys
 
-from .git import is_repo, repo_root
+from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import ok, print_json
@@ -17,13 +17,10 @@ def run_pick(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
-    if not is_repo():
-        print(t("not_a_git_repo"), file=sys.stderr)
-        return 1
-    root = repo_root()
-    if root is None:
-        print(t("no_repo_root"), file=sys.stderr)
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
 
     if continue_:
         r = git_run([("revert" if revert else "cherry-pick"), "--continue"], cwd=root, check=False)

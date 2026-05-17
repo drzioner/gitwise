@@ -4,8 +4,7 @@ from pathlib import Path
 
 from .git import (
     current_branch,
-    is_repo,
-    repo_root,
+    require_root,
     stale_branches,
     worktree_branches,
 )
@@ -60,14 +59,11 @@ def run_clean(
         error(t("clean_specify_flag"))
         return 1
 
-    if not is_repo():
-        error(t("not_a_git_repo"))
-        return 1
-
-    cwd = repo_root()
-    if cwd is None:
-        error(t("no_repo_root"))
-        return 1
+    root, err = require_root()
+    if err:
+        return err
+    assert root is not None
+    cwd = root
 
     deletable, skipped = _categorize(cwd)
 
