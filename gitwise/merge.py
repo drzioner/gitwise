@@ -59,6 +59,11 @@ def run_merge(
         ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 else 0
         behind_count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
     except ValueError:
+        from .output import debug
+
+        debug(
+            f"merge ahead/behind parse failed: {ahead.stdout.strip()!r} / {behind.stdout.strip()!r}"
+        )
         ahead_count = behind_count = 0
 
     if ahead_count > 0 and behind_count > 0:
@@ -108,7 +113,7 @@ def run_merge(
         err = (
             t("merge_conflicts")
             if ("CONFLICT" in r.stdout or "CONFLICT" in r.stderr)
-            else r.stderr.strip()
+            else t("git_command_failed", cmd="merge/rebase", error=r.stderr.strip())
         )
         if as_json:
             print_json({"v": 2, "ok": False, "error": err})
