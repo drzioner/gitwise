@@ -25,10 +25,12 @@ Index of development standards for the project.
 ```
 gitwise/                # Python package — one module per subcommand
   __main__.py           # argparse router → dispatches to run_<cmd>()
-  setup_agents.py       # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
+  setup_agents/         # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
+  _cli_setup_agents.py  # CLI adapter for setup-agents
+  _runtime_config.py    # immutable runtime settings (theme, color, TTY)
   git.py                # git subprocess helpers (run, config, is_repo, etc.)
   output.py             # ok/warn/error/info/debug/print_json
-  i18n.py               # es/en strings (~170 keys), auto locale detection
+  i18n.py               # es/en strings (624 keys), auto locale detection
   snapshot.py           # .claude/git-snapshot.md generator
   doctor.py             # Environment checks
   audit.py              # Repo diagnostics (7 finding types)

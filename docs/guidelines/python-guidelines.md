@@ -330,8 +330,8 @@ Each file in `gitwise/` has one and only one responsibility.
 | Element | Limit | Action if exceeded |
 |---------|-------|--------------------|
 | Module `gitwise/*.py` | ~300 lines | Extract helpers to a new module |
-| `setup_agents.py` | ~320 lines | Thin orchestrator — delegates to `_sa_*` modules |
-| `_sa_*.py` (split modules) | ~150-310 lines each | State, planning, execution phases |
+| `setup_agents/` (package) | ~1,345 lines total | Split into plan/state/exec/types/format modules |
+| `setup_agents/*.py` (sub-modules) | ~50-360 lines each | State, planning, execution, types, format, skills, gitfiles |
 | Function `run_<cmd>()` | ~50 lines | Delegate to `_plan_actions` and `_execute_actions` |
 | Private function `_helper()` | ~30 lines | Consider splitting |
 
@@ -344,12 +344,13 @@ If you need "and" to describe what a module does, it probably needs splitting.
 | `git.py` | Git subprocess wrappers | ~118 | OK |
 | `output.py` | Output formatting + JSON | ~129 | OK |
 | `i18n.py` | es/en translations | ~692 | OK (string catalog) |
-| `setup_agents.py` | Entry point, delegates to `_sa_*` | ~320 | OK |
-| `_sa_state.py` | State detection | ~141 | OK |
-| `_sa_plan.py` | Planning orchestrator | ~311 | OK |
-| `_sa_plan_skills.py` | Skills planning | ~236 | OK |
-| `_sa_plan_gitfiles.py` | Managed blocks | ~161 | OK |
-| `_sa_exec.py` | Execution + rollback | ~240 | OK |
+| `setup_agents/plan.py` | Planning orchestrator | ~360 | OK |
+| `setup_agents/state.py` | State detection | ~141 | OK |
+| `setup_agents/exec.py` | Execution + rollback | ~273 | OK |
+| `setup_agents/types.py` | Shared type definitions | ~48 | OK |
+| `setup_agents/format.py` | JSON output formatting | ~91 | OK |
+| `setup_agents/plan_skills.py` | Skills planning | ~237 | OK |
+| `setup_agents/plan_gitfiles.py` | Managed blocks | ~161 | OK |
 | `audit.py` | Repo diagnostics | ~296 | OK |
 | `clean.py` | Stale branch cleanup | ~129 | OK |
 | `optimize.py` | Git optimization | ~138 | OK |
