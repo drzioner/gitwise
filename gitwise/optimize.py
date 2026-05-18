@@ -35,7 +35,9 @@ def _repo_size_kb(cwd: Path) -> int:
     if gd is None:
         return 0
     try:
-        r = subprocess.run(["du", "-sk", str(gd)], capture_output=True, text=True, check=True)
+        r = subprocess.run(
+            ["du", "-sk", str(gd)], capture_output=True, text=True, check=True, timeout=120
+        )
         return int(r.stdout.split()[0])
     except (subprocess.SubprocessError, ValueError, IndexError, FileNotFoundError):
         return sum(f.stat().st_size for f in gd.rglob("*") if f.is_file()) // 1024
@@ -135,4 +137,6 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     else:
         ok(t("repo_size", size=str(size_after)))
 
-    return 0 if (graph_ok or repack_ok) else 1
+    if not graph_ok and not repack_ok:
+        return 1
+    return 2 if not prune_ok else 0

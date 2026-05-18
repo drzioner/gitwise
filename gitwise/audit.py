@@ -253,7 +253,6 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         )
 
     sizer = _run_git_sizer(cwd) if not quick else None
-    has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
     _has_remote = has_remote(cwd)
     _has_upstream = has_upstream(cwd)
@@ -264,15 +263,15 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 "severity": "low",
                 "message": t("no_upstream_audit"),
                 "fix": t("no_upstream_fix"),
-                "cost_of_fix": t("trivial"),
-                "cost_of_ignore": t("no_upstream_cost"),
+                "cost_of_ignore": t("trivial"),
             }
         )
-        has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
     from .health import compute_health
 
     health = compute_health(cwd)
+
+    has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
     result: dict[str, Any] = {
         "v": 2,
