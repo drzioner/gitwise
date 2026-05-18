@@ -62,7 +62,7 @@ gitwise/             # Python package — one module per subcommand
   i18n.py            # t(), confirm_responses(), reset_cache() — loads from _i18n_data.json
   _i18n_data.json    # i18n string catalog (es/en, 220+ keys)
   git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
-  output.py          # ok/warn/error/info/debug/print_json/bat_pipe, _reinit()
+  output.py          # ok/warn/error/info/debug/print_json/bat_pipe
   snapshot.py        # generates .claude/git-snapshot.md
   doctor.py          # environment checks
   audit.py           # repo diagnostics
@@ -103,19 +103,60 @@ def run_<command>(...) -> int:   # returns exit code
 - `_detect_state(root)` → state dict (a_state, c_state, agents_dir, skills_state, rules_warnings, supports_symlinks, errors, …)
 - `_resolve_canonical_doc(root, state, ...)` → `(bucket: 1-5, actions, warnings)`
 - `_plan_actions(root, ...)` → `(actions, warnings, errors, bucket, state)` — read-only I/O for state detection is acceptable
-- `_execute_actions(root, actions)` — writes files; rolls back on failure via `_undo_partial`
+- `_execute_actions(root, actions)` — writes files; rolls back on failure via `_undo_partial`; raises `PlanExecutionError` on error
 - `_safe_create_symlink(link, target_relative, root)` — sandbox + TOCTOU-safe
 
 JSON output schema: `v=2`, `v_compat=[1,2]`. Keys: `bucket`, `agents_md_detected`, `agents_dir_detected`, `supports_symlinks`, `actions`, `warnings`, `rules_warnings`, `errors`, `summary`, `ok`.
 
 ## Code Style
 
-- Type hints on all function signatures
+- Type hints on all function signatures (enforced by basedpyright)
 - `pathlib.Path` over `os.path` (use `os.path.realpath` for symlink resolution — `Path.resolve()` can fail on broken symlinks)
 - `Literal["absent","regular","symlink_valid","symlink_broken"]` for path states
 - Never silence exceptions; `try/except OSError` only at I/O boundaries
 - No comments describing what the code does — only WHY (non-obvious invariants)
-- No abstractions before 3+ concrete use cases
+- No abstractions before 3+ concrete use cases (Rule of Three)
+- `T | None` over `Optional[T]` (Python 3.10+ syntax)
+- Return types always explicit; never rely on inference for public APIs
+- Named tuples or dataclasses over plain tuples for multi-value returns
+- Constants as `SCREAMING_SNAKE_CASE` at module level
+- Absolute imports only; no relative imports
+- Functions: one purpose, max ~50 lines; extract when complexity grows
+- Composition over inheritance; prefer protocols for interface definitions
+- No `Any` type without explicit justification comment
+
+## Error Handling
+
+- Validate inputs early at function boundaries (fail-fast)
+- `try/except` only at I/O boundaries; never bare `except Exception: pass`
+- Chain exceptions with `raise ... from e` to preserve debug trail
+- Specific exception types (`ValueError`, `TypeError`, `FileNotFoundError`) over generic `Exception`
+- Batch operations: track successes and failures separately; never abort entire batch on single item error
+- Error messages: explain what failed, why, and how to fix
+
+## Resource Management
+
+- Context managers (`with`) for all file handles and external resources
+- No unclosed resources; `__exit__` / `finally` must run unconditionally
+- `subprocess.run()` with explicit `timeout` and `capture_output=True` for git calls
+- Clean up temp files/dirs in `finally` blocks or fixture teardown
+
+## Testing
+
+- No mocks — all git operations run on synthetic temp repos via fixtures
+- One behavior per test; test name follows `test_<unit>_<scenario>_<expected>` pattern
+- Test error paths and edge cases, not just happy paths
+- Fixtures in `conftest.py`; no shared mutable state between tests
+- `run_gitwise()` helper for subprocess invocation; assert exit codes and output
+- `pytest -k` filters preferred over commenting out tests
+- Coverage: aim for meaningful coverage of critical paths (setup_agents, symlink safety)
+
+## Shell Scripts
+
+- ShellCheck clean: `shellcheck install.sh bin/gitwise` passes with zero warnings
+- `set -Eeuo pipefail` at top of all shell scripts
+- Quote all variable expansions; never leave `$var` unquoted
+- Check exit codes directly with `if command; then` — never `if [ $? -eq 0 ]`
 
 ## Git conventions for this project
 

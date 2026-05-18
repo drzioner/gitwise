@@ -82,7 +82,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
                 debug(t("using_delta"))
                 try:
                     delta = subprocess.Popen(["delta"], stdin=subprocess.PIPE, text=True)
-                    delta.communicate(input=diff_r.stdout)
+                    delta.communicate(input=diff_r.stdout, timeout=120)
                 except OSError:
                     bat_pipe(diff_r.stdout, language="diff")
             else:

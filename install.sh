@@ -2,7 +2,9 @@
 # install.sh — instala gitwise en ~/.local/bin
 # Uso: bash install.sh [--dry-run]
 # Para actualizar: gitwise update
-set -euo pipefail
+set -Eeuo pipefail
+
+trap 'exit 130' INT TERM
 
 BIN_DIR="${GITWISE_BIN_DIR:-$HOME/.local/bin}"
 DRY_RUN=false

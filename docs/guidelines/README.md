@@ -2,7 +2,7 @@
 
 > Stack: `python@3.10+` · `argparse` · `stdlib` · `pytest` · `ruff` · `basedpyright`
 > Zero dependencies. Only stdlib + git subprocess.
-> Last reviewed: 2026-05-15
+> Last reviewed: 2026-05-18
 
 Index of development standards for the project.
 
@@ -12,10 +12,11 @@ Index of development standards for the project.
 
 | I want to know about... | Read |
 |-------------------------|------|
-| Types, type hints, Literal, Protocol, pathlib | [python-guidelines.md](python-guidelines.md) |
-| Plan/execute/rollback, subcommand pattern, managed blocks | [architecture.md](architecture.md) |
-| pytest, subprocess testing, conftest, no mocks | [testing-guidelines.md](testing-guidelines.md) |
+| Types, type hints, Literal, Protocol, pathlib, error handling, resources | [python-guidelines.md](python-guidelines.md) |
+| Plan/execute/rollback, subcommand pattern, managed blocks, batch failures | [architecture.md](architecture.md) |
+| pytest, subprocess testing, conftest, no mocks, error paths | [testing-guidelines.md](testing-guidelines.md) |
 | What NOT to do — prohibited anti-patterns | [anti-patterns.md](anti-patterns.md) |
+| Visual identity, color palette, typography, component patterns | [../DESIGN.md](../DESIGN.md) |
 
 ---
 

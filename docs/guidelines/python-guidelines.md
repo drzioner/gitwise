@@ -2,7 +2,7 @@
 
 > Compatible with: `python@3.10+` · `ruff` · `basedpyright`
 > Zero dependencies. Only stdlib.
-> Last reviewed: 2026-05-15
+> Last reviewed: 2026-05-18
 
 Python code standards for the project. Every rule is mandatory.
 
@@ -13,7 +13,7 @@ Python code standards for the project. Every rule is mandatory.
 **ALWAYS** annotate return types on public functions. Type hints are the project's executable documentation.
 
 ```python
-# CORRECT — full signature
+# CORRECT — full signature with explicit return type
 def run_clean(
     branches: bool = False,
     refs: bool = False,
@@ -30,6 +30,80 @@ def _classify_path(p: Path) -> Literal["absent", "regular", "symlink_valid", "sy
 # PROHIBITED — no return type
 def run_clean(branches=False, dry_run=False, yes=False, as_json=False):
     ...
+```
+
+### Return types — always explicit
+
+Never rely on type inference for return types. basedpyright can miss inferred returns, and explicit types serve as documentation:
+
+```python
+# CORRECT — explicit return type
+def _find_skills(root: Path) -> list[Path]:
+    ...
+
+# PROHIBITED — relying on inference
+def _find_skills(root: Path):
+    ...
+```
+
+### Multi-value returns — named tuples or dataclasses
+
+Plain tuples are opaque. Use named constructs when returning 2+ values:
+
+```python
+# CORRECT — named tuple for clarity
+from typing import NamedTuple
+
+class PlanResult(NamedTuple):
+    actions: list[Action]
+    warnings: list[str]
+    errors: list[str]
+    bucket: int
+
+def _plan_actions(root: Path, ...) -> PlanResult:
+    ...
+
+# PROHIBITED — opaque tuple
+def _plan_actions(root: Path, ...) -> tuple[list[dict], list[str], list[str], int]:
+    ...
+```
+
+### `T | None` over `Optional[T]`
+
+Python 3.10+ union syntax is required:
+
+```python
+# CORRECT
+def repo_root(path: Path | None = None) -> Path | None:
+
+# PROHIBITED
+from typing import Optional
+def repo_root(path: Optional[Path] = None) -> Optional[Path]:
+```
+
+### `Any` — prohibited without justification
+
+`Any` disables type checking downstream. Every use requires a comment explaining why:
+
+```python
+# PROHIBITED — no justification
+def process(data: Any) -> Any:
+
+# ACCEPTABLE — with justification
+def _merge_json(base: dict, override: Any) -> dict:
+    # Any is acceptable: override comes from user JSON file, structure unknown at design time
+```
+
+### Typed collections — always specify type parameters
+
+```python
+# CORRECT
+branches: list[str] = []
+findings: dict[str, str] = {}
+
+# PROHIBITED — generic container
+branches: list = []
+findings: dict = {}
 ```
 
 ### When to skip
@@ -256,7 +330,8 @@ Each file in `gitwise/` has one and only one responsibility.
 | Element | Limit | Action if exceeded |
 |---------|-------|--------------------|
 | Module `gitwise/*.py` | ~300 lines | Extract helpers to a new module |
-| Exception: `setup_agents.py` | ~1400 lines | Justified by cohesive 5-bucket model |
+| `setup_agents.py` | ~320 lines | Thin orchestrator — delegates to `_sa_*` modules |
+| `_sa_*.py` (split modules) | ~150-310 lines each | State, planning, execution phases |
 | Function `run_<cmd>()` | ~50 lines | Delegate to `_plan_actions` and `_execute_actions` |
 | Private function `_helper()` | ~30 lines | Consider splitting |
 
@@ -269,7 +344,12 @@ If you need "and" to describe what a module does, it probably needs splitting.
 | `git.py` | Git subprocess wrappers | ~118 | OK |
 | `output.py` | Output formatting + JSON | ~129 | OK |
 | `i18n.py` | es/en translations | ~692 | OK (string catalog) |
-| `setup_agents.py` | Cohesive 5-bucket model | ~1390 | Justified exception |
+| `setup_agents.py` | Entry point, delegates to `_sa_*` | ~320 | OK |
+| `_sa_state.py` | State detection | ~141 | OK |
+| `_sa_plan.py` | Planning orchestrator | ~311 | OK |
+| `_sa_plan_skills.py` | Skills planning | ~236 | OK |
+| `_sa_plan_gitfiles.py` | Managed blocks | ~161 | OK |
+| `_sa_exec.py` | Execution + rollback | ~240 | OK |
 | `audit.py` | Repo diagnostics | ~296 | OK |
 | `clean.py` | Stale branch cleanup | ~129 | OK |
 | `optimize.py` | Git optimization | ~138 | OK |
@@ -278,7 +358,7 @@ If you need "and" to describe what a module does, it probably needs splitting.
 | `worktree.py` | Worktree helpers | ~177 | OK |
 | `doctor.py` | Environment checks | ~104 | OK |
 | `snapshot.py` | Snapshot generator | ~83 | OK |
-| `__main__.py` | CLI router + update cmd | ~243 | OK |
+| `__main__.py` | CLI router + dispatch handlers | ~584 | OK (dispatch dict pattern) |
 
 ---
 
@@ -494,13 +574,163 @@ class PlanExecutionError(Exception):
 
 ---
 
+## 16. Error handling
+
+### Fail-fast validation
+
+Validate inputs at function boundaries, before any I/O or processing:
+
+```python
+def _plan_managed_block(file: str, content: str) -> list[Action]:
+    if not file:
+        raise ValueError(t("errors.path_required"))
+    if not content:
+        raise ValueError(t("errors.content_required"))
+    ...
+```
+
+### Specific exception types
+
+Match the failure type to the exception class:
+
+| Failure | Exception |
+|---------|-----------|
+| Invalid parameter | `ValueError` |
+| Wrong type | `TypeError` |
+| File not found | `FileNotFoundError` |
+| I/O failure | `OSError` |
+| Symlink escapes sandbox | `SymlinkConflict` |
+| Execution partial failure | `PlanExecutionError` |
+
+### Exception chaining
+
+Always preserve the original traceback when re-raising:
+
+```python
+# CORRECT — chain preserves debug trail
+try:
+    path.write_text(content, encoding="utf-8")
+except OSError as e:
+    raise PlanExecutionError(t("errors.write_failed", path=str(path))) from e
+
+# PROHIBITED — original traceback lost
+try:
+    path.write_text(content, encoding="utf-8")
+except OSError as e:
+    raise PlanExecutionError(t("errors.write_failed", path=str(path)))
+```
+
+### `try/except` only at I/O boundaries
+
+Business logic should not catch I/O exceptions. Let them propagate to the execution layer:
+
+```python
+# CORRECT — I/O at boundary, domain logic is pure
+def _plan_actions(root: Path, ...) -> PlanResult:
+    # No try/except — pure logic
+    actions = _build_actions(root, state)
+    return PlanResult(actions, warnings, errors, bucket)
+
+def _execute_actions(root: Path, actions: list[dict]) -> None:
+    executed: list[dict] = []
+    for action in actions:
+        try:
+            _apply_action(root, action)
+            executed.append(action)
+        except OSError as e:
+            error(t("errors.action_failed", action=action["action"]))
+            _undo_partial(executed, root)
+            raise
+```
+
+---
+
+## 17. Resource management
+
+### Context managers for all file handles
+
+```python
+# CORRECT
+with path.open(encoding="utf-8") as f:
+    content = f.read()
+
+# PROHIBITED
+f = path.open(encoding="utf-8")
+content = f.read()
+```
+
+### Subprocess — timeout and capture always
+
+```python
+# CORRECT (git.run already enforces this)
+subprocess.run(args, capture_output=True, text=True, timeout=120, env=_GIT_ENV)
+
+# PROHIBITED
+subprocess.run(args)  # no timeout, no capture
+```
+
+### Temp file cleanup
+
+```python
+# CORRECT — cleanup in finally
+temp_file = None
+try:
+    temp_file = Path(tmp_path) / "temp.json"
+    temp_file.write_text(data)
+    process(temp_file)
+finally:
+    if temp_file and temp_file.exists():
+        temp_file.unlink()
+```
+
+### String accumulation — list + join
+
+```python
+# CORRECT — O(n)
+parts: list[str] = []
+for chunk in chunks:
+    parts.append(processed(chunk))
+result = "".join(parts)
+
+# PROHIBITED — O(n²)
+result = ""
+for chunk in chunks:
+    result += processed(chunk)
+```
+
+---
+
+## 18. Composition over inheritance
+
+Prefer composing behavior via function parameters over class hierarchies:
+
+```python
+# CORRECT — composition via parameters
+def _execute_actions(root: Path, actions: list[dict]) -> None:
+    for action in actions:
+        _apply_action(root, action)
+
+# PROHIBITED — unnecessary class hierarchy
+class BaseExecutor:
+    def execute(self, root, actions): ...
+
+class SymlinkExecutor(BaseExecutor):
+    def execute(self, root, actions): ...
+```
+
+---
+
 ## Quick summary
 
 | Category | Required | Prohibited |
 |----------|----------|------------|
-| Type hints | On all public signatures | Signatures without return type |
+| Type hints | On all public signatures, explicit return types | Signatures without return type, inferred returns |
 | Types | Extract Literal to variable if 2+ uses | Inline type repeated |
 | Finite values | `Literal["a", "b"]` | Generic `str` |
+| Union syntax | `T \| None` (3.10+) | `Optional[T]`, `Union[T, None]` |
+| `Any` | Only with justification comment | Unjustified `Any` |
+| Collections | Type parameters: `list[str]` | Generic `list`, `dict` |
+| Multi-value returns | Named tuple or dataclass | Plain tuple |
 | Paths | `pathlib.Path` | `os.path` (except `realpath`) |
 | Dependencies | stdlib only | Any external package |
 | Imports | Relative `from .x import y` | Absolute `from gitwise.x` |
@@ -508,4 +738,8 @@ class PlanExecutionError(Exception):
 | Semantic numbers | Named constant | Literal anywhere |
 | Comments | Only the WHY | What the code already says |
 | i18n | `t("key")` for user text | Literal strings in output |
-| Exceptions | `SymlinkConflict`, `PlanExecutionError` | Generic `ValueError` |
+| Exceptions | Specific types, chain with `from e` | Bare `except`, lost traceback |
+| Error handling | Validate at boundaries, `try` at I/O only | Business logic catching I/O errors |
+| Resources | Context managers, `with`, `finally` | Unclosed files, no timeout |
+| Composition | Functions + parameters | Class hierarchies without 3+ implementations |
+| String accumulation | `list.append()` + `"".join()` | `+=` in loops |
