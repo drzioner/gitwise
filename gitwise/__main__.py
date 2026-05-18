@@ -3,7 +3,6 @@
 import argparse
 import sys
 import time
-from pathlib import Path
 
 from . import __version__
 from .i18n import t
@@ -246,33 +245,284 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _run_update(args: argparse.Namespace) -> int:
-    from .git import run as git_run
-    from .output import print_json
+    from .update import run_update
 
-    install_dir = Path(__file__).parent.parent
-    if args.dry_run:
-        if getattr(args, "json", False):
-            print_json({"v": 2, "ok": True, "dry_run": True, "dir": str(install_dir)})
-            return 0
-        print(t("update_dry_run", dir=str(install_dir)))
-        return 0
-    print(t("updating_from", dir=str(install_dir)))
-    r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
-    if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
-        if getattr(args, "json", False):
-            print_json({"v": 2, "ok": True, "updated": True, "output": r.stdout.strip()})
-            return 0
-        print(r.stdout.strip())
-    elif r.returncode != 0:
-        if getattr(args, "json", False):
-            print_json({"v": 2, "ok": False, "error": r.stderr.strip() or t("error_updating")})
-            return 1
-        print(r.stderr.strip() or t("error_updating"), file=sys.stderr)
-        return r.returncode
-    elif getattr(args, "json", False):
-        print_json({"v": 2, "ok": True, "updated": False, "output": t("already_up_to_date")})
-        return 0
-    return r.returncode
+    return run_update(dry_run=args.dry_run, as_json=args.json)
+
+
+def _run_doctor(args: argparse.Namespace) -> int:
+    from .doctor import run_doctor
+
+    return run_doctor(as_json=args.json)
+
+
+def _run_setup_agents(args: argparse.Namespace) -> int:
+    from ._cli_setup_agents import run_setup_agents
+
+    return run_setup_agents(
+        local=args.local,
+        no_skills=args.no_skills,
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+        no_symlinks=args.no_symlinks,
+        strict=args.strict,
+        replace_claude_with_symlink=args.replace_claude_with_symlink,
+        frozen_time=args.frozen_time,
+        no_git_files=args.no_git_files,
+    )
+
+
+def _run_setup(args: argparse.Namespace) -> int:
+    from .setup import run_setup
+
+    return run_setup(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
+
+
+def _run_audit(args: argparse.Namespace) -> int:
+    from .audit import run_audit
+
+    return run_audit(quick=args.quick, as_json=args.json)
+
+
+def _run_summarize(args: argparse.Namespace) -> int:
+    from .summarize import run_summarize
+
+    return run_summarize(as_json=args.json, diff=args.diff, max_commits=args.max_commits)
+
+
+def _run_snapshot(args: argparse.Namespace) -> int:
+    from .snapshot import run_snapshot
+
+    return run_snapshot(as_json=args.json)
+
+
+def _run_clean(args: argparse.Namespace) -> int:
+    from .clean import run_clean
+
+    return run_clean(
+        branches=args.branches,
+        refs=args.refs,
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+    )
+
+
+def _run_optimize(args: argparse.Namespace) -> int:
+    from .optimize import run_optimize
+
+    return run_optimize(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
+
+
+def _run_worktree(args: argparse.Namespace) -> int:
+    from .worktree import run_worktree
+
+    return run_worktree(
+        args.action, getattr(args, "branch", None), dry_run=args.dry_run, as_json=args.json
+    )
+
+
+def _run_diff(args: argparse.Namespace) -> int:
+    from .diff import run_diff
+
+    return run_diff(
+        staged=args.staged,
+        stat=args.stat,
+        name_only=args.name_only,
+        full=args.full,
+        as_json=args.json,
+    )
+
+
+def _run_log(args: argparse.Namespace) -> int:
+    from .log import run_log
+
+    return run_log(
+        as_json=args.json,
+        oneline=args.oneline,
+        graph=args.graph,
+        author=args.author,
+        grep=args.grep,
+        since=args.since,
+        until=args.until,
+        file=args.file,
+        max_count=args.max_count,
+    )
+
+
+def _run_show(args: argparse.Namespace) -> int:
+    from .show import run_show
+
+    return run_show(ref=args.ref, stat=args.stat, as_json=args.json)
+
+
+def _run_commit(args: argparse.Namespace) -> int:
+    from .commit import run_commit
+
+    return run_commit(
+        message=args.message,
+        type=args.type,
+        scope=args.scope,
+        breaking=args.breaking,
+        amend=args.amend,
+        dry_run=args.dry_run,
+        as_json=args.json,
+    )
+
+
+def _run_branches(args: argparse.Namespace) -> int:
+    from .branches import run_branches
+
+    return run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
+
+
+def _run_sync(args: argparse.Namespace) -> int:
+    from .sync import run_sync
+
+    return run_sync(
+        pull=args.pull,
+        push=args.push,
+        remote=args.remote,
+        dry_run=args.dry_run,
+        as_json=args.json,
+    )
+
+
+def _run_pr(args: argparse.Namespace) -> int:
+    from .pr import run_pr
+
+    return run_pr(action=args.action, as_json=args.json)
+
+
+def _run_undo(args: argparse.Namespace) -> int:
+    from .undo import run_undo
+
+    return run_undo(
+        ref=args.ref,
+        soft=args.soft,
+        steps=args.steps,
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+    )
+
+
+def _run_context(args: argparse.Namespace) -> int:
+    from .context import run_context
+
+    return run_context(as_json=args.json)
+
+
+def _run_health(args: argparse.Namespace) -> int:
+    from .health import run_health
+
+    return run_health(as_json=args.json)
+
+
+def _run_stash(args: argparse.Namespace) -> int:
+    from .stash import run_stash
+
+    return run_stash(
+        action=args.action,
+        index=args.index,
+        as_json=args.json,
+        yes=args.yes,
+        dry_run=args.dry_run,
+        patch=args.patch,
+    )
+
+
+def _run_tag(args: argparse.Namespace) -> int:
+    from .tag import run_tag
+
+    return run_tag(
+        action=args.action,
+        name=getattr(args, "name", None),
+        bump=args.bump,
+        message=args.message,
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+    )
+
+
+def _run_merge(args: argparse.Namespace) -> int:
+    from .merge import run_merge
+
+    return run_merge(
+        args.branch,
+        rebase=args.rebase,
+        no_ff=args.no_ff,
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+    )
+
+
+def _run_conflicts(args: argparse.Namespace) -> int:
+    from .conflicts import run_conflicts
+
+    return run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
+
+
+def _run_suggest(args: argparse.Namespace) -> int:
+    from .suggest import run_suggest
+
+    return run_suggest(as_json=args.json)
+
+
+def _run_pick(args: argparse.Namespace) -> int:
+    from .pick import run_pick
+
+    return run_pick(
+        args.refs,
+        revert=args.revert,
+        continue_=args.continue_,
+        abort=args.abort,
+        dry_run=args.dry_run,
+        as_json=args.json,
+    )
+
+
+def _run_status(args: argparse.Namespace) -> int:
+    from .status import run_status
+
+    return run_status(as_json=args.json)
+
+
+_DISPATCH: dict = {
+    "doctor": _run_doctor,
+    "setup-agents": _run_setup_agents,
+    "setup": _run_setup,
+    "audit": _run_audit,
+    "summarize": _run_summarize,
+    "snapshot": _run_snapshot,
+    "clean": _run_clean,
+    "branch-clean": _run_clean,
+    "optimize": _run_optimize,
+    "worktree": _run_worktree,
+    "diff": _run_diff,
+    "log": _run_log,
+    "show": _run_show,
+    "commit": _run_commit,
+    "branches": _run_branches,
+    "sync": _run_sync,
+    "pr": _run_pr,
+    "undo": _run_undo,
+    "context": _run_context,
+    "health": _run_health,
+    "stash": _run_stash,
+    "tag": _run_tag,
+    "merge": _run_merge,
+    "conflicts": _run_conflicts,
+    "suggest": _run_suggest,
+    "commit-suggest": _run_suggest,
+    "pick": _run_pick,
+    "cherry-pick": _run_pick,
+    "update": _run_update,
+    "status": _run_status,
+}
 
 
 def main() -> int:
@@ -290,224 +540,9 @@ def main() -> int:
 
     start = time.monotonic()
 
-    if args.command == "doctor":
-        from .doctor import run_doctor
-
-        ret = run_doctor(as_json=args.json)
-
-    elif args.command == "setup-agents":
-        from .setup_agents import run_setup_agents
-
-        ret = run_setup_agents(
-            local=args.local,
-            no_skills=args.no_skills,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            as_json=args.json,
-            no_symlinks=args.no_symlinks,
-            strict=args.strict,
-            replace_claude_with_symlink=args.replace_claude_with_symlink,
-            frozen_time=args.frozen_time,
-            no_git_files=args.no_git_files,
-        )
-
-    elif args.command == "setup":
-        from .setup import run_setup
-
-        ret = run_setup(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
-
-    elif args.command == "audit":
-        from .audit import run_audit
-
-        ret = run_audit(quick=args.quick, as_json=args.json)
-
-    elif args.command == "summarize":
-        from .summarize import run_summarize
-
-        ret = run_summarize(as_json=args.json, diff=args.diff, max_commits=args.max_commits)
-
-    elif args.command == "snapshot":
-        from .snapshot import run_snapshot
-
-        ret = run_snapshot(as_json=args.json)
-
-    elif args.command in ("clean", "branch-clean"):
-        from .clean import run_clean
-
-        ret = run_clean(
-            branches=args.branches,
-            refs=args.refs,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            as_json=args.json,
-        )
-
-    elif args.command == "optimize":
-        from .optimize import run_optimize
-
-        ret = run_optimize(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
-
-    elif args.command == "worktree":
-        from .worktree import run_worktree
-
-        ret = run_worktree(
-            args.action, getattr(args, "branch", None), dry_run=args.dry_run, as_json=args.json
-        )
-
-    elif args.command == "diff":
-        from .diff import run_diff
-
-        ret = run_diff(
-            staged=args.staged,
-            stat=args.stat,
-            name_only=args.name_only,
-            full=args.full,
-            as_json=args.json,
-        )
-
-    elif args.command == "log":
-        from .log import run_log
-
-        ret = run_log(
-            as_json=args.json,
-            oneline=args.oneline,
-            graph=args.graph,
-            author=args.author,
-            grep=args.grep,
-            since=args.since,
-            until=args.until,
-            file=args.file,
-            max_count=args.max_count,
-        )
-
-    elif args.command == "show":
-        from .show import run_show
-
-        ret = run_show(ref=args.ref, stat=args.stat, as_json=args.json)
-
-    elif args.command == "commit":
-        from .commit import run_commit
-
-        ret = run_commit(
-            message=args.message,
-            type=args.type,
-            scope=args.scope,
-            breaking=args.breaking,
-            amend=args.amend,
-            dry_run=args.dry_run,
-            as_json=args.json,
-        )
-
-    elif args.command == "branches":
-        from .branches import run_branches
-
-        ret = run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
-
-    elif args.command == "sync":
-        from .sync import run_sync
-
-        ret = run_sync(
-            pull=args.pull,
-            push=args.push,
-            remote=args.remote,
-            dry_run=args.dry_run,
-            as_json=args.json,
-        )
-
-    elif args.command == "pr":
-        from .pr import run_pr
-
-        ret = run_pr(action=args.action, as_json=args.json)
-
-    elif args.command == "undo":
-        from .undo import run_undo
-
-        ret = run_undo(
-            ref=args.ref,
-            soft=args.soft,
-            steps=args.steps,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            as_json=args.json,
-        )
-
-    elif args.command == "context":
-        from .context import run_context
-
-        ret = run_context(as_json=args.json)
-
-    elif args.command == "health":
-        from .health import run_health
-
-        ret = run_health(as_json=args.json)
-
-    elif args.command == "stash":
-        from .stash import run_stash
-
-        ret = run_stash(
-            action=args.action,
-            index=args.index,
-            as_json=args.json,
-            yes=args.yes,
-            dry_run=args.dry_run,
-            patch=args.patch,
-        )
-
-    elif args.command == "tag":
-        from .tag import run_tag
-
-        ret = run_tag(
-            action=args.action,
-            name=getattr(args, "name", None),
-            bump=args.bump,
-            message=args.message,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            as_json=args.json,
-        )
-
-    elif args.command == "merge":
-        from .merge import run_merge
-
-        ret = run_merge(
-            args.branch,
-            rebase=args.rebase,
-            no_ff=args.no_ff,
-            dry_run=args.dry_run,
-            yes=args.yes,
-            as_json=args.json,
-        )
-
-    elif args.command == "conflicts":
-        from .conflicts import run_conflicts
-
-        ret = run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
-
-    elif args.command in ("suggest", "commit-suggest"):
-        from .suggest import run_suggest
-
-        ret = run_suggest(as_json=args.json)
-
-    elif args.command in ("pick", "cherry-pick"):
-        from .pick import run_pick
-
-        ret = run_pick(
-            args.refs,
-            revert=args.revert,
-            continue_=args.continue_,
-            abort=args.abort,
-            dry_run=args.dry_run,
-            as_json=args.json,
-        )
-
-    elif args.command == "update":
-        ret = _run_update(args)
-
-    elif args.command == "status":
-        from .status import run_status
-
-        ret = run_status(as_json=args.json)
-
+    handler = _DISPATCH.get(args.command)
+    if handler is not None:
+        ret = handler(args)
     else:
         parser.print_help()
         ret = 0

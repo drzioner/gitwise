@@ -2,12 +2,22 @@
 
 from pathlib import Path
 
-from ._sa_exec import PlanExecutionError, _execute_actions
-from ._sa_plan import _SKILLS, _plan_actions, _plan_actions_global
-from .git import config as git_config
-from .git import is_repo, repo_root
-from .i18n import confirm_responses, t
-from .output import error, info, ok, print_json, warn
+from gitwise.git import config as git_config
+from gitwise.git import is_repo, repo_root
+from gitwise.i18n import confirm_responses, t
+from gitwise.output import error, info, ok, print_json, warn
+from gitwise.setup_agents import (
+    _SKILLS,
+    PlanExecutionError,
+    _execute_actions,
+    _plan_actions,
+    _plan_actions_global,
+)
+from gitwise.setup_agents.format import (
+    format_json_output_global,
+    format_json_output_local,
+    format_json_output_local_error,
+)
 
 
 def _run_setup_global(
@@ -26,36 +36,10 @@ def _run_setup_global(
         return 1
 
     if as_json:
-        summary: dict[str, int] = {
-            "created": 0,
-            "appended": 0,
-            "symlinked": 0,
-            "skipped": 0,
-            "errored": 0,
-        }
-        for a in actions:
-            match a["action"]:
-                case "create" | "managed-block-create":
-                    summary["created"] += 1
-                case "append":
-                    summary["appended"] += 1
-                case "symlink-create":
-                    summary["symlinked"] += 1
-                case "skip" | "symlink-skip" | "managed-block-skip":
-                    summary["skipped"] += 1
         print_json(
-            {
-                "v": 2,
-                "v_compat": [1, 2],
-                "dry_run": dry_run,
-                "root": str(home / ".claude"),
-                "mode": "global",
-                "actions": [{"file": a["file"], "action": a["action"]} for a in actions],
-                "warnings": warnings,
-                "errors": [],
-                "summary": summary,
-                "ok": True,
-            }
+            format_json_output_global(
+                home=home, actions=actions, warnings=warnings, dry_run=dry_run
+            )
         )
         return 0
 
@@ -147,73 +131,25 @@ def _run_setup_local(
     has_errors = bool(plan_errors)
     all_warnings = gpg_warnings + warnings
 
-    has_agents_md = state.get("a_state", "absent") != "absent"
-    has_agents_dir = state.get("agents_dir", False)
-    supports_symlinks = state.get("supports_symlinks", False)
-
     if as_json:
         if has_errors:
             print_json(
-                {
-                    "v": 2,
-                    "v_compat": [1, 2],
-                    "dry_run": dry_run,
-                    "root": str(root),
-                    "bucket": 5,
-                    "agents_md_detected": False,
-                    "agents_dir_detected": False,
-                    "supports_symlinks": False,
-                    "actions": [],
-                    "warnings": all_warnings,
-                    "rules_warnings": [],
-                    "errors": [e["reason"] for e in plan_errors],
-                    "summary": {
-                        "created": 0,
-                        "appended": 0,
-                        "symlinked": 0,
-                        "skipped": 0,
-                        "errored": len(plan_errors),
-                    },
-                    "ok": False,
-                }
+                format_json_output_local_error(
+                    root=root, dry_run=dry_run, plan_errors=plan_errors, all_warnings=all_warnings
+                )
             )
             return 1
 
-        summary: dict[str, int] = {
-            "created": 0,
-            "appended": 0,
-            "symlinked": 0,
-            "skipped": 0,
-            "errored": 0,
-        }
-        for a in actions:
-            match a["action"]:
-                case "create" | "managed-block-create":
-                    summary["created"] += 1
-                case "append":
-                    summary["appended"] += 1
-                case "symlink-create":
-                    summary["symlinked"] += 1
-                case "skip" | "symlink-skip" | "managed-block-skip":
-                    summary["skipped"] += 1
-
         print_json(
-            {
-                "v": 2,
-                "v_compat": [1, 2],
-                "dry_run": dry_run,
-                "root": str(root),
-                "bucket": bucket,
-                "agents_md_detected": has_agents_md,
-                "agents_dir_detected": has_agents_dir,
-                "supports_symlinks": supports_symlinks,
-                "actions": [{"file": a["file"], "action": a["action"]} for a in actions],
-                "warnings": all_warnings,
-                "rules_warnings": state.get("rules_warnings", []),
-                "errors": [],
-                "summary": summary,
-                "ok": True,
-            }
+            format_json_output_local(
+                root=root,
+                dry_run=dry_run,
+                bucket=bucket,
+                actions=actions,
+                all_warnings=all_warnings,
+                rules_warnings=state["rules_warnings"],
+                state=state,
+            )
         )
         return 0
 

@@ -44,43 +44,50 @@ def _detect_output_mode() -> OutputMode:
     return "human"
 
 
-_active_locale: Locale = _detect_locale()
-_active_mode: OutputMode = _detect_output_mode()
+class _I18nState:
+    __slots__ = ("locale", "mode")
+
+    def __init__(self) -> None:
+        self.locale: Locale = _detect_locale()
+        self.mode: OutputMode = _detect_output_mode()
+
+
+_state = _I18nState()
 
 
 def get_locale() -> Locale:
-    return _active_locale
+    return _state.locale
 
 
 def get_mode() -> OutputMode:
-    return _active_mode
+    return _state.mode
 
 
 def set_locale(locale: Locale) -> None:
-    global _active_locale
-    _active_locale = locale
+    _state.locale = locale
+    _CACHE.clear()
 
 
 def set_mode(mode: OutputMode) -> None:
-    global _active_mode
-    _active_mode = mode
+    _state.mode = mode
+    _CACHE.clear()
 
 
 def t(key: str, **kwargs: str) -> str:
-    cached_key = f"{_active_locale}:{key}:{sorted(kwargs.items())}"
+    cached_key = f"{_state.locale}:{key}:{sorted(kwargs.items())}"
     if cached_key in _CACHE and "GITWISE_DEBUG" not in os.environ:
         return _CACHE[cached_key]
     entry = _STRINGS.get(key)
     if entry is None:
         return key
-    template = entry.get(_active_locale, entry.get("en", key))
+    template = entry.get(_state.locale, entry.get("en", key))
     result = template.format(**kwargs) if kwargs else template
     _CACHE[cached_key] = result
     return result
 
 
 def confirm_responses() -> set[str]:
-    if _active_locale == "es":
+    if _state.locale == "es":
         return {"s", "si", "sí", "y", "yes"}
     return {"y", "yes", "s", "si"}
 

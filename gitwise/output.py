@@ -1,54 +1,12 @@
 """Dual output: human-readable (colored, localized) + JSON (structured). Detects bat/delta/rg."""
 
 import json
-import os
-import shutil
+import subprocess
 import sys
 from typing import Any
 
+from ._runtime_config import get_runtime_config
 from .i18n import confirm_responses, t
-
-HAS_BAT = bool(shutil.which("bat"))
-HAS_DELTA = bool(shutil.which("delta"))
-
-
-def _should_color() -> bool:
-    if os.environ.get("CLICOLOR_FORCE", "").lower() in ("1", "true"):
-        return True
-    if os.environ.get("NO_COLOR", "") != "":
-        return False
-    if os.environ.get("GITWISE_NO_COLOR", "").lower() in ("1", "true"):
-        return False
-    if os.environ.get("CLICOLOR", "1") not in ("1", "true"):
-        return False
-    return sys.stdout.isatty()
-
-
-def _detect_theme() -> str:
-    colorfgbg = os.environ.get("COLORFGBG", "")
-    if colorfgbg:
-        parts = colorfgbg.split(";")
-        if len(parts) == 2:
-            bg = parts[1]
-            if bg in ("0", "8", "16"):
-                return "dark"
-            return "light"
-    return "dark"
-
-
-def _reinit() -> None:
-    global _THEME, _USE_COLOR, IS_TTY, DEBUG, _C
-    _THEME = _detect_theme()
-    _USE_COLOR = _should_color()
-    IS_TTY = sys.stdout.isatty()
-    DEBUG = os.environ.get("GITWISE_DEBUG", "").lower() in ("1", "true")
-    _C = _COLORS_DARK if _THEME == "dark" else _COLORS_LIGHT
-
-
-_THEME = _detect_theme()
-_USE_COLOR = _should_color()
-IS_TTY = sys.stdout.isatty()
-DEBUG = os.environ.get("GITWISE_DEBUG", "").lower() in ("1", "true")
 
 _COLORS_DARK = {
     "success": "\033[0;32m",
@@ -70,13 +28,31 @@ _COLORS_LIGHT = {
     "reset": "\033[0m",
 }
 
-_C = _COLORS_DARK if _THEME == "dark" else _COLORS_LIGHT
+
+class _ModuleAttr:
+    __slots__ = ("_name",)
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    def __bool__(self) -> bool:
+        return bool(getattr(get_runtime_config(), self._name))
+
+    def __repr__(self) -> str:
+        return repr(bool(self))
+
+
+HAS_BAT = _ModuleAttr("has_bat")
+HAS_DELTA = _ModuleAttr("has_delta")
+IS_TTY = _ModuleAttr("is_tty")
 
 
 def _color(name: str) -> str:
-    if _USE_COLOR:
-        return _C.get(name, "")
-    return ""
+    cfg = get_runtime_config()
+    if not cfg.use_color:
+        return ""
+    colors = _COLORS_DARK if cfg.theme == "dark" else _COLORS_LIGHT
+    return colors.get(name, "")
 
 
 def info(msg: str) -> None:
@@ -102,7 +78,7 @@ def ok(msg: str) -> None:
 
 
 def debug(msg: str) -> None:
-    if DEBUG:
+    if get_runtime_config().debug:
         print(f"[gitwise debug] {msg}", file=sys.stderr)
 
 
@@ -123,15 +99,16 @@ def bat_pipe(text: str, language: str = "plain") -> None:
         return
     if not text.endswith("\n"):
         text += "\n"
-    if HAS_BAT and IS_TTY:
-        import subprocess
-
-        color_flag = "always" if _USE_COLOR else "never"
+    cfg = get_runtime_config()
+    if cfg.has_bat and cfg.is_tty:
+        color_flag = "always" if cfg.use_color else "never"
         cmd = ["bat", "--style=plain", "--pager=never", f"--color={color_flag}"]
         if language and language != "plain":
             cmd += ["--language", language]
         try:
-            r = subprocess.run(cmd, input=text, text=True, check=False, stderr=subprocess.DEVNULL)
+            r = subprocess.run(
+                cmd, input=text, text=True, check=False, stderr=subprocess.DEVNULL, timeout=120
+            )
             if r.returncode == 0:
                 return
         except OSError:
