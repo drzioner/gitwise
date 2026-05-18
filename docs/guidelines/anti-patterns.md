@@ -1,7 +1,7 @@
 # Anti-Patterns — gitwise
 
 > Compatible with: `python@3.10+` · `stdlib` · `pytest` · `ruff`
-> Last reviewed: 2026-05-15
+> Last reviewed: 2026-05-18
 
 List of **prohibited** patterns in this project, organized by category.
 
@@ -90,14 +90,63 @@ Every change should have a clear, limited objective. If you want to improve some
 | `dict` without type | `dict[str, Any]` is useless without known keys | `dict[str, bool]` or TypedDict |
 | `str` for finite values | Allows any string | `Literal["info", "warn", "error"]` |
 | `Any` as return type | Disables downstream type checking | Specific type |
+| `Any` without justification comment | Even as parameter, disables type safety | Specific type or `TypeVar` |
 | `as Any` cast | Hides real errors | Redesign the type |
 | `# type: ignore` | Silences real errors | Fix the root type |
 | `Optional[X]` | Pre-3.10 style | `X | None` (union syntax) |
 | `List[X]`, `Dict[K, V]` | Pre-3.10 style | `list[X]`, `dict[K, V]` (lowercase generics) |
+| `list` without type parameter | Generic container loses safety | `list[str]`, `list[Path]` |
+| Plain tuple for multi-value returns | Opaque `(str, int, bool)` — what is each? | Named tuple or dataclass |
+| Return type relying on inference | basedpyright can miss it, breaks docs | Always explicit `-> ReturnType` |
 
 ---
 
-## 6. Path handling
+## 6. Error handling
+
+| Anti-pattern | Why | Alternative |
+|-------------|-----|-------------|
+| Bare `except Exception: pass` | Silences failures, hides bugs forever | Catch specific `OSError`, `ValueError`, etc. |
+| `except Exception as e: raise e` | Loses original traceback | `raise` (re-raise preserves traceback) |
+| `except Exception: raise RuntimeError(msg)` | Loses original traceback | `raise RuntimeError(msg) from e` (chain) |
+| Batch abort on first item error | One bad item kills entire operation | Track successes and failures separately |
+| Error message without context | `"Failed"` — what? why? how to fix? | `"Failed to create symlink: target escapes repo root"` |
+| Catching at wrong layer | Business logic catching I/O errors | I/O errors at I/O boundary, domain errors in domain |
+| Generic `Exception` in `except` | Catches `KeyboardInterrupt`, `SystemExit` | Specific exception types only |
+| Ignoring `subprocess` timeout errors | Git hang becomes silent failure | Handle `subprocess.TimeoutExpired` explicitly |
+
+### Exception chaining rule
+
+```python
+# CORRECT — preserve debug trail
+try:
+    content = path.read_text(encoding="utf-8")
+except OSError as e:
+    raise PlanExecutionError(t("errors.read_failed", path=str(path))) from e
+
+# PROHIBITED — original traceback lost
+try:
+    content = path.read_text(encoding="utf-8")
+except OSError as e:
+    raise PlanExecutionError(t("errors.read_failed", path=str(path)))
+```
+
+---
+
+## 7. Resource management
+
+| Anti-pattern | Why | Alternative |
+|-------------|-----|-------------|
+| `f = open(path); f.read()` without `with` | File never closed on exception | `with open(path) as f:` |
+| `subprocess.run()` without `timeout` | Git hang blocks forever | `timeout=120` (default in `git.run()`) |
+| `subprocess.run()` without `capture_output=True` | Output leaks to terminal | Always capture |
+| Temp files not cleaned up on failure | Disk pollution in test runs | `finally` block or fixture teardown |
+| `__exit__` that doesn't run unconditionally | Resource leak on exception | `__exit__` must always clean up |
+| Accumulating strings with `+=` in loops | O(n²) for large outputs | List append + `"".join()` |
+| Multiple resources without `ExitStack` | Nested `with` gets unwieldy at 3+ | `contextlib.ExitStack` |
+
+---
+
+## 8. Path handling
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
@@ -109,7 +158,7 @@ Every change should have a clear, limited objective. If you want to improve some
 
 ---
 
-## 7. Subprocess and Git
+## 9. Subprocess and Git
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
@@ -125,7 +174,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 8. Output and presentation
+## 10. Output and presentation
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
@@ -138,7 +187,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 9. GPG and security
+## 11. GPG and security
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
@@ -150,7 +199,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 10. Testing
+## 12. Testing
 
 | Anti-pattern | Alternative |
 |-------------|-------------|
@@ -166,7 +215,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 11. Commits and Git
+## 13. Commits and Git
 
 | Anti-pattern | Alternative |
 |-------------|-------------|
@@ -179,7 +228,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 12. File structure
+## 14. File structure
 
 | Anti-pattern | Alternative |
 |-------------|-------------|
@@ -193,7 +242,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 13. JSON schema
+## 15. JSON schema
 
 | Anti-pattern | Alternative |
 |-------------|-------------|
@@ -204,7 +253,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 14. Comments
+## 16. Comments
 
 | Anti-pattern | Alternative |
 |-------------|-------------|
@@ -216,7 +265,7 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
-## 15. AI slop in generated text
+## 17. AI slop in generated text
 
 **NEVER** produce text with generic AI patterns. Applies to: commit messages, CLI output, documentation, i18n strings.
 
@@ -232,6 +281,18 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 ---
 
+## 18. Over-engineering (configuration and observability)
+
+| Anti-pattern | Why | Alternative |
+|-------------|-----|-------------|
+| `pydantic-settings` / `dotenv` for config | Breaks zero-dep | Direct `os.environ.get()` or `os.getenv()` |
+| Structured logging library (`structlog`) | Breaks zero-dep | `output.py` functions (ok/warn/error/info/debug) |
+| `prometheus_client` / OpenTelemetry | Breaks zero-dep, overkill for CLI | Exit codes + JSON output for machine parsing |
+| Configuration class for 2 values | Premature abstraction | Direct parameters with defaults |
+| Factory/registry pattern for formatters | Over-engineering | Simple dict mapping |
+
+---
+
 ## Quick summary
 
 | Category | Required | Prohibited |
@@ -241,11 +302,17 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 | Output | `ok()` / `t("key")` | `print()` / literal strings |
 | Paths | `pathlib.Path` | `os.path` (except `realpath`) |
 | Imports | Relative `from .x import y` | Absolute `from gitwise.x` |
-| Types | Type hints on all signatures | `Any`, `def f(x):` |
+| Types | Type hints on all signatures, explicit return types | `Any`, `def f(x):`, inferred returns |
 | Finite values | `Literal["a", "b"]` | Generic `str` |
+| Multi-value returns | Named tuple or dataclass | Plain tuple |
 | Magic values | Named constant | Literal repeated in 2+ places |
+| Error handling | Specific exceptions, `raise ... from e` | Bare `except`, lost traceback |
+| Batch errors | Track successes/failures separately | Abort entire batch on single error |
+| Resources | Context managers, `with`, `finally` | Unclosed files, no timeout on subprocess |
 | GPG | Only verify, never modify | Changing gpgsign/signingkey |
 | Testing | pytest + real subprocess | unittest, mocks |
 | Comments | Only the WHY | What the code already says |
 | JSON schema | Bump version, maintain compat | Removing keys, no default |
 | Commits | Conventional format, GPG signed | `--no-gpg-sign` in production |
+| Config | `os.environ.get()` | pydantic-settings, dotenv |
+| Logging | `output.py` functions | structlog, logging library |

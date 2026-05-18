@@ -1,7 +1,7 @@
 # Architecture Guidelines — gitwise
 
 > Compatible with: `python@3.10+` · `argparse` · `stdlib`
-> Last reviewed: 2026-05-15
+> Last reviewed: 2026-05-18
 
 Architectural patterns of the project. Every pattern exists for a documented reason.
 
@@ -75,9 +75,9 @@ run_<cmd>()
   │       └── PURE: no I/O, no side effects
   ├── 3. Dry-run: print plan, return 0
   ├── 4. Confirm (unless --yes)
-  └── 5. _execute_actions() → exit_code
+  └── 5. _execute_actions() → raises on failure
           └── I/O: write files, create symlinks
-          └── _undo_partial() on failure
+          └── _undo_partial() on failure (then re-raises PlanExecutionError)
 ```
 
 ### Invariants
@@ -102,41 +102,50 @@ class PlanExecutionError(Exception):
 ```
 
 - `_safe_create_symlink` raises `SymlinkConflict` if target escapes the repo
-- `_execute_actions` catches exceptions and calls `_undo_partial`
+- `_execute_actions` catches exceptions and calls `_undo_partial`, then re-raises `PlanExecutionError`
+
+### Exception chaining
+
+All re-raised exceptions must preserve the original traceback:
+
+```python
+try:
+    content = path.read_text(encoding="utf-8")
+except OSError as e:
+    raise PlanExecutionError(t("errors.read_failed", path=str(path))) from e
+```
+
+**NEVER** re-raise without `from e` — it destroys the debug trail.
+
+### Batch partial failures
+
+Operations that process multiple items (e.g., multi-action `_execute_actions`) track successes and failures separately:
+
+```python
+def _execute_actions(root: Path, actions: list[dict]) -> None:
+    executed: list[dict] = []
+    for action in actions:
+        try:
+            _apply_single(root, action)
+            executed.append(action)
+        except (OSError, SymlinkConflict) as e:
+            error(t("errors.action_failed", action=action["action"]))
+            _undo_partial(executed, root)
+            raise
+```
+
+**NEVER** abort the entire batch on a single item error without reporting which item failed and why.
 
 ### `actions` structure
 
-Actions use typed dictionaries with a `type` discriminator:
+Actions use dictionaries with an `action` discriminator:
 
 ```python
-from typing import Any, Literal, TypedDict
-
-class WriteAction(TypedDict):
-    type: Literal["write"]
-    path: str
-    content: str
-
-class SymlinkAction(TypedDict):
-    type: Literal["symlink"]
-    link: str
-    target_relative: str
-
-class MkdirAction(TypedDict):
-    type: Literal["mkdir"]
-    path: str
-
-class ManagedBlockAction(TypedDict):
-    type: Literal["managed_block"]
-    file: str
-    content: str
-
-Action = WriteAction | SymlinkAction | MkdirAction | ManagedBlockAction
-
-actions: list[Action] = [
-    {"type": "write", "path": "CLAUDE.md", "content": "..."},
-    {"type": "symlink", "link": "CLAUDE.md", "target_relative": "AGENTS.md"},
-    {"type": "mkdir", "path": ".claude/skills/git-audit"},
-    {"type": "managed_block", "file": ".gitignore", "content": "..."},
+actions: list[dict] = [
+    {"action": "write", "path": "CLAUDE.md", "content": "..."},
+    {"action": "symlink", "link": "CLAUDE.md", "target_relative": "AGENTS.md"},
+    {"action": "mkdir", "path": ".claude/skills/git-audit"},
+    {"action": "managed_block", "file": ".gitignore", "content": "..."},
 ]
 ```
 
@@ -356,8 +365,9 @@ _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 | Element | Suggested limit | Action |
 |---------|----------------|--------|
 | Module `gitwise/*.py` | ~300 lines | Extract helpers to new module |
-| `setup_agents.py` | ~1400 lines (exception) | Don't split — 5-bucket is cohesive |
-| `__main__.py` | ~250 lines | Router + argparse + update |
+| `setup_agents.py` | ~320 lines | Entry point — delegates to `_sa_*` modules |
+| `_sa_*.py` (split modules) | ~150-310 lines each | State, planning, execution phases |
+| `__main__.py` | ~580 lines | Router + argparse + dispatch handlers |
 | Public function | ~50 lines | Delegate to private helpers |
 | Private function | ~30 lines | Consider splitting |
 
@@ -373,8 +383,14 @@ _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 If you can describe a module in a single sentence, it has good cohesion. If you need "and", consider splitting:
 
 ```
-"setup_agents.py" → "Manages AGENTS.md/CLAUDE.md coexistence with the 5-bucket model"
-→ Single cohesive responsibility. OK despite 1400 lines.
+"setup_agents.py" → "Entry point that delegates to _sa_* modules"
+→ Thin orchestrator. OK.
+
+"_sa_state.py" → "State detection for AGENTS.md/CLAUDE.md paths"
+→ Single responsibility. OK.
+
+"_sa_plan.py" → "Planning orchestrator for 5-bucket actions"
+→ Single responsibility. OK.
 
 If it were → "Manages file coexistence AND generates snapshots AND handles i18n"
 → Three responsibilities. Split.
@@ -403,10 +419,10 @@ _execute_*() → git.py, output.py, filesystem (I/O)
 
 ```python
 # CORRECT — explicit data
-def _plan_actions(root: Path, ...) -> tuple[list[dict[str, Any]], list[str], list[str], int]:
+def _plan_actions(root: Path, ...) -> tuple[list[dict], list[str], list[str], int]:
     ...
 
-def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> int:
+def _execute_actions(root: Path, actions: list[dict]) -> None:
     ...
 
 # PROHIBITED — global state
@@ -416,3 +432,82 @@ def _plan_actions(root):
     global _plan_result
     ...
 ```
+
+---
+
+## 12. Resource Management
+
+### File I/O — always use context managers
+
+```python
+# CORRECT — resource released even on exception
+def _read_template(path: Path) -> str:
+    with path.open(encoding="utf-8") as f:
+        return f.read()
+
+# PROHIBITED — file leak on exception
+def _read_template(path: Path) -> str:
+    f = path.open(encoding="utf-8")
+    return f.read()
+```
+
+### Subprocess — always with timeout and capture
+
+All `subprocess.run()` calls must include:
+- `capture_output=True` — prevent output leaking to terminal
+- `timeout` — prevent indefinite hangs (default 120s in `git.run()`)
+- `text=True` — string output, not bytes
+
+### Temp file cleanup
+
+Fixtures that create temp files/dirs must clean up in teardown:
+
+```python
+@pytest.fixture
+def tmp_with_config(tmp_path):
+    config = tmp_path / "config.json"
+    config.write_text("{}")
+    yield tmp_path
+    # pytest tmp_path auto-cleans, but explicit cleanup for non-tmp resources:
+    # for f in temp_files: f.unlink(missing_ok=True)
+```
+
+### String accumulation
+
+Never concatenate strings in a loop with `+=` — O(n²) complexity:
+
+```python
+# CORRECT — O(n)
+parts: list[str] = []
+for line in lines:
+    parts.append(processed_line)
+result = "".join(parts)
+
+# PROHIBITED — O(n²)
+result = ""
+for line in lines:
+    result += processed_line
+```
+
+---
+
+## 13. Observability — output.py as the interface
+
+gitwise has no logging library (zero-dep). `output.py` serves as the structured output layer:
+
+| Function | Level | When |
+|----------|-------|------|
+| `ok()` | Success | Operation completed |
+| `warn()` | Warning | Non-critical issue |
+| `error()` | Error | Operation failed |
+| `info()` | Information | Status updates |
+| `debug()` | Debug | Only when env var enabled |
+| `print_json()` | Machine | Structured JSON output |
+
+### Rules
+
+- **NEVER** use `print()` outside `__main__._run_update`
+- **NEVER** hardcode ANSI codes — `output.py` handles color detection
+- **NEVER** import `logging` or `structlog` — zero-dep constraint
+- Error messages must include what failed, why, and how to fix
+- `--json` flag must produce valid JSON with versioned schema on every command

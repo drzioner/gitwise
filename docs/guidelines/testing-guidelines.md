@@ -2,7 +2,7 @@
 
 > Compatible with: `pytest` · `subprocess` · `conftest.py`
 > No mocks. Real integration tests on synthetic repos.
-> Last reviewed: 2026-05-15
+> Last reviewed: 2026-05-18
 
 ---
 
@@ -130,6 +130,64 @@ Rules:
 ---
 
 ## 5. Test structure
+
+### One behavior per test
+
+Each test verifies exactly one behavior. This makes failures easy to diagnose:
+
+```python
+# CORRECT — one behavior per test
+def test_bucket2_creates_symlink_when_agents_present(tmp_git_repo):
+    (tmp_git_repo / "AGENTS.md").write_text("# Agents")
+    result = run_gitwise("setup-agents", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert (tmp_git_repo / "CLAUDE.md").is_symlink()
+
+def test_bucket2_symlink_targets_agents_md(tmp_git_repo):
+    (tmp_git_repo / "AGENTS.md").write_text("# Agents")
+    run_gitwise("setup-agents", cwd=tmp_git_repo)
+    target = os.path.realpath(str(tmp_git_repo / "CLAUDE.md"))
+    assert target == str(tmp_git_repo / "AGENTS.md")
+
+# PROHIBITED — multiple behaviors
+def test_bucket2(tmp_git_repo):
+    (tmp_git_repo / "AGENTS.md").write_text("# Agents")
+    result = run_gitwise("setup-agents", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert (tmp_git_repo / "CLAUDE.md").is_symlink()  # behavior 2
+    target = os.path.realpath(str(tmp_git_repo / "CLAUDE.md"))  # behavior 3
+    assert target == str(tmp_git_repo / "AGENTS.md")
+```
+
+### Test error paths and edge cases
+
+Every test module must include tests for failure scenarios, not just happy paths:
+
+```python
+# Happy path
+def test_audit_detects_large_blobs(tmp_git_repo_with_large_blob):
+    ...
+
+# Error paths
+def test_audit_returns_1_on_non_repo(tmp_path):
+    result = run_gitwise("audit", cwd=tmp_path)
+    assert result.returncode == 1
+
+def test_clean_refuses_without_confirm(tmp_git_repo_with_stale):
+    result = run_gitwise("clean", "--branches", cwd=tmp_git_repo_with_stale)
+    assert result.returncode == 0  # didn't delete, just exited
+    data = json.loads(run_gitwise("clean", "--branches", "--json", "--dry-run", cwd=tmp_git_repo_with_stale).stdout)
+    assert len(data["branches"]["stale"]) > 0  # branches still there
+```
+
+### Edge cases to cover
+
+- Empty repos (no commits beyond initial)
+- Repos with no branches besides main
+- Files with special characters in names
+- Non-standard git configurations
+- Missing directories that gitwise expects
+- Concurrent access patterns (e.g., worktree + main)
 
 ```
 tests/
@@ -306,3 +364,48 @@ uv run pytest
 - **Lines**: >80% in core modules (`setup_agents.py`, `setup.py`, `clean.py`)
 - **Branches**: >70% in `_plan_*` and `_execute_*` functions
 - **Don't** chase 100% — better integration tests than numeric coverage
+
+---
+
+## 11. Testing batch and partial failure scenarios
+
+When a command processes multiple items, tests must verify partial failure behavior:
+
+```python
+def test_execute_actions_rolls_back_on_failure(tmp_git_repo):
+    """Verify partial execution is rolled back when a later action fails."""
+    result = run_gitwise("setup-agents", cwd=tmp_git_repo)
+    assert result.returncode == 0
+
+    # After failure, verify no partial state was left
+    assert not (tmp_git_repo / ".claude" / "partial_file").exists()
+```
+
+### Assertion strategy for batches
+
+```python
+# CORRECT — verify individual outcomes
+def test_batch_reports_failures(tmp_git_repo):
+    result = run_gitwise("command", "--json", cwd=tmp_git_repo)
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert len(data["errors"]) > 0
+    assert any("specific_error" in e for e in data["errors"])
+
+# PROHIBITED — only checking total count
+def test_batch(tmp_git_repo):
+    result = run_gitwise("command", cwd=tmp_git_repo)
+    assert result.returncode == 1  # why did it fail?
+```
+
+---
+
+## 12. Test isolation rules
+
+| Rule | Why |
+|------|-----|
+| No shared mutable state between tests | Tests must run in any order |
+| Each test creates its own repo state | No dependency on other tests |
+| No `pytest.mark.order` | Order-independent by design |
+| No global variables modified in tests | Fixtures provide isolated state |
+| Cleanup in fixture teardown or `tmp_path` | No leaked temp files |
