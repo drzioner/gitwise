@@ -1,10 +1,10 @@
-"""Unit tests for setup-agents internal modules: _sa_state, _sa_exec."""
+"""Unit tests for setup-agents internal modules: state, exec."""
 
 import os
 from pathlib import Path
 
 import pytest
-from gitwise._sa_exec import (
+from gitwise.setup_agents.exec import (
     PlanExecutionError,
     SymlinkConflict,
     _apply_managed_block,
@@ -12,7 +12,7 @@ from gitwise._sa_exec import (
     _safe_create_symlink,
     _undo_partial,
 )
-from gitwise._sa_state import (
+from gitwise.setup_agents.state import (
     _classify_path,
     _detect_rules,
     _detect_state,

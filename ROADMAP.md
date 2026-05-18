@@ -3,14 +3,14 @@
 Documento vivo con las funcionalidades propuestas para transformar gitwise de herramienta
 diagnóstica/setup en el hub central de git para humanos y agentes AI.
 
-## Estado Actual (v0.7.0)
+## Estado Actual (v0.10.3)
 
 gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `audit`,
 `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`, `diff`, `log`,
 `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`, `health`, `stash`, `tag`,
 `merge`, `conflicts`, `suggest` (`commit-suggest`), `pick` (`cherry-pick`), `status`, `update`.
 
-**Phases 1-7 completadas.** 241 tests, 304 i18n keys (es/en), zero deps.
+**Phases 1-10 completadas.** 326 tests, 624 i18n keys (es/en), zero deps.
 
 ---
 
@@ -50,12 +50,38 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 - `log --graph` flag for branch topology
 - `stash show --patch` for full diff output
 
-## Phase 7 — Final Aliases & Changelog (THIS PR)
+## Phase 7 — Final Aliases & Changelog (MERGED, PR #13)
 
 - `clean` → `branch-clean` alias
 - `suggest` → `commit-suggest` alias
 - ROADMAP.md updated (all items marked Done)
 - CHANGELOG.md generated
+
+## Phase 8 — Command Enhancements (MERGED, PR #14)
+
+- `pr` — create GitHub PRs via `gh` CLI
+- `undo` — reflog-based undo with soft/hard modes
+- `merge` — merge/rebase with preflight checks
+- `conflicts` — conflict detection and resolution (`--ours`/`--theirs`)
+- `tag` — semver-aware tag management with `--bump`
+- `suggest` — heuristic commit message suggestion from staged diff
+- `pick` — cherry-pick/revert with conflict handling
+- `update` — self-update via `git pull` in install directory
+
+## Phase 9 — Cross-Verification Fixes (MERGED, PR #15)
+
+- Multi-review audit fixes across command modules
+- Edge case hardening in `audit`, `clean`, `optimize`
+- GPG detection improvements in `setup`
+
+## Phase 10 — Architecture Cleanup (MERGED, PR #16, #17)
+
+- `setup_agents` refactored from monolithic `_sa_*.py` files to `setup_agents/` package
+- `_runtime_config.py` — immutable runtime settings (theme, color, TTY, bat/delta detection)
+- `_cli_setup_agents.py` — CLI adapter separated from business logic
+- Guidelines documentation (`docs/guidelines/`): architecture, python, testing, anti-patterns
+- `require_root()` DRY refactoring across command modules
+- 85+ new edge case tests
 
 ---
 

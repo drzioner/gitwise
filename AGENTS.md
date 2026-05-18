@@ -33,10 +33,12 @@ bash install.sh                   # symlinks bin/gitwise → ~/.local/bin/gitwis
 uv run pytest                      # all tests (from repo root)
 uv run pytest tests/test_setup_agents.py -v   # single module
 uv run pytest -k test_bucket2      # filter by name
-uv run pytest --cov=gitwise        # with coverage
+uv run pytest --cov=gitwise        # with coverage (see note below)
 ```
 
 Tests invoke gitwise as a subprocess via `run_gitwise()` in `conftest.py`. No mocks — all git operations run on synthetic temp repos created by fixtures.
+
+**Coverage note:** `--cov` reports ~22% because tests run gitwise as a subprocess (`subprocess.run()`). `pytest --cov` only instruments the parent process, so 24 command modules show 0% despite being fully tested via subprocess invocations. The real coverage is significantly higher. Only modules directly imported in test files (`setup_agents/`, `clean`, `optimize`, `git`, `i18n`, `output`) show accurate coverage numbers.
 
 ## Lint, Format & Type Check
 
@@ -53,14 +55,11 @@ lefthook run pre-commit            # run all pre-commit hooks
 ```
 gitwise/             # Python package — one module per subcommand
   __main__.py        # argparse router → dispatches to run_<cmd>()
-  setup_agents.py    # entry point: run_setup_agents → _run_setup_local/global
-  _sa_state.py       # state detection (_classify_path, _detect_state, _detect_rules, reset_caches)
-  _sa_plan.py        # planning orchestrator (_resolve_canonical_doc, _plan_actions, _plan_actions_global)
-  _sa_plan_skills.py # skills planning (plan_skills, plan_global_skills, _plan_single_skill)
-  _sa_plan_gitfiles.py # managed blocks (plan_managed_block, gitignore/gitattributes generators)
-  _sa_exec.py        # execution (_execute_actions, _safe_create_symlink, _undo_partial)
+  setup_agents/      # setup-agents sub-package (plan, state, exec, types, format)
+  _cli_setup_agents.py  # CLI adapter for setup-agents
+  _runtime_config.py  # immutable runtime settings (theme, color, TTY, bat/delta)
   i18n.py            # t(), confirm_responses(), reset_cache() — loads from _i18n_data.json
-  _i18n_data.json    # i18n string catalog (es/en, 220+ keys)
+  _i18n_data.json    # i18n string catalog (es/en, 624 keys)
   git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
   output.py          # ok/warn/error/info/debug/print_json/bat_pipe
   snapshot.py        # generates .claude/git-snapshot.md
@@ -99,12 +98,14 @@ def run_<command>(...) -> int:   # returns exit code
     # 6. Return exit code (0=ok, 1=error, 2=strict warnings)
 ```
 
-`setup_agents.py` — key functions:
-- `_detect_state(root)` → state dict (a_state, c_state, agents_dir, skills_state, rules_warnings, supports_symlinks, errors, …)
-- `_resolve_canonical_doc(root, state, ...)` → `(bucket: 1-5, actions, warnings)`
-- `_plan_actions(root, ...)` → `(actions, warnings, errors, bucket, state)` — read-only I/O for state detection is acceptable
-- `_execute_actions(root, actions)` — writes files; rolls back on failure via `_undo_partial`; raises `PlanExecutionError` on error
-- `_safe_create_symlink(link, target_relative, root)` — sandbox + TOCTOU-safe
+`setup_agents/` package — key modules:
+- `setup_agents/state.py`: `_detect_state(root)` → state dict, `_classify_path()`, `_detect_rules()`, `reset_caches()`
+- `setup_agents/plan.py`: `_resolve_canonical_doc()` → bucket 1-5, `_plan_actions()` → actions list
+- `setup_agents/exec.py`: `_execute_actions()` — writes files, rolls back via `_undo_partial`; `_safe_create_symlink()` — sandbox + TOCTOU-safe
+- `setup_agents/plan_skills.py`: `plan_skills()`, `plan_global_skills()` — skill installation planning
+- `setup_agents/plan_gitfiles.py`: `plan_managed_block()` — .gitignore/.gitattributes managed blocks
+- `setup_agents/types.py`: `ActionDict`, `StateDict`, `PathState`, `ActionSummary` — shared type definitions
+- `setup_agents/format.py`: `format_json_output_local()`, `format_json_output_global()` — JSON output formatting
 
 JSON output schema: `v=2`, `v_compat=[1,2]`. Keys: `bucket`, `agents_md_detected`, `agents_dir_detected`, `supports_symlinks`, `actions`, `warnings`, `rules_warnings`, `errors`, `summary`, `ok`.
 
@@ -171,7 +172,7 @@ JSON output schema: `v=2`, `v_compat=[1,2]`. Keys: `bucket`, `agents_md_detected
 ## Boundaries
 
 **Always:**
-- Run `uv run pytest` after any change to `setup_agents.py` or its tests
+- Run `uv run pytest` after any change to `setup_agents/` or its tests
 - Run `ruff check` and `ruff format --check` before committing
 - Use `_safe_create_symlink` for any new symlink creation (sandbox enforced)
 - Keep `_plan_actions` read-only (no write I/O) — state detection reads are acceptable; planning and execution are separate phases
@@ -179,7 +180,7 @@ JSON output schema: `v=2`, `v_compat=[1,2]`. Keys: `bucket`, `agents_md_detected
 
 **Ask first:**
 - Adding a new subcommand (touches `__main__.py` router and needs its own test module)
-- Changing the 5-bucket model logic in `_resolve_canonical_doc`
+- Changing the 5-bucket model logic in `setup_agents.plan._resolve_canonical_doc`
 - Modifying `share/claude/` templates (affects all repos that run setup-agents)
 
 **Never:**

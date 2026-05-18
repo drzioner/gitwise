@@ -180,7 +180,7 @@ _GITIGNORE_MARKER_END = "# <<< gitwise managed <<<"
 
 ---
 
-## 4. 5-Bucket Model (`setup_agents.py`)
+## 4. 5-Bucket Model (`setup_agents/` package)
 
 The AGENTS.md/CLAUDE.md coexistence system classifies each repo into one of 5 states:
 
@@ -326,7 +326,7 @@ warn(t("audit.stale_branches", count=len(stale)))
 ### Multi-layer protection
 
 1. `setup.py`: configures hooks and defaults, **never** touches GPG keys
-2. `setup_agents.py`: injects `settings.json` with deny rules for `--no-gpg-sign`
+2. `setup_agents/`: injects `settings.json` with deny rules for `--no-gpg-sign`
 3. `share/hooks/pre-commit`: verifies signing key is in the keyring
 4. Tests: use `--no-gpg-sign` (only permitted exception)
 
@@ -365,8 +365,8 @@ _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 | Element | Suggested limit | Action |
 |---------|----------------|--------|
 | Module `gitwise/*.py` | ~300 lines | Extract helpers to new module |
-| `setup_agents.py` | ~320 lines | Entry point — delegates to `_sa_*` modules |
-| `_sa_*.py` (split modules) | ~150-310 lines each | State, planning, execution phases |
+| `setup_agents/` (package) | ~1,345 lines total | Split into plan/state/exec/types/format modules |
+| `setup_agents/*.py` (sub-modules) | ~50-360 lines each | State, planning, execution, types, format, skills, gitfiles |
 | `__main__.py` | ~580 lines | Router + argparse + dispatch handlers |
 | Public function | ~50 lines | Delegate to private helpers |
 | Private function | ~30 lines | Consider splitting |
@@ -375,7 +375,7 @@ _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 
 - **YES**: a private function grows beyond 50 lines
 - **YES**: a module has 3+ functions forming a coherent sub-domain
-- **NO**: if splitting breaks cohesion (setup_agents.py is an example)
+- **NO**: if splitting breaks cohesion (setup_agents/ package is already well-split)
 - **NO**: "just in case" — split when it hurts, not before
 
 ### Diagnostic
@@ -383,13 +383,13 @@ _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 If you can describe a module in a single sentence, it has good cohesion. If you need "and", consider splitting:
 
 ```
-"setup_agents.py" → "Entry point that delegates to _sa_* modules"
-→ Thin orchestrator. OK.
-
-"_sa_state.py" → "State detection for AGENTS.md/CLAUDE.md paths"
+"setup_agents/state.py" → "State detection for AGENTS.md/CLAUDE.md paths"
 → Single responsibility. OK.
 
-"_sa_plan.py" → "Planning orchestrator for 5-bucket actions"
+"setup_agents/plan.py" → "Planning orchestrator for 5-bucket actions"
+→ Single responsibility. OK.
+
+"setup_agents/exec.py" → "Execution, symlink creation, rollback"
 → Single responsibility. OK.
 
 If it were → "Manages file coexistence AND generates snapshots AND handles i18n"

@@ -312,8 +312,8 @@ uv run pytest tests/test_setup.py::test_gpg_safety -v
 ### Before committing
 
 ```bash
-# Always after changes to setup_agents.py or its tests
-uv run pytest tests/test_setup_agents.py -v
+# Always after changes to setup_agents/ or its tests
+uv run pytest tests/test_setup_agents.py tests/test_sa_unit.py tests/test_sa_plan.py -v
 
 # Always before commit
 ruff check gitwise/ tests/
@@ -361,8 +361,8 @@ uv run pytest
 
 ### Coverage targets
 
-- **Lines**: >80% in core modules (`setup_agents.py`, `setup.py`, `clean.py`)
-- **Branches**: >70% in `_plan_*` and `_execute_*` functions
+- **Lines**: >80% in core modules (`setup_agents/`, `setup.py`, `clean.py`)
+- **Branches**: >70% in `plan.*` and `exec.*` functions
 - **Don't** chase 100% — better integration tests than numeric coverage
 
 ---

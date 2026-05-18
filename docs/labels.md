@@ -54,7 +54,7 @@ New issue → status/needs-triage
 | Label | Color | Covers |
 |-------|-------|--------|
 | `area/core` | `#1a5276` | `__main__.py`, `git.py`, `output.py`, shared helpers |
-| `area/setup-agents` | `#6f42c1` | `setup_agents.py`, 5-bucket model, AGENTS.md/CLAUDE.md coexistence |
+| `area/setup-agents` | `#6f42c1` | `setup_agents/` package, 5-bucket model, AGENTS.md/CLAUDE.md coexistence |
 | `area/cli` | `#0052cc` | Argparse routing, subcommand pattern, output formatting, i18n |
 | `area/git-ops` | `#29C8CA` | `audit.py`, `clean.py`, `optimize.py`, `worktree.py`, `diff.py`, `summarize.py` |
 | `area/templates` | `#c5def5` | `share/` directory: CLAUDE.md.template, settings.json, skills, hooks |
