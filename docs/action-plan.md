@@ -117,8 +117,9 @@ gitwise/             # Python package — one module per subcommand
 
 **Action:**
 1. Update `tests/test_sa_unit.py` imports to use `gitwise.setup_agents.exec` and `gitwise.setup_agents.state` directly
-2. Delete all 6 stub files
-3. Update `AGENTS.md` if any stub references remain
+2. Verify `tests/test_sa_plan.py` imports (already uses `gitwise.setup_agents.*` directly)
+3. Delete all 6 stub files
+4. Update `AGENTS.md` if any stub references remain
 
 **Files to modify:**
 - `tests/test_sa_unit.py` — change imports

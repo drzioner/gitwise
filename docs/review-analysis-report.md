@@ -26,7 +26,7 @@
 | Commands (run_\*) | 27 | **27** + 3 aliases | `grep 'def run_' gitwise/*.py` |
 | Dispatch entries | 27 | **30** | `__main__.py:_DISPATCH` |
 | Source files (.py) | — | **47** | `find gitwise -name "*.py"` |
-| Source LOC | — | **5,840** | `wc -l gitwise/*.py` |
+| Source LOC | — | **5,840** | `find gitwise -name "*.py" | xargs wc -l` |
 | Test files | — | **35** | `find tests -name "*.py"` |
 | Test LOC | — | **3,481** | `wc -l tests/*.py` |
 | Commits | 46 | **47** | `git --no-pager log --oneline` |
@@ -198,17 +198,17 @@ Commit `5767e55` (2026-05-18) performed a 6-phase architecture cleanup:
 |----------|--------|
 | Old monolith → Package | `_sa_exec.py` (248→10 LOC), `_sa_plan.py` (316→12), `_sa_state.py` (148→11), etc. → `setup_agents/` package (1,345 LOC across 8 modules) |
 | New files | `_runtime_config.py` (63 LOC), `setup_agents/__init__.py`, `exec.py`, `plan.py`, `plan_skills.py`, `plan_gitfiles.py`, `state.py`, `types.py`, `format.py` |
-| Stub files | 6 `_sa_*.py` files kept as thin re-export stubs (9-12 LOC each) |
-| Test migration | `test_sa_unit.py` + `test_sa_plan.py` added (687 LOC), imports via stubs |
+| Stub files | 6 `_sa_*.py` files removed (previously thin re-export stubs) |
+| Test migration | `test_sa_unit.py` + `test_sa_plan.py` added (687 LOC), imports migrated to package |
 | Guidelines | 5 new files in `docs/guidelines/` (architecture, python-guidelines, testing-guidelines, anti-patterns, README) |
 | AGENTS.md | Updated with new structure references |
 
 ### Assessment
 
 - **Well executed**: Clean separation of concerns, proper package structure
-- **Compatibility maintained**: Stubs preserve backward-compatible imports
+- **Compatibility maintained**: Stubs preserved backward-compatible imports during migration
 - **No functional changes**: Pure refactor, all 326 tests pass
-- **Risk**: Stubs create import indirection — should be cleaned up when no external consumers exist
+- **Resolved**: Stubs created import indirection and have been removed in this PR
 
 ---
 
