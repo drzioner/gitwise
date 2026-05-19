@@ -21,11 +21,7 @@ AGENTS.md.bak*
 
 .claude/
 
-.opencode/**
-!.opencode/
-!.opencode/themes/
-!.opencode/themes/**
-!.opencode/.gitignore
+.opencode/
 review/
 
 # >>> gitwise managed (do not edit between markers) >>>
