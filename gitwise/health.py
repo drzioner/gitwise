@@ -1,6 +1,5 @@
 """gitwise health — repo health score (0-100) with grade and breakdown."""
 
-import subprocess
 from pathlib import Path
 
 from .git import (
@@ -31,12 +30,10 @@ def _commit_count(cwd: Path) -> int:
 
 
 def _branch_info(cwd: Path) -> tuple[int, list[str]]:
-    r = subprocess.run(
-        ["git", "for-each-ref", "--format=%(refname:short) %(upstream:track)", "refs/heads/"],
-        capture_output=True,
-        text=True,
+    r = git_run(
+        ["for-each-ref", "--format=%(refname:short) %(upstream:track)", "refs/heads/"],
         cwd=cwd,
-        timeout=30,
+        check=False,
     )
     if r.returncode != 0:
         return 0, []
