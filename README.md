@@ -1,6 +1,6 @@
 # gitwise
 
-Zero-dependency Python CLI for optimizing git workflows and Claude Code integration.
+Python CLI for optimizing git workflows and Claude Code integration. Uses `rich` for terminal rendering.
 
 [![CI](https://github.com/drzioner/gitwise/actions/workflows/ci.yml/badge.svg)](https://github.com/drzioner/gitwise/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

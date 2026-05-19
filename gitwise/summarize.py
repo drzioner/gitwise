@@ -2,10 +2,20 @@
 
 import subprocess
 
+from ._runtime_config import get_runtime_config
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import HAS_DELTA, IS_TTY, bat_pipe, debug, info, ok, print_json, warn
+from .output import (
+    bat_pipe,
+    debug,
+    info,
+    ok,
+    print_header,
+    print_json,
+    print_section,
+    warn,
+)
 
 
 def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int = 10) -> int:
@@ -52,33 +62,30 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
             warn(t("output_exceeds_8kb", size=str(output_size)))
         return 0
 
-    info(t("branch_label", branch=branch))
-    info("")
+    print_header(t("branch_label", branch=branch))
 
     if status_lines:
-        info(t("modified_files_status", count=str(len(status_lines))))
-        bat_pipe("\n".join(status_lines), language="plain")
-        info("")
+        print_section(t("modified_files_status", count=str(len(status_lines))))
+        for line in status_lines:
+            info(line)
     else:
         ok(t("working_tree_clean"))
-        info("")
 
     if log_lines:
-        info(t("last_commits", count=str(len(log_lines))))
-        bat_pipe("\n".join(log_lines), language="plain")
-        info("")
+        print_section(t("last_commits", count=str(len(log_lines))))
+        for line in log_lines:
+            info(line)
     else:
         info(t("no_commits_yet"))
-        info("")
 
     if shortstat:
-        info(t("diff_prefix", stat=shortstat))
-        info("")
+        print_section(t("diff_prefix", stat=shortstat))
 
     if diff:
         diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
         if diff_r.stdout:
-            if HAS_DELTA and IS_TTY:
+            cfg = get_runtime_config()
+            if cfg.has_delta and cfg.is_tty:
                 debug(t("using_delta"))
                 try:
                     delta = subprocess.Popen(["delta"], stdin=subprocess.PIPE, text=True)
@@ -87,6 +94,6 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
                     bat_pipe(diff_r.stdout, language="diff")
             else:
                 stat_r = git_run(["--no-pager", "diff", "--stat"], cwd=cwd, check=False)
-                info(stat_r.stdout)
+                bat_pipe(stat_r.stdout, language="diff")
 
     return 0

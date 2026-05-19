@@ -156,7 +156,7 @@ def test_setup_agents_warns_on_legacy_commands(tmp_git_repo):
     (legacy / "git-audit.md").write_text("# legacy\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert any("legacy" in w for w in data["warnings"])
+    assert any("legacy" in w or "antiguo" in w for w in data["warnings"])
 
 
 # ── Marker regex ──────────────────────────────────────────────────────────────

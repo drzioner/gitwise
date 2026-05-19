@@ -1,13 +1,21 @@
 """gitwise tag — semver-aware tag management (list/create/delete)."""
 
 import re
-import sys
 from pathlib import Path
 
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import confirm, ok, print_json, warn
+from .output import (
+    confirm,
+    error,
+    ok,
+    print_bracket,
+    print_header,
+    print_json,
+    print_table,
+    warn,
+)
 
 _SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$")
 
@@ -89,8 +97,26 @@ def run_tag(
         if not tags:
             ok(t("tag_empty"))
             return 0
-        for tg in tags:
-            print(f"  {tg['name']}  {tg['sha']}  {tg['date']}")
+
+        columns = [
+            (t("col_tag"), "name"),
+            (t("col_sha"), "sha"),
+            (t("col_date"), "date"),
+        ]
+
+        rows: list[list[str]] = []
+        highlight_rows: set[int] = set()
+        for i, tg in enumerate(tags):
+            rows.append([tg["name"], tg["sha"], tg["date"]])
+            if _SEMVER_RE.match(tg["name"]):
+                highlight_rows.add(i)
+
+        print_table(
+            title=t("tag_list_title"),
+            columns=columns,
+            rows=rows,
+            highlight_rows=highlight_rows,
+        )
         return 0
 
     if action == "latest":
@@ -99,7 +125,8 @@ def run_tag(
             print_json({"v": 2, "latest": latest, "ok": True})
             return 0
         if latest:
-            print(f"  {latest['name']}  {latest['sha']}")
+            print_header(t("tag_latest_title"))
+            print_bracket(latest["name"], latest["sha"])
         else:
             warn(t("tag_no_semver"))
         return 0
@@ -112,7 +139,7 @@ def run_tag(
         else:
             tag_name = name
         if not tag_name:
-            print(t("tag_name_required"), file=sys.stderr)
+            error(t("tag_name_required"))
             return 1
 
         args = ["tag"]
@@ -130,7 +157,7 @@ def run_tag(
             if as_json:
                 print_json({"v": 2, "ok": False, "error": err})
             else:
-                print(err, file=sys.stderr)
+                error(err)
             return 1
         if as_json:
             print_json({"v": 2, "created": tag_name, "ok": True})
@@ -140,7 +167,7 @@ def run_tag(
 
     if action == "delete":
         if not name:
-            print(t("tag_name_required"), file=sys.stderr)
+            error(t("tag_name_required"))
             return 1
         if not yes and not confirm(t("confirm_tag_delete", name=name)):
             warn(t("aborted"))
@@ -154,7 +181,7 @@ def run_tag(
             if as_json:
                 print_json({"v": 2, "ok": False, "error": err})
             else:
-                print(err, file=sys.stderr)
+                error(err)
             return 1
         if as_json:
             print_json({"v": 2, "deleted": name, "ok": True})
@@ -162,5 +189,5 @@ def run_tag(
         ok(t("tag_deleted", name=name))
         return 0
 
-    print(t("tag_unknown_action", action=action), file=sys.stderr)
+    error(t("tag_unknown_action", action=action))
     return 1

@@ -1,12 +1,20 @@
 """gitwise stash — manage stashes by index or age (list/show/pop/drop/clear)."""
 
-import sys
 from pathlib import Path
 
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import confirm, ok, print_json, warn
+from .output import (
+    confirm,
+    error,
+    info,
+    ok,
+    print_header,
+    print_json,
+    print_table,
+    warn,
+)
 
 
 def _stash_list(root: Path) -> list[dict[str, str]]:
@@ -33,13 +41,28 @@ def _cmd_list(root: Path, *, as_json: bool) -> int:
     if not stashes:
         ok(t("stash_empty"))
         return 0
+
+    columns = [
+        (t("stash_col_ref"), "ref"),
+        (t("stash_col_branch"), "branch"),
+        (t("stash_col_message"), "message"),
+    ]
+
+    rows: list[list[str]] = []
     for s in stashes:
-        line = s["ref"]
-        if "branch" in s:
-            line += f"  [{s['branch']}]"
-        if "message" in s:
-            line += f"  {s['message']}"
-        print(line)
+        rows.append(
+            [
+                s.get("ref", ""),
+                s.get("branch", ""),
+                s.get("message", ""),
+            ]
+        )
+
+    print_table(
+        title=t("stash_list_title"),
+        columns=columns,
+        rows=rows,
+    )
     return 0
 
 
@@ -50,12 +73,14 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
         stat_args = ["stash", "show", "-p", ref]
     r = git_run(stat_args, cwd=root, check=False)
     if r.returncode != 0:
-        print(t("stash_not_found", index=str(index)), file=sys.stderr)
+        error(t("stash_not_found", index=str(index)))
         return 1
     if as_json:
         print_json({"v": 2, "ref": ref, "stat": r.stdout.strip(), "ok": True})
         return 0
-    print(r.stdout.strip())
+    print_header(ref)
+    for line in r.stdout.strip().splitlines():
+        info(line)
     return 0
 
 
@@ -63,7 +88,7 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
     ref = f"stash@{{{index}}}"
     r = git_run(["stash", "pop", ref], cwd=root, check=False)
     if r.returncode != 0:
-        print(r.stderr.strip(), file=sys.stderr)
+        error(r.stderr.strip())
         return 1
     if as_json:
         print_json({"v": 2, "popped": ref, "ok": True})
@@ -79,7 +104,7 @@ def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> in
         return 1
     r = git_run(["stash", "drop", ref], cwd=root, check=False)
     if r.returncode != 0:
-        print(r.stderr.strip(), file=sys.stderr)
+        error(r.stderr.strip())
         return 1
     if as_json:
         print_json({"v": 2, "dropped": ref, "ok": True})
@@ -104,7 +129,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         return 1
     r = git_run(["stash", "clear"], cwd=root, check=False)
     if r.returncode != 0:
-        print(r.stderr.strip(), file=sys.stderr)
+        error(r.stderr.strip())
         return 1
     if as_json:
         print_json({"v": 2, "cleared": len(stashes), "ok": True})
@@ -137,5 +162,5 @@ def run_stash(
         return _cmd_drop(root, index, as_json=as_json, yes=yes)
     if action in ("clean", "clear"):
         return _cmd_clean(root, as_json=as_json, yes=yes, dry_run=dry_run)
-    print(t("stash_unknown_action", action=action), file=sys.stderr)
+    error(t("stash_unknown_action", action=action))
     return 1

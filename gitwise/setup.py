@@ -9,7 +9,7 @@ from .git import require_root
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
-from .output import confirm, info, ok, print_json, warn
+from .output import confirm, info, ok, print_header, print_json, print_kv, print_status_line, warn
 
 # Modern git defaults (GitButler list, Chacon feb 2025)
 _BASE_CONFIGS: list[tuple[str, str]] = [
@@ -74,7 +74,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                         "key": "core.fsmonitor",
                         "desired": "true",
                         "current": current,
-                        "note": "macOS only",
+                        "note": t("setup_note_fsmonitor"),
                     }
                 )
 
@@ -87,7 +87,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                     "key": "feature.manyFiles",
                     "desired": "true",
                     "current": current,
-                    "note": "opt-in, git ≥ 2.40",
+                    "note": t("setup_note_manyfiles"),
                 }
             )
 
@@ -99,7 +99,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                 "key": "core.hooksPath",
                 "desired": str(hooks_dir),
                 "current": current,
-                "note": "instala hooks GPG + conventional commits",
+                "note": t("setup_note_hooks"),
             }
         )
 
@@ -132,21 +132,19 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
     for w in gpg_warnings:
         warn(w)
     if gpg_warnings:
-        info("")
+        print()
 
     if not changes:
         ok(t("config_up_to_date"))
         return 0
 
-    info(t("planned_changes", count=str(len(changes))))
-    info("")
+    print_header(t("planned_changes", count=str(len(changes))))
     for c in changes:
         note = f"  [{c['note']}]" if c.get("note") else ""
         current_str = (
             t("current_value", current=c["current"]) if c.get("current") else t("not_configured")
         )
-        info(f"  git config {c['key']} {c['desired']}{current_str}{note}")
-    info("")
+        print_kv(c["key"], f"{c['desired']}  {current_str}{note}")
 
     if dry_run:
         return 0
@@ -155,15 +153,14 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         if not confirm(t("confirm_setup_changes")):
             info(t("cancelled"))
             return 0
-        info("")
+        print()
 
     for c in changes:
         r = git_run(["config", c["key"], c["desired"]], cwd=cwd, check=False)
         if r.returncode == 0:
-            ok(f"git config {c['key']} = {c['desired']}")
+            print_status_line("✓", c["key"], c["desired"])
         else:
-            warn(t("config_failed", name=c["key"]))
+            print_status_line("✗", c["key"], t("config_failed", name=c["key"]), ok_flag=False)
 
-    info("")
     ok(t("setup_complete"))
     return 0

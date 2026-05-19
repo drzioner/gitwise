@@ -1,11 +1,9 @@
 """gitwise branches — intelligence dashboard with ahead/behind, merged, stale, worktree info."""
 
-import sys
-
 from .git import require_root, stale_branches, worktree_branches
 from .git import run as git_run
 from .i18n import t
-from .output import print_json
+from .output import error, info, print_accent, print_header, print_json, print_table
 
 
 def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
@@ -47,28 +45,6 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
     return branches
 
 
-def _format_branch(b: dict[str, str], show_remote: bool = False) -> str:
-    name = b["name"]
-    current = " * " if b["current"] == "true" else "   "
-    sha = b["sha"][:8]
-    subject = b["subject"][:40]
-    age = b.get("age", "")
-
-    flags: list[str] = []
-    if b.get("ahead"):
-        flags.append(f"↑{b['ahead']}")
-    if b.get("behind"):
-        flags.append(f"↓{b['behind']}")
-    if b.get("in_worktree") == "true":
-        flags.append("wt")
-    flag_str = " ".join(flags)
-    flag_display = f" [{flag_str}]" if flag_str else ""
-
-    age_display = f" ({age})" if age else ""
-
-    return f"{current}{name:25s} {sha} {subject:40s}{age_display}{flag_display}"
-
-
 def run_branches(
     *,
     stale: bool = False,
@@ -84,15 +60,15 @@ def run_branches(
     if stale:
         names = stale_branches(cwd=root)
         if not names:
-            print(t("no_stale_branches"))
+            info(t("no_stale_branches"))
             return 0
         if as_json:
             print_json({"v": 2, "ok": True, "stale_branches": names, "count": len(names)})
         else:
-            print(t("branches_to_delete", count=str(len(names))))
+            print_header(t("branches_to_delete", count=str(len(names))))
             for n in names:
-                print(f"  {n}")
-            print(t("clean_to_delete"))
+                print_accent(f"  {n}")
+            info(t("clean_to_delete"))
         return 0
 
     wt_branches = worktree_branches(cwd=root)
@@ -106,19 +82,61 @@ def run_branches(
         check=False,
     )
     if r.returncode != 0:
-        print(t("git_ref_failed", error=r.stderr.strip()), file=sys.stderr)
+        error(t("git_ref_failed", error=r.stderr.strip()))
         return 1
 
     if not r.stdout.strip():
-        print(t("no_commits_yet"))
+        info(t("no_commits_yet"))
         return 0
 
     branches = _parse_branches(r.stdout, wt_branches)
 
     if as_json:
         print_json({"v": 2, "ok": True, "branches": branches, "count": len(branches)})
-    else:
-        for b in branches:
-            print(_format_branch(b, show_remote=remote))
+        return 0
+
+    current_idx: int | None = None
+    columns = [
+        (t("col_branch"), "name"),
+        (t("col_sha"), "sha"),
+        (t("col_subject"), "subject"),
+        (t("col_age"), "age"),
+        (t("col_status"), "status"),
+    ]
+
+    rows: list[list[str]] = []
+    highlight_rows: set[int] = set()
+
+    for idx, b in enumerate(branches):
+        sha = b["sha"][:8]
+        subject = b["subject"][:40]
+        age = b.get("age", "")
+
+        flags: list[str] = []
+        if b.get("ahead"):
+            flags.append(f"↑{b['ahead']}")
+        if b.get("behind"):
+            flags.append(f"↓{b['behind']}")
+        if b.get("in_worktree") == "true":
+            flags.append("wt")
+        if b.get("upstream"):
+            flags.append(f"→{b['upstream']}")
+        status = " ".join(flags) if flags else ""
+
+        name_display = f"* {b['name']}" if b["current"] == "true" else b["name"]
+        rows.append([name_display, sha, subject, age, status])
+
+        if b["current"] == "true":
+            current_idx = idx
+            highlight_rows.add(idx)
+
+    print_table(
+        title=t("branch_list_title_current", branch=branches[current_idx]["name"])
+        if current_idx is not None
+        else t("branch_list_title"),
+        columns=columns,
+        rows=rows,
+        highlight_rows=highlight_rows,
+    )
 
     return 0

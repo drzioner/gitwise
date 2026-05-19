@@ -5,7 +5,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import print_json
+from .output import info, print_bracket, print_dim, print_header, print_json
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
@@ -126,28 +126,28 @@ def run_context(*, as_json: bool = False) -> int:
             }
         )
     else:
-        print(t("ctx_directory_tree"))
+        print_header(t("ctx_directory_tree"))
         for ln in tree[:50]:
-            print(f"  {ln}")
+            info(f"  {ln}")
         if len(tree) > 50:
-            print(t("ctx_more_entries", count=str(len(tree) - 50)))
+            print_dim(t("ctx_more_entries", count=str(len(tree) - 50)))
         print()
         if contributors:
-            print(t("ctx_top_contributors"))
+            print_bracket(t("ctx_top_contributors"))
             for c in contributors:
-                print(f"  {c['commits']:>5}  {c['author']}")
+                print_dim(f"  {c['commits']:>5}  {c['author']}")
             print()
         if file_types:
-            print(t("ctx_file_types"))
+            print_bracket(t("ctx_file_types"))
             for ext, count in list(file_types.items())[:10]:
-                print(f"  .{ext}: {count}")
+                print_dim(f"  .{ext}: {count}")
             print()
         if todo_fixme["todo"] or todo_fixme["fixme"]:
-            print(
+            print_bracket(
                 t("ctx_todo_fixme", todo=str(todo_fixme["todo"]), fixme=str(todo_fixme["fixme"]))
             )
             print()
-        print(
+        print_bracket(
             t(
                 "ctx_branches",
                 local=str(len(topology["local"])),

@@ -384,8 +384,11 @@ wheels = [
 
 [[package]]
 name = "gitwise"
-version = "0.10.2"
+version = "0.10.3"
 source = { editable = "." }
+dependencies = [
+    { name = "rich" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -398,6 +401,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "rich", specifier = ">=13.0" }]
 
 [package.metadata.requires-dev]
 dev = [

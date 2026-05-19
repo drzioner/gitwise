@@ -1,11 +1,11 @@
 """gitwise log — pretty git log with filters and JSON output."""
 
-import sys
+from pathlib import Path
 
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import HAS_DELTA, bat_pipe, info, print_json
+from .output import bat_pipe, error, info, print_header, print_json, print_table
 
 
 def _build_log_args(
@@ -25,9 +25,7 @@ def _build_log_args(
     if oneline:
         args.append("--oneline")
     else:
-        args.append(
-            "--format=%C(yellow)%h%C(reset) %C(dim)%ad%C(reset) %C(bold)%an%C(reset)%C(dim)%d%C(reset)%n  %s"
-        )
+        args.append("--format=%h\t%an\t%ad\t%s")
         args.append("--date=short")
     if author:
         args.append(f"--author={author}")
@@ -92,10 +90,7 @@ def _parse_log_json(raw: str) -> list[dict[str, str]]:
     return commits
 
 
-def _enrich_with_stats(commits: list[dict[str, str]], cwd: object) -> None:
-    from pathlib import Path
-
-    assert isinstance(cwd, Path)
+def _enrich_with_stats(commits: list[dict[str, str]], cwd: Path) -> None:
     for c in commits:
         r = git_run(
             ["diff-tree", "--no-commit-id", "--stat", "-r", c["hash"]],
@@ -106,6 +101,33 @@ def _enrich_with_stats(commits: list[dict[str, str]], cwd: object) -> None:
             c["stats"] = r.stdout.strip()
         else:
             c["stats"] = ""
+
+
+def _parse_log_table(raw: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 4:
+            rows.append(
+                [
+                    parts[0],
+                    parts[1],
+                    parts[2],
+                    parts[3],
+                ]
+            )
+        elif len(parts) >= 3:
+            rows.append(
+                [
+                    parts[0],
+                    parts[1],
+                    parts[2],
+                    "",
+                ]
+            )
+    return rows
 
 
 def run_log(
@@ -134,7 +156,7 @@ def run_log(
             if "does not have any commits yet" in r.stderr:
                 print_json({"v": 2, "ok": True, "commits": [], "count": 0})
                 return 0
-            print(t("git_log_failed", error=r.stderr.strip()), file=sys.stderr)
+            error(t("git_log_failed", error=r.stderr.strip()))
             return 1
         commits = _parse_log_json(r.stdout)
         _enrich_with_stats(commits, root)
@@ -153,15 +175,34 @@ def run_log(
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
             if r.stderr and "does not have any commits yet" in r.stderr:
-                print(t("no_commits_yet"))
+                info(t("no_commits_yet"))
                 return 0
-            print(t("git_log_failed", error=r.stderr.strip()), file=sys.stderr)
+            error(t("git_log_failed", error=r.stderr.strip()))
             return 1
         if not r.stdout.strip():
-            print(t("no_commits_yet"))
+            info(t("no_commits_yet"))
             return 0
-        if HAS_DELTA:
-            info(t("using_delta"))
-        bat_pipe(r.stdout, language="gitlog")
+
+        if graph or oneline:
+            print_header(t("git_log_title"))
+            bat_pipe(r.stdout, language="gitlog")
+        else:
+            rows = _parse_log_table(r.stdout)
+            if not rows:
+                info(t("no_commits_yet"))
+                return 0
+
+            columns = [
+                (t("col_sha"), "sha"),
+                (t("col_author"), "author"),
+                (t("col_date"), "date"),
+                (t("col_subject"), "subject"),
+            ]
+
+            print_table(
+                title=t("git_log_title"),
+                columns=columns,
+                rows=rows,
+            )
 
     return 0

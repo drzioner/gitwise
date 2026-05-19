@@ -17,7 +17,15 @@ from .git import (
 )
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, debug, ok, print_json
+from .output import (
+    debug,
+    ok,
+    print_bracket,
+    print_dim,
+    print_error_styled,
+    print_header,
+    print_json,
+)
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -297,17 +305,18 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         ok(t("repo_good_shape", suffix="  (quick)" if quick else ""))
         return 0
 
-    lines = [
-        t("diagnostic", suffix=" quick" if quick else "", count=str(len(findings))),
-        "",
-    ]
+    print_header(t("diagnostic", suffix=" quick" if quick else "", count=str(len(findings))))
+    print()
     for f in findings:
-        icon = _SEVERITY_ICON.get(f["severity"], "•")
-        lines.append(f"  {icon} [{f['severity'].upper()}] {f['message']}")
-        lines.append(f"     fix:    `{f['fix']}`")
-        lines.append(f"     ignora: {f['cost_of_ignore']}")
-        lines.append("")
-
-    bat_pipe("\n".join(lines), language="Markdown")
+        sev = f["severity"]
+        if sev in ("critical", "high"):
+            print_error_styled(f"  [{sev.upper()}] {f['message']}")
+        elif sev == "medium":
+            print_bracket(sev.upper(), f["message"])
+        else:
+            print_dim(f"  [{sev.upper()}] {f['message']}")
+        print_dim(f"     {t('audit_fix_label')}:    `{f['fix']}`")
+        print_dim(f"     {t('audit_ignore_label')}: {f['cost_of_ignore']}")
+        print()
 
     return 0 if not has_issues else 1

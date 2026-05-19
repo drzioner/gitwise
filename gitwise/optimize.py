@@ -10,7 +10,17 @@ from .git import require_root
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
-from .output import confirm, debug, info, ok, print_json, warn
+from .output import (
+    confirm,
+    debug,
+    ok,
+    print_dim,
+    print_header,
+    print_json,
+    print_section,
+    print_status_line,
+    warn,
+)
 
 
 def _gc_is_running(cwd: Path) -> bool:
@@ -95,21 +105,22 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     size_before = _repo_size_kb(cwd)
-    info(t("optimizing", root=str(cwd)))
-    info("")
-    for _, desc in steps:
-        info(f"  › {desc}")
-    info("")
+    print_header(t("optimizing", root=str(cwd)))
+    print()
+    for _name, desc in steps:
+        print_status_line("›", desc, t("pending"), ok_flag=False)
+
+    print()
 
     if dry_run:
-        info(t("dry_run_no_exec"))
+        print_dim(t("dry_run_no_exec"))
         return 0
 
     if not yes:
         if not confirm(t("confirm_optimize")):
-            info(t("cancelled"))
+            print_dim(t("cancelled"))
             return 0
-        info("")
+        print()
 
     graph_ok = _write_commit_graph(cwd)
     if graph_ok:
@@ -131,7 +142,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
 
     size_after = _repo_size_kb(cwd)
     saved = size_before - size_after
-    info("")
+    print_section(t("summary"))
     if saved > 0:
         ok(t("space_freed", saved=str(saved), before=str(size_before), after=str(size_after)))
     else:

@@ -3,7 +3,7 @@
 from .git import current_branch, has_upstream, require_root
 from .git import run as git_run
 from .i18n import t
-from .output import ok, print_json
+from .output import info, ok, print_bracket, print_header, print_json
 
 
 def run_status(*, as_json: bool = False) -> int:
@@ -53,11 +53,10 @@ def run_status(*, as_json: bool = False) -> int:
         )
         return 0
 
-    print(f"  {t('branch_label', branch=branch)}")
+    print_header(t("branch_label", branch=branch))
     if ahead or behind:
-        print(
-            f"  {t('branches_ahead', count=str(ahead))}  {t('branches_behind', count=str(behind))}"
-        )
+        print_bracket(t("status_ahead_label"), str(ahead))
+        print_bracket(t("status_behind_label"), str(behind))
     print()
 
     if not status_lines:
@@ -65,23 +64,23 @@ def run_status(*, as_json: bool = False) -> int:
         return 0
 
     if staged:
-        print(f"  {t('status_staged', count=str(len(staged)))}")
+        print_bracket(t("status_staged_label"), str(len(staged)))
         for line in staged:
-            print(f"    {line}")
+            info(f"    {line[:2]}  {line[3:]}")
         print()
 
     if unstaged:
-        print(f"  {t('status_unstaged', count=str(len(unstaged)))}")
+        print_bracket(t("status_unstaged_label"), str(len(unstaged)))
         for line in unstaged:
-            print(f"    {line}")
+            info(f"    {line[:2]}  {line[3:]}")
         print()
 
     if untracked:
-        print(f"  {t('status_untracked', count=str(len(untracked)))}")
+        print_bracket(t("status_untracked_label"), str(len(untracked)))
         for line in untracked[:10]:
-            print(f"    {line[3:]}")
+            info(f"    ??  {line[3:]}")
         if len(untracked) > 10:
-            print(f"    {t('status_more_files', count=str(len(untracked) - 10))}")
+            info(f"    {t('status_more_files', count=str(len(untracked) - 10))}")
         print()
 
     return 0

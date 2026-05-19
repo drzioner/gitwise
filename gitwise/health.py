@@ -12,7 +12,7 @@ from .git import (
 )
 from .git import run as git_run
 from .i18n import t
-from .output import print_json
+from .output import print_header, print_json, print_status_line
 
 
 def _untracked_count(cwd: Path) -> int:
@@ -34,6 +34,18 @@ def _branch_count(cwd: Path) -> int:
     r = git_run(["branch"], cwd=cwd, check=False)
     return len(r.stdout.splitlines()) if r.returncode == 0 else 0
 
+
+_BREAKDOWN_LABELS: dict[str, str] = {
+    "remote": t("health_remote"),
+    "upstream": t("health_upstream"),
+    "gpg_signing": t("health_gpg_signing"),
+    "stale_branches": t("health_stale_branches"),
+    "commit_graph": t("health_commit_graph"),
+    "old_stashes": t("health_old_stashes"),
+    "untracked_clutter": t("health_untracked_clutter"),
+    "no_commits": t("health_no_commits"),
+    "too_many_branches": t("health_too_many_branches"),
+}
 
 _GRADE_MAP = [(90, "A"), (75, "B"), (60, "C"), (40, "D"), (0, "F")]
 
@@ -127,9 +139,11 @@ def run_health(*, as_json: bool = False) -> int:
     if as_json:
         print_json({"v": 2, "ok": True, **h})
     else:
-        print(t("health_label", score=str(h["score"]), grade=h["grade"]))
+        print_header(t("health_label", score=str(h["score"]), grade=h["grade"]))
         if h["breakdown"]:
             for key, delta in h["breakdown"].items():
-                print(f"  {key}: {delta}")
+                label = _BREAKDOWN_LABELS.get(key) or key
+                is_ok = delta == 0
+                print_status_line("✓" if is_ok else "✗", label, str(delta), ok_flag=is_ok)
 
     return 0

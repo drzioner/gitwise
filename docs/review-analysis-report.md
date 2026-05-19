@@ -31,7 +31,7 @@
 | Test LOC | — | **3,481** | `wc -l tests/*.py` |
 | Commits | 46 | **47** | `git --no-pager log --oneline` |
 | Tags | 16 | **16** (v0.1.0→v0.10.2) | `git tag --sort=-version:refname` |
-| Zero runtime deps | Yes | **Yes** | No `[project.dependencies]` in pyproject.toml |
+| Runtime deps | 0 | **1 (`rich>=13.0`)** | `dependencies = ["rich>=13.0"]` in pyproject.toml |
 | Build system | hatchling | **hatchling** | pyproject.toml `[build-system]` |
 | Python min | 3.10 | **3.10** | `requires-python = ">=3.10"` |
 | Platform | macOS, Linux | **macOS, Linux** | Classifiers (no Windows) |
@@ -53,7 +53,7 @@
 | # | Claim | Evidence |
 |---|-------|----------|
 | 1 | "27+ comandos implementados" | 27 `run_*` functions + 3 argparse aliases |
-| 2 | "Zero runtime deps" | No `[project.dependencies]` in pyproject.toml |
+| 2 | "1 runtime dep (`rich>=13.0`)" | `dependencies = ["rich>=13.0"]` in pyproject.toml |
 | 3 | "hatchling build backend" | `build-backend = "hatchling.build"` |
 | 4 | "Python >= 3.10" | `requires-python = ">=3.10"` |
 | 5 | "Beta (Development Status 4)" | Classifier confirmed |

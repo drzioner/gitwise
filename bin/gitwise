@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
-# gitwise entry-point — resolves symlinks before setting PYTHONPATH
+# gitwise entry-point — resolves symlinks, uses venv Python when available
 set -euo pipefail
 
 _self="${BASH_SOURCE[0]}"
-while [ -L "$_self" ]; do
+_max_depth=32
+while [ -L "$_self" ] && [ $((_max_depth--)) -gt 0 ]; do
     _dir="$(cd "$(dirname "$_self")" && pwd -P)"
     _self="$(readlink "$_self")"
     [[ "$_self" != /* ]] && _self="$_dir/$_self"
 done
 SCRIPT_DIR="$(cd "$(dirname "$_self")" && pwd -P)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+VENV_PYTHON="$PROJECT_ROOT/.venv/bin/python"
+if [[ -x "$VENV_PYTHON" ]]; then
+    PYTHONPATH="$PROJECT_ROOT${PYTHONPATH:+:$PYTHONPATH}" exec "$VENV_PYTHON" -m gitwise "$@"
+fi
+
+if ! command -v python3 &>/dev/null; then
+    echo "error: python3 not found. Run 'uv sync' or install Python 3.10+" >&2
+    exit 127
+fi
 PYTHONPATH="$PROJECT_ROOT${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m gitwise "$@"

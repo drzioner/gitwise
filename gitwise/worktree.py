@@ -6,7 +6,15 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, ok, print_json
+from .output import (
+    error,
+    info,
+    ok,
+    print_bracket,
+    print_dim,
+    print_header,
+    print_json,
+)
 
 
 def _list_worktrees(cwd: Path) -> list[dict]:
@@ -75,8 +83,8 @@ def _worktree_new(branch: str, root: Path) -> int:
         error(data.get("error", t("worktree_failed", error="unknown")))
         return rc
     ok(t("worktree_created", path=path or ""))
-    info(t("worktree_branch_msg", branch=branch))
-    info(t("worktree_to_use", path=path or ""))
+    print_header(t("worktree_branch_msg", branch=branch))
+    print_dim(t("worktree_to_use", path=path or ""))
     return 0
 
 
@@ -93,10 +101,9 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
     prune_r = git_run(prune_args, cwd=cwd, check=False)
 
     if prune_r.returncode == 0 and prune_r.stdout.strip():
-        info(t("worktrees_to_clean"))
+        print_bracket(t("worktrees_to_clean"))
         for line in prune_r.stdout.splitlines():
-            info(f"  {line}")
-        info("")
+            print_dim(f"  {line}")
 
     # Detect orphaned worktrees (missing directory)
     orphaned = _find_orphaned(cwd)
@@ -107,13 +114,10 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
 
     info(t("orphaned_worktrees", count=str(len(orphaned))))
     for wt in orphaned:
-        info(
-            f"  – {wt['path']}  ({t('branch_label', branch=wt['branch'] or t('unknown_branch'))})"
-        )
-    info("")
+        print_bracket(wt["path"], t("branch_label", branch=wt["branch"] or t("unknown_branch")))
 
     if dry_run:
-        info(t("dry_run_no_clean"))
+        print_dim(t("dry_run_no_clean"))
         return 0
 
     git_run(["worktree", "prune"], cwd=cwd, check=False)
