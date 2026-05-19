@@ -24,6 +24,7 @@
     "bash": {
       "python -m pytest *": "allow",
       "python -m gitwise *": "allow",
+      "gitwise *": "allow",
       "pyright *": "allow",
       "shellcheck *": "allow",
       "uv run pytest *": "allow",
@@ -44,15 +45,14 @@
       "git commit *": "allow",
       "git tag *": "allow",
       "git worktree *": "allow",
-      "uv run *": "allow",
       "cat *": "allow",
       "ls *": "allow",
       "mkdir *": "allow",
-      "git *--no-gpg-sign*": "deny",
-      "git *--no-verify*": "deny",
-      "git push --force *": "deny",
-      "git push -f *": "deny",
-      "git reset --hard *": "deny",
+      "*--no-gpg-sign*": "deny",
+      "*--no-verify*": "deny",
+      "*push*--force*": "deny",
+      "*push*-f*": "deny",
+      "*reset*--hard*": "deny",
       "*": "ask"
     }
   },

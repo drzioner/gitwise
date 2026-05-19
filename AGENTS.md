@@ -146,7 +146,7 @@ Detailed rules for specific subsystems are in `.agents/rules/`:
 
 | File | Loads when editing |
 |------|-------------------|
-| `project-structure.md` | Always (via opencode instructions) |
+| `project-structure.md` | Always |
 | `testing.md` | `tests/**` |
 | `setup-agents.md` | `gitwise/setup_agents/**` |
 | `color-system.md` | `gitwise/output.py`, `design.py`, `_runtime_config.py` |
