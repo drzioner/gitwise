@@ -1,6 +1,6 @@
 """gitwise show — commit inspector with stat and JSON output."""
 
-from .git import require_root
+from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, print_header, print_json
@@ -51,7 +51,12 @@ def run_show(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
+
+    if not validate_ref(ref):
+        error(t("invalid_ref", ref=ref))
+        return 1
 
     if as_json:
         args = _build_show_json_args(ref)

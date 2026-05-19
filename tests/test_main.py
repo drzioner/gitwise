@@ -72,9 +72,16 @@ def test_all_subcommands_accept_json(tmp_git_repo):
         ("clean", "--branches"),
         ("optimize", "--dry-run"),
         ("diff",),
+        ("log",),
+        ("branches",),
+        ("status",),
+        ("stash",),
+        ("tag",),
+        ("health",),
+        ("context",),
     ]
     for cmd in commands:
         result = _run(*cmd, "--json", cwd=tmp_git_repo)
-        assert result.returncode in (0, 1), f"{cmd} --json failed"
+        assert result.returncode in (0, 1), f"{cmd} --json failed: {result.stderr}"
         data = json.loads(result.stdout)
         assert "v" in data or "ok" in data or "files" in data, f"{cmd} missing expected JSON key"

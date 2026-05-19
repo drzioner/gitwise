@@ -1,6 +1,6 @@
 """gitwise undo — reflog-based undo to any previous HEAD state."""
 
-from .git import require_root
+from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import confirm, error, print_bracket, print_dim, print_header, print_json
@@ -34,7 +34,8 @@ def run_undo(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     r = git_run(
         ["reflog", "--format=%H|gd-ref:%gd|gs:%gs|msg:%s", f"--max-count={steps + 10}"],
@@ -51,6 +52,9 @@ def run_undo(
         return 1
 
     if ref:
+        if not validate_ref(ref):
+            error(t("invalid_ref", ref=ref))
+            return 1
         target = ref
     elif len(entries) >= steps + 1:
         target = entries[steps]["hash"]
@@ -86,7 +90,7 @@ def run_undo(
         args.append("--soft")
     else:
         args.append("--hard")
-    args.append(target)
+    args.extend(["--", target])
 
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:

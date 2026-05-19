@@ -64,3 +64,75 @@ def test_gpg_status_in_doctor():
     assert "gpgsign_enabled" in gpg
     assert "signing_key_set" in gpg
     assert "ready" in gpg
+
+
+def test_validate_ref_rejects_dash_prefix():
+    from gitwise.git import validate_ref
+
+    assert validate_ref("-evil") is False
+    assert validate_ref("--option") is False
+
+
+def test_validate_ref_rejects_path_traversal():
+    from gitwise.git import validate_ref
+
+    assert validate_ref("HEAD..feature") is False
+    assert validate_ref("HEAD~5") is False
+    assert validate_ref("HEAD^{}") is False
+
+
+def test_validate_ref_accepts_valid():
+    from gitwise.git import validate_ref
+
+    assert validate_ref("HEAD") is True
+    assert validate_ref("main") is True
+    assert validate_ref("abc1234") is True
+    assert validate_ref("feature/test-branch") is True
+
+
+def test_validate_branch_name_rejects_invalid():
+    from gitwise.git import validate_branch_name
+
+    assert validate_branch_name("-evil") is False
+    assert validate_branch_name("feature..test") is False
+    assert validate_branch_name("feature~test") is False
+    assert validate_branch_name("feature:ref") is False
+    assert validate_branch_name("feature name") is False
+
+
+def test_validate_branch_name_accepts_valid():
+    from gitwise.git import validate_branch_name
+
+    assert validate_branch_name("main") is True
+    assert validate_branch_name("feature/test-branch") is True
+    assert validate_branch_name("release/v1.0.0") is True
+
+
+def test_validate_grep_pattern_rejects_nested_quantifiers():
+    from gitwise.git import validate_grep_pattern
+
+    assert validate_grep_pattern("(a+)+b") is False
+    assert validate_grep_pattern("(a|b)+c") is False
+    assert validate_grep_pattern("[a+]+b") is False
+
+
+def test_validate_grep_pattern_rejects_too_long():
+    from gitwise.git import validate_grep_pattern
+
+    assert validate_grep_pattern("a" * 201) is False
+
+
+def test_validate_grep_pattern_rejects_invalid_regex():
+    from gitwise.git import validate_grep_pattern
+
+    assert validate_grep_pattern("[invalid") is False
+    assert validate_grep_pattern("(unclosed") is False
+
+
+def test_validate_grep_pattern_accepts_valid():
+    from gitwise.git import validate_grep_pattern
+
+    assert validate_grep_pattern("feat") is True
+    assert validate_grep_pattern("fix.*auth") is True
+    assert validate_grep_pattern("^(feat|fix):") is True
+    assert validate_grep_pattern("[0-9]+\\.[0-9]+") is True

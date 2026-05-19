@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from .git import current_branch, require_root
+from .git import current_branch, require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import (
@@ -22,7 +22,7 @@ def _has_uncommitted(root: Path) -> bool:
 
 
 def _branch_exists(root: Path, name: str) -> bool:
-    r = git_run(["rev-parse", "--verify", name], cwd=root, check=False)
+    r = git_run(["rev-parse", "--verify", "refs/heads/" + name], cwd=root, check=False)
     return r.returncode == 0
 
 
@@ -38,11 +38,16 @@ def run_merge(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     cur = current_branch(root)
     if cur is None:
         error(t("merge_detached_head"))
+        return 1
+
+    if not validate_ref(branch):
+        error(t("invalid_ref", ref=branch))
         return 1
 
     if not _branch_exists(root, branch):

@@ -1,6 +1,8 @@
 """gitwise sync — remote fetch, safe pull/push, ahead/behind reporting."""
 
-from .git import current_branch, require_root
+from pathlib import Path
+
+from .git import PROTECTED_BRANCHES, current_branch, require_root
 from .git import run as git_run
 from .i18n import t
 from .output import (
@@ -13,7 +15,7 @@ from .output import (
 )
 
 
-def _ahead_behind(cwd) -> dict[str, int]:
+def _ahead_behind(cwd: Path) -> dict[str, int]:
     branch = current_branch(cwd=cwd)
     if not branch:
         return {"ahead": 0, "behind": 0}
@@ -54,7 +56,8 @@ def run_sync(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     branch = current_branch(cwd=root) or ""
 
@@ -101,7 +104,7 @@ def run_sync(
             return 1
 
     if push:
-        if branch in ("main", "master", "release"):
+        if branch in PROTECTED_BRANCHES:
             if as_json:
                 print_json({"v": 2, "ok": False, "error": t("sync_push_protected", branch=branch)})
             else:

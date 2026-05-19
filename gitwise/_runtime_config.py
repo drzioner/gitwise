@@ -4,7 +4,11 @@ import os
 import select
 import shutil
 import sys
-import termios
+
+if sys.platform != "win32":
+    import termios
+else:
+    termios = None  # type: ignore[assignment,misc]
 from typing import TYPE_CHECKING
 
 from .design import ColorDepth, ThemeTokens, build_theme
@@ -42,6 +46,8 @@ def _query_bg_color() -> str | None:
     except OSError:
         return None
     try:
+        if termios is None:
+            return None
         old = termios.tcgetattr(fd)
         new = list(old)
         new[3] = new[3] & ~(termios.ECHO | termios.ICANON)

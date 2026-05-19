@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .git import require_root
+from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import (
@@ -62,6 +62,8 @@ def _bump_version(version: str, part: str) -> str:
     if not m:
         return version
     major, minor, patch = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    pre = m.group(4) or ""
+    build = m.group(5) or ""
     prefix = "v" if version.startswith("v") else ""
     if part == "major":
         major += 1
@@ -71,7 +73,7 @@ def _bump_version(version: str, part: str) -> str:
         patch = 0
     else:
         patch += 1
-    return f"{prefix}{major}.{minor}.{patch}"
+    return f"{prefix}{major}.{minor}.{patch}{pre}{build}"
 
 
 def run_tag(
@@ -87,7 +89,8 @@ def run_tag(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if action == "list":
         tags = _list_tags(root)
@@ -141,6 +144,9 @@ def run_tag(
         if not tag_name:
             error(t("tag_name_required"))
             return 1
+        if not validate_ref(tag_name):
+            error(t("invalid_ref", ref=tag_name))
+            return 1
 
         args = ["tag"]
         if message:
@@ -168,6 +174,9 @@ def run_tag(
     if action == "delete":
         if not name:
             error(t("tag_name_required"))
+            return 1
+        if not validate_ref(name):
+            error(t("invalid_ref", ref=name))
             return 1
         if not yes and not confirm(t("confirm_tag_delete", name=name)):
             warn(t("aborted"))

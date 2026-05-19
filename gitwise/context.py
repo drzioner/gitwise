@@ -67,19 +67,23 @@ def _file_type_breakdown(root: Path) -> dict[str, int]:
 
 
 def _todo_fixme_counts(root: Path) -> dict[str, int]:
-    def _grep_count(pattern: str) -> int:
-        res = git_run(["grep", "-c", pattern, "HEAD", "--", "."], cwd=root, check=False)
-        if res.returncode != 0:
+    def _count_pattern(pattern: str) -> int:
+        r = git_run(
+            ["grep", "-c", "-e", pattern, "HEAD", "--", "."],
+            cwd=root,
+            check=False,
+        )
+        if r.returncode != 0:
             return 0
         total = 0
-        for line in res.stdout.splitlines():
+        for line in r.stdout.splitlines():
             try:
                 total += int(line.rsplit(":", 1)[-1])
             except (ValueError, IndexError):
                 continue
         return total
 
-    return {"todo": _grep_count("TODO"), "fixme": _grep_count("FIXME")}
+    return {"todo": _count_pattern("TODO"), "fixme": _count_pattern("FIXME")}
 
 
 def _branch_topology(root: Path) -> dict[str, list[str]]:
@@ -101,7 +105,8 @@ def run_context(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     tree = _directory_tree(root)
     contributors = _top_contributors(root)

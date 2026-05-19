@@ -5,7 +5,7 @@ from pathlib import Path
 from conftest import _git, run_gitwise
 
 
-def test_commit_dry_run(tmp_git_repo: Path) -> None:
+def test_commit_dry_run_invalid_format(tmp_git_repo: Path) -> None:
     (tmp_git_repo / "file.txt").write_text("hello")
     _git(["add", "."], tmp_git_repo)
     r = run_gitwise("commit", "-m", "test message", "--dry-run", cwd=tmp_git_repo)

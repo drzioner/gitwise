@@ -610,10 +610,20 @@ def main() -> int:
 
     handler = _DISPATCH.get(args.command)
     if handler is not None:
-        ret = handler(args)
+        try:
+            ret = handler(args)
+        except KeyboardInterrupt:
+            ret = 130
+        except SystemExit:
+            raise
+        except Exception:
+            from .output import error as _error
+
+            _error(t("unexpected_error"))
+            ret = 1
     else:
-        parser.print_help()
-        ret = 0
+        parser.print_help(sys.stderr)
+        ret = 1
 
     elapsed = time.monotonic() - start
     as_json = getattr(args, "json", False)

@@ -21,6 +21,7 @@ def _gh(args: list[str], cwd) -> tuple[int, str, str]:
         capture_output=True,
         text=True,
         check=False,
+        timeout=120,
     )
     return r.returncode, r.stdout.strip(), r.stderr.strip()
 
@@ -36,7 +37,8 @@ def run_pr(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if action == "list":
         rc, out, err = _gh(["pr", "list", "--json", "number,title,state,headRefName"], cwd=root)

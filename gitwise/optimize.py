@@ -85,7 +85,8 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     if _gc_is_running(cwd):

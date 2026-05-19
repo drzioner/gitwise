@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .git import require_root
+from .git import require_root, validate_branch_name
 from .git import run as git_run
 from .i18n import t
 from .output import (
@@ -54,6 +54,9 @@ def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
     safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
     wt_path = root.parent / (safe_name or "worktree")
 
+    if not validate_branch_name(branch):
+        return 1, None, {"ok": False, "error": t("invalid_branch_name", name=branch)}
+
     if wt_path.exists():
         return 1, None, {"ok": False, "error": t("directory_exists", path=str(wt_path))}
 
@@ -67,9 +70,9 @@ def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
     )
 
     if branch_exists:
-        r = git_run(["worktree", "add", str(wt_path), branch], cwd=root, check=False)
+        r = git_run(["worktree", "add", "--", str(wt_path), branch], cwd=root, check=False)
     else:
-        r = git_run(["worktree", "add", "-b", branch, str(wt_path)], cwd=root, check=False)
+        r = git_run(["worktree", "add", "-b", branch, "--", str(wt_path)], cwd=root, check=False)
 
     if r.returncode != 0:
         return 1, None, {"ok": False, "error": r.stderr.strip()}
@@ -93,24 +96,42 @@ def _worktree_new_json(branch: str, root: Path) -> tuple[int, dict]:
     return rc, data
 
 
-def _worktree_clean(cwd: Path, *, dry_run: bool = False) -> int:
+def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) -> int:
     # git worktree prune removes stale admin files
     prune_args = ["worktree", "prune"]
     if dry_run:
         prune_args.append("--dry-run")
     prune_r = git_run(prune_args, cwd=cwd, check=False)
 
-    if prune_r.returncode == 0 and prune_r.stdout.strip():
-        print_bracket(t("worktrees_to_clean"))
-        for line in prune_r.stdout.splitlines():
-            print_dim(f"  {line}")
+    pruned_lines = prune_r.stdout.strip().splitlines() if prune_r.stdout.strip() else []
 
     # Detect orphaned worktrees (missing directory)
     orphaned = _find_orphaned(cwd)
 
-    if not orphaned:
-        ok(t("no_orphaned_worktrees", suffix=" (dry-run)" if dry_run else ""))
+    if not orphaned and not pruned_lines:
+        if as_json:
+            print_json({"v": 2, "cleaned": 0, "orphaned": 0, "dry_run": dry_run, "ok": True})
+        else:
+            ok(t("no_orphaned_worktrees", suffix=" (dry-run)" if dry_run else ""))
         return 0
+
+    if as_json:
+        print_json(
+            {
+                "v": 2,
+                "pruned": len(pruned_lines),
+                "orphaned": len(orphaned),
+                "orphaned_branches": [wt["branch"] for wt in orphaned],
+                "dry_run": dry_run,
+                "ok": True,
+            }
+        )
+        return 0
+
+    if pruned_lines:
+        print_bracket(t("worktrees_to_clean"))
+        for line in pruned_lines:
+            print_dim(f"  {line}")
 
     info(t("orphaned_worktrees", count=str(len(orphaned))))
     for wt in orphaned:
@@ -135,7 +156,8 @@ def run_worktree(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if action == "new":
         if not branch:
@@ -148,7 +170,7 @@ def run_worktree(
         return _worktree_new(branch, root)
 
     elif action == "clean":
-        return _worktree_clean(root, dry_run=dry_run)
+        return _worktree_clean(root, dry_run=dry_run, as_json=as_json)
 
     else:
         error(t("worktree_usage_full"))

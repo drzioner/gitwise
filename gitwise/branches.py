@@ -3,7 +3,7 @@
 from .git import require_root, stale_branches, worktree_branches
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, print_accent, print_header, print_json, print_table
+from .output import error, info, print_accent, print_dim, print_header, print_json, print_table
 
 
 def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
@@ -12,15 +12,15 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
         if not line.strip():
             continue
         parts = line.split("\t")
-        if len(parts) < 4:
+        if len(parts) < 5:
             continue
-        name = parts[0].removeprefix("* ").strip()
-        is_current = parts[0].startswith("*")
-        sha = parts[1]
-        subject = parts[2]
-        age = parts[3]
-        tracking = parts[4] if len(parts) > 4 else ""
-        upstream = parts[5] if len(parts) > 5 else ""
+        is_current = parts[0].strip() == "*"
+        name = parts[1].strip()
+        sha = parts[2]
+        subject = parts[3]
+        age = parts[4]
+        tracking = parts[5] if len(parts) > 5 else ""
+        upstream = parts[6] if len(parts) > 6 else ""
 
         ahead = behind = ""
         if "[ahead" in tracking:
@@ -45,6 +45,20 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
     return branches
 
 
+_VALID_SORT_FIELDS = frozenset(
+    {
+        "refname",
+        "-refname",
+        "committerdate",
+        "-committerdate",
+        "creatordate",
+        "-creatordate",
+        "authordate",
+        "-authordate",
+    }
+)
+
+
 def run_branches(
     *,
     stale: bool = False,
@@ -55,7 +69,8 @@ def run_branches(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if stale:
         names = stale_branches(cwd=root)
@@ -64,17 +79,19 @@ def run_branches(
             return 0
         if as_json:
             print_json({"v": 2, "ok": True, "stale_branches": names, "count": len(names)})
-        else:
-            print_header(t("branches_to_delete", count=str(len(names))))
-            for n in names:
-                print_accent(f"  {n}")
-            info(t("clean_to_delete"))
+            return 0
+        for n in names:
+            print_dim(n)
         return 0
+
+    if sort not in _VALID_SORT_FIELDS:
+        error(t("invalid_sort_field", field=sort))
+        return 1
 
     wt_branches = worktree_branches(cwd=root)
 
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
-    fmt = "%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
+    fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
 
     r = git_run(
         ["for-each-ref", f"--sort={sort}", f"--format={fmt}", ref_pattern],
@@ -86,7 +103,10 @@ def run_branches(
         return 1
 
     if not r.stdout.strip():
-        info(t("no_commits_yet"))
+        if remote:
+            info(t("no_remote_branches"))
+        else:
+            info(t("no_commits_yet"))
         return 0
 
     branches = _parse_branches(r.stdout, wt_branches)

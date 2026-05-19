@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from typing import Any
 
 try:
@@ -27,6 +28,19 @@ _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
     "256color": "256",
     "16color": "16",
 }
+
+_LOG_JSON = os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
+
+
+def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
+    entry: dict[str, Any] = {
+        "ts": time.time(),
+        "level": level,
+        "msg": msg,
+    }
+    if kwargs:
+        entry.update(kwargs)
+    sys.stderr.write(json.dumps(entry, default=str) + "\n")
 
 
 class _ModuleAttr:
@@ -157,6 +171,9 @@ def info(msg: str) -> None:
 
 
 def warn(msg: str) -> None:
+    if _LOG_JSON:
+        _structured_log("warn", msg)
+        return
     prefix = t("warning_label")
     if _should_use_rich():
         text = Text()
@@ -168,6 +185,9 @@ def warn(msg: str) -> None:
 
 
 def error(msg: str) -> None:
+    if _LOG_JSON:
+        _structured_log("error", msg)
+        return
     prefix = t("error")
     if _should_use_rich():
         text = Text()

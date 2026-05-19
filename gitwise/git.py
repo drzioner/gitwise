@@ -2,18 +2,54 @@
 
 import functools
 import os
+import re
 import subprocess
 from pathlib import Path
+
+_NESTED_QUANTIFIER_RE = re.compile(
+    r"(\([^)]*[+*][^)]*\)[+*{])"
+    r"|(\[[^\]]*[+*][^\]]*\][+*{])"
+    r"|(\(.+\|.+\)[+*{])"
+)
+
+_GREP_MAX_LEN = 200
+
 
 _GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
 
 _DEFAULT_TIMEOUT = 120
 
+_NETWORK_TIMEOUT = 60
 
-def _get_timeout() -> int:
+_CMD_TIMEOUTS: dict[str, int] = {
+    "diff-tree": 30,
+    "diff": 30,
+    "log": 30,
+    "status": 10,
+    "branch": 10,
+    "stash": 10,
+    "ls-files": 10,
+    "rev-list": 30,
+    "shortlog": 30,
+    "grep": 30,
+    "for-each-ref": 10,
+    "rev-parse": 10,
+    "config": 5,
+    "tag": 10,
+    "commit": 30,
+    "fetch": _NETWORK_TIMEOUT,
+    "push": _NETWORK_TIMEOUT,
+    "pull": _NETWORK_TIMEOUT,
+    "clone": _NETWORK_TIMEOUT,
+}
+
+
+def _get_timeout(cmd: str | None = None) -> int:
     val = os.environ.get("GITWISE_GIT_TIMEOUT", "")
     if val.isdigit():
         return int(val)
+    if cmd and cmd in _CMD_TIMEOUTS:
+        return _CMD_TIMEOUTS[cmd]
     return _DEFAULT_TIMEOUT
 
 
@@ -25,7 +61,8 @@ def run(
 ) -> subprocess.CompletedProcess[str]:
     from .output import debug
 
-    actual_timeout = timeout if timeout is not None else _get_timeout()
+    cmd_name = args[0] if args else None
+    actual_timeout = timeout if timeout is not None else _get_timeout(cmd_name)
     debug(f"git {' '.join(args)}")
     return subprocess.run(
         ["git"] + args,
@@ -128,6 +165,35 @@ def version() -> tuple[int, int, int]:
 
             _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)
+
+
+def validate_ref(ref: str) -> bool:
+    if not ref or ref.startswith("-"):
+        return False
+    return not (".." in ref or "~" in ref or "^{}" in ref)
+
+
+def validate_branch_name(name: str) -> bool:
+    if not name or name.startswith("-"):
+        return False
+    return not (".." in name or "~" in name or ":" in name or " " in name)
+
+
+def validate_grep_pattern(pattern: str) -> bool:
+    if len(pattern) > _GREP_MAX_LEN:
+        return False
+    if _NESTED_QUANTIFIER_RE.search(pattern):
+        return False
+    try:
+        re.compile(pattern)
+    except re.error:
+        return False
+    return True
+
+
+PROTECTED_BRANCHES: frozenset[str] = frozenset(
+    {"main", "master", "develop", "dev", "trunk", "release"}
+)
 
 
 def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, int]:
