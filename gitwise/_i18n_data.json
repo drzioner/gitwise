@@ -12,12 +12,16 @@
     "en": "adapter {adapter}: {file} already exists"
   },
   "adapter_no_template": {
-    "es": "adaptador {adapter}: sin plantilla disponible",
-    "en": "adapter {adapter}: no template available"
+    "es": "plantilla de adaptador no encontrada: {path}",
+    "en": "adapter template not found: {path}"
   },
   "adapters_available": {
     "es": "adaptadores disponibles: {list}",
     "en": "available adapters: {list}"
+  },
+  "adapters_none_with_others": {
+    "es": "\"none\" o \"claude-only\" no se pueden combinar con otros adaptadores",
+    "en": "\"none\" or \"claude-only\" cannot be combined with other adapters"
   },
   "adapters_require_local": {
     "es": "los adaptadores requieren --local",

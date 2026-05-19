@@ -1,5 +1,7 @@
 """Tests for the adapter registry and planning system."""
 
+import json
+
 from conftest import run_gitwise
 
 
@@ -13,6 +15,10 @@ class TestListAdapters:
     def test_list_adapters_in_json_mode(self):
         result = run_gitwise("setup-agents", "--list-adapters", "--json")
         assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "adapters" in data
+        for name in ("cursor", "continue", "opencode", "codex", "aider", "pi"):
+            assert name in data["adapters"]
 
 
 class TestAdapterDryRun:
@@ -138,6 +144,47 @@ class TestAdapterDryRun:
         )
         assert result.returncode == 0
         assert "ADAPTER-CREATE" not in result.stdout
+
+    def test_adapters_claude_only_no_adapter_actions(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--adapters",
+            "claude-only",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        assert "ADAPTER-CREATE" not in result.stdout
+
+    def test_adapters_none_with_others_errors(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--adapters",
+            "cursor",
+            "none",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 1
+        assert "cannot be combined" in result.stderr or "cannot be combined" in result.stdout
+
+    def test_duplicate_adapter_idempotent(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--adapters",
+            "cursor",
+            "cursor",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        assert ".cursor/rules/gitwise.mdc" in result.stdout
 
     def test_no_adapters_flag_no_adapter_actions(self, tmp_git_repo):
         result = run_gitwise(
@@ -297,3 +344,22 @@ class TestAdapterContent:
         content = (tmp_git_repo / "CONVENTIONS.md").read_text()
         assert "gitwise diff" in content
         assert "GPG-signed" in content
+
+    def test_adapter_actions_in_json_output(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--json",
+            "--adapters",
+            "cursor",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        adapter_actions = [
+            a for a in data.get("actions", []) if a.get("action") == "adapter-create"
+        ]
+        assert len(adapter_actions) == 1
+        assert ".cursor/rules/gitwise.mdc" in adapter_actions[0]["file"]

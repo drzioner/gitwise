@@ -308,8 +308,13 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
         from .i18n import t as _t
         from .setup_agents.adapters import list_adapters
 
-        adapter_list = ", ".join(list_adapters())
-        print(_t("adapters_available", list=adapter_list))
+        adapter_list = list_adapters()
+        if args.json:
+            import json
+
+            print(json.dumps({"adapters": adapter_list}))
+        else:
+            print(_t("adapters_available", list=", ".join(adapter_list)))
         return 0
 
     from ._cli_setup_agents import run_setup_agents
