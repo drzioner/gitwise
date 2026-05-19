@@ -24,3 +24,17 @@ AGENTS.md.bak*
 .opencode/
 opencode.json
 review/
+
+# >>> gitwise managed (do not edit between markers) >>>
+# Claude Code local/personal files (do not commit)
+.claude/settings.local.json
+.claude/.credentials.json
+# Snapshot regenerated each gitwise run (timestamps change)
+.claude/git-snapshot.md
+# Backups from gitwise setup-agents
+*.bak
+CLAUDE.md.bak*
+AGENTS.md.bak*
+# <<< gitwise managed <<<
+.aider.conf.yml
+CONVENTIONS.md

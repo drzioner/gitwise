@@ -343,7 +343,7 @@ gitwise update --json
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/gqklWBzRL8KGex7u.svg)](https://asciinema.org/a/gqklWBzRL8KGex7u)
+[![asciicast](https://asciinema.org/a/6tm4TnYMygEQT7ef.svg)](https://asciinema.org/a/6tm4TnYMygEQT7ef)
 
 ## GPG protection
 
