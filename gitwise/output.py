@@ -7,7 +7,13 @@ import os
 import subprocess
 import sys
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
+    from rich.theme import Theme
 
 try:
     from rich.console import Console
