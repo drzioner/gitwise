@@ -1,11 +1,9 @@
 """gitwise show — commit inspector with stat and JSON output."""
 
-import sys
-
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import HAS_DELTA, bat_pipe, info, print_json
+from .output import bat_pipe, error, print_header, print_json
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
@@ -59,7 +57,7 @@ def run_show(
         args = _build_show_json_args(ref)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            print(t("git_show_failed", error=r.stderr.strip()), file=sys.stderr)
+            error(t("git_show_failed", error=r.stderr.strip()))
             return 1
         data = _parse_show_json(r.stdout)
         data["v"] = 2
@@ -69,10 +67,9 @@ def run_show(
         args = _build_show_args(ref, stat)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            print(t("git_show_failed", error=r.stderr.strip()), file=sys.stderr)
+            error(t("git_show_failed", error=r.stderr.strip()))
             return 1
-        if HAS_DELTA:
-            info(t("using_delta"))
+        print_header(t("show_header", ref=ref))
         bat_pipe(r.stdout, language="diff")
 
     return 0

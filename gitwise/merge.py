@@ -1,12 +1,19 @@
 """gitwise merge — merge/rebase with pre-flight checks."""
 
-import sys
 from pathlib import Path
 
 from .git import current_branch, require_root
 from .git import run as git_run
 from .i18n import t
-from .output import confirm, ok, print_json, warn
+from .output import (
+    confirm,
+    error,
+    ok,
+    print_bracket,
+    print_header,
+    print_json,
+    warn,
+)
 
 
 def _has_uncommitted(root: Path) -> bool:
@@ -35,15 +42,15 @@ def run_merge(
 
     cur = current_branch(root)
     if cur is None:
-        print(t("merge_detached_head"), file=sys.stderr)
+        error(t("merge_detached_head"))
         return 1
 
     if not _branch_exists(root, branch):
-        print(t("merge_branch_not_found", branch=branch), file=sys.stderr)
+        error(t("merge_branch_not_found", branch=branch))
         return 1
 
     if branch == cur:
-        print(t("merge_same_branch"), file=sys.stderr)
+        error(t("merge_same_branch"))
         return 1
 
     warnings: list[str] = []
@@ -82,12 +89,13 @@ def run_merge(
                 }
             )
             return 0
-        action = "rebase" if rebase else "merge"
-        print(f"  {action}: {branch} → {cur}")
+        action = t("merge_rebase_label") if rebase else t("merge_merge_label")
+        print_header(f"{action}: {branch} → {cur}")
         if ahead_count or behind_count:
-            print(f"  ahead: {ahead_count}  behind: {behind_count}")
+            print_bracket(t("status_ahead_label"), str(ahead_count))
+            print_bracket(t("status_behind_label"), str(behind_count))
         for w in warnings:
-            print(f"  ⚠ {w}")
+            warn(w)
         return 0
 
     if warnings:
@@ -115,7 +123,7 @@ def run_merge(
         if as_json:
             print_json({"v": 2, "ok": False, "error": err})
         else:
-            print(err, file=sys.stderr)
+            error(err)
         return 1
 
     if as_json:

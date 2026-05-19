@@ -6,7 +6,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import debug, ok, print_json
+from .output import debug, print_header, print_json
 
 
 def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
@@ -75,5 +75,5 @@ def run_snapshot(*, as_json: bool = False) -> int:
         print_json({"v": 2, "path": str(path), "ok": True})
         return 0
 
-    ok(t("snapshot_generated", path=str(path.relative_to(root))))
+    print_header(t("snapshot_generated", path=str(path.relative_to(root))))
     return 0

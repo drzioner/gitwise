@@ -12,7 +12,17 @@ from .git import (
     run as git_run,
 )
 from .i18n import t
-from .output import confirm, error, info, ok, print_json, warn
+from .output import (
+    confirm,
+    error,
+    ok,
+    print_bracket,
+    print_dim,
+    print_header,
+    print_json,
+    print_success,
+    warn,
+)
 
 _DEFAULT_PROTECTED: frozenset[str] = frozenset(
     {"main", "master", "develop", "dev", "trunk", "release"}
@@ -84,42 +94,42 @@ def run_clean(
         return 0
 
     if skipped:
-        info(t("protected_stale_branches", count=str(len(skipped))))
+        print_header(t("protected_stale_branches", count=str(len(skipped))))
         for s in skipped:
-            info(f"  – {s['branch']}  ({s['reason']})")
-        info("")
+            print_bracket(s["branch"], s["reason"])
+        print()
 
     if not deletable:
         ok(t("no_deletable_branches"))
         return 0
 
-    info(t("branches_to_delete", count=str(len(deletable))))
+    print_header(t("branches_to_delete", count=str(len(deletable))))
     for branch in deletable:
-        info(f"  – {branch}")
-    info("")
+        print_bracket(branch)
+    print()
 
     if dry_run:
-        info(t("dry_run_no_delete"))
-        info(t("clean_to_delete"))
+        print_dim(t("dry_run_no_delete"))
+        print_dim(t("clean_to_delete"))
         return 0
 
     if not yes:
         if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
-            info(t("cancelled"))
+            print_dim(t("cancelled"))
             return 0
-        info("")
+        print()
 
     errors: list[str] = []
     for branch in deletable:
         r = git_run(["branch", "-D", branch], cwd=cwd, check=False)
         if r.returncode == 0:
-            ok(t("branch_deleted", branch=branch))
+            print_success(t("branch_deleted", branch=branch))
         else:
             errors.append(branch)
             warn(t("could_not_delete", branch=branch, error=r.stderr.strip()))
 
     if errors:
         return 1
-    info("")
+    print()
     ok(t("deleted_count", count=str(len(deletable))))
     return 0

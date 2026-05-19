@@ -1,11 +1,16 @@
 """gitwise sync — remote fetch, safe pull/push, ahead/behind reporting."""
 
-import sys
-
 from .git import current_branch, require_root
 from .git import run as git_run
 from .i18n import t
-from .output import debug, print_json
+from .output import (
+    debug,
+    error,
+    print_bracket,
+    print_dim,
+    print_header,
+    print_json,
+)
 
 
 def _ahead_behind(cwd) -> dict[str, int]:
@@ -70,9 +75,10 @@ def run_sync(
                 }
             )
         else:
-            print(t("dry_run_no_exec"))
+            print_header(t("sync_dry_run_title"))
             for action in _planned_actions(pull, push, ab, unpushed, remote):
-                print(f"  {action}")
+                print_bracket(action)
+            print_dim(t("dry_run_no_exec"))
         return 0
 
     r = git_run(["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False)
@@ -82,7 +88,7 @@ def run_sync(
                 {"v": 2, "ok": False, "error": t("sync_fetch_failed", error=r.stderr.strip())}
             )
         else:
-            print(t("sync_fetch_failed", error=r.stderr.strip()), file=sys.stderr)
+            error(t("sync_fetch_failed", error=r.stderr.strip()))
         return 1
 
     if pull:
@@ -91,7 +97,7 @@ def run_sync(
             if as_json:
                 print_json({"v": 2, "ok": False, "error": t("sync_pull_diverged")})
             else:
-                print(t("sync_pull_diverged"), file=sys.stderr)
+                error(t("sync_pull_diverged"))
             return 1
 
     if push:
@@ -99,7 +105,7 @@ def run_sync(
             if as_json:
                 print_json({"v": 2, "ok": False, "error": t("sync_push_protected", branch=branch)})
             else:
-                print(t("sync_push_protected", branch=branch), file=sys.stderr)
+                error(t("sync_push_protected", branch=branch))
             return 1
         r = git_run(["push"], cwd=root, check=False)
         if r.returncode != 0:
@@ -108,7 +114,7 @@ def run_sync(
                     {"v": 2, "ok": False, "error": t("sync_push_failed", error=r.stderr.strip())}
                 )
             else:
-                print(t("sync_push_failed", error=r.stderr.strip()), file=sys.stderr)
+                error(t("sync_push_failed", error=r.stderr.strip()))
             return 1
 
     ab = _ahead_behind(root)
@@ -124,17 +130,20 @@ def run_sync(
             }
         )
     else:
-        print(t("sync_complete", branch=branch, ahead=str(ab["ahead"]), behind=str(ab["behind"])))
+        print_header(t("sync_complete_title"))
+        print_bracket(branch, t("sync_status", ahead=str(ab["ahead"]), behind=str(ab["behind"])))
     return 0
 
 
 def _planned_actions(
     pull: bool, push: bool, ab: dict, unpushed: list, remote: str | None = None
 ) -> list[str]:
-    fetch_cmd = f"fetch {remote}" if remote else "fetch --all --prune"
+    fetch_cmd = (
+        t("sync_action_fetch_remote", remote=remote) if remote else t("sync_action_fetch_all")
+    )
     actions = [fetch_cmd]
     if pull and ab["behind"] > 0:
-        actions.append("pull --ff-only")
+        actions.append(t("sync_pull_ff"))
     if push and unpushed:
-        actions.append(f"push ({len(unpushed)} commits)")
+        actions.append(t("sync_push_commits", count=str(len(unpushed))))
     return actions

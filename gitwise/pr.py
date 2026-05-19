@@ -2,10 +2,10 @@
 
 import json
 import shutil
-import sys
 
 from .git import require_root
 from .i18n import t
+from .output import error, info, print_accent, print_bracket, print_header
 
 
 def _gh_available() -> bool:
@@ -31,7 +31,7 @@ def run_pr(
     as_json: bool = False,
 ) -> int:
     if not _gh_available():
-        print(t("pr_gh_required"), file=sys.stderr)
+        error(t("pr_gh_required"))
         return 1
     root, err = require_root()
     if err:
@@ -41,30 +41,32 @@ def run_pr(
     if action == "list":
         rc, out, err = _gh(["pr", "list", "--json", "number,title,state,headRefName"], cwd=root)
         if rc != 0:
-            print(err, file=sys.stderr)
+            error(err)
             return 1
         if as_json:
             print(out)
         else:
             prs = json.loads(out) if out else []
             if not prs:
-                print(t("pr_none"))
+                info(t("pr_none"))
                 return 0
+            print_header(t("pr_list_title"))
             for pr in prs:
-                print(f"  #{pr['number']} {pr['title']} ({pr['state']}) ← {pr['headRefName']}")
+                print_bracket(f"#{pr['number']}", f"{pr['title']}")
+                print_accent(f"  ({pr['state']}) ← {pr['headRefName']}")
         return 0
 
     if action == "checks":
         rc, out, err = _gh(["pr", "checks"], cwd=root)
         if rc != 0:
-            print(err, file=sys.stderr)
+            error(err)
             return 1
         if as_json:
             rc2, out2, _ = _gh(["pr", "view", "--json", "statusCheckRollup"], cwd=root)
             print(out2 if rc2 == 0 else "{}")
         else:
-            print(out)
+            info(out)
         return 0
 
-    print(t("pr_unknown_action", action=action), file=sys.stderr)
+    error(t("pr_unknown_action", action=action))
     return 1

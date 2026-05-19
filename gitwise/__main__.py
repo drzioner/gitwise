@@ -5,31 +5,43 @@ import sys
 import time
 
 from . import __version__
+from .design import GitwiseHelpFormatter
 from .i18n import t
+from .output import print_dim
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="gitwise",
-        description="CLI for optimizing git + Claude Code workflows",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--version", action="version", version=f"gitwise {__version__}")
-    parser.add_argument(
+    parent = argparse.ArgumentParser(add_help=False)
+    parent.add_argument(
         "--lang",
         choices=["es", "en"],
         default=None,
         help="output language (default: auto-detect from locale)",
     )
+    parent.add_argument(
+        "--theme",
+        choices=["dark", "light", "auto"],
+        default=None,
+        help="color theme: dark, light, or auto-detect (default: auto)",
+    )
+
+    parser = argparse.ArgumentParser(
+        prog="gitwise",
+        description="CLI for optimizing git workflows and Claude Code integration",
+        formatter_class=GitwiseHelpFormatter,
+        parents=[parent],
+    )
+    parser.add_argument("--version", action="version", version=f"gitwise {__version__}")
 
     sub = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    p = sub.add_parser("doctor", help="check requirements and environment")
+    p = sub.add_parser("doctor", help="check requirements and environment", parents=[parent])
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser(
         "setup-agents",
         help="install skills/rules/settings into ~/.claude/ (default) or current repo (--local)",
+        parents=[parent],
     )
     p.add_argument(
         "--local",
@@ -74,42 +86,51 @@ def _build_parser() -> argparse.ArgumentParser:
         help="don't touch .gitignore or .gitattributes — --local only",
     )
 
-    p = sub.add_parser("setup", help="apply modern git defaults")
+    p = sub.add_parser("setup", help="apply modern git defaults", parents=[parent])
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("audit", help="repository diagnostics")
+    p = sub.add_parser("audit", help="repository diagnostics", parents=[parent])
     p.add_argument("--quick", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("summarize", help="compact status + log")
+    p = sub.add_parser("summarize", help="compact status + log", parents=[parent])
     p.add_argument("--json", action="store_true")
     p.add_argument("--diff", action="store_true")
     p.add_argument("--max-commits", type=int, default=10, dest="max_commits")
 
-    p = sub.add_parser("snapshot", help="generate .claude/git-snapshot.md")
+    p = sub.add_parser("snapshot", help="generate .claude/git-snapshot.md", parents=[parent])
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("clean", help="clean up stale branches and refs", aliases=["branch-clean"])
+    p = sub.add_parser(
+        "clean",
+        help="clean up stale branches and refs",
+        aliases=["branch-clean"],
+        parents=[parent],
+    )
     p.add_argument("--branches", action="store_true")
     p.add_argument("--refs", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("optimize", help="optimize the repository")
+    p = sub.add_parser("optimize", help="optimize the repository", parents=[parent])
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("worktree", help="worktree helpers for Claude agents")
+    p = sub.add_parser("worktree", help="worktree helpers for Claude agents", parents=[parent])
     p.add_argument("action", choices=["new", "clean"], nargs="?", metavar="new|clean")
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--json", action="store_true")
 
-    p = sub.add_parser("diff", help="changed files with diffstat (default), or patch view")
+    p = sub.add_parser(
+        "diff",
+        help="changed files with diffstat (default), or patch view",
+        parents=[parent],
+    )
     diff_group = p.add_mutually_exclusive_group()
     diff_group.add_argument("--staged", action="store_true", help="show staged changes only")
     diff_group.add_argument("--name-only", action="store_true", help="show only file names")
@@ -119,7 +140,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stat", action="store_true", help="show diffstat (default behavior)")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("log", help="pretty git log with filters")
+    p = sub.add_parser("log", help="pretty git log with filters", parents=[parent])
     p.add_argument("--json", action="store_true", help="output JSON")
     p.add_argument("--oneline", action="store_true", help="one line per commit")
     p.add_argument("--graph", action="store_true", help="show branch topology graph")
@@ -130,12 +151,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--file", type=str, default=None, help="show commits for file")
     p.add_argument("--max-count", type=int, default=20, dest="max_count", help="max commits")
 
-    p = sub.add_parser("show", help="commit inspector")
+    p = sub.add_parser("show", help="commit inspector", parents=[parent])
     p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")
     p.add_argument("--stat", action="store_true", help="show diffstat")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("commit", help="smart conventional commit")
+    p = sub.add_parser("commit", help="smart conventional commit", parents=[parent])
     p.add_argument("-m", "--message", type=str, default=None, help="commit message")
     p.add_argument("--type", type=str, default=None, help="commit type (feat/fix/etc)")
     p.add_argument("--scope", type=str, default=None, help="commit scope")
@@ -144,7 +165,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="show without committing")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("branches", help="branch intelligence dashboard")
+    p = sub.add_parser("branches", help="branch intelligence dashboard", parents=[parent])
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
     p.add_argument("--remote", action="store_true", help="show remote branches")
     p.add_argument(
@@ -155,20 +176,20 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("sync", help="remote fetch, safe pull/push")
+    p = sub.add_parser("sync", help="remote fetch, safe pull/push", parents=[parent])
     p.add_argument("--pull", action="store_true", help="pull --ff-only after fetch")
     p.add_argument("--push", action="store_true", help="push unpushed commits")
     p.add_argument("--remote", type=str, default=None, help="specific remote (default: all)")
     p.add_argument("--dry-run", action="store_true", help="show planned actions")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("pr", help="GitHub PR wrapper (requires gh)")
+    p = sub.add_parser("pr", help="GitHub PR wrapper (requires gh)", parents=[parent])
     p.add_argument(
         "action", nargs="?", default="list", choices=["list", "checks"], help="pr action"
     )
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("undo", help="reflog-based undo")
+    p = sub.add_parser("undo", help="reflog-based undo", parents=[parent])
     p.add_argument("ref", nargs="?", default=None, help="target ref (default: HEAD~1)")
     p.add_argument("--soft", action="store_true", help="soft reset (keep working tree)")
     p.add_argument("--steps", type=int, default=1, help="number of steps back")
@@ -176,13 +197,17 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation for --hard")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("context", help="enriched repo snapshot for LLMs")
+    p = sub.add_parser("context", help="enriched repo snapshot for LLMs", parents=[parent])
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("health", help="repo health score (0-100)")
+    p = sub.add_parser("health", help="repo health score (0-100)", parents=[parent])
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("stash", help="manage stashes (list/show/pop/drop/clear)")
+    p = sub.add_parser(
+        "stash",
+        help="manage stashes (list/show/pop/drop/clear)",
+        parents=[parent],
+    )
     p.add_argument(
         "action",
         nargs="?",
@@ -195,7 +220,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--patch", action="store_true", help="show full patch (show only)")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("tag", help="semver-aware tag management")
+    p = sub.add_parser("tag", help="semver-aware tag management", parents=[parent])
     p.add_argument(
         "action", nargs="?", default="list", choices=["list", "latest", "create", "delete"]
     )
@@ -206,7 +231,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("merge", help="merge/rebase with pre-flight checks")
+    p = sub.add_parser("merge", help="merge/rebase with pre-flight checks", parents=[parent])
     p.add_argument("branch", help="branch to merge/rebase from")
     p.add_argument("--rebase", action="store_true", help="rebase instead of merge")
     p.add_argument("--no-ff", action="store_true", help="force no-fast-forward")
@@ -214,17 +239,24 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("conflicts", help="conflict detection and resolution helper")
+    p = sub.add_parser(
+        "conflicts", help="conflict detection and resolution helper", parents=[parent]
+    )
     p.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
     p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
     p.add_argument("--json", action="store_true", help="output JSON")
 
     p = sub.add_parser(
-        "suggest", help="suggest commit message from staged diff", aliases=["commit-suggest"]
+        "suggest",
+        help="suggest commit message from staged diff",
+        aliases=["commit-suggest"],
+        parents=[parent],
     )
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("pick", help="cherry-pick or revert commits", aliases=["cherry-pick"])
+    p = sub.add_parser(
+        "pick", help="cherry-pick or revert commits", aliases=["cherry-pick"], parents=[parent]
+    )
     p.add_argument("refs", nargs="*", help="commit refs to pick/revert")
     p.add_argument("--revert", action="store_true", help="revert instead of cherry-pick")
     p.add_argument(
@@ -234,11 +266,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="show without executing")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("update", help="update gitwise (git pull in install directory)")
+    p = sub.add_parser(
+        "update", help="update gitwise (git pull in install directory)", parents=[parent]
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--json", action="store_true", help="output JSON")
 
-    p = sub.add_parser("status", help="enhanced git status for humans and AI")
+    p = sub.add_parser("status", help="enhanced git status for humans and AI", parents=[parent])
     p.add_argument("--json", action="store_true", help="output JSON")
 
     return parser
@@ -526,6 +560,9 @@ _DISPATCH: dict = {
 
 
 def main() -> int:
+    import os
+
+    from ._runtime_config import reset_runtime_config
     from .i18n import set_locale
 
     parser = _build_parser()
@@ -534,6 +571,10 @@ def main() -> int:
     if args.command is None:
         parser.print_usage(sys.stderr)
         return 1
+
+    if args.theme and args.theme != "auto":
+        os.environ["GITWISE_THEME"] = args.theme
+        reset_runtime_config()
 
     if args.lang:
         set_locale(args.lang)
@@ -550,7 +591,7 @@ def main() -> int:
     elapsed = time.monotonic() - start
     as_json = getattr(args, "json", False)
     if not as_json and elapsed > 0.2 and args.command not in ("doctor",):
-        print(t("completed_in", elapsed=f"{elapsed:.1f}"))
+        print_dim(t("completed_in", elapsed=f"{elapsed:.1f}"))
 
     return ret
 

@@ -1,12 +1,11 @@
 """gitwise suggest — heuristic commit message from staged diff."""
 
 import re
-import sys
 
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import ok, print_json
+from .output import error, print_accent, print_bracket, print_header, print_json
 
 _TYPE_MAP: list[tuple[str, str]] = [
     (r"/test", "test"),
@@ -51,8 +50,8 @@ def _build_message(staged_files: list[str], additions: int, deletions: int) -> s
     scope_str = f"({scope})" if scope else ""
     if len(staged_files) == 1:
         filename = staged_files[0].rsplit("/", 1)[-1]
-        return f"{commit_type}{scope_str}: update {filename}"
-    return f"{commit_type}{scope_str}: update {len(staged_files)} files"
+        return f"{commit_type}{scope_str}: {t('suggest_update_file', filename=filename)}"
+    return f"{commit_type}{scope_str}: {t('suggest_update_files', count=str(len(staged_files)))}"
 
 
 def run_suggest(*, as_json: bool = False) -> int:
@@ -63,11 +62,11 @@ def run_suggest(*, as_json: bool = False) -> int:
 
     r = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
     if r.returncode != 0:
-        print(t("suggest_diff_failed"), file=sys.stderr)
+        error(t("suggest_diff_failed"))
         return 1
     staged_files = [line.strip() for line in r.stdout.splitlines() if line.strip()]
     if not staged_files:
-        print(t("suggest_no_staged"), file=sys.stderr)
+        error(t("suggest_no_staged"))
         return 1
 
     stat = git_run(["diff", "--cached", "--numstat"], cwd=root, check=False)
@@ -97,5 +96,8 @@ def run_suggest(*, as_json: bool = False) -> int:
         )
         return 0
 
-    ok(t("suggest_message", message=message))
+    print_header(t("suggest_message", message=message))
+    print_bracket(t("suggest_type", type=_infer_type(staged_files)))
+    for f in staged_files:
+        print_accent(f"  {f}")
     return 0

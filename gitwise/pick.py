@@ -1,11 +1,9 @@
 """gitwise pick — cherry-pick/revert helper."""
 
-import sys
-
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import ok, print_json
+from .output import error, ok, print_json, warn
 
 
 def run_pick(
@@ -25,7 +23,7 @@ def run_pick(
     if continue_:
         r = git_run([("revert" if revert else "cherry-pick"), "--continue"], cwd=root, check=False)
         if r.returncode != 0:
-            print(r.stderr.strip(), file=sys.stderr)
+            error(r.stderr.strip())
             return 1
         if as_json:
             print_json({"v": 2, "continued": True, "ok": True})
@@ -36,7 +34,7 @@ def run_pick(
     if abort:
         r = git_run([("revert" if revert else "cherry-pick"), "--abort"], cwd=root, check=False)
         if r.returncode != 0:
-            print(r.stderr.strip(), file=sys.stderr)
+            error(r.stderr.strip())
             return 1
         if as_json:
             print_json({"v": 2, "aborted": True, "ok": True})
@@ -45,7 +43,7 @@ def run_pick(
         return 0
 
     if not refs:
-        print(t("pick_no_refs"), file=sys.stderr)
+        error(t("pick_no_refs"))
         return 1
 
     action = "revert" if revert else "cherry-pick"
@@ -61,9 +59,9 @@ def run_pick(
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
         if "CONFLICT" in r.stdout or "CONFLICT" in r.stderr:
-            print(t("pick_conflicts"), file=sys.stderr)
+            warn(t("pick_conflicts"))
         else:
-            print(r.stderr.strip(), file=sys.stderr)
+            error(r.stderr.strip())
         return 1
 
     if as_json:

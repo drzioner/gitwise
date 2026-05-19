@@ -5,7 +5,16 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import HAS_DELTA, bat_pipe, error, info, print_json
+from .output import (
+    HAS_DELTA,
+    bat_pipe,
+    error,
+    info,
+    print_bracket,
+    print_dim,
+    print_header,
+    print_json,
+)
 
 
 def _has_commits(cwd: Path) -> bool:
@@ -42,7 +51,7 @@ def run_diff(
             print_json({"v": 2, "ok": True, "diff": r.stdout})
         else:
             if HAS_DELTA:
-                info(t("using_delta"))
+                print_dim(t("using_delta"))
             bat_pipe(r.stdout, language="diff")
         return 0
 
@@ -78,9 +87,9 @@ def run_diff(
         if as_json:
             print_json({"v": 2, "ok": True, "files": files, "count": len(files)})
             return 0
-        info(t("changed_files", count=str(len(files))))
+        print_header(t("changed_files", count=str(len(files))))
         for f in files:
-            info(f"  {f['path']}  {f['changes']}")
+            print_dim(f"  {f['path']}  {f['changes']}")
         return 0
 
     if not lines:
@@ -103,7 +112,7 @@ def run_diff(
         print_json({"v": 2, "ok": True, "files": files, "count": len(files)})
         return 0
 
-    info(t("changed_files", count=str(len(files))))
+    print_header(t("changed_files", count=str(len(files))))
     for f in files:
-        info(f"  {f['status']}  {f['path']}")
+        print_bracket(f["status"], f["path"])
     return 0

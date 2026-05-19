@@ -8,7 +8,14 @@ from . import __version__
 from .git import gpg_status
 from .git import version as git_version
 from .i18n import t
-from .output import info, ok, print_json, warn
+from .output import (
+    print_dim,
+    print_header,
+    print_json,
+    print_kv,
+    print_status_line,
+    warn,
+)
 
 MIN_GIT = (2, 29, 0)
 
@@ -56,50 +63,53 @@ def run_doctor(*, as_json: bool = False) -> int:
         print_json(result)
         return 0 if result["ok"] else 1
 
-    info(f"gitwise {__version__}")
-    info("")
+    print_header(f"gitwise {__version__}")
+    print()
 
     git_str = ".".join(str(n) for n in git_ver)
     min_str = ".".join(str(n) for n in MIN_GIT)
     if git_ok:
-        ok(t("git_version_ok", ver=git_str, min=min_str))
+        print_status_line("✓", t("doctor_git_label"), git_str, ok_flag=True)
     else:
+        print_status_line("✗", t("doctor_git_label"), git_str, ok_flag=False)
         warn(t("git_too_old", ver=git_str, min=min_str))
 
     py_str = ".".join(str(n) for n in python_ver)
     if python_ok:
-        ok(t("python_version_ok", ver=py_str))
+        print_status_line("✓", t("doctor_python_label"), py_str, ok_flag=True)
     else:
+        print_status_line("✗", t("doctor_python_label"), py_str, ok_flag=False)
         warn(t("python_too_old", ver=py_str))
 
-    ok(t("platform_label", name=platform_name))
+    print_status_line("✓", t("platform_label", name=platform_name), "", ok_flag=True)
 
     if not fsmonitor_supported:
         warn(t("fsmonitor_not_supported"))
 
-    info("")
-    info(t("optional_tools"))
+    print()
+    print_header(t("optional_tools"))
     for tool, found in optional.items():
         if found:
-            info(f"  ✓ {tool}")
+            print_status_line("✓", tool, "", ok_flag=True)
         else:
             desc_key, install = _TOOL_INFO.get(tool, ("", f"brew install {tool}"))
             desc = t(desc_key) if desc_key else ""
-            info(f"  – {tool}  ({desc})")
-            info(f"      → {install}")
+            print_status_line("–", tool, "", ok_flag=False)
+            print_kv(t("doctor_purpose_label"), desc)
+            print_kv(t("doctor_install_label"), install)
 
-    info("")
-    info(t("gpg_title"))
+    print()
+    print_header(t("gpg_title"))
     if gpg["ready"]:
-        ok(t("gpg_ready_msg"))
+        print_status_line("✓", t("gpg_ready_msg"), "", ok_flag=True)
     elif not gpg["gpg_binary"]:
-        warn(t("gpg_not_installed"))
-        info(t("gpg_install_instruction"))
+        print_status_line("✗", t("gpg_not_installed"), "", ok_flag=False)
+        print_dim(t("gpg_install_instruction"))
     elif not gpg["gpgsign_enabled"]:
-        info(t("gpg_not_enabled"))
-        info(t("gpg_enable_instruction"))
+        print_status_line("–", t("gpg_not_enabled"), "", ok_flag=False)
+        print_dim(t("gpg_enable_instruction"))
     elif not gpg["signing_key_set"]:
-        warn(t("gpg_no_signing_key"))
-        info(t("gpg_key_instruction"))
+        print_status_line("✗", t("gpg_no_signing_key"), "", ok_flag=False)
+        print_dim(t("gpg_key_instruction"))
 
     return 0 if result["ok"] else 1

@@ -1,11 +1,9 @@
 """gitwise undo — reflog-based undo to any previous HEAD state."""
 
-import sys
-
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import confirm, print_json
+from .output import confirm, error, print_bracket, print_dim, print_header, print_json
 
 
 def _parse_reflog(raw: str) -> list[dict[str, str]]:
@@ -44,12 +42,12 @@ def run_undo(
         check=False,
     )
     if r.returncode != 0:
-        print(t("undo_reflog_failed"), file=sys.stderr)
+        error(t("undo_reflog_failed"))
         return 1
 
     entries = _parse_reflog(r.stdout)
     if not entries:
-        print(t("undo_no_entries"), file=sys.stderr)
+        error(t("undo_no_entries"))
         return 1
 
     if ref:
@@ -57,7 +55,7 @@ def run_undo(
     elif len(entries) >= steps + 1:
         target = entries[steps]["hash"]
     else:
-        print(t("undo_not_enough_history"), file=sys.stderr)
+        error(t("undo_not_enough_history"))
         return 1
 
     if dry_run:
@@ -73,14 +71,14 @@ def run_undo(
                 }
             )
         else:
-            print(t("dry_run_no_exec"))
+            print_header(t("undo_dry_run_title"))
             mode = "--soft" if soft else "--hard"
-            print(f"  git reset {mode} {target[:12]}")
+            print_bracket(f"git reset {mode}", target[:12])
         return 0
 
     if not soft and not yes:
         if not confirm(t("undo_confirm_hard", ref=target[:12])):
-            print(t("cancelled"))
+            print_dim(t("cancelled"))
             return 0
 
     args = ["reset"]
@@ -92,11 +90,12 @@ def run_undo(
 
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
-        print(r.stderr.strip(), file=sys.stderr)
+        error(r.stderr.strip())
         return 1
 
     if as_json:
         print_json({"v": 2, "ok": True, "target": target, "soft": soft})
     else:
-        print(t("undo_complete", ref=target[:12]))
+        print_header(t("undo_complete_title"))
+        print_bracket(t("undo_reset_to"), target[:12])
     return 0
