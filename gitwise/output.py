@@ -121,7 +121,7 @@ def _make_console(*, file: Any = sys.stdout, force: bool = False) -> Console:
     depth = cfg.color_depth
     console = Console(
         theme=Theme(_build_rich_theme()),
-        color_system=_COLOR_SYSTEM_MAP.get(depth, "auto"),
+        color_system=_COLOR_SYSTEM_MAP.get(depth, "auto"),  # pyright: ignore[reportArgumentType]
         no_color=None,
         force_terminal=force,
         width=cfg.terminal_width,

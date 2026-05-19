@@ -61,6 +61,7 @@ pythonVersion = "3.10"
 pythonPlatform = "All"
 include = ["gitwise", "tests"]
 typeCheckingMode = "standard"
+reportPossiblyUnboundVariable = "warning"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

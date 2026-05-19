@@ -3,7 +3,7 @@
 from .git import require_root, stale_branches, worktree_branches
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, print_accent, print_dim, print_header, print_json, print_table
+from .output import error, info, print_dim, print_json, print_table
 
 
 def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
