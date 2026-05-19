@@ -87,7 +87,7 @@ uv run pytest --cov=gitwise        # with coverage (see note below)
 
 Tests invoke gitwise as a subprocess via `run_gitwise()` in `conftest.py`. No mocks — all git operations run on synthetic temp repos created by fixtures.
 
-**Coverage note:** `--cov` reports ~22% because tests run gitwise as a subprocess (`subprocess.run()`). `pytest --cov` only instruments the parent process, so 24 command modules show 0% despite being fully tested via subprocess invocations. The real coverage is significantly higher. Only modules directly imported in test files (`setup_agents/`, `clean`, `optimize`, `git`, `i18n`, `output`) show accurate coverage numbers.
+**Coverage note:** `--cov` reports ~22% because tests run gitwise as a subprocess (`subprocess.run()`). `pytest --cov` only instruments the parent process, so 24 command modules show 0% despite being fully tested via subprocess invocations. With `[tool.coverage.run] patch = ["subprocess"]` in `pyproject.toml`, subprocess coverage is collected when running with `--cov`. The real coverage is significantly higher. Only modules directly imported in test files (`setup_agents/`, `clean`, `optimize`, `git`, `i18n`, `output`) show accurate coverage numbers. 440+ tests across all modules.
 
 ## Lint, Format & Type Check
 
@@ -105,10 +105,11 @@ lefthook run pre-commit            # run all pre-commit hooks
 gitwise/             # Python package — one module per subcommand
   __main__.py        # argparse router → dispatches to run_<cmd>()
   setup_agents/      # setup-agents sub-package (plan, state, exec, types, format)
+  setup_agents/adapters/  # multi-agent adapter registry (cursor, continue, opencode, codex, aider, pi)
   _cli_setup_agents.py  # CLI adapter for setup-agents
   _runtime_config.py  # immutable runtime settings (theme, color, TTY, bat/delta)
   i18n.py            # t(), confirm_responses(), reset_cache() — loads from _i18n_data.json
-  _i18n_data.json    # i18n string catalog (es/en, 624 keys)
+  _i18n_data.json    # i18n string catalog (es/en, 630+ keys)
   git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
   output.py          # Rich Console engine: ok/warn/error/info/debug/print_json/bat_pipe
   design.py          # ThemeTokens (hex), GitwiseHelpFormatter (raw ANSI), text utilities
@@ -128,8 +129,15 @@ share/claude/        # Templates copied/merged into target repos
   skills/git-audit/SKILL.md
   skills/git-clean/SKILL.md
   skills/git-optimize/SKILL.md
+share/cursor/        # Cursor adapter templates
+share/continue/      # Continue adapter templates
+share/opencode/      # opencode adapter templates
+share/codex/         # Codex adapter templates
+share/aider/         # Aider adapter templates
+share/pi/            # Pi adapter templates
 tests/               # pytest — mirrors gitwise/ modules
   conftest.py        # shared fixtures + run_gitwise() helper
+  test_adapters.py   # adapter system tests (--adapters, --list-adapters)
 bin/gitwise          # Shell wrapper → .venv/bin/python (or python3 fallback)
 install.sh           # Installs to ~/.local/bin
 ```

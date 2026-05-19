@@ -10,7 +10,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`, `health`, `stash`, `tag`,
 `merge`, `conflicts`, `suggest` (`commit-suggest`), `pick` (`cherry-pick`), `status`, `update`.
 
-**Phases 1-10 completadas.** 411 tests, 624+ i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
+**Phases 1-12 completadas.** 440+ tests, 630+ i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
 
 ---
 
@@ -82,6 +82,25 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 - Guidelines documentation (`docs/guidelines/`): architecture, python, testing, anti-patterns
 - `require_root()` DRY refactoring across command modules
 - 85+ new edge case tests
+
+## Phase 11 — Rich Migration (MERGED, PR #19)
+
+- Full color system with WCAG AA themes (dark/light)
+- `design.py` — ThemeTokens (hex colors), `hex_to_ansi_fg()`, `GitwiseHelpFormatter`
+- `_runtime_config.py` — immutable RuntimeConfig with OSC 11 theme detection
+- `output.py` — Rich Console with custom Theme, color gate, force_terminal
+- Environment variable precedence: NO_COLOR → CLICOLOR_FORCE → COLORTERM → TERM → auto
+- `--theme` CLI flag
+
+## Phase 12 — Multi-Agent Adapters & Coverage (v0.12.0)
+
+- `setup_agents/adapters/` — adapter registry for 6 coding agents
+- `--adapters` and `--list-adapters` CLI flags
+- Adapters: Cursor, Continue, opencode, Codex, Aider, Pi
+- `share/<adapter>/` template files for each agent
+- `[tool.coverage.run]` with subprocess patching for accurate coverage
+- `tests/test_adapters.py` — adapter planning, execution, idempotency tests
+- 440+ tests across all modules
 
 ---
 

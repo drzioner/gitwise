@@ -1,0 +1,16 @@
+---
+description: Use gitwise CLI for git operations — gitwise diff, summarize, worktree
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+## Use gitwise commands in tool calls
+
+- Changed files: `gitwise diff` — never raw `git diff`
+- Status + log: `gitwise summarize` — never raw `git status` or `git log`
+- Branch switch: `gitwise worktree new <branch>` — never `git stash + checkout`
+- Snapshot: `gitwise snapshot` — regenerates `.claude/git-snapshot.md`
+- Audit: `gitwise audit --quick` — before large commits
+- Clean: `gitwise clean --branches` — remove stale branches
+- Optimize: `gitwise optimize` — gc, pack-refs, commit-graph

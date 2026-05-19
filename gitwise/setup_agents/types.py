@@ -37,7 +37,7 @@ def build_action_summary(actions: list[ActionDict]) -> ActionSummary:
     }
     for a in actions:
         match a.get("action"):
-            case "create" | "managed-block-create":
+            case "create" | "managed-block-create" | "adapter-create":
                 summary["created"] += 1
             case "append" | "merge":
                 summary["appended"] += 1

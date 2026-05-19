@@ -3,6 +3,30 @@
     "es": "cancelado.",
     "en": "aborted."
   },
+  "adapter_created": {
+    "es": "adaptador {adapter}: creado {file}",
+    "en": "adapter {adapter}: created {file}"
+  },
+  "adapter_exists": {
+    "es": "adaptador {adapter}: {file} ya existe",
+    "en": "adapter {adapter}: {file} already exists"
+  },
+  "adapter_no_template": {
+    "es": "plantilla de adaptador no encontrada: {path}",
+    "en": "adapter template not found: {path}"
+  },
+  "adapters_available": {
+    "es": "adaptadores disponibles: {list}",
+    "en": "available adapters: {list}"
+  },
+  "adapters_none_with_others": {
+    "es": "\"none\" o \"claude-only\" no se pueden combinar con otros adaptadores",
+    "en": "\"none\" or \"claude-only\" cannot be combined with other adapters"
+  },
+  "adapters_require_local": {
+    "es": "los adaptadores requieren --local",
+    "en": "adapters require --local"
+  },
   "action_failed": {
     "es": "acción falló: {error} — revirtiendo {count} acciones previas",
     "en": "action failed: {error} — rolling back {count} previous actions"
@@ -1438,6 +1462,10 @@
   "unknown_action": {
     "es": "acción desconocida: {action} en {file}",
     "en": "unknown action: {action} on {file}"
+  },
+  "unknown_adapter": {
+    "es": "adaptador desconocido: {name}",
+    "en": "unknown adapter: {name}"
   },
   "unknown_branch": {
     "es": "desconocida",

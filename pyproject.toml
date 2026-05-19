@@ -66,6 +66,19 @@ typeCheckingMode = "standard"
 testpaths = ["tests"]
 pythonpath = ["tests"]
 
+[tool.coverage.run]
+patch = ["subprocess"]
+parallel = true
+source = ["gitwise"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+]
+
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "v$version"

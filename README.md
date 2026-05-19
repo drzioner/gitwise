@@ -56,6 +56,14 @@ gitwise setup-agents --local --yes       # run without confirmation
 gitwise setup-agents                      # global mode (installs to ~/.claude/)
 ```
 
+Multi-agent support (Cursor, Continue, opencode, Codex, Aider, Pi):
+
+```bash
+gitwise setup-agents --list-adapters                    # list available adapters
+gitwise setup-agents --local --yes --adapters cursor    # install cursor rules
+gitwise setup-agents --local --yes --adapters cursor --adapters aider
+```
+
 Idempotent. Never modifies `commit.gpgsign` or `user.signingkey`.
 
 ### `gitwise setup`
@@ -332,6 +340,10 @@ Updates gitwise by running `git pull` in the installation directory.
 gitwise update
 gitwise update --json
 ```
+
+## Demo
+
+[![asciicast](https://asciinema.org/a/6tm4TnYMygEQT7ef.svg)](https://asciinema.org/a/6tm4TnYMygEQT7ef)
 
 ## GPG protection
 
