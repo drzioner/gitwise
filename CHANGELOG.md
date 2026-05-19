@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.12.1 (2026-05-19)
+
+### Refactor
+
+- split AGENTS.md into scoped rules for opencode and Claude Code (#21)
+
 ## v0.12.0 (2026-05-19)
 
 ### Feat
