@@ -63,7 +63,7 @@ structure. Tests invoke gitwise as a subprocess via `run_gitwise()` in
 - Type hints on all function signatures
 - `pathlib.Path` over `os.path` (use `os.path.realpath` for symlink resolution)
 - No comments describing what code does — only WHY (non-obvious invariants)
-- No external dependencies — zero-dep runtime is a hard constraint
+- Minimal dependencies — `rich` is the only allowed external dependency
 - `ruff` handles linting and formatting; config is in `pyproject.toml`
 - `lefthook` manages git hooks; config is in `lefthook.yml`
 - `commitizen` validates commit messages; config is in `pyproject.toml`
