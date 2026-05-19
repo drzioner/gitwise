@@ -24,19 +24,19 @@
     "en": "could not determine repository root"
   },
   "dry_run_nothing": {
-    "es": "modo dry-run — no se escribirá nada:",
+    "es": "modo simulación — no se escribirá nada:",
     "en": "dry-run mode — nothing will be written:"
   },
   "dry_run_no_exec": {
-    "es": "modo dry-run — no se ejecutará nada",
+    "es": "modo simulación — no se ejecutará nada",
     "en": "dry-run mode — nothing will be executed"
   },
   "dry_run_no_delete": {
-    "es": "modo dry-run — no se eliminará nada",
+    "es": "modo simulación — no se eliminará nada",
     "en": "dry-run mode — nothing will be deleted"
   },
   "dry_run_no_clean": {
-    "es": "modo dry-run — no se limpiará nada",
+    "es": "modo simulación — no se limpiará nada",
     "en": "dry-run mode — nothing will be cleaned"
   },
   "actions_to_perform": {
@@ -204,15 +204,15 @@
     "en": "specify --branches  (or --refs)"
   },
   "no_stale_branches": {
-    "es": "no hay ramas stale ([gone])",
+    "es": "no hay ramas sin seguimiento remoto ([gone])",
     "en": "no stale branches ([gone])"
   },
   "protected_stale_branches": {
-    "es": "ramas stale protegidas ({count}) — no se tocarán:",
+    "es": "ramas sin seguimiento remoto protegidas ({count}) — no se tocarán:",
     "en": "protected stale branches ({count}) — won't be touched:"
   },
   "branches_to_delete": {
-    "es": "ramas stale a eliminar ({count}):",
+    "es": "ramas sin seguimiento remoto a eliminar ({count}):",
     "en": "stale branches to delete ({count}):"
   },
   "clean_to_delete": {
@@ -232,7 +232,7 @@
     "en": "could not delete: {branch}  ({error})"
   },
   "deleted_count": {
-    "es": "eliminadas {count} rama(s) stale",
+    "es": "eliminadas {count} rama(s) sin seguimiento remoto",
     "en": "deleted {count} stale branch(es)"
   },
   "no_deletable_branches": {
@@ -244,7 +244,7 @@
     "en": "protected (default list)"
   },
   "current_branch_msg": {
-    "es": "rama actual (checked out)",
+    "es": "rama actual (activa)",
     "en": "current branch (checked out)"
   },
   "active_in_worktree": {
@@ -324,19 +324,19 @@
     "en": "output {size} bytes exceeds 8KB — use smaller --max-commits"
   },
   "no_uncommitted_changes": {
-    "es": "no uncommitted changes",
+    "es": "sin cambios sin confirmar",
     "en": "no uncommitted changes"
   },
   "changed_files": {
-    "es": "changed files: ({count})",
+    "es": "archivos modificados: ({count})",
     "en": "changed files: ({count})"
   },
   "nothing_staged": {
-    "es": "nothing staged",
+    "es": "nada en área de preparación",
     "en": "nothing staged"
   },
   "tip_staged": {
-    "es": "no uncommitted changes  (tip: --staged for staged files)",
+    "es": "sin cambios sin confirmar  (tip: --staged para archivos en staging)",
     "en": "no uncommitted changes  (tip: --staged for staged files)"
   },
   "snapshot_generated": {
@@ -408,7 +408,7 @@
     "en": "usage: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]"
   },
   "git_diff_failed": {
-    "es": "git diff failed: {error}",
+    "es": "git diff falló: {error}",
     "en": "git diff failed: {error}"
   },
   "gpg_signing_active_no_key": {
@@ -432,7 +432,7 @@
     "en": "y"
   },
   "no_commits_yet_note": {
-    "es": "no commits yet",
+    "es": "sin commits aún",
     "en": "no commits yet"
   },
   "skills_already_configured": {
@@ -504,7 +504,7 @@
     "en": "~/.claude/skills/{skill} is a regular dir and ~/.agents/skills/{skill} also exists — no changes. Consolidate manually."
   },
   "legacy_commands": {
-    "es": ".claude/commands/{skill}.md es formato legacy — ahora se usa .claude/skills/{skill}/SKILL.md. Eliminá el .md viejo manualmente.",
+    "es": ".claude/commands/{skill}.md es formato antiguo — ahora se usa .claude/skills/{skill}/SKILL.md. Eliminá el .md viejo manualmente.",
     "en": ".claude/commands/{skill}.md is legacy format — now using .claude/skills/{skill}/SKILL.md. Delete the old .md manually."
   },
   "claude_md_symlink_other": {
@@ -588,7 +588,7 @@
     "en": "{count} large file(s) (≥1MB) in HEAD"
   },
   "mixed_staging": {
-    "es": "hay archivos staged y unstaged — el commit no sería atómico",
+    "es": "hay archivos en área de preparación y sin confirmar — el commit no sería atómico",
     "en": "staged and unstaged files present — commit wouldn't be atomic"
   },
   "stale_branches_audit": {
@@ -636,7 +636,7 @@
     "en": "consider git-lfs or history removal"
   },
   "mixed_staging_fix": {
-    "es": "revisar con git diff --staged antes de commitear",
+    "es": "revisar con git diff --staged antes de confirmar",
     "en": "review with git diff --staged before committing"
   },
   "gpg_binary_missing_fix": {
@@ -859,6 +859,18 @@
     "es": "## Stashes: {count}",
     "en": "## Stashes: {count}"
   },
+  "stash_list_title": {
+    "es": "Stashes",
+    "en": "Stashes"
+  },
+  "tag_list_title": {
+    "es": "Tags",
+    "en": "Tags"
+  },
+  "git_log_title": {
+    "es": "Commits",
+    "en": "Commits"
+  },
   "step_commit_graph": {
     "es": "git commit-graph write --reachable --changed-paths",
     "en": "git commit-graph write --reachable --changed-paths"
@@ -899,12 +911,16 @@
     "es": "adelantada",
     "en": "ahead"
   },
+  "branch_list_title": {
+    "es": "Ramas",
+    "en": "Branches"
+  },
   "branches_behind": {
     "es": "atrasada",
     "en": "behind"
   },
   "branches_merged": {
-    "es": "merged",
+    "es": "fusionadas",
     "en": "merged"
   },
   "branches_worktree": {
@@ -916,7 +932,7 @@
     "en": "current"
   },
   "branches_stale_label": {
-    "es": "stale [gone]",
+    "es": "antiguas [gone]",
     "en": "stale [gone]"
   },
   "branches_remote_label": {
@@ -940,7 +956,7 @@
     "en": "scope: {scope}"
   },
   "commit_breaking_hint": {
-    "es": "breaking change",
+    "es": "cambio rompedor",
     "en": "breaking change"
   },
   "sync_fetch_failed": {
@@ -1044,11 +1060,11 @@
     "en": "push/pull may fail without upstream"
   },
   "ctx_directory_tree": {
-    "es": "## Arbol de directorios",
+    "es": "## Árbol de directorios",
     "en": "## Directory Tree"
   },
   "ctx_more_entries": {
-    "es": "  ... ({count} entradas mas)",
+    "es": "  ... ({count} entradas más)",
     "en": "  ... ({count} more entries)"
   },
   "ctx_top_contributors": {
@@ -1071,12 +1087,48 @@
     "es": "Salud: {score}/100  Nota: {grade}",
     "en": "Health: {score}/100  Grade: {grade}"
   },
+  "health_remote": {
+    "es": "sin remoto",
+    "en": "no remote"
+  },
+  "health_upstream": {
+    "es": "sin rama seguimiento",
+    "en": "no upstream"
+  },
+  "health_gpg_signing": {
+    "es": "firma GPG desactivada",
+    "en": "GPG signing off"
+  },
+  "health_stale_branches": {
+    "es": "ramas sin seguimiento remoto",
+    "en": "stale branches"
+  },
+  "health_commit_graph": {
+    "es": "commit-graph ausente",
+    "en": "no commit-graph"
+  },
+  "health_old_stashes": {
+    "es": "stashes acumulados",
+    "en": "old stashes"
+  },
+  "health_untracked_clutter": {
+    "es": "archivos sin seguimiento",
+    "en": "untracked clutter"
+  },
+  "health_no_commits": {
+    "es": "sin commits",
+    "en": "no commits"
+  },
+  "health_too_many_branches": {
+    "es": "exceso de ramas",
+    "en": "too many branches"
+  },
   "tag_empty": {
     "es": "No hay tags",
     "en": "No tags"
   },
   "tag_no_semver": {
-    "es": "No se encontro tag semver",
+    "es": "No se encontró tag semver",
     "en": "No semver tag found"
   },
   "tag_name_required": {
@@ -1084,7 +1136,7 @@
     "en": "Tag name required"
   },
   "tag_create_dry": {
-    "es": "Se crearia tag {name}",
+    "es": "Se crearía tag {name}",
     "en": "Would create tag {name}"
   },
   "tag_created": {
@@ -1092,7 +1144,7 @@
     "en": "Tag {name} created"
   },
   "tag_delete_dry": {
-    "es": "Se eliminaria tag {name}",
+    "es": "Se eliminaría tag {name}",
     "en": "Would delete tag {name}"
   },
   "tag_deleted": {
@@ -1104,7 +1156,7 @@
     "en": "Delete tag {name}? (y/N)"
   },
   "tag_unknown_action": {
-    "es": "Accion desconocida: {action}",
+    "es": "Acción desconocida: {action}",
     "en": "Unknown action: {action}"
   },
   "merge_detached_head": {
@@ -1120,7 +1172,7 @@
     "en": "Cannot merge a branch into itself"
   },
   "merge_uncommitted": {
-    "es": "Hay cambios sin commitear",
+    "es": "Hay cambios sin confirmar",
     "en": "There are uncommitted changes"
   },
   "merge_diverged": {
@@ -1168,7 +1220,7 @@
     "en": "Failed to get staged diff"
   },
   "suggest_no_staged": {
-    "es": "No hay archivos staged",
+    "es": "No hay archivos en área de preparación",
     "en": "No staged files"
   },
   "suggest_message": {
@@ -1180,7 +1232,7 @@
     "en": "Commit refs required"
   },
   "pick_dry": {
-    "es": "Se ejecutaria {action} en: {refs}",
+    "es": "Se ejecutaría {action} en: {refs}",
     "en": "Would {action}: {refs}"
   },
   "pick_conflicts": {
@@ -1204,7 +1256,7 @@
     "en": "markers"
   },
   "status_staged": {
-    "es": "{count} archivo(s) en staging",
+    "es": "{count} archivo(s) en área de preparación",
     "en": "{count} file(s) staged"
   },
   "status_unstaged": {
@@ -1212,7 +1264,7 @@
     "en": "{count} file(s) modified"
   },
   "status_untracked": {
-    "es": "{count} archivo(s) sin trackear",
+    "es": "{count} archivo(s) sin seguimiento",
     "en": "{count} untracked file(s)"
   },
   "detached_head": {
@@ -1246,5 +1298,173 @@
   "git_show_failed": {
     "es": "Error al mostrar commit: {error}",
     "en": "Failed to show commit: {error}"
+  },
+  "status_ahead_label": {
+    "es": "adelante",
+    "en": "ahead"
+  },
+  "status_behind_label": {
+    "es": "atrás",
+    "en": "behind"
+  },
+  "status_staged_label": {
+    "es": "preparados",
+    "en": "staged"
+  },
+  "status_unstaged_label": {
+    "es": "modificados",
+    "en": "unstaged"
+  },
+  "status_untracked_label": {
+    "es": "sin seguimiento",
+    "en": "untracked"
+  },
+  "doctor_git_label": {
+    "es": "git",
+    "en": "git"
+  },
+  "doctor_python_label": {
+    "es": "python",
+    "en": "python"
+  },
+  "doctor_purpose_label": {
+    "es": "propósito",
+    "en": "purpose"
+  },
+  "doctor_install_label": {
+    "es": "instalación",
+    "en": "install"
+  },
+  "merge_merge_label": {
+    "es": "merge",
+    "en": "merge"
+  },
+  "merge_rebase_label": {
+    "es": "rebase",
+    "en": "rebase"
+  },
+  "show_header": {
+    "es": "mostrar {ref}",
+    "en": "show {ref}"
+  },
+  "commit_msg_label": {
+    "es": "mensaje",
+    "en": "msg"
+  },
+  "commit_amend_label": {
+    "es": "amend",
+    "en": "amend"
+  },
+  "commit_branch_label": {
+    "es": "rama",
+    "en": "branch"
+  },
+  "stash_col_ref": {
+    "es": "Ref",
+    "en": "Ref"
+  },
+  "stash_col_branch": {
+    "es": "Rama",
+    "en": "Branch"
+  },
+  "stash_col_message": {
+    "es": "Mensaje",
+    "en": "Message"
+  },
+  "audit_fix_label": {
+    "es": "solución",
+    "en": "fix"
+  },
+  "audit_ignore_label": {
+    "es": "ignorar",
+    "en": "ignore"
+  },
+  "setup_note_fsmonitor": {
+    "es": "solo macOS",
+    "en": "macOS only"
+  },
+  "setup_note_manyfiles": {
+    "es": "opcional, git ≥ 2.40",
+    "en": "opt-in, git ≥ 2.40"
+  },
+  "setup_note_hooks": {
+    "es": "instala hooks GPG + conventional commits",
+    "en": "installs GPG + conventional commit hooks"
+  },
+  "suggest_update_file": {
+    "es": "actualizar {filename}",
+    "en": "update {filename}"
+  },
+  "suggest_update_files": {
+    "es": "actualizar {count} archivos",
+    "en": "update {count} files"
+  },
+  "sync_action_fetch_all": {
+    "es": "fetch --all --prune",
+    "en": "fetch --all --prune"
+  },
+  "sync_action_fetch_remote": {
+    "es": "fetch {remote}",
+    "en": "fetch {remote}"
+  },
+  "sync_pull_ff": {
+    "es": "pull --ff-only",
+    "en": "pull --ff-only"
+  },
+  "sync_push_commits": {
+    "es": "push ({count} commits)",
+    "en": "push ({count} commits)"
+  },
+  "aborted": {
+    "es": "cancelado.",
+    "en": "aborted."
+  },
+  "pending": {
+    "es": "pendiente",
+    "en": "pending"
+  },
+  "pr_list_title": {
+    "es": "Pull Requests",
+    "en": "Pull Requests"
+  },
+  "suggest_type": {
+    "es": "tipo {type}",
+    "en": "type {type}"
+  },
+  "summary": {
+    "es": "resumen",
+    "en": "summary"
+  },
+  "sync_complete_title": {
+    "es": "sincronización completa",
+    "en": "sync complete"
+  },
+  "sync_dry_run_title": {
+    "es": "sincronización (simulación)",
+    "en": "sync (dry-run)"
+  },
+  "sync_status": {
+    "es": "ahead {ahead}, behind {behind}",
+    "en": "ahead {ahead}, behind {behind}"
+  },
+  "tag_latest_title": {
+    "es": "último tag",
+    "en": "latest tag"
+  },
+  "trivial": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "undo_complete_title": {
+    "es": "undo completo",
+    "en": "undo complete"
+  },
+  "undo_dry_run_title": {
+    "es": "undo (simulación)",
+    "en": "undo (dry-run)"
+  },
+  "undo_reset_to": {
+    "es": "reset a",
+    "en": "reset to"
   }
 }
