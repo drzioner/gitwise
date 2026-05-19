@@ -1,7 +1,7 @@
 # Python Guidelines — gitwise
 
 > Compatible with: `python@3.10+` · `ruff` · `basedpyright`
-> Zero dependencies. Only stdlib.
+> Minimal dependencies. `rich` for terminal rendering + stdlib.
 > Last reviewed: 2026-05-18
 
 Python code standards for the project. Every rule is mandatory.
@@ -198,12 +198,12 @@ agents_md = os.path.join(str(repo_root), "AGENTS.md")
 
 ---
 
-## 5. No external dependencies
+## 5. Minimal external dependencies
 
-**NEVER** add imports from packages other than stdlib in `gitwise/`.
+**NEVER** add imports from packages other than stdlib + `rich` in `gitwise/`.
 
 ```python
-# CORRECT — stdlib only
+# CORRECT — stdlib or rich
 import argparse
 import json
 import os
@@ -212,15 +212,17 @@ import sys
 from pathlib import Path
 from typing import Any, Literal
 
-# PROHIBITED — any external package
+from rich.console import Console
+from rich.text import Text
+
+# PROHIBITED — any external package except rich
 import requests        # NO
 import click            # NO
-import rich             # NO
 import toml             # NO (use tomllib in 3.11+)
 import yaml             # NO
 ```
 
-Zero-dep is a hard constraint. If new functionality is needed, implement it with stdlib or git subprocess.
+Minimal dependency policy: `rich>=13.0` is the only allowed external dependency. If new functionality is needed, implement it with stdlib or git subprocess.
 
 ---
 
@@ -535,7 +537,7 @@ if agents_md.exists():
 
 ## 14. Imports — stdlib order
 
-Imports grouped by PEP 8. There's only one group (stdlib) since there are no external dependencies:
+Imports grouped by PEP 8. Two groups: stdlib first, then `rich` (the only external dependency):
 
 ```python
 # CORRECT — alphabetically sorted, grouped by type

@@ -11,14 +11,13 @@ List of **prohibited** patterns in this project, organized by category.
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
-| `import requests` / `import httpx` | Breaks zero-dep | `urllib.request` from stdlib |
-| `import click` / `import typer` | Breaks zero-dep, argparse is enough | `argparse` from stdlib |
-| `import rich` | Breaks zero-dep | `output.py` with ANSI codes |
-| `import yaml` / `import toml` | Breaks zero-dep | `json` from stdlib, `tomllib` in 3.11+ |
-| `import colorama` | Breaks zero-dep | Direct ANSI codes in `output.py` |
-| `pip install X` as runtime dependency | Hard constraint of the project | Implement with stdlib |
+| `import requests` / `import httpx` | Unnecessary dep | `urllib.request` from stdlib |
+| `import click` / `import typer` | Unnecessary, argparse is enough | `argparse` from stdlib |
+| `import yaml` / `import toml` | Unnecessary | `json` from stdlib, `tomllib` in 3.11+ |
+| `import colorama` | Redundant, rich handles colors | `rich` (already a dependency) |
+| `pip install X` beyond rich | Project constraint | Implement with stdlib |
 
-**Zero-dep is non-negotiable.** If functionality requires an external package, implement it with stdlib or git subprocess.
+**Minimal dependency policy:** `rich` is the only allowed external dependency. If new functionality requires another package, implement it with stdlib or git subprocess.
 
 ---
 
@@ -285,9 +284,9 @@ Only `audit.py` and `summarize.py` use `subprocess` directly for non-git command
 
 | Anti-pattern | Why | Alternative |
 |-------------|-----|-------------|
-| `pydantic-settings` / `dotenv` for config | Breaks zero-dep | Direct `os.environ.get()` or `os.getenv()` |
-| Structured logging library (`structlog`) | Breaks zero-dep | `output.py` functions (ok/warn/error/info/debug) |
-| `prometheus_client` / OpenTelemetry | Breaks zero-dep, overkill for CLI | Exit codes + JSON output for machine parsing |
+| `pydantic-settings` / `dotenv` for config | Unnecessary dep | Direct `os.environ.get()` or `os.getenv()` |
+| Structured logging library (`structlog`) | Unnecessary dep | `output.py` functions (ok/warn/error/info/debug) |
+| `prometheus_client` / OpenTelemetry | Overkill for CLI | Exit codes + JSON output for machine parsing |
 | Configuration class for 2 values | Premature abstraction | Direct parameters with defaults |
 | Factory/registry pattern for formatters | Over-engineering | Simple dict mapping |
 

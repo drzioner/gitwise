@@ -1,7 +1,7 @@
 # Guidelines — gitwise
 
 > Stack: `python@3.10+` · `argparse` · `stdlib` · `pytest` · `ruff` · `basedpyright`
-> Zero dependencies. Only stdlib + git subprocess.
+> Minimal dependencies. `rich` for terminal rendering + stdlib + git subprocess.
 > Last reviewed: 2026-05-18
 
 Index of development standards for the project.
@@ -46,7 +46,7 @@ share/claude/           # Templates copied/merged into target repos
 ```
 
 - **Runtime**: Python 3.10+ with git 2.29+
-- **Dependencies**: Zero. Only stdlib + `git` subprocess
+- **Dependencies**: 1 runtime (`rich>=13.0` for terminal rendering). Stdlib + `git` subprocess for everything else.
 - **CLI**: `argparse` (no Click, no Typer)
 - **Tests**: `pytest` as dev dependency, no mocks, real subprocess
 - **Lint**: `ruff check` + `ruff format`

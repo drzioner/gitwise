@@ -20,14 +20,14 @@ All items in this priority are **high impact + low effort**.
 ```
 ## Estado Actual (v0.7.0)
 ...
-**Phases 1-7 completadas.** 241 tests, 304 i18n keys (es/en), zero deps.
+**Phases 1-7 completadas.** 241 tests, 304 i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
 ```
 
 **Target state:**
 ```
 ## Estado Actual (v0.10.3)
 ...
-**Phases 1-10 completadas.** 326 tests, 624 i18n keys (es/en), zero deps.
+**Phases 1-10 completadas.** 411 tests, 624+ i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
 ```
 
 **Files to modify:**

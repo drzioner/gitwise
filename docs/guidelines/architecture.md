@@ -493,7 +493,7 @@ for line in lines:
 
 ## 13. Observability — output.py as the interface
 
-gitwise has no logging library (zero-dep). `output.py` serves as the structured output layer:
+gitwise uses `output.py` as the structured output layer (backed by `rich`):
 
 | Function | Level | When |
 |----------|-------|------|
@@ -508,6 +508,6 @@ gitwise has no logging library (zero-dep). `output.py` serves as the structured 
 
 - **NEVER** use `print()` outside `__main__._run_update`
 - **NEVER** hardcode ANSI codes — `output.py` handles color detection
-- **NEVER** import `logging` or `structlog` — zero-dep constraint
+- **NEVER** import `logging` or `structlog` — use `output.py` functions
 - Error messages must include what failed, why, and how to fix
 - `--json` flag must produce valid JSON with versioned schema on every command

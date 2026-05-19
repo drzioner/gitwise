@@ -10,7 +10,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`, `health`, `stash`, `tag`,
 `merge`, `conflicts`, `suggest` (`commit-suggest`), `pick` (`cherry-pick`), `status`, `update`.
 
-**Phases 1-10 completadas.** 326 tests, 624 i18n keys (es/en), zero deps.
+**Phases 1-10 completadas.** 411 tests, 624+ i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
 
 ---
 
@@ -115,7 +115,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 
 ## Principios de Diseño
 
-1. **Zero-dep**: Solo stdlib + git subprocess. `shutil.which()` para detectar herramientas opcionales
+1. **Minimal deps**: `rich>=13.0` (terminal rendering) + stdlib + git subprocess. `shutil.which()` para detectar herramientas opcionales
 2. **`--json` en todo**: Para agentes AI (schema unificado v:2)
 3. **`--dry-run` en destructivos**: commit, sync, clean, stash drop, merge, tag delete
 4. **Delta automático**: Si `HAS_DELTA` + `IS_TTY`
