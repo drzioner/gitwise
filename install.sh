@@ -15,7 +15,8 @@ for arg in "$@"; do
     esac
 done
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_SELF="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$_SELF")" && pwd)"
 SOURCE="$SCRIPT_DIR/bin/gitwise"
 TARGET="$BIN_DIR/gitwise"
 
@@ -36,6 +37,12 @@ fi
 mkdir -p "$BIN_DIR"
 ln -snf "$SOURCE" "$TARGET"
 chmod +x "$SOURCE"
+
+if command -v pip &>/dev/null; then
+    pip install -e "$SCRIPT_DIR" --quiet || echo "warning: pip install failed (non-fatal)" >&2
+elif command -v uv &>/dev/null; then
+    uv pip install -e "$SCRIPT_DIR" --quiet || echo "warning: uv pip install failed (non-fatal)" >&2
+fi
 
 echo "✓ gitwise instalado en: $TARGET"
 
