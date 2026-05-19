@@ -82,7 +82,7 @@ def _color_forced() -> bool:
     )
 
 
-def _should_use_rich() -> bool:
+def _use_rich() -> bool:
     if not _HAS_RICH:
         return False
     if _color_disabled():
@@ -95,10 +95,10 @@ def _should_use_rich() -> bool:
 _use_rich_cached: bool | None = None
 
 
-def _should_should_use_rich() -> bool:
+def _should_use_rich() -> bool:
     global _use_rich_cached
     if _use_rich_cached is None:
-        _use_rich_cached = _should_use_rich()
+        _use_rich_cached = _use_rich()
     return _use_rich_cached
 
 
@@ -224,7 +224,7 @@ def bat_pipe(text: str, language: str = "plain") -> None:
         return
     cfg = get_runtime_config()
     if cfg.has_bat and cfg.is_tty:
-        color_flag = "always"
+        color_flag = "always" if not _color_disabled() else "never"
         cmd = [
             "bat",
             "--style=plain",

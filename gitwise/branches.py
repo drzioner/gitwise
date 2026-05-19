@@ -97,11 +97,11 @@ def run_branches(
 
     current_idx: int | None = None
     columns = [
-        ("Branch", "name"),
-        ("SHA", "sha"),
-        ("Subject", "subject"),
-        ("Age", "age"),
-        ("Status", "status"),
+        (t("col_branch"), "name"),
+        (t("col_sha"), "sha"),
+        (t("col_subject"), "subject"),
+        (t("col_age"), "age"),
+        (t("col_status"), "status"),
     ]
 
     rows: list[list[str]] = []
@@ -131,9 +131,9 @@ def run_branches(
             highlight_rows.add(idx)
 
     print_table(
-        title=t("branch_list_title")
-        if current_idx is None
-        else f"Branches (current: {branches[current_idx]['name']})",
+        title=t("branch_list_title_current", branch=branches[current_idx]["name"])
+        if current_idx is not None
+        else t("branch_list_title"),
         columns=columns,
         rows=rows,
         highlight_rows=highlight_rows,

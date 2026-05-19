@@ -193,10 +193,10 @@ def run_log(
                 return 0
 
             columns = [
-                ("SHA", "sha"),
-                ("Author", "author"),
-                ("Date", "date"),
-                ("Subject", "subject"),
+                (t("col_sha"), "sha"),
+                (t("col_author"), "author"),
+                (t("col_date"), "date"),
+                (t("col_subject"), "subject"),
             ]
 
             print_table(

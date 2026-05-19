@@ -99,9 +99,9 @@ def run_tag(
             return 0
 
         columns = [
-            ("Tag", "name"),
-            ("SHA", "sha"),
-            ("Date", "date"),
+            (t("col_tag"), "name"),
+            (t("col_sha"), "sha"),
+            (t("col_date"), "date"),
         ]
 
         rows: list[list[str]] = []

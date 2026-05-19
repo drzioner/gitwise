@@ -158,13 +158,19 @@ def truncate(text: str, width: int, ellipsis: str = "...") -> str:
     vl = visible_length(text)
     if vl <= width:
         return text
-    available = width - len(ellipsis)
+    available = width - visible_length(ellipsis)
     if available <= 0:
         return ellipsis[:width]
     stripped = strip_ansi(text)
-    if len(stripped) <= available:
-        return text
-    return stripped[:available] + ellipsis
+    res: list[str] = []
+    curr_w = 0
+    for c in stripped:
+        w = 2 if unicodedata.east_asian_width(c) in ("W", "F") else 1
+        if curr_w + w > available:
+            break
+        res.append(c)
+        curr_w += w
+    return "".join(res) + ellipsis
 
 
 def pad_right(text: str, width: int) -> str:
