@@ -85,6 +85,19 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="no_git_files",
         help="don't touch .gitignore or .gitattributes — --local only",
     )
+    p.add_argument(
+        "--adapters",
+        nargs="*",
+        default=None,
+        dest="adapters",
+        help="install config for coding agents (comma-separated: cursor,aider or multiple: --adapters cursor aider)",
+    )
+    p.add_argument(
+        "--list-adapters",
+        action="store_true",
+        dest="list_adapters",
+        help="list available adapters and exit",
+    )
 
     p = sub.add_parser("setup", help="apply modern git defaults", parents=[parent])
     p.add_argument("--dry-run", action="store_true")
@@ -291,6 +304,14 @@ def _run_doctor(args: argparse.Namespace) -> int:
 
 
 def _run_setup_agents(args: argparse.Namespace) -> int:
+    if getattr(args, "list_adapters", False):
+        from .i18n import t as _t
+        from .setup_agents.adapters import list_adapters
+
+        adapter_list = ", ".join(list_adapters())
+        print(_t("adapters_available", list=adapter_list))
+        return 0
+
     from ._cli_setup_agents import run_setup_agents
 
     return run_setup_agents(
@@ -304,6 +325,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
         replace_claude_with_symlink=args.replace_claude_with_symlink,
         frozen_time=args.frozen_time,
         no_git_files=args.no_git_files,
+        adapters=args.adapters,
     )
 
 

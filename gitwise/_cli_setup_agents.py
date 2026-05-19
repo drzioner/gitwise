@@ -97,6 +97,7 @@ def _run_setup_local(
     replace_claude_with_symlink: bool = False,
     frozen_time: bool = False,
     no_git_files: bool = False,
+    adapters: list[str] | None = None,
 ) -> int:
     cwd = target or Path.cwd()
 
@@ -130,6 +131,19 @@ def _run_setup_local(
 
     has_errors = bool(plan_errors)
     all_warnings = gpg_warnings + warnings
+
+    if adapters:
+        from gitwise.setup_agents.adapters import plan_adapter_actions
+
+        expanded = []
+        for a in adapters:
+            expanded.extend(part.strip() for part in a.split(",") if part.strip())
+        adapter_actions, adapter_errors, adapter_warnings = plan_adapter_actions(expanded, root)
+        if adapter_errors:
+            plan_errors.extend({"reason": e, "file": ""} for e in adapter_errors)
+            has_errors = True
+        actions.extend(adapter_actions)
+        all_warnings.extend(adapter_warnings)
 
     if as_json:
         if has_errors:
@@ -233,6 +247,7 @@ def run_setup_agents(
     replace_claude_with_symlink: bool = False,
     frozen_time: bool = False,
     no_git_files: bool = False,
+    adapters: list[str] | None = None,
 ) -> int:
     """Dispatcher: global mode (default) or per-repo mode (--local)."""
     if local:
@@ -246,7 +261,11 @@ def run_setup_agents(
             replace_claude_with_symlink=replace_claude_with_symlink,
             frozen_time=frozen_time,
             no_git_files=no_git_files,
+            adapters=adapters,
         )
+    if adapters:
+        error(t("adapters_require_local"))
+        return 1
     return _run_setup_global(
         Path.home(),
         dry_run=dry_run,

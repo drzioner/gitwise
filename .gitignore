@@ -11,6 +11,7 @@ tests/fixtures/repos/
 .envrc
 .venv/
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 

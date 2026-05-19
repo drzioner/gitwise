@@ -81,7 +81,7 @@ def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
                     debug(
                         t("debug_rollback_restored_skill", file=file_key, skill=agents_skill_str)
                     )
-            elif act in ("create",) and action.get("_created") and path.exists():
+            elif act in ("create", "adapter-create") and action.get("_created") and path.exists():
                 path.unlink()
                 debug(t("debug_rollback_deleted", file=file_key))
         except OSError as e:
@@ -207,6 +207,15 @@ def _exec_rule(action: dict[str, Any], root: Path) -> None:
     ok(t("created", file=file_key))
 
 
+def _exec_adapter_create(action: dict[str, Any], root: Path) -> None:
+    file_key = action["file"]
+    path = root / file_key
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(action["content"], encoding="utf-8")
+    action["_created"] = True
+    ok(t("adapter_created", adapter=action.get("adapter", file_key), file=file_key))
+
+
 def _exec_snapshot(action: dict[str, Any], root: Path) -> None:
     from gitwise.snapshot import generate_snapshot as _gen_snapshot
 
@@ -242,6 +251,8 @@ def _match_file_key(file_key: str, act: str) -> Callable[[dict[str, Any], Path],
         return _exec_snapshot
     if act in ("managed-block-create", "managed-block-replace"):
         return _exec_managed_block
+    if act == "adapter-create":
+        return _exec_adapter_create
     return None
 
 
