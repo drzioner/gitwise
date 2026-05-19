@@ -1,0 +1,1 @@
+../../.agents/rules/shell-scripts.md

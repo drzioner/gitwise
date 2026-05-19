@@ -1,0 +1,72 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".agents/rules/testing.md",
+    ".agents/rules/project-structure.md"
+  ],
+  "lsp": {
+    "basedpyright": {
+      "command": [".venv/bin/basedpyright-langserver", "--stdio"],
+      "extensions": [".py", ".pyi"]
+    },
+    "ruff": {
+      "command": [".venv/bin/ruff", "server"],
+      "extensions": [".py", ".pyi"]
+    }
+  },
+  "formatter": {
+    "ruff": {
+      "command": [".venv/bin/ruff", "format", "$FILE"],
+      "extensions": [".py", ".pyi"]
+    }
+  },
+  "permission": {
+    "bash": {
+      "python -m pytest *": "allow",
+      "python -m gitwise *": "allow",
+      "gitwise *": "allow",
+      "pyright *": "allow",
+      "shellcheck *": "allow",
+      "uv run pytest *": "allow",
+      "uv run basedpyright *": "allow",
+      "uv run python -m gitwise *": "allow",
+      "basedpyright *": "allow",
+      "ruff *": "allow",
+      "git status *": "allow",
+      "git log *": "allow",
+      "git diff *": "allow",
+      "git branch *": "allow",
+      "git show *": "allow",
+      "git rev-parse *": "allow",
+      "git config *": "allow",
+      "git ls-files *": "allow",
+      "git for-each-ref *": "allow",
+      "git add *": "allow",
+      "git commit *": "allow",
+      "git tag *": "allow",
+      "git worktree *": "allow",
+      "cat *": "allow",
+      "ls *": "allow",
+      "mkdir *": "allow",
+      "*--no-gpg-sign*": "deny",
+      "*--no-verify*": "deny",
+      "*push*--force*": "deny",
+      "*push*-f*": "deny",
+      "*reset*--hard*": "deny",
+      "*": "ask"
+    }
+  },
+  "watcher": {
+    "ignore": [
+      "__pycache__/**",
+      ".pytest_cache/**",
+      "*.pyc",
+      "research/**",
+      "review/**",
+      "*.egg-info/**",
+      ".venv/**",
+      "node_modules/**",
+      "uv.lock"
+    ]
+  }
+}
