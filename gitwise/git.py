@@ -168,9 +168,7 @@ def version() -> tuple[int, int, int]:
 
 
 def validate_ref(ref: str) -> bool:
-    if not ref or ref.startswith("-"):
-        return False
-    return not (".." in ref or "~" in ref or "^{}" in ref)
+    return bool(ref) and not ref.startswith("-")
 
 
 def validate_branch_name(name: str) -> bool:
