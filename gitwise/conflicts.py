@@ -37,7 +37,8 @@ def run_conflicts(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     conflicts = _find_conflict_files(root)
 
@@ -53,7 +54,7 @@ def run_conflicts(
         if r.returncode != 0:
             error(r.stderr.strip())
             return 1
-        git_run(["add"] + conflicts, cwd=root, check=False)
+        git_run(["add", "--"] + conflicts, cwd=root, check=False)
         if as_json:
             print_json({"v": 2, "resolved": len(conflicts), "strategy": "ours", "ok": True})
             return 0
@@ -65,7 +66,7 @@ def run_conflicts(
         if r.returncode != 0:
             error(r.stderr.strip())
             return 1
-        git_run(["add"] + conflicts, cwd=root, check=False)
+        git_run(["add", "--"] + conflicts, cwd=root, check=False)
         if as_json:
             print_json({"v": 2, "resolved": len(conflicts), "strategy": "theirs", "ok": True})
             return 0

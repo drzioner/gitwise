@@ -22,7 +22,8 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     branch_r = git_run(["branch", "--show-current"], cwd=cwd, check=False)
@@ -47,7 +48,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
     if as_json:
         import json
 
-        result = {
+        result: dict = {
             "v": 2,
             "ok": True,
             "branch": branch,
@@ -56,6 +57,9 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
             "shortstat": shortstat,
             "changed_files": changed_files,
         }
+        if diff:
+            diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
+            result["diff"] = diff_r.stdout if diff_r.returncode == 0 else ""
         print_json(result)
         output_size = len(json.dumps(result))
         if output_size > 8192:
@@ -88,9 +92,17 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
             if cfg.has_delta and cfg.is_tty:
                 debug(t("using_delta"))
                 try:
-                    delta = subprocess.Popen(["delta"], stdin=subprocess.PIPE, text=True)
-                    delta.communicate(input=diff_r.stdout, timeout=120)
-                except OSError:
+                    subprocess.run(
+                        ["delta"],
+                        input=diff_r.stdout,
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                        check=False,
+                    )
+                except subprocess.TimeoutExpired:
+                    bat_pipe(diff_r.stdout, language="diff")
+                except (FileNotFoundError, OSError):
                     bat_pipe(diff_r.stdout, language="diff")
             else:
                 stat_r = git_run(["--no-pager", "diff", "--stat"], cwd=cwd, check=False)

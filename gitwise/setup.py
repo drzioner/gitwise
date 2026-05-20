@@ -110,7 +110,8 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     gpg_warnings = _check_gpg_state(cwd)

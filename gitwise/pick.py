@@ -1,6 +1,6 @@
 """gitwise pick — cherry-pick/revert helper."""
 
-from .git import require_root
+from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import error, ok, print_json, warn
@@ -18,7 +18,8 @@ def run_pick(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if continue_:
         r = git_run([("revert" if revert else "cherry-pick"), "--continue"], cwd=root, check=False)
@@ -46,6 +47,11 @@ def run_pick(
         error(t("pick_no_refs"))
         return 1
 
+    for ref in refs:
+        if not validate_ref(ref):
+            error(t("invalid_ref", ref=ref))
+            return 1
+
     action = "revert" if revert else "cherry-pick"
 
     if dry_run:
@@ -55,7 +61,7 @@ def run_pick(
         ok(t("pick_dry", action=action, refs=", ".join(refs)))
         return 0
 
-    args = [action] + refs
+    args = [action, "--"] + refs
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
         if "CONFLICT" in r.stdout or "CONFLICT" in r.stderr:

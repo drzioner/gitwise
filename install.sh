@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# install.sh — instala gitwise en ~/.local/bin
-# Uso: bash install.sh [--dry-run]
-# Para actualizar: gitwise update
+# install.sh — install gitwise to ~/.local/bin
+# Usage: bash install.sh [--dry-run]
+# To update: gitwise update
 set -Eeuo pipefail
 
 trap 'exit 130' INT TERM
@@ -21,15 +21,15 @@ SOURCE="$SCRIPT_DIR/bin/gitwise"
 TARGET="$BIN_DIR/gitwise"
 
 if [[ ! -f "$SOURCE" ]]; then
-    echo "error: no se encontró bin/gitwise en $SCRIPT_DIR" >&2
+    echo "error: bin/gitwise not found in $SCRIPT_DIR" >&2
     exit 1
 fi
 
 if [[ "$DRY_RUN" == "true" ]]; then
     echo "would install to: $TARGET"
-    echo "would symlink: $SOURCE → $TARGET"
+    echo "would symlink: $SOURCE -> $TARGET"
     if ! printf '%s\n' "${PATH//:/$'\n'}" | grep -qx "$BIN_DIR"; then
-        echo "would add to PATH: $BIN_DIR (no está en PATH actualmente)"
+        echo "would add to PATH: $BIN_DIR (not currently in PATH)"
     fi
     exit 0
 fi
@@ -41,19 +41,19 @@ chmod +x "$SOURCE"
 if command -v pip &>/dev/null; then
     pip install -e "$SCRIPT_DIR" --quiet || echo "warning: pip install failed (non-fatal)" >&2
 elif command -v uv &>/dev/null; then
-    uv pip install -e "$SCRIPT_DIR" --quiet || echo "warning: uv pip install failed (non-fatal)" >&2
+    uv pip install -e "$SCRIPT_DIR" --no-scripts || echo "warning: uv pip install failed (non-fatal)" >&2
 fi
 
-echo "✓ gitwise instalado en: $TARGET"
+echo "gitwise installed at: $TARGET"
 
 if ! printf '%s\n' "${PATH//:/$'\n'}" | grep -qx "$BIN_DIR"; then
     echo ""
-    echo "AVISO: $BIN_DIR no está en PATH."
-    echo "Agrega a ~/.zshrc:"
+    echo "NOTE: $BIN_DIR is not in PATH."
+    echo "Add to ~/.zshrc:"
     echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
-    echo "Luego: source ~/.zshrc"
+    echo "Then: source ~/.zshrc"
 fi
 
 echo ""
-echo "Prueba con: gitwise doctor"
-echo "Para actualizar: gitwise update"
+echo "Try: gitwise doctor"
+echo "To update: gitwise update"

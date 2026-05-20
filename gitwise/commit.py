@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .git import current_branch, gpg_status, require_root
+from .git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, print_bracket, print_header, print_json
@@ -11,8 +11,6 @@ from .output import error, print_bracket, print_header, print_json
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
 )
-
-_PROTECTED_BRANCHES = {"main", "master", "release"}
 
 
 def _is_pushed(branch: str, cwd: Path) -> bool:
@@ -33,11 +31,12 @@ def run_commit(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if amend:
         branch = current_branch(cwd=root) or ""
-        if branch in _PROTECTED_BRANCHES:
+        if branch in PROTECTED_BRANCHES:
             error(t("commit_amend_protected", branch=branch))
             return 1
         if _is_pushed(branch, root):

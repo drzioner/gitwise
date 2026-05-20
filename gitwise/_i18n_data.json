@@ -1534,5 +1534,33 @@
   "yes_response": {
     "es": "s",
     "en": "y"
+  },
+  "invalid_ref": {
+    "es": "referencia inválida: {ref}",
+    "en": "invalid ref: {ref}"
+  },
+  "invalid_branch_name": {
+    "es": "nombre de rama inválido: {name}",
+    "en": "invalid branch name: {name}"
+  },
+  "no_remote_branches": {
+    "es": "no hay ramas remotas",
+    "en": "no remote branches"
+  },
+  "update_requires_git_clone": {
+    "es": "update requiere una instalación vía git clone (no se encontró .git/)",
+    "en": "update requires a git clone installation (.git/ not found)"
+  },
+  "invalid_grep_pattern": {
+    "es": "patrón de búsqueda inválido o peligroso: {pattern}",
+    "en": "invalid or unsafe grep pattern: {pattern}"
+  },
+  "unexpected_error": {
+    "es": "error inesperado. Ejecuta con GITWISE_DEBUG=1 para más detalles.",
+    "en": "unexpected error. Run with GITWISE_DEBUG=1 for details."
+  },
+  "invalid_sort_field": {
+    "es": "campo de ordenamiento no válido: {field}. Campos válidos: refname, committerdate, creatordate, authordate",
+    "en": "invalid sort field: {field}. Valid fields: refname, committerdate, creatordate, authordate"
   }
 }

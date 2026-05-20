@@ -150,7 +150,8 @@ def run_stash(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if action == "list":
         return _cmd_list(root, as_json=as_json)

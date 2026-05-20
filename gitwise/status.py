@@ -10,7 +10,8 @@ def run_status(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     branch = current_branch(root) or t("detached_head")
 

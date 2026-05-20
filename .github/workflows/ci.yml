@@ -1,13 +1,12 @@
 name: CI
 
 on:
-  pull_request:
+  push:
     branches: [main]
-  workflow_call:
-  workflow_dispatch:
+  pull_request:
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -23,12 +22,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          version: "0.11.x"
-          enable-cache: true
-          cache-suffix: lint
-      - run: uvx ruff@0.11.0 check gitwise/ tests/
-      - run: uvx ruff@0.11.0 format --check gitwise/ tests/
+      - run: uv sync --group dev
+      - run: uv run ruff check gitwise/ tests/
+      - run: uv run ruff format --check gitwise/ tests/
 
   typecheck:
     name: Type Check
@@ -39,16 +35,14 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          version: "0.11.x"
-          enable-cache: true
-          cache-suffix: typecheck
-      - run: uv sync
+      - run: uv sync --group dev
+      - run: uv run basedpyright
 
   test:
     name: Tests (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    needs: [lint, typecheck]
     strategy:
       fail-fast: false
       matrix:
@@ -60,12 +54,9 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          version: "0.11.x"
           python-version: ${{ matrix.python-version }}
-          enable-cache: true
-          cache-suffix: "${{ matrix.os }}-${{ matrix.python-version }}"
-      - run: uv sync
-      - run: uv run pytest --tb=short -q --cov=gitwise --cov-fail-under=8
+      - run: uv sync --group dev
+      - run: uv run pytest -q --tb=short --cov=gitwise --cov-report=term-missing
 
   shellcheck:
     name: Shell Lint
@@ -75,20 +66,17 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - name: Run shellcheck
+      - name: shellcheck
         run: shellcheck install.sh bin/gitwise
 
   audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          version: "0.11.x"
-          enable-cache: true
-          cache-suffix: audit
-      - run: uv sync
+      - run: uv sync --group dev
+      - run: uv pip install pip-audit && uv run pip-audit

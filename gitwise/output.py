@@ -6,7 +6,14 @@ import json
 import os
 import subprocess
 import sys
-from typing import Any
+import time
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
+    from rich.theme import Theme
 
 try:
     from rich.console import Console
@@ -27,6 +34,19 @@ _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
     "256color": "256",
     "16color": "16",
 }
+
+_LOG_JSON = os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
+
+
+def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
+    entry: dict[str, Any] = {
+        "ts": time.time(),
+        "level": level,
+        "msg": msg,
+    }
+    if kwargs:
+        entry.update(kwargs)
+    sys.stderr.write(json.dumps(entry, default=str) + "\n")
 
 
 class _ModuleAttr:
@@ -107,7 +127,7 @@ def _make_console(*, file: Any = sys.stdout, force: bool = False) -> Console:
     depth = cfg.color_depth
     console = Console(
         theme=Theme(_build_rich_theme()),
-        color_system=_COLOR_SYSTEM_MAP.get(depth, "auto"),
+        color_system=_COLOR_SYSTEM_MAP.get(depth, "auto"),  # pyright: ignore[reportArgumentType]
         no_color=None,
         force_terminal=force,
         width=cfg.terminal_width,
@@ -157,6 +177,9 @@ def info(msg: str) -> None:
 
 
 def warn(msg: str) -> None:
+    if _LOG_JSON:
+        _structured_log("warn", msg)
+        return
     prefix = t("warning_label")
     if _should_use_rich():
         text = Text()
@@ -168,6 +191,9 @@ def warn(msg: str) -> None:
 
 
 def error(msg: str) -> None:
+    if _LOG_JSON:
+        _structured_log("error", msg)
+        return
     prefix = t("error")
     if _should_use_rich():
         text = Text()

@@ -81,7 +81,10 @@ def t(key: str, **kwargs: str) -> str:
     if entry is None:
         return key
     template = entry.get(_state.locale, entry.get("en", key))
-    result = template.format(**kwargs) if kwargs else template
+    try:
+        result = template.format(**kwargs) if kwargs else template
+    except (KeyError, IndexError, ValueError):
+        result = template
     _CACHE[cached_key] = result
     return result
 

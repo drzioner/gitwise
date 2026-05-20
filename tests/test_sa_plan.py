@@ -66,7 +66,7 @@ class TestPlanManagedBlock:
     def test_nonexistent_creates_block(self, tmp_path: Path) -> None:
         path = tmp_path / ".gitignore"
         block = "# test content\n"
-        actions, warnings = plan_managed_block(path, block, ".gitignore")
+        actions, _warnings = plan_managed_block(path, block, ".gitignore")
         assert len(actions) == 1
         assert actions[0]["action"] == "managed-block-create"
         assert actions[0]["content"] == block
@@ -75,7 +75,7 @@ class TestPlanManagedBlock:
         path = tmp_path / ".gitignore"
         path.write_text("original content\n", encoding="utf-8")
         block = "# new block\n"
-        actions, warnings = plan_managed_block(path, block, ".gitignore")
+        actions, _warnings = plan_managed_block(path, block, ".gitignore")
         assert len(actions) == 1
         assert actions[0]["action"] == "managed-block-create"
         assert actions[0]["_append"] is True
@@ -84,7 +84,7 @@ class TestPlanManagedBlock:
         path = tmp_path / ".gitattributes"
         content = f"{_MANAGED_MARKER_START}\nline1\n{_MANAGED_MARKER_END}\n"
         path.write_text(content, encoding="utf-8")
-        actions, warnings = plan_managed_block(path, content, ".gitattributes")
+        actions, _warnings = plan_managed_block(path, content, ".gitattributes")
         assert len(actions) == 1
         assert actions[0]["action"] == "managed-block-skip"
 
@@ -93,7 +93,7 @@ class TestPlanManagedBlock:
         desired = f"{_MANAGED_MARKER_START}\nline1\n{_MANAGED_MARKER_END}\n"
         on_disk = desired + "   \n"
         path.write_text(on_disk, encoding="utf-8")
-        actions, warnings = plan_managed_block(path, desired, ".gitattributes")
+        actions, _warnings = plan_managed_block(path, desired, ".gitattributes")
         assert len(actions) == 1
         assert actions[0]["action"] == "managed-block-skip"
 
@@ -102,7 +102,7 @@ class TestPlanManagedBlock:
         old = f"{_MANAGED_MARKER_START}\nold content\n{_MANAGED_MARKER_END}\n"
         new = f"{_MANAGED_MARKER_START}\nnew content\n{_MANAGED_MARKER_END}\n"
         path.write_text(old, encoding="utf-8")
-        actions, warnings = plan_managed_block(path, new, ".gitattributes")
+        actions, _warnings = plan_managed_block(path, new, ".gitattributes")
         assert len(actions) == 1
         assert actions[0]["action"] == "managed-block-replace"
         assert actions[0]["_start_idx"] == 0
@@ -160,7 +160,7 @@ class TestPlanSkillsSymlinkedDir:
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_skills(
+        actions, _warnings = plan_skills(
             tmp_path,
             _base_state(
                 c_state="symlink_valid",
@@ -177,7 +177,7 @@ class TestPlanSkillsSymlinkedDir:
         audit_dir.mkdir(parents=True)
         (audit_dir / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_skills(
+        actions, _warnings = plan_skills(
             tmp_path,
             _base_state(
                 c_state="symlink_valid",
@@ -200,7 +200,7 @@ class TestPlanSkillsSymlinkedDir:
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_skills(
+        actions, _warnings = plan_skills(
             tmp_path,
             _base_state(
                 c_state="symlink_valid",
@@ -221,14 +221,14 @@ class TestPlanSkillsRegularDir:
         claude_skills = tmp_path / ".claude" / "skills"
         claude_skills.mkdir(parents=True)
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
+        actions, _warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
         mkdir_actions = [a for a in actions if a["action"] == "mkdir"]
         symlink_actions = [a for a in actions if a["action"] == "symlink-create"]
         assert any("git-audit" in a.get("file", "") for a in mkdir_actions)
         assert any("git-audit" in a.get("file", "") for a in symlink_actions)
 
     def test_global_skill_availability_warning(self, tmp_path: Path) -> None:
-        actions, warnings = plan_skills(
+        _actions, warnings = plan_skills(
             tmp_path,
             _base_state(),
             global_skills=frozenset(_SKILLS),
@@ -239,7 +239,7 @@ class TestPlanSkillsRegularDir:
         claude_skills = tmp_path / ".claude" / "skills"
         claude_skills.mkdir(parents=True)
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
+        actions, _warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
         created = [
             a for a in actions if a["action"] == "create" and "SKILL.md" in a.get("file", "")
         ]
@@ -252,7 +252,7 @@ class TestPlanSkillsRegularDir:
             (claude_skills / skill).mkdir()
             (claude_skills / skill / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
+        actions, _warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
         assert all(a["action"] == "skip" for a in actions)
 
     def test_symlink_mismatch_produces_warning(self, tmp_path: Path) -> None:
@@ -265,7 +265,7 @@ class TestPlanSkillsRegularDir:
         skill = claude_skills / "git-audit"
         os.symlink(str(wrong_target), str(skill))
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
+        _actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
         assert len(warnings) > 0
 
     def test_broken_symlink_produces_warning(self, tmp_path: Path) -> None:
@@ -276,7 +276,7 @@ class TestPlanSkillsRegularDir:
         skill = claude_skills / "git-audit"
         os.symlink(str(tmp_path / "nonexistent-target"), str(skill))
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
+        _actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
         assert len(warnings) > 0
 
     def test_conflict_skip_when_agents_skill_exists(self, tmp_path: Path) -> None:
@@ -289,7 +289,7 @@ class TestPlanSkillsRegularDir:
         (claude_skills / "git-audit").mkdir()
         (claude_skills / "git-audit" / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
+        actions, _warnings = plan_skills(tmp_path, _base_state(agents_dir=True))
         audit_actions = [a for a in actions if "git-audit" in a.get("file", "")]
         assert any(a["action"] == "skip" for a in audit_actions)
 
@@ -302,7 +302,7 @@ class TestPlanSkillsRegularDir:
         (claude_skills / "git-audit").mkdir()
         (claude_skills / "git-audit" / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_global_skills(home)
+        actions, _warnings = plan_global_skills(home)
         migrate_actions = [a for a in actions if a["action"] == "skill-migrate-to-agents"]
         assert len(migrate_actions) == 1
 
@@ -313,7 +313,7 @@ class TestPlanSkillsRegularDir:
         commands_dir.mkdir(parents=True)
         (commands_dir / "git-audit.md").write_text("old", encoding="utf-8")
 
-        actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
+        _actions, warnings = plan_skills(tmp_path, _base_state(agents_dir=False))
         assert len(warnings) > 0
 
 
@@ -326,12 +326,12 @@ class TestPlanGlobalSkills:
             d.mkdir(parents=True)
             (d / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_global_skills(home)
+        actions, _warnings = plan_global_skills(home)
         assert all(a["action"] == "skip" for a in actions)
 
     def test_missing_skill_created(self, tmp_path: Path) -> None:
         home = tmp_path / "home"
-        actions, warnings = plan_global_skills(home)
+        actions, _warnings = plan_global_skills(home)
         created = [a for a in actions if a["action"] == "create"]
         assert len(created) == len(_SKILLS)
 
@@ -342,7 +342,7 @@ class TestPlanGlobalSkills:
             d.mkdir(parents=True)
             (d / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_global_skills(home)
+        actions, _warnings = plan_global_skills(home)
         assert all(a["action"] == "skip" for a in actions)
 
     def test_global_symlinked_dir_skips_existing(self, tmp_path: Path) -> None:
@@ -356,5 +356,5 @@ class TestPlanGlobalSkills:
             d.mkdir(parents=True)
             (d / "SKILL.md").write_text("content", encoding="utf-8")
 
-        actions, warnings = plan_global_skills(home)
+        actions, _warnings = plan_global_skills(home)
         assert all(a["action"] == "skip" for a in actions)

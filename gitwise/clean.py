@@ -72,7 +72,8 @@ def run_clean(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     deletable, skipped = _categorize(cwd)

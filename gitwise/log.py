@@ -1,8 +1,9 @@
 """gitwise log — pretty git log with filters and JSON output."""
 
+import subprocess
 from pathlib import Path
 
-from .git import require_root
+from .git import require_root, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, info, print_header, print_json, print_table
@@ -30,6 +31,9 @@ def _build_log_args(
     if author:
         args.append(f"--author={author}")
     if grep:
+        if not validate_grep_pattern(grep):
+            error(t("invalid_grep_pattern", pattern=grep[:50]))
+            raise ValueError(f"unsafe grep pattern: {grep[:50]}")
         args.append(f"--grep={grep}")
     if since:
         args.append(f"--since={since}")
@@ -59,6 +63,9 @@ def _build_log_json_args(
     if author:
         args.append(f"--author={author}")
     if grep:
+        if not validate_grep_pattern(grep):
+            error(t("invalid_grep_pattern", pattern=grep[:50]))
+            raise ValueError(f"unsafe grep pattern: {grep[:50]}")
         args.append(f"--grep={grep}")
     if since:
         args.append(f"--since={since}")
@@ -74,7 +81,7 @@ def _parse_log_json(raw: str) -> list[dict[str, str]]:
     commits: list[dict[str, str]] = []
     entries = raw.split("---END---")
     for entry in entries:
-        lines = [ln for ln in entry.strip().splitlines() if ln.strip()]
+        lines = entry.strip().splitlines()
         if len(lines) >= 7:
             commits.append(
                 {
@@ -87,20 +94,57 @@ def _parse_log_json(raw: str) -> list[dict[str, str]]:
                     "parents": lines[6],
                 }
             )
+        elif len(lines) == 6:
+            commits.append(
+                {
+                    "hash": lines[0],
+                    "short_hash": lines[1],
+                    "author": lines[2],
+                    "email": lines[3],
+                    "date": lines[4],
+                    "subject": lines[5],
+                    "parents": "",
+                }
+            )
     return commits
 
 
 def _enrich_with_stats(commits: list[dict[str, str]], cwd: Path) -> None:
-    for c in commits:
-        r = git_run(
-            ["diff-tree", "--no-commit-id", "--stat", "-r", c["hash"]],
-            cwd=cwd,
-            check=False,
-        )
-        if r.returncode == 0 and r.stdout.strip():
-            c["stats"] = r.stdout.strip()
-        else:
+    if not commits:
+        return
+    hashes = "\n".join(c["hash"] for c in commits)
+    r = subprocess.run(
+        ["git", "diff-tree", "--stdin", "--no-commit-id", "--stat", "-r"],
+        input=hashes,
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        timeout=120,
+    )
+    if r.returncode != 0:
+        for c in commits:
             c["stats"] = ""
+        return
+    stats_by_hash: dict[str, str] = {}
+    current_hash = ""
+    current_lines: list[str] = []
+    for line in r.stdout.splitlines():
+        if not line and current_hash:
+            stats_by_hash[current_hash] = "\n".join(current_lines).strip()
+            current_hash = ""
+            current_lines = []
+            continue
+        if len(line) >= 40 and all(c in "0123456789abcdef" for c in line[:40]):
+            if current_hash and current_lines:
+                stats_by_hash[current_hash] = "\n".join(current_lines).strip()
+            current_hash = line.strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+    if current_hash and current_lines:
+        stats_by_hash[current_hash] = "\n".join(current_lines).strip()
+    for c in commits:
+        c["stats"] = stats_by_hash.get(c["hash"], "")
 
 
 def _parse_log_table(raw: str) -> list[list[str]]:
@@ -145,12 +189,16 @@ def run_log(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     if as_json:
-        args = _build_log_json_args(
-            author=author, grep=grep, since=since, until=until, file=file, max_count=max_count
-        )
+        try:
+            args = _build_log_json_args(
+                author=author, grep=grep, since=since, until=until, file=file, max_count=max_count
+            )
+        except ValueError:
+            return 1
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
             if "does not have any commits yet" in r.stderr:
@@ -162,16 +210,19 @@ def run_log(
         _enrich_with_stats(commits, root)
         print_json({"v": 2, "ok": True, "commits": commits, "count": len(commits)})
     else:
-        args = _build_log_args(
-            oneline=oneline,
-            graph=graph,
-            author=author,
-            grep=grep,
-            since=since,
-            until=until,
-            file=file,
-            max_count=max_count,
-        )
+        try:
+            args = _build_log_args(
+                oneline=oneline,
+                graph=graph,
+                author=author,
+                grep=grep,
+                since=since,
+                until=until,
+                file=file,
+                max_count=max_count,
+            )
+        except ValueError:
+            return 1
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
             if r.stderr and "does not have any commits yet" in r.stderr:

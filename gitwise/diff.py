@@ -32,7 +32,8 @@ def run_diff(
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     if not staged and not _has_commits(cwd):
@@ -102,11 +103,14 @@ def run_diff(
             info(t("tip_staged"))
         return 0
 
-    files = []
-    for line in lines:
-        parts = line.split("\t", 1)
-        if len(parts) == 2:
-            files.append({"status": parts[0].strip(), "path": parts[1].strip()})
+    if name_only:
+        files = [{"path": line.strip()} for line in lines if line.strip()]
+    else:
+        files = []
+        for line in lines:
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                files.append({"status": parts[0].strip(), "path": parts[1].strip()})
 
     if as_json:
         print_json({"v": 2, "ok": True, "files": files, "count": len(files)})

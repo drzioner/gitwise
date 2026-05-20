@@ -9,6 +9,12 @@ from .output import error, info, print_dim, print_header, print_json
 
 def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
     install_dir = Path(__file__).parent.parent
+    if not (install_dir / ".git").is_dir():
+        if as_json:
+            print_json({"v": 2, "ok": False, "error": t("update_requires_git_clone")})
+        else:
+            error(t("update_requires_git_clone"))
+        return 1
     if dry_run:
         if as_json:
             print_json({"v": 2, "ok": True, "dry_run": True, "dir": str(install_dir)})

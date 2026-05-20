@@ -277,7 +277,14 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
 
     from .health import compute_health
 
-    health = compute_health(cwd)
+    health = compute_health(
+        cwd,
+        _has_remote_gpg=gpg,
+        _has_commit_graph=has_commit_graph_val,
+        _has_remote=_has_remote,
+        _has_upstream=_has_upstream,
+        _stale_branches=stale,
+    )
 
     has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 

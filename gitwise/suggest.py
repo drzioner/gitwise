@@ -58,7 +58,8 @@ def run_suggest(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     r = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
     if r.returncode != 0:

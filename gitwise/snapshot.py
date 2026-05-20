@@ -57,8 +57,12 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
             lines += [t("worktrees_active", count=str(wt_count)), ""]
 
     tmp = snapshot_path.with_suffix(".tmp")
-    tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    tmp.replace(snapshot_path)
+    try:
+        tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        tmp.replace(snapshot_path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
     debug(t("debug_snapshot_written", path=str(snapshot_path)))
     return snapshot_path
 
@@ -67,7 +71,8 @@ def run_snapshot(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
 
     path = generate_snapshot(root)
 

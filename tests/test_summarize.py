@@ -48,3 +48,20 @@ def test_summarize_max_commits_flag(tmp_git_repo):
     d_limited = json.loads(result_limited.stdout)
     assert len(d_limited["log"]) <= 2
     assert len(d_default["log"]) <= 10
+
+
+def test_summarize_diff_json_includes_diff_field(tmp_git_repo):
+    readme = tmp_git_repo / "README.md"
+    readme.write_text("modified content\n")
+    result = run_gitwise("summarize", "--diff", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "diff" in data
+    assert "modified content" in data["diff"]
+
+
+def test_summarize_json_without_diff(tmp_git_repo):
+    result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "diff" not in data
