@@ -95,7 +95,6 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
                     subprocess.run(
                         ["delta"],
                         input=diff_r.stdout,
-                        capture_output=True,
                         text=True,
                         timeout=120,
                         check=False,

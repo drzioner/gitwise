@@ -73,12 +73,14 @@ def test_validate_ref_rejects_dash_prefix():
     assert validate_ref("--option") is False
 
 
-def test_validate_ref_rejects_path_traversal():
+def test_validate_ref_accepts_git_revision_syntax():
     from gitwise.git import validate_ref
 
-    assert validate_ref("HEAD..feature") is False
-    assert validate_ref("HEAD~5") is False
-    assert validate_ref("HEAD^{}") is False
+    assert validate_ref("HEAD..feature") is True
+    assert validate_ref("HEAD~5") is True
+    assert validate_ref("HEAD^{}") is True
+    assert validate_ref("v1.0^{commit}") is True
+    assert validate_ref("main@{2024-01-01}") is True
 
 
 def test_validate_ref_accepts_valid():
