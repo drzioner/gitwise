@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.12.2 (2026-05-20)
+
+### Fix
+
+- **ci**: unblock auto-release — workflow_call, dev deps, scoped permissions
+- full audit — 35 items across security, quality, performance and CI
+
 ## v0.12.1 (2026-05-19)
 
 ### Refactor
