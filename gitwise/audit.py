@@ -20,6 +20,7 @@ from .i18n import t
 from .output import (
     debug,
     ok,
+    print_blank,
     print_bracket,
     print_dim,
     print_error_styled,
@@ -313,7 +314,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
         return 0
 
     print_header(t("diagnostic", suffix=" quick" if quick else "", count=str(len(findings))))
-    print()
+    print_blank()
     for f in findings:
         sev = f["severity"]
         if sev in ("critical", "high"):
@@ -324,6 +325,6 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             print_dim(f"  [{sev.upper()}] {f['message']}")
         print_dim(f"     {t('audit_fix_label')}:    `{f['fix']}`")
         print_dim(f"     {t('audit_ignore_label')}: {f['cost_of_ignore']}")
-        print()
+        print_blank()
 
     return 0 if not has_issues else 1

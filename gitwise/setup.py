@@ -9,7 +9,17 @@ from .git import require_root
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
-from .output import confirm, info, ok, print_header, print_json, print_kv, print_status_line, warn
+from .output import (
+    confirm,
+    info,
+    ok,
+    print_blank,
+    print_header,
+    print_json,
+    print_kv,
+    print_status_line,
+    warn,
+)
 
 # Modern git defaults (GitButler list, Chacon feb 2025)
 _BASE_CONFIGS: list[tuple[str, str]] = [
@@ -133,7 +143,7 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
     for w in gpg_warnings:
         warn(w)
     if gpg_warnings:
-        print()
+        print_blank()
 
     if not changes:
         ok(t("config_up_to_date"))
@@ -154,7 +164,7 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
         if not confirm(t("confirm_setup_changes")):
             info(t("cancelled"))
             return 0
-        print()
+        print_blank()
 
     for c in changes:
         r = git_run(["config", c["key"], c["desired"]], cwd=cwd, check=False)

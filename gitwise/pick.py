@@ -44,6 +44,9 @@ def run_pick(
         return 0
 
     if not refs:
+        if as_json:
+            print_json({"v": 2, "ok": False, "error": t("pick_no_refs")})
+            return 1
         error(t("pick_no_refs"))
         return 1
 

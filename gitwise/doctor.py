@@ -9,6 +9,7 @@ from .git import gpg_status
 from .git import version as git_version
 from .i18n import t
 from .output import (
+    print_blank,
     print_dim,
     print_header,
     print_json,
@@ -64,7 +65,7 @@ def run_doctor(*, as_json: bool = False) -> int:
         return 0 if result["ok"] else 1
 
     print_header(f"gitwise {__version__}")
-    print()
+    print_blank()
 
     git_str = ".".join(str(n) for n in git_ver)
     min_str = ".".join(str(n) for n in MIN_GIT)
@@ -86,7 +87,7 @@ def run_doctor(*, as_json: bool = False) -> int:
     if not fsmonitor_supported:
         warn(t("fsmonitor_not_supported"))
 
-    print()
+    print_blank()
     print_header(t("optional_tools"))
     for tool, found in optional.items():
         if found:
@@ -98,7 +99,7 @@ def run_doctor(*, as_json: bool = False) -> int:
             print_kv(t("doctor_purpose_label"), desc)
             print_kv(t("doctor_install_label"), install)
 
-    print()
+    print_blank()
     print_header(t("gpg_title"))
     if gpg["ready"]:
         print_status_line("✓", t("gpg_ready_msg"), "", ok_flag=True)

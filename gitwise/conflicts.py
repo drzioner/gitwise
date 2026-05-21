@@ -5,7 +5,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, ok, print_accent, print_dim, print_header, print_json
+from .output import error, ok, print_accent, print_blank, print_dim, print_header, print_json
 
 
 def _find_conflict_files(root: Path) -> list[str]:
@@ -85,6 +85,6 @@ def run_conflicts(
     print_header(t("conflicts_found", count=str(len(conflicts))))
     for d in details:
         print_accent(f"  {d['file']}  ({d['markers']} {t('markers_label')})")
-    print()
+    print_blank()
     print_dim(t("conflicts_hint"))
     return 1

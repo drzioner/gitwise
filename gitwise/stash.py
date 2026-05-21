@@ -10,11 +10,27 @@ from .output import (
     error,
     info,
     ok,
+    print_diffstat,
     print_header,
     print_json,
     print_table,
     warn,
 )
+
+
+def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    for line in raw.splitlines():
+        if "|" not in line:
+            continue
+        parts = line.split("|", 1)
+        if len(parts) != 2:
+            continue
+        path = parts[0].strip()
+        changes = parts[1].strip()
+        if path:
+            entries.append({"path": path, "changes": changes, "status": "M"})
+    return entries
 
 
 def _stash_list(root: Path) -> list[dict[str, str]]:
@@ -78,9 +94,19 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
     if as_json:
         print_json({"v": 2, "ref": ref, "stat": r.stdout.strip(), "ok": True})
         return 0
-    print_header(ref)
-    for line in r.stdout.strip().splitlines():
-        info(line)
+    if patch:
+        print_header(ref)
+        for line in r.stdout.strip().splitlines():
+            info(line)
+        return 0
+
+    entries = _parse_diffstat_entries(r.stdout)
+    if entries:
+        print_diffstat(ref, entries)
+    else:
+        print_header(ref)
+        for line in r.stdout.strip().splitlines():
+            info(line)
     return 0
 
 

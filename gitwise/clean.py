@@ -16,6 +16,7 @@ from .output import (
     confirm,
     error,
     ok,
+    print_blank,
     print_bracket,
     print_dim,
     print_header,
@@ -98,7 +99,7 @@ def run_clean(
         print_header(t("protected_stale_branches", count=str(len(skipped))))
         for s in skipped:
             print_bracket(s["branch"], s["reason"])
-        print()
+        print_blank()
 
     if not deletable:
         ok(t("no_deletable_branches"))
@@ -107,7 +108,7 @@ def run_clean(
     print_header(t("branches_to_delete", count=str(len(deletable))))
     for branch in deletable:
         print_bracket(branch)
-    print()
+    print_blank()
 
     if dry_run:
         print_dim(t("dry_run_no_delete"))
@@ -118,7 +119,7 @@ def run_clean(
         if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
             print_dim(t("cancelled"))
             return 0
-        print()
+        print_blank()
 
     errors: list[str] = []
     for branch in deletable:
@@ -131,6 +132,6 @@ def run_clean(
 
     if errors:
         return 1
-    print()
+    print_blank()
     ok(t("deleted_count", count=str(len(deletable))))
     return 0

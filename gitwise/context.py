@@ -5,7 +5,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import info, print_bracket, print_dim, print_header, print_json
+from .output import info, print_blank, print_bracket, print_dim, print_header, print_json
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
@@ -136,22 +136,22 @@ def run_context(*, as_json: bool = False) -> int:
             info(f"  {ln}")
         if len(tree) > 50:
             print_dim(t("ctx_more_entries", count=str(len(tree) - 50)))
-        print()
+        print_blank()
         if contributors:
             print_bracket(t("ctx_top_contributors"))
             for c in contributors:
                 print_dim(f"  {c['commits']:>5}  {c['author']}")
-            print()
+            print_blank()
         if file_types:
             print_bracket(t("ctx_file_types"))
             for ext, count in list(file_types.items())[:10]:
                 print_dim(f"  .{ext}: {count}")
-            print()
+            print_blank()
         if todo_fixme["todo"] or todo_fixme["fixme"]:
             print_bracket(
                 t("ctx_todo_fixme", todo=str(todo_fixme["todo"]), fixme=str(todo_fixme["fixme"]))
             )
-            print()
+            print_blank()
         print_bracket(
             t(
                 "ctx_branches",
