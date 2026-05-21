@@ -10,10 +10,77 @@ def test_no_command_shows_usage():
     assert result.returncode == 1
 
 
+def test_no_command_json_returns_error_payload():
+    result = _run("--json")
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert data["error"] == "missing_command"
+    assert data["kind"] == "help"
+    assert data["schema"] == "gitwise/help/v1"
+    assert data["scope"] == "root"
+
+
 def test_version_flag():
     result = _run("--version")
     assert result.returncode == 0
     assert "gitwise" in result.stdout
+
+
+def test_root_help_json():
+    result = _run("--help", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["kind"] == "help"
+    assert data["schema"] == "gitwise/help/v1"
+    assert data["scope"] == "root"
+    assert isinstance(data["commands"], list)
+
+
+def test_root_help_json_pretty_without_json_flag():
+    result = _run("--help", "--json-pretty")
+    assert result.returncode == 0
+    assert '\n  "' in result.stdout
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["scope"] == "root"
+
+
+def test_command_help_json():
+    result = _run("diff", "--help", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["kind"] == "help"
+    assert data["schema"] == "gitwise/help/v1"
+    assert data["scope"] == "command"
+    assert data["command"] == "diff"
+    assert isinstance(data["options"], list)
+
+
+def test_json_compact_by_default(tmp_git_repo):
+    result = _run("summarize", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert '\n  "' not in result.stdout
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+
+
+def test_json_pretty_flag(tmp_git_repo):
+    result = _run("summarize", "--json-pretty", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert '\n  "' in result.stdout
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+
+
+def test_json_pretty_alias_flag(tmp_git_repo):
+    result = _run("summarize", "--pretty", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert '\n  "' in result.stdout
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
 
 
 def test_unknown_command():

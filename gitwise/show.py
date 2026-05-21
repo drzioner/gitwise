@@ -3,7 +3,7 @@
 from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, print_header, print_json
+from .output import bat_pipe, error, print_diffstat, print_header, print_json
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
@@ -17,6 +17,37 @@ def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
         args.append("--patch")
     args.append(ref)
     return args
+
+
+def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    for line in raw.splitlines():
+        if "|" not in line:
+            continue
+        parts = line.split("|", 1)
+        if len(parts) != 2:
+            continue
+        path = parts[0].strip()
+        changes = parts[1].strip()
+        if path:
+            entries.append({"path": path, "changes": changes})
+    return entries
+
+
+def _show_status_map(root, ref: str) -> dict[str, str]:
+    r = git_run(["show", "--name-status", "--format=", ref], cwd=root, check=False)
+    if r.returncode != 0:
+        return {}
+    status_map: dict[str, str] = {}
+    for line in r.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0][:1].upper()
+        path = parts[-1].strip()
+        if path:
+            status_map[path] = status
+    return status_map
 
 
 def _build_show_json_args(ref: str = "HEAD") -> list[str]:
@@ -69,12 +100,33 @@ def run_show(
         data["ok"] = True
         print_json(data)
     else:
-        args = _build_show_args(ref, stat)
-        r = git_run(args, cwd=root, check=False)
-        if r.returncode != 0:
-            error(t("git_show_failed", error=r.stderr.strip()))
-            return 1
-        print_header(t("show_header", ref=ref))
-        bat_pipe(r.stdout, language="diff")
+        if stat:
+            r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
+            if r.returncode != 0:
+                error(t("git_show_failed", error=r.stderr.strip()))
+                return 1
+            entries = _parse_diffstat_entries(r.stdout)
+            if entries:
+                status_map = _show_status_map(root, ref)
+                styled_entries = [
+                    {
+                        "path": entry["path"],
+                        "changes": entry["changes"],
+                        "status": status_map.get(entry["path"], "M"),
+                    }
+                    for entry in entries
+                ]
+                print_diffstat(t("show_header", ref=ref), styled_entries)
+            else:
+                print_header(t("show_header", ref=ref))
+                bat_pipe(r.stdout, language="diff")
+        else:
+            args = _build_show_args(ref, stat)
+            r = git_run(args, cwd=root, check=False)
+            if r.returncode != 0:
+                error(t("git_show_failed", error=r.stderr.strip()))
+                return 1
+            print_header(t("show_header", ref=ref))
+            bat_pipe(r.stdout, language="diff")
 
     return 0

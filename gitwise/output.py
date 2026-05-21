@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -26,7 +27,7 @@ except ImportError:
     _HAS_RICH = False
 
 from ._runtime_config import get_runtime_config
-from .design import ColorDepth, pad_right, visible_length
+from .design import ColorDepth, pad_right, truncate, visible_length
 from .i18n import confirm_responses, t
 
 _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
@@ -36,6 +37,7 @@ _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
 }
 
 _LOG_JSON = os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
+_JSON_PRETTY = os.environ.get("GITWISE_JSON_PRETTY", "").lower() in ("1", "true")
 
 
 def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
@@ -47,6 +49,11 @@ def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
     if kwargs:
         entry.update(kwargs)
     sys.stderr.write(json.dumps(entry, default=str) + "\n")
+
+
+def set_json_pretty(pretty: bool) -> None:
+    global _JSON_PRETTY
+    _JSON_PRETTY = pretty
 
 
 class _ModuleAttr:
@@ -228,7 +235,17 @@ def debug(msg: str) -> None:
 
 
 def print_json(data: Any) -> None:
-    print(json.dumps(data, ensure_ascii=False, indent=2))
+    if _JSON_PRETTY:
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+        return
+    print(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+
+
+def print_blank() -> None:
+    if _should_use_rich():
+        _get_console().print()
+    else:
+        print()
 
 
 def confirm(prompt: str) -> bool:
@@ -279,11 +296,155 @@ def print_header(text: str) -> None:
 
 def print_section(title: str) -> None:
     if _should_use_rich():
-        _get_console().print()
+        print_blank()
         _get_console().rule(f" {title} ", style="accent")
     else:
-        print()
+        print_blank()
         print(f"  {title}")
+
+
+def print_bullet(text: str, *, icon: str = "•", accent: bool = False, indent: int = 2) -> None:
+    prefix = " " * max(0, indent)
+    if _should_use_rich():
+        row = Text()
+        row.append(prefix)
+        row.append(icon, style="accent" if accent else "secondary")
+        row.append(" ")
+        row.append(text)
+        _get_console().print(row)
+    else:
+        print(f"{prefix}{icon} {text}")
+
+
+def _commit_type_style(message: str) -> str:
+    msg = message.strip().lower()
+    match = re.match(r"^([a-z]+)(\([^)]*\))?(!)?:", msg)
+    if not match:
+        if msg.startswith("merge "):
+            return "dim"
+        return "fg"
+    commit_type = match.group(1)
+    if commit_type == "feat":
+        return "success"
+    if commit_type == "fix":
+        return "warning"
+    if commit_type in {"docs", "style", "test", "ci", "build"}:
+        return "accent"
+    if commit_type in {"refactor", "perf"}:
+        return "brand"
+    if commit_type in {"revert"}:
+        return "error"
+    return "fg"
+
+
+def print_commit_line(line: str, *, indent: int = 2) -> None:
+    prefix = " " * max(0, indent)
+    parts = line.strip().split(" ", 1)
+    if len(parts) != 2:
+        print_bullet(line.strip(), icon="-", accent=False, indent=indent)
+        return
+    short_hash, subject = parts[0], parts[1]
+    if not re.fullmatch(r"[0-9a-f]{7,40}", short_hash):
+        print_bullet(line.strip(), icon="-", accent=False, indent=indent)
+        return
+
+    if _should_use_rich():
+        text = Text()
+        text.append(prefix)
+        text.append(short_hash, style="secondary")
+        text.append("  ", style="dim")
+        text.append(subject, style=_commit_type_style(subject))
+        _get_console().print(text)
+        return
+
+    print(f"{prefix}- {short_hash} {subject}")
+
+
+def _status_style(code: str) -> str:
+    normalized = code.strip().upper()
+    if normalized in {"??", "A", "M", "R", "C", "T", "U", "D"}:
+        if normalized in {"D", "U"}:
+            return "error"
+        if normalized in {"M", "R", "C", "T"}:
+            return "warning"
+        return "success"
+    return "secondary"
+
+
+def _path_style_for_status(code: str) -> str:
+    normalized = code.strip().upper()
+    if normalized in {"??", "A"}:
+        return "success"
+    if normalized in {"D", "U"}:
+        return "error"
+    if normalized in {"M", "R", "C", "T"}:
+        return "warning"
+    return "fg"
+
+
+def print_file_status(code: str, path: str, *, indent: int = 2) -> None:
+    status = code.strip() or "--"
+    prefix = " " * max(0, indent)
+    if _should_use_rich():
+        text = Text()
+        text.append(prefix)
+        text.append(status.rjust(2), style=_status_style(status))
+        text.append("  ", style="dim")
+        text.append(path, style=_path_style_for_status(status))
+        _get_console().print(text)
+    else:
+        print(f"{prefix}{status.rjust(2)}  {path}")
+
+
+def _append_diffstat_changes(text: Text, changes: str) -> None:
+    for char in changes:
+        if char == "+":
+            text.append(char, style="success")
+        elif char == "-":
+            text.append(char, style="error")
+        else:
+            text.append(char, style="secondary")
+
+
+def print_diffstat(title: str, entries: list[dict[str, str]]) -> None:
+    if not entries:
+        return
+    if _should_use_rich():
+        print_header(title)
+        width = get_runtime_config().terminal_width
+        path_col = max(24, min(width // 2, max(visible_length(e["path"]) for e in entries)))
+        for entry in entries:
+            path = truncate(entry["path"], path_col)
+            padded_path = pad_right(path, path_col)
+            status = entry.get("status", "M")
+            changes = entry.get("changes", "")
+            row = Text()
+            row.append("  ")
+            row.append(padded_path, style=_path_style_for_status(status))
+            row.append("  ", style="dim")
+            _append_diffstat_changes(row, changes)
+            _get_console().print(row)
+        return
+
+    print(title)
+    for entry in entries:
+        print(f"  {entry['path']}  {entry.get('changes', '')}")
+
+
+def print_summary_box(title: str, lines: list[str]) -> None:
+    if not lines:
+        return
+    if _should_use_rich():
+        _get_console().rule(f" {title} ", style="dim")
+        for line in lines:
+            row = Text()
+            row.append("  ", style="dim")
+            row.append(line)
+            _get_console().print(row)
+        return
+    print(title)
+    for line in lines:
+        print(f"  {line}")
 
 
 def print_bracket(label: str, value: str = "") -> None:
@@ -357,7 +518,14 @@ def print_status_line(icon: str, label: str, status: str, ok_flag: bool = True) 
         text.append(status, style=icon_style)
         console.print(text)
     else:
-        print(f"  {icon} {label} {status}")
+        width = get_runtime_config().terminal_width
+        base = f"  {icon} {label}"
+        if not status:
+            print(base)
+            return
+        used = visible_length(base) + visible_length(status) + 2
+        dots = max(1, width - used)
+        print(f"{base} {'·' * dots} {status}")
 
 
 def print_table(
@@ -367,6 +535,11 @@ def print_table(
     *,
     column_styles: list[str] | None = None,
     highlight_rows: set[int] | None = None,
+    no_wrap_columns: set[int] | None = None,
+    min_widths: dict[int, int] | None = None,
+    max_widths: dict[int, int] | None = None,
+    overflow_columns: dict[int, Literal["fold", "crop", "ellipsis", "ignore"]] | None = None,
+    column_ratios: dict[int, int] | None = None,
 ) -> None:
     if not _should_use_rich() or not rows:
         if title:
@@ -379,6 +552,11 @@ def print_table(
             for i, cell in enumerate(row):
                 if i < num_cols:
                     col_widths[i] = max(col_widths[i], visible_length(cell))
+        headers = [columns[i][0] for i in range(num_cols)]
+        header_row = "  ".join(pad_right(headers[i], col_widths[i]) for i in range(num_cols))
+        sep_row = "  ".join("-" * col_widths[i] for i in range(num_cols))
+        print(f"   {header_row}")
+        print(f"   {sep_row}")
         highlights = highlight_rows or set()
         for idx, row in enumerate(rows):
             prefix = " * " if idx in highlights else "   "
@@ -398,10 +576,28 @@ def print_table(
         header_style="bold.accent",
         pad_edge=False,
         padding=(0, 1),
+        expand=True,
     )
 
-    for col_name, _col_key in columns:
-        table.add_column(col_name, no_wrap=True)
+    no_wrap = no_wrap_columns or set()
+    mins = min_widths or {}
+    maxs = max_widths or {}
+    overflows = overflow_columns or {}
+    ratios = column_ratios or {}
+
+    for idx, (col_name, _col_key) in enumerate(columns):
+        no_wrap_value = (idx in no_wrap) if no_wrap_columns is not None else True
+        overflow_value: Literal["fold", "crop", "ellipsis", "ignore"] = overflows.get(
+            idx, "ellipsis"
+        )
+        table.add_column(
+            col_name,
+            no_wrap=no_wrap_value,
+            min_width=mins.get(idx),
+            max_width=maxs.get(idx),
+            overflow=overflow_value,
+            ratio=ratios.get(idx),
+        )
 
     styles = column_styles or []
     highlights = highlight_rows or set()

@@ -5,7 +5,18 @@ import shutil
 
 from .git import require_root
 from .i18n import t
-from .output import error, info, print_accent, print_bracket, print_header
+from .output import error, info, print_file_status, print_header, print_json
+
+
+def _pr_status_code(state: str) -> str:
+    normalized = state.strip().upper()
+    if normalized in {"OPEN", "DRAFT"}:
+        return "M"
+    if normalized in {"MERGED"}:
+        return "A"
+    if normalized in {"CLOSED"}:
+        return "D"
+    return "M"
 
 
 def _gh_available() -> bool:
@@ -46,7 +57,13 @@ def run_pr(
             error(err)
             return 1
         if as_json:
-            print(out)
+            if out:
+                try:
+                    print_json(json.loads(out))
+                except json.JSONDecodeError:
+                    print_json({"ok": False, "error": "invalid_gh_json", "raw": out})
+            else:
+                print_json([])
         else:
             prs = json.loads(out) if out else []
             if not prs:
@@ -54,8 +71,8 @@ def run_pr(
                 return 0
             print_header(t("pr_list_title"))
             for pr in prs:
-                print_bracket(f"#{pr['number']}", f"{pr['title']}")
-                print_accent(f"  ({pr['state']}) ← {pr['headRefName']}")
+                print_file_status(_pr_status_code(pr["state"]), f"#{pr['number']}  {pr['title']}")
+                info(f"    ({pr['state']}) <- {pr['headRefName']}")
         return 0
 
     if action == "checks":
@@ -65,7 +82,13 @@ def run_pr(
             return 1
         if as_json:
             rc2, out2, _ = _gh(["pr", "view", "--json", "statusCheckRollup"], cwd=root)
-            print(out2 if rc2 == 0 else "{}")
+            if rc2 == 0 and out2:
+                try:
+                    print_json(json.loads(out2))
+                except json.JSONDecodeError:
+                    print_json({"ok": False, "error": "invalid_gh_json", "raw": out2})
+            else:
+                print_json({})
         else:
             info(out)
         return 0

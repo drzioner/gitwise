@@ -5,7 +5,7 @@ import re
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, print_accent, print_bracket, print_header, print_json
+from .output import error, print_bracket, print_file_status, print_header, print_json
 
 _TYPE_MAP: list[tuple[str, str]] = [
     (r"/test", "test"),
@@ -54,6 +54,22 @@ def _build_message(staged_files: list[str], additions: int, deletions: int) -> s
     return f"{commit_type}{scope_str}: {t('suggest_update_files', count=str(len(staged_files)))}"
 
 
+def _staged_with_status(root) -> list[tuple[str, str]]:
+    r = git_run(["diff", "--cached", "--name-status"], cwd=root, check=False)
+    if r.returncode != 0:
+        return []
+    pairs: list[tuple[str, str]] = []
+    for line in r.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0][:1].upper()
+        path = parts[-1].strip()
+        if path:
+            pairs.append((status, path))
+    return pairs
+
+
 def run_suggest(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
@@ -66,7 +82,12 @@ def run_suggest(*, as_json: bool = False) -> int:
         error(t("suggest_diff_failed"))
         return 1
     staged_files = [line.strip() for line in r.stdout.splitlines() if line.strip()]
+    staged_pairs = _staged_with_status(root)
+    staged_map = {path: status for status, path in staged_pairs}
     if not staged_files:
+        if as_json:
+            print_json({"v": 2, "ok": False, "error": t("suggest_no_staged")})
+            return 1
         error(t("suggest_no_staged"))
         return 1
 
@@ -100,5 +121,5 @@ def run_suggest(*, as_json: bool = False) -> int:
     print_header(t("suggest_message", message=message))
     print_bracket(t("suggest_type", type=_infer_type(staged_files)))
     for f in staged_files:
-        print_accent(f"  {f}")
+        print_file_status(staged_map.get(f, "M"), f)
     return 0

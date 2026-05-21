@@ -112,6 +112,24 @@ def test_diff_stat_json(tmp_git_repo):
     data = json.loads(result.stdout)
     assert data["count"] >= 1
     assert all("path" in f and "changes" in f for f in data["files"])
+    assert "totals" in data
+    assert "insertions" in data["totals"]
+    assert "deletions" in data["totals"]
+    assert "lines_changed" in data["totals"]
+
+
+def test_diff_stat_json_includes_structured_fields(tmp_git_repo):
+    (tmp_git_repo / "README.md").write_text("line1\nline2\nline3\n")
+    result = _run("diff", "--stat", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    readme_entry = next((f for f in data["files"] if f.get("path") == "README.md"), None)
+    assert readme_entry is not None
+    assert readme_entry["status"] == "M"
+    assert "lines_changed" in readme_entry
+    assert "insertions" in readme_entry
+    assert "deletions" in readme_entry
+    assert isinstance(readme_entry.get("graph", ""), str)
 
 
 # ── Mutual exclusion ─────────────────────────────────────────────────────────

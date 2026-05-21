@@ -10,6 +10,22 @@ def test_pick_no_refs(tmp_git_repo):
     assert r.returncode == 1
 
 
+def test_pick_no_refs_json(tmp_git_repo):
+    r = run_gitwise("pick", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert "error" in data
+
+
+def test_pick_no_refs_json_pretty(tmp_git_repo):
+    r = run_gitwise("pick", "--json-pretty", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert "error" in data
+
+
 def test_pick_not_git(tmp_path):
     r = run_gitwise("pick", "abc123", cwd=tmp_path)
     assert r.returncode == 1
@@ -34,6 +50,14 @@ def test_pick_cherry_pick(tmp_git_repo):
 
 def test_pick_dry_run_json(tmp_git_repo):
     r = run_gitwise("pick", "HEAD", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["ok"] is True
+    assert data["dry_run"] is True
+
+
+def test_pick_dry_run_json_pretty(tmp_git_repo):
+    r = run_gitwise("pick", "HEAD", "--dry-run", "--json-pretty", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert data["ok"] is True

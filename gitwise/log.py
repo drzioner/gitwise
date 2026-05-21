@@ -6,7 +6,7 @@ from pathlib import Path
 from .git import require_root, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, info, print_header, print_json, print_table
+from .output import bat_pipe, error, info, print_json, print_table
 
 
 def _build_log_args(
@@ -235,7 +235,6 @@ def run_log(
             return 0
 
         if graph or oneline:
-            print_header(t("git_log_title"))
             bat_pipe(r.stdout, language="gitlog")
         else:
             rows = _parse_log_table(r.stdout)
@@ -254,6 +253,11 @@ def run_log(
                 title=t("git_log_title"),
                 columns=columns,
                 rows=rows,
+                no_wrap_columns={0, 2},
+                min_widths={0: 7, 2: 10},
+                max_widths={0: 10, 1: 20},
+                overflow_columns={0: "crop", 1: "ellipsis", 2: "crop", 3: "ellipsis"},
+                column_ratios={3: 4},
             )
 
     return 0

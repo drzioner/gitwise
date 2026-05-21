@@ -14,6 +14,7 @@ from .output import (
     confirm,
     debug,
     ok,
+    print_blank,
     print_dim,
     print_header,
     print_json,
@@ -107,11 +108,11 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
 
     size_before = _repo_size_kb(cwd)
     print_header(t("optimizing", root=str(cwd)))
-    print()
+    print_blank()
     for _name, desc in steps:
         print_status_line("›", desc, t("pending"), ok_flag=False)
 
-    print()
+    print_blank()
 
     if dry_run:
         print_dim(t("dry_run_no_exec"))
@@ -121,7 +122,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         if not confirm(t("confirm_optimize")):
             print_dim(t("cancelled"))
             return 0
-        print()
+        print_blank()
 
     graph_ok = _write_commit_graph(cwd)
     if graph_ok:

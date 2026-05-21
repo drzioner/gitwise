@@ -29,9 +29,15 @@ def test_json_output_no_color_codes(tmp_git_repo):
 def test_json_output_is_valid(tmp_git_repo):
     result = _run("summarize", "--json", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert data["v"] == 2
+    assert data["v"] == 3
     assert "branch" in data
     assert "ok" in data
+
+
+def test_json_pretty_indentation_when_flag_used(tmp_git_repo):
+    result = _run("summarize", "--json-pretty", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert '\n  "' in result.stdout
 
 
 def test_bat_pipe_fallback_without_bat():

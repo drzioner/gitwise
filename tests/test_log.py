@@ -67,7 +67,8 @@ def test_log_json_empty_repo(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     r = run_gitwise("log", "--json", cwd=tmp_path)
     assert r.returncode == 0
-    assert '"commits": []' in r.stdout
+    data = json.loads(r.stdout)
+    assert data["commits"] == []
 
 
 def test_log_author_filter(tmp_git_repo: Path) -> None:
