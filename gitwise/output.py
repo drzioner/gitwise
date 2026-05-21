@@ -538,7 +538,7 @@ def print_table(
     no_wrap_columns: set[int] | None = None,
     min_widths: dict[int, int] | None = None,
     max_widths: dict[int, int] | None = None,
-    overflow_columns: dict[int, Literal["fold", "crop", "ellipsis", "ignore"]] | None = None,
+    overflow_columns: dict[int, Literal["fold", "crop", "ellipsis"]] | None = None,
     column_ratios: dict[int, int] | None = None,
 ) -> None:
     if not _should_use_rich() or not rows:
@@ -587,9 +587,7 @@ def print_table(
 
     for idx, (col_name, _col_key) in enumerate(columns):
         no_wrap_value = (idx in no_wrap) if no_wrap_columns is not None else True
-        overflow_value: Literal["fold", "crop", "ellipsis", "ignore"] = overflows.get(
-            idx, "ellipsis"
-        )
+        overflow_value: Literal["fold", "crop", "ellipsis"] = overflows.get(idx, "ellipsis")
         table.add_column(
             col_name,
             no_wrap=no_wrap_value,
