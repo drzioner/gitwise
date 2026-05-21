@@ -44,6 +44,7 @@
       "git add *": "allow",
       "git commit *": "allow",
       "git tag *": "allow",
+      "git push *": "ask",
       "git worktree *": "allow",
       "cat *": "allow",
       "ls *": "allow",
