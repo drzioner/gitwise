@@ -1,6 +1,6 @@
 [project]
 name = "gitwise"
-version = "0.12.2"
+version = "0.13.0"
 description = "Python CLI for optimizing git workflows and Claude Code integration"
 readme = "README.md"
 license = "MIT"
