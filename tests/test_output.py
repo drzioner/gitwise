@@ -70,3 +70,23 @@ def test_print_json_output(tmp_git_repo):
 def test_error_goes_to_stderr(tmp_git_repo):
     result = _run("clean", "--branches", "--yes", cwd=tmp_git_repo)
     assert result.returncode in (0, 1)
+
+
+def test_bat_pipe_fallback_when_binary_missing(monkeypatch, capsys):
+    import gitwise.output as output_module
+
+    class _Cfg:
+        has_bat = True
+        is_tty = True
+        debug = False
+
+    monkeypatch.setattr(output_module, "get_runtime_config", lambda: _Cfg())
+    monkeypatch.setattr(
+        output_module.subprocess,
+        "run",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("missing")),
+    )
+
+    output_module.bat_pipe("hello\n", language="python")
+    captured = capsys.readouterr()
+    assert "hello" in captured.out

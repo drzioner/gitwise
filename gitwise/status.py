@@ -40,10 +40,9 @@ def run_status(*, as_json: bool = False) -> int:
         if ab_r.returncode == 0:
             parts = ab_r.stdout.strip().split()
             if len(parts) == 2:
-                try:
-                    ahead, behind = int(parts[0]), int(parts[1])
-                except ValueError:
-                    pass
+                ahead_raw, behind_raw = parts[0], parts[1]
+                if ahead_raw.isdigit() and behind_raw.isdigit():
+                    ahead, behind = int(ahead_raw), int(behind_raw)
 
     if as_json:
         print_json(

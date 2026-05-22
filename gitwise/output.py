@@ -282,8 +282,9 @@ def bat_pipe(text: str, language: str = "plain") -> None:
             )
             if r.returncode == 0:
                 return
-        except OSError:
-            pass
+        except OSError as e:
+            if get_runtime_config().debug:
+                sys.stderr.write(f"[gitwise debug] bat execution failed: {e}\n")
     print(text, end="")
 
 

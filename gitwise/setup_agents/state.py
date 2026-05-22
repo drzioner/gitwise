@@ -124,8 +124,8 @@ def _detect_state(root: Path) -> StateDict:
     if skills_state == "symlink_valid":
         try:
             skills_target = os.readlink(skills_dir)
-        except OSError:
-            pass
+        except OSError as e:
+            errors.append(t("symlink_read_failed", file=".claude/skills", error=str(e)))
     elif skills_state == "symlink_broken":
         errors.append(t("symlink_conflict_broken", file=".claude/skills"))
 

@@ -70,14 +70,7 @@ def _clean_lines(text: str, *, max_lines: int) -> list[str]:
 
 
 def _normalize_body_text(text: str) -> str:
-    normalized = text
-    if "\\r\\n" in normalized:
-        normalized = normalized.replace("\\r\\n", "\n")
-    if "\\n" in normalized:
-        normalized = normalized.replace("\\n", "\n")
-    if "\\t" in normalized:
-        normalized = normalized.replace("\\t", "\t")
-    return normalized
+    return text
 
 
 def _json_or_error(out: str) -> tuple[bool, dict[str, Any] | list[Any] | None]:
@@ -123,8 +116,7 @@ def _format_datetime(value: str) -> str:
 
 
 def _non_empty_line_count(text: str) -> int:
-    normalized = _normalize_body_text(text)
-    return len([line for line in normalized.splitlines() if line.strip()])
+    return len([line for line in text.splitlines() if line.strip()])
 
 
 def _format_duration(seconds: int) -> str:
@@ -153,6 +145,20 @@ def _state_label(state: str) -> str:
         "QUEUED": "queued",
     }
     return mapping.get(normalized, normalized.lower() if normalized else "-")
+
+
+def _state_label_human(state: str) -> str:
+    mapping = {
+        "pass": "pr_check_state_pass",
+        "fail": "pr_check_state_fail",
+        "running": "pr_check_state_running",
+        "pending": "pr_check_state_pending",
+        "queued": "pr_check_state_queued",
+        "cancel": "pr_check_state_cancel",
+        "skip": "pr_check_state_skip",
+        "other": "pr_check_state_other",
+    }
+    return t(mapping.get(state, "")) if state in mapping else state
 
 
 def _duration_from_check(check: dict[str, Any]) -> str:
@@ -238,6 +244,10 @@ def _render_pr_checks(checks: list[dict[str, str]], *, selector_label: str) -> i
             failed=str(summary["fail"]),
             running=str(summary["running"]),
             other=str(summary["other"]),
+            label_pass=t("pr_check_state_pass"),
+            label_fail=t("pr_check_state_fail"),
+            label_running=t("pr_check_state_running"),
+            label_other=t("pr_check_state_other"),
         ),
     )
 
@@ -247,7 +257,9 @@ def _render_pr_checks(checks: list[dict[str, str]], *, selector_label: str) -> i
         (t("pr_checks_col_duration"), "duration"),
         (t("pr_checks_col_workflow"), "workflow"),
     ]
-    rows = [[c["name"], c["state"], c["duration"], c["workflow"]] for c in checks]
+    rows = [
+        [c["name"], _state_label_human(c["state"]), c["duration"], c["workflow"]] for c in checks
+    ]
     print_table(
         title=t("pr_checks_table_title"),
         columns=columns,
@@ -466,7 +478,13 @@ def run_pr(
                 error(t("pr_invalid_json"))
             return 1
         if as_json:
-            print_json(payload)
+            print_json(
+                {
+                    "v": 2,
+                    "ok": True,
+                    **payload,
+                }
+            )
             return 0
         _render_pr_view(payload)
         return 0

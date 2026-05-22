@@ -9,12 +9,7 @@ if sys.platform != "win32":
     import termios
 else:
     termios = None  # type: ignore[assignment,misc]
-from typing import TYPE_CHECKING
-
 from .design import ColorDepth, ThemeTokens, build_theme
-
-if TYPE_CHECKING:
-    pass
 
 _BRIGHTNESS_THRESHOLD = 0.5
 _OSC_TIMEOUT = 0.5
@@ -66,8 +61,9 @@ def _query_bg_color() -> str | None:
     finally:
         try:
             os.close(fd)
-        except OSError:
-            pass
+        except OSError as e:
+            if os.environ.get("GITWISE_DEBUG", "").lower() in ("1", "true"):
+                sys.stderr.write(f"[gitwise debug] tty close failed: {e}\n")
 
 
 def _read_osc_response(fd: int) -> str | None:

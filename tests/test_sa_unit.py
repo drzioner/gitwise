@@ -97,6 +97,21 @@ class TestDetectState:
         state = _detect_state(tmp_git_repo)
         assert state["rules_warnings"] == []
 
+    def test_skills_symlink_read_error_reported(self, tmp_git_repo: Path, monkeypatch) -> None:
+        reset_caches()
+        skills_dir = tmp_git_repo / ".claude" / "skills"
+        skills_dir.parent.mkdir(parents=True)
+        skills_dir.symlink_to("../missing-target")
+
+        monkeypatch.setattr("gitwise.setup_agents.state._classify_path", lambda p: "symlink_valid")
+        monkeypatch.setattr(
+            "gitwise.setup_agents.state.os.readlink",
+            lambda p: (_ for _ in ()).throw(OSError("boom")),
+        )
+
+        state = _detect_state(tmp_git_repo)
+        assert any("skills" in e.lower() for e in state["errors"])
+
 
 class TestSafeCreateSymlink:
     def test_creates_symlink(self, tmp_path: Path) -> None:

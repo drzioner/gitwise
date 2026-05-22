@@ -97,11 +97,12 @@ def run_suggest(*, as_json: bool = False) -> int:
         for line in stat.stdout.splitlines():
             parts = line.split()
             if len(parts) >= 2:
-                try:
-                    additions += int(parts[0]) if parts[0] != "-" else 0
-                    deletions += int(parts[1]) if parts[1] != "-" else 0
-                except ValueError:
-                    pass
+                added = parts[0]
+                removed = parts[1]
+                if added != "-" and added.isdigit():
+                    additions += int(added)
+                if removed != "-" and removed.isdigit():
+                    deletions += int(removed)
 
     message = _build_message(staged_files, additions, deletions)
 

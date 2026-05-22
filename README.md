@@ -45,8 +45,8 @@ gitwise doctor --json
 
 ### `gitwise setup-agents`
 
-Injects Claude Code configuration into the current repo (`--local`, default)
-or globally into `~/.claude/`: `CLAUDE.md` with git conventions,
+Injects Claude Code configuration globally into `~/.claude/` by default,
+or into the current repo with `--local`: `CLAUDE.md` with git conventions,
 `.claude/settings.json` with allow/deny rules, skills for `/git-audit`,
 `/git-clean`, `/git-optimize`.
 
@@ -239,16 +239,17 @@ gitwise pr view 123 --json
 Human output is optimized for readability:
 
 - `pr checks` renders a structured table + compact summary (instead of raw gh output)
-- `pr comments` normalizes escaped line breaks from GitHub comments
+- `pr comments` preserves literal technical content in comment bodies
 - `pr view` hides noisy fields for merged/closed PRs
 
 ### `gitwise undo`
 
-Undo the last commit (soft reset, keeps changes staged).
+Undo the last commit.
 
 ```bash
 gitwise undo
-gitwise undo --hard       # discard changes
+gitwise undo              # hard reset by default (asks confirmation)
+gitwise undo --soft       # keep changes staged
 gitwise undo --json
 ```
 
