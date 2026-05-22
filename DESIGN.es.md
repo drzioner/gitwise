@@ -3,7 +3,7 @@
 Source: DESIGN.md
 Last sync: 2026-05-22
 
-[English](DESIGN.md) | [Espanol](DESIGN.es.md)
+[English](DESIGN.md) | [Español](DESIGN.es.md)
 
 El documento de diseno completo se mantiene en ingles como fuente canonica.
 

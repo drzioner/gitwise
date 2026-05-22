@@ -1,6 +1,6 @@
 # gitwise
 
-[English](README.md) | [Espanol](README.es.md)
+[English](README.md) | [Español](README.es.md)
 
 Python CLI for optimized Git workflows and Claude Code integration.
 
@@ -62,12 +62,12 @@ gitwise summarize
 For all commands, examples, aliases, and JSON usage, see:
 
 - [Command reference (English)](docs/reference/commands.md)
-- [Referencia de comandos (Espanol)](docs/es/reference/commands.md)
+- [Referencia de comandos (Español)](docs/es/reference/commands.md)
 
 ## Documentation
 
 - [Documentation index (English)](docs/README.md)
-- [Indice de documentacion (Espanol)](docs/es/README.md)
+- [Indice de documentacion (Español)](docs/es/README.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Guia de contribucion](CONTRIBUTING.es.md)
 - [Security policy](SECURITY.md)
@@ -79,7 +79,7 @@ For all commands, examples, aliases, and JSON usage, see:
 
 `setup` and `setup-agents` never modify `commit.gpgsign` or `user.signingkey`.
 
-- Git layer: `core.hooksPath` hook validates signing key availability.
+- Git layer: `setup` manages hooks safely (`--hooks-mode preserve|native|legacy|skip`) to validate signing key availability and conventional commits.
 - Agent layer: deny-rules block `--no-gpg-sign`, `--no-verify`, and `-c commit.gpgsign=false`.
 
 ## Environment Variables

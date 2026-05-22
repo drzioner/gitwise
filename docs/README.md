@@ -1,6 +1,6 @@
 # Documentation Index
 
-[English](README.md) | [Espanol](es/README.md)
+[English](README.md) | [Español](es/README.md)
 
 This index organizes user and contributor documentation for gitwise.
 

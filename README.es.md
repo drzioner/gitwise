@@ -3,7 +3,7 @@
 Source: README.md
 Last sync: 2026-05-22
 
-[English](README.md) | [Espanol](README.es.md)
+[English](README.md) | [Español](README.es.md)
 
 CLI de Python para optimizar flujos de Git e integracion con Claude Code.
 
@@ -65,12 +65,12 @@ gitwise summarize
 Para todos los comandos, ejemplos, aliases y uso JSON:
 
 - [Command reference (English)](docs/reference/commands.md)
-- [Referencia de comandos (Espanol)](docs/es/reference/commands.md)
+- [Referencia de comandos (Español)](docs/es/reference/commands.md)
 
 ## Documentacion
 
 - [Documentation index (English)](docs/README.md)
-- [Indice de documentacion (Espanol)](docs/es/README.md)
+- [Indice de documentacion (Español)](docs/es/README.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Guia de contribucion](CONTRIBUTING.es.md)
 - [Security policy](SECURITY.md)
@@ -82,7 +82,7 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 
 `setup` y `setup-agents` nunca modifican `commit.gpgsign` ni `user.signingkey`.
 
-- Capa Git: hook en `core.hooksPath` valida disponibilidad de la clave.
+- Capa Git: `setup` gestiona hooks de forma segura (`--hooks-mode preserve|native|legacy|skip`) para validar disponibilidad de la clave y conventional commits.
 - Capa agente: deny-rules bloquean `--no-gpg-sign`, `--no-verify` y `-c commit.gpgsign=false`.
 
 ## Variables de entorno

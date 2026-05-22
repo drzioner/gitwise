@@ -3,7 +3,7 @@
 Source: ROADMAP.md
 Last sync: 2026-05-22
 
-[English](ROADMAP.md) | [Espanol](ROADMAP.es.md)
+[English](ROADMAP.md) | [Español](ROADMAP.es.md)
 
 Roadmap vivo para consolidar gitwise como hub practico de Git para humanos y agentes de codigo.
 

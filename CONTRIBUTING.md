@@ -1,6 +1,6 @@
 # Contributing to gitwise
 
-[English](CONTRIBUTING.md) | [Espanol](CONTRIBUTING.es.md)
+[English](CONTRIBUTING.md) | [Español](CONTRIBUTING.es.md)
 
 Thanks for your interest! This guide covers everything you need to contribute.
 

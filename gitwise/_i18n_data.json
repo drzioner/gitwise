@@ -1235,9 +1235,57 @@
     "es": "setup completado",
     "en": "setup complete"
   },
+  "setup_hook_backend_selected": {
+    "es": "hooks backend: {backend} (modo solicitado: {requested})",
+    "en": "hooks backend: {backend} (requested mode: {requested})"
+  },
+  "setup_hook_managers_detected": {
+    "es": "managers detectados: {managers}",
+    "en": "detected managers: {managers}"
+  },
+  "setup_hook_warning_legacy_conflict": {
+    "es": "core.hooksPath apunta a '{current}'. Con modo preserve se omiten hooks para no romper configuración existente.",
+    "en": "core.hooksPath points to '{current}'. In preserve mode, hooks are skipped to avoid breaking existing setup."
+  },
+  "setup_hook_warning_legacy_overwrite": {
+    "es": "modo legacy sobrescribirá core.hooksPath actual: '{current}'",
+    "en": "legacy mode will overwrite current core.hooksPath: '{current}'"
+  },
+  "setup_hook_warning_managers_no_native": {
+    "es": "detectados {managers} y Git sin hooks nativos: se omite instalación de hooks para evitar conflictos.",
+    "en": "detected {managers} and native config hooks unavailable: skipping hook installation to avoid conflicts."
+  },
+  "setup_hook_warning_managers_preserve": {
+    "es": "detectados {managers}. Con modo preserve se omite instalación de hooks para evitar conflictos.",
+    "en": "detected {managers}. In preserve mode, hook installation is skipped to avoid conflicts."
+  },
+  "setup_hook_warning_existing_scripts": {
+    "es": "hooks ya existentes detectados ({hooks}) en el directorio activo. Con modo preserve se omite instalación de hooks para evitar sobreescritura.",
+    "en": "existing hooks detected ({hooks}) in the active hooks directory. In preserve mode, hook installation is skipped to avoid overwriting."
+  },
+  "setup_hook_warning_native_unsupported": {
+    "es": "modo native requiere soporte de hooks por configuración de Git (git hook + hook.<name>.*). Se omite instalación de hooks.",
+    "en": "native mode requires Git config hooks support (git hook + hook.<name>.*). Hook installation is skipped."
+  },
   "setup_note_fsmonitor": {
     "es": "solo macOS",
     "en": "macOS only"
+  },
+  "setup_note_hooks_legacy": {
+    "es": "instala hooks Gitwise vía core.hooksPath (modo legacy)",
+    "en": "installs Gitwise hooks via core.hooksPath (legacy mode)"
+  },
+  "setup_note_hooks_native": {
+    "es": "instala hook nativo por configuración Git (modo native)",
+    "en": "installs native hook via Git config (native mode)"
+  },
+  "setup_note_hooks_native_event": {
+    "es": "agrega evento del hook nativo en Git config",
+    "en": "adds native hook event in Git config"
+  },
+  "setup_note_hooks_native_migrate": {
+    "es": "migra desde core.hooksPath de Gitwise a hooks nativos",
+    "en": "migrates from Gitwise core.hooksPath to native hooks"
   },
   "setup_note_hooks": {
     "es": "instala hooks GPG + conventional commits",
@@ -1642,6 +1690,10 @@
   "unknown_branch": {
     "es": "desconocida",
     "en": "unknown"
+  },
+  "unset_value": {
+    "es": "<unset>",
+    "en": "<unset>"
   },
   "update_dry_run": {
     "es": "ejecutaría: git pull --ff-only en {dir}",

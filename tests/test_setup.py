@@ -12,6 +12,23 @@ def _git_config(key: str, cwd: Path) -> str | None:
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+def _git_config_all(key: str, cwd: Path) -> list[str]:
+    r = subprocess.run(
+        ["git", "config", "--get-all", key], cwd=cwd, capture_output=True, text=True
+    )
+    if r.returncode != 0:
+        return []
+    return [line.strip() for line in r.stdout.splitlines() if line.strip()]
+
+
+def _supports_config_hooks(cwd: Path) -> bool:
+    r = subprocess.run(
+        ["git", "hook", "list", "pre-commit"], cwd=cwd, capture_output=True, text=True
+    )
+    combined = f"{r.stdout}\n{r.stderr}".lower()
+    return "not a git command" not in combined and "unknown subcommand" not in combined
+
+
 def test_gpg_config_not_modified(tmp_git_repo_with_gpg_config):
     """CRÍTICO: setup NUNCA debe tocar commit.gpgsign ni user.signingkey."""
     repo = tmp_git_repo_with_gpg_config
@@ -58,4 +75,117 @@ def test_setup_json_structure(tmp_git_repo):
     assert "changes" in data
     assert "warnings" in data
     assert "ok" in data
+    assert "hooks_backend" in data
+    assert "hooks_mode_requested" in data
     assert data["ok"] is True
+
+
+def test_setup_legacy_mode_sets_core_hookspath(tmp_git_repo):
+    _run("setup", "--yes", "--hooks-mode", "legacy", cwd=tmp_git_repo)
+    hooks_dir = str(Path(__file__).parent.parent / "share" / "hooks")
+    assert _git_config("core.hooksPath", tmp_git_repo) == hooks_dir
+
+
+def test_setup_skip_mode_does_not_manage_hooks(tmp_git_repo):
+    _run("setup", "--yes", "--hooks-mode", "skip", cwd=tmp_git_repo)
+    assert _git_config("core.hooksPath", tmp_git_repo) is None
+    assert _git_config("hook.gitwise-gpg.command", tmp_git_repo) is None
+    assert _git_config_all("hook.gitwise-gpg.event", tmp_git_repo) == []
+
+
+def test_setup_preserve_keeps_existing_hookspath(tmp_git_repo):
+    subprocess.run(
+        ["git", "config", "core.hooksPath", ".husky/_"],
+        cwd=tmp_git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    _run("setup", "--yes", cwd=tmp_git_repo)
+    assert _git_config("core.hooksPath", tmp_git_repo) == ".husky/_"
+
+
+def test_setup_native_mode_uses_config_hooks_when_supported(tmp_git_repo):
+    r = _run("setup", "--yes", "--hooks-mode", "native", cwd=tmp_git_repo)
+    assert r.returncode == 0
+
+    if _supports_config_hooks(tmp_git_repo):
+        hooks_dir = str(Path(__file__).parent.parent / "share" / "hooks")
+        assert _git_config("hook.gitwise-gpg.command", tmp_git_repo) == str(
+            Path(hooks_dir) / "pre-commit"
+        )
+        assert "pre-commit" in _git_config_all("hook.gitwise-gpg.event", tmp_git_repo)
+        assert _git_config("core.hooksPath", tmp_git_repo) is None
+    else:
+        assert _git_config("hook.gitwise-gpg.command", tmp_git_repo) is None
+
+
+def test_setup_legacy_mode_reports_overwrite_warning_in_json(tmp_git_repo):
+    subprocess.run(
+        ["git", "config", "commit.gpgsign", "true"],
+        cwd=tmp_git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.signingkey", "TESTKEY123ABC"],
+        cwd=tmp_git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "core.hooksPath", ".husky/_"],
+        cwd=tmp_git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    r = _run(
+        "setup",
+        "--dry-run",
+        "--json",
+        "--hooks-mode",
+        "legacy",
+        cwd=tmp_git_repo,
+        env={"GITWISE_LANG": "en"},
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert any("legacy mode will overwrite current core.hooksPath" in w for w in data["warnings"])
+
+
+def test_setup_preserve_skips_when_existing_hook_scripts_present(tmp_git_repo):
+    hooks_dir = tmp_git_repo / ".git" / "hooks"
+    hook_file = hooks_dir / "pre-commit"
+    hook_file.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+
+    r = _run(
+        "setup",
+        "--dry-run",
+        "--json",
+        cwd=tmp_git_repo,
+        env={"GITWISE_LANG": "en"},
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["hooks_backend"] == "skip"
+    assert any("existing hooks detected (pre-commit)" in w for w in data["warnings"])
+
+
+def test_setup_preserve_keeps_legacy_when_gitwise_hookspath_already_set(tmp_git_repo):
+    hooks_dir = str(Path(__file__).parent.parent / "share" / "hooks")
+    subprocess.run(
+        ["git", "config", "core.hooksPath", hooks_dir],
+        cwd=tmp_git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    r = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["hooks_backend"] == "legacy"

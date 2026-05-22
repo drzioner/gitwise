@@ -1,6 +1,6 @@
 # gitwise - Product Roadmap
 
-[English](ROADMAP.md) | [Espanol](ROADMAP.es.md)
+[English](ROADMAP.md) | [Español](ROADMAP.es.md)
 
 Living roadmap for turning gitwise into a practical Git hub for humans and coding agents.
 

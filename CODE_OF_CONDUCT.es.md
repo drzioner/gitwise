@@ -3,7 +3,7 @@
 Source: CODE_OF_CONDUCT.md
 Last sync: 2026-05-22
 
-[English](CODE_OF_CONDUCT.md) | [Espanol](CODE_OF_CONDUCT.es.md)
+[English](CODE_OF_CONDUCT.md) | [Español](CODE_OF_CONDUCT.es.md)
 
 ## Nuestro compromiso
 

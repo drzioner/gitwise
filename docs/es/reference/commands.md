@@ -3,7 +3,7 @@
 Source: docs/reference/commands.md
 Last sync: 2026-05-22
 
-[English](../../reference/commands.md) | [Espanol](commands.md)
+[English](../../reference/commands.md) | [Español](commands.md)
 
 Referencia completa de comandos para `gitwise`.
 
@@ -20,12 +20,23 @@ gitwise doctor --json
 
 ### `gitwise setup`
 
-Aplica defaults modernos de Git (`fetch.prune`, diff histogram, hooks path, maintenance).
+Aplica defaults modernos de Git (`fetch.prune`, diff histogram, maintenance, estrategia segura de hooks).
 
 ```bash
 gitwise setup --dry-run
 gitwise setup --yes
+gitwise setup --hooks-mode preserve
+gitwise setup --hooks-mode native
+gitwise setup --hooks-mode legacy
+gitwise setup --hooks-mode skip
 ```
+
+Comportamiento de `--hooks-mode`:
+
+- `preserve` (default): mantiene managers/config existentes (`lefthook`, `husky`, `core.hooksPath` custom) y evita conflictos.
+- `native`: usa hooks por config de Git (`hook.<name>.event` + `hook.<name>.command`) cuando el Git instalado lo soporta.
+- `legacy`: fuerza hooks de Gitwise via `core.hooksPath`.
+- `skip`: no gestiona hooks en `setup`.
 
 ### `gitwise setup-agents`
 

@@ -1,11 +1,13 @@
 """Applies modern git defaults. NEVER modifies GPG-related config."""
 
+import os
 import platform
 from pathlib import Path
-from typing import Any
+from typing import Literal, TypedDict
 
 from .git import config as git_config
-from .git import require_root
+from .git import config_all as git_config_all
+from .git import git_dir, require_root, supports_config_hooks
 from .git import run as git_run
 from .git import version as git_version
 from .i18n import t
@@ -20,6 +22,17 @@ from .output import (
     print_status_line,
     warn,
 )
+
+HookMode = Literal["preserve", "native", "legacy", "skip"]
+
+
+class SetupChange(TypedDict):
+    op: Literal["set", "add", "unset"]
+    key: str
+    desired: str
+    current: str | None
+    note: str | None
+
 
 # Modern git defaults (GitButler list, Chacon feb 2025)
 _BASE_CONFIGS: list[tuple[str, str]] = [
@@ -45,6 +58,11 @@ _BASE_CONFIGS: list[tuple[str, str]] = [
 # These keys are NEVER modified by gitwise setup
 _PROTECTED_KEYS = {"commit.gpgsign", "user.signingkey", "user.email", "user.name"}
 
+_NATIVE_HOOKS: tuple[tuple[str, str], ...] = (
+    ("gitwise-gpg", "pre-commit"),
+    ("gitwise-conventional-commit", "commit-msg"),
+)
+
 
 def _check_gpg_state(cwd: Path) -> list[str]:
     """Returns warnings about GPG state. Never modifies anything."""
@@ -60,16 +78,27 @@ def _check_gpg_state(cwd: Path) -> list[str]:
     return warnings
 
 
-def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
-    """Returns list of config changes needed (idempotent check)."""
-    changes: list[dict[str, Any]] = []
-
+def _plan_base_changes(cwd: Path) -> list[SetupChange]:
+    changes: list[SetupChange] = []
     for key, desired in _BASE_CONFIGS:
         if key in _PROTECTED_KEYS:
             raise ValueError(t("protected_key", name=key))
         current = git_config(key, cwd=cwd)
         if current != desired:
-            changes.append({"key": key, "desired": desired, "current": current})
+            changes.append(
+                {
+                    "op": "set",
+                    "key": key,
+                    "desired": desired,
+                    "current": current,
+                    "note": None,
+                }
+            )
+    return changes
+
+
+def _plan_platform_feature_changes(cwd: Path) -> list[SetupChange]:
+    changes: list[SetupChange] = []
 
     # fsmonitor: macOS only, requires git >= 2.36 (built-in FSEvents) or watchman
     if platform.system() == "Darwin":
@@ -81,6 +110,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
             if current != "true":
                 changes.append(
                     {
+                        "op": "set",
                         "key": "core.fsmonitor",
                         "desired": "true",
                         "current": current,
@@ -94,6 +124,7 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
         if current != "true":
             changes.append(
                 {
+                    "op": "set",
                     "key": "feature.manyFiles",
                     "desired": "true",
                     "current": current,
@@ -101,22 +132,296 @@ def _plan_changes(cwd: Path) -> list[dict[str, Any]]:
                 }
             )
 
-    hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
-    current = git_config("core.hooksPath", cwd=cwd)
-    if str(hooks_dir) != current:
+    return changes
+
+
+def _detect_hook_managers(cwd: Path) -> list[str]:
+    managers: list[str] = []
+    if (cwd / "lefthook.yml").exists() or (cwd / ".lefthook").exists():
+        managers.append("lefthook")
+    if (cwd / ".husky").exists():
+        managers.append("husky")
+    return managers
+
+
+def _same_path(left: Path, right: Path) -> bool:
+    return os.path.realpath(str(left)) == os.path.realpath(str(right))
+
+
+def _active_hooks_dir(repo_root: Path) -> Path | None:
+    configured = git_config("core.hooksPath", cwd=repo_root)
+    if configured:
+        configured_path = Path(configured)
+        if configured_path.is_absolute():
+            return configured_path
+        return repo_root / configured_path
+
+    repository_git_dir = git_dir(repo_root)
+    if repository_git_dir is None:
+        return None
+    return repository_git_dir / "hooks"
+
+
+def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
+    active_dir = _active_hooks_dir(repo_root)
+    if active_dir is None:
+        return []
+    if _same_path(active_dir, hooks_dir):
+        return []
+
+    existing_events: list[str] = []
+    for _, event in _NATIVE_HOOKS:
+        hook_file = active_dir / event
+        if hook_file.exists() or hook_file.is_symlink():
+            existing_events.append(event)
+    return existing_events
+
+
+def _plan_native_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
+    changes: list[SetupChange] = []
+
+    current_hookspath = git_config("core.hooksPath", cwd=cwd)
+    if current_hookspath == str(hooks_dir):
         changes.append(
             {
+                "op": "unset",
                 "key": "core.hooksPath",
-                "desired": str(hooks_dir),
-                "current": current,
-                "note": t("setup_note_hooks"),
+                "current": current_hookspath,
+                "desired": "",
+                "note": t("setup_note_hooks_native_migrate"),
             }
         )
+
+    for name, event in _NATIVE_HOOKS:
+        hook_script = str(hooks_dir / event)
+        command_key = f"hook.{name}.command"
+        event_key = f"hook.{name}.event"
+
+        current_command = git_config(command_key, cwd=cwd)
+        if current_command != hook_script:
+            changes.append(
+                {
+                    "op": "set",
+                    "key": command_key,
+                    "desired": hook_script,
+                    "current": current_command,
+                    "note": t("setup_note_hooks_native"),
+                }
+            )
+
+        current_events = set(git_config_all(event_key, cwd=cwd))
+        if event not in current_events:
+            changes.append(
+                {
+                    "op": "add",
+                    "key": event_key,
+                    "desired": event,
+                    "current": None,
+                    "note": t("setup_note_hooks_native_event"),
+                }
+            )
 
     return changes
 
 
-def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
+def _plan_legacy_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
+    current = git_config("core.hooksPath", cwd=cwd)
+    desired = str(hooks_dir)
+    if current == desired:
+        return []
+    return [
+        {
+            "op": "set",
+            "key": "core.hooksPath",
+            "desired": desired,
+            "current": current,
+            "note": t("setup_note_hooks_legacy"),
+        }
+    ]
+
+
+def _choose_hooks_backend(
+    *,
+    cwd: Path,
+    hooks_mode: HookMode,
+    hooks_dir: Path,
+    managers: list[str],
+    existing_events: list[str],
+) -> tuple[Literal["native", "legacy", "skip"], list[str]]:
+    warnings: list[str] = []
+    native_supported = supports_config_hooks(cwd=cwd)
+    current = git_config("core.hooksPath", cwd=cwd)
+
+    if hooks_mode == "skip":
+        return "skip", warnings
+
+    if hooks_mode == "native":
+        if native_supported:
+            return "native", warnings
+        warnings.append(t("setup_hook_warning_native_unsupported"))
+        return "skip", warnings
+
+    if hooks_mode == "legacy":
+        if current and current != str(hooks_dir):
+            warnings.append(t("setup_hook_warning_legacy_overwrite", current=current))
+        return "legacy", warnings
+
+    if current == str(hooks_dir):
+        return "legacy", warnings
+
+    if managers:
+        warnings.append(t("setup_hook_warning_managers_preserve", managers=", ".join(managers)))
+        return "skip", warnings
+
+    if current and current != str(hooks_dir):
+        warnings.append(t("setup_hook_warning_legacy_conflict", current=current))
+        return "skip", warnings
+
+    if existing_events:
+        warnings.append(
+            t("setup_hook_warning_existing_scripts", hooks=", ".join(sorted(existing_events)))
+        )
+        return "skip", warnings
+
+    if native_supported:
+        return "native", warnings
+
+    return "legacy", warnings
+
+
+def _plan_hook_changes(
+    *,
+    repo_root: Path,
+    hooks_mode: HookMode,
+) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
+    hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
+    managers = _detect_hook_managers(repo_root)
+    existing_events = _detect_existing_hook_events(repo_root, hooks_dir)
+    backend, warnings = _choose_hooks_backend(
+        cwd=repo_root,
+        hooks_mode=hooks_mode,
+        hooks_dir=hooks_dir,
+        managers=managers,
+        existing_events=existing_events,
+    )
+
+    if backend == "native":
+        return _plan_native_hooks(repo_root, hooks_dir), warnings, managers, backend
+    if backend == "legacy":
+        return _plan_legacy_hooks(repo_root, hooks_dir), warnings, managers, backend
+    return [], warnings, managers, backend
+
+
+def _plan_changes(
+    *,
+    repo_root: Path,
+    hooks_mode: HookMode,
+) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
+    changes: list[SetupChange] = []
+    changes.extend(_plan_base_changes(repo_root))
+    changes.extend(_plan_platform_feature_changes(repo_root))
+    hook_changes, hook_warnings, managers, backend = _plan_hook_changes(
+        repo_root=repo_root,
+        hooks_mode=hooks_mode,
+    )
+    changes.extend(hook_changes)
+    return changes, hook_warnings, managers, backend
+
+
+def _format_desired(change: SetupChange) -> str:
+    op = change["op"]
+    if op == "add":
+        return f"+ {change['desired']}"
+    if op == "unset":
+        return t("unset_value")
+    return change["desired"]
+
+
+def _apply_change(change: SetupChange, cwd: Path) -> bool:
+    op = change["op"]
+    key = change["key"]
+
+    if op == "add":
+        result = git_run(["config", "--add", key, change["desired"]], cwd=cwd, check=False)
+    elif op == "unset":
+        result = git_run(["config", "--unset-all", key], cwd=cwd, check=False)
+    else:
+        result = git_run(["config", key, change["desired"]], cwd=cwd, check=False)
+    return result.returncode == 0
+
+
+def _json_report(
+    *,
+    dry_run: bool,
+    root: Path,
+    changes: list[SetupChange],
+    warnings: list[str],
+    managers: list[str],
+    hooks_mode: HookMode,
+    hooks_backend: Literal["native", "legacy", "skip"],
+) -> dict[str, object]:
+    return {
+        "v": 2,
+        "dry_run": dry_run,
+        "root": str(root),
+        "changes": changes,
+        "warnings": warnings,
+        "hook_managers": managers,
+        "hooks_mode_requested": hooks_mode,
+        "hooks_backend": hooks_backend,
+        "ok": True,
+    }
+
+
+def _print_setup_context(
+    *,
+    gpg_warnings: list[str],
+    hook_warnings: list[str],
+    managers: list[str],
+    hooks_backend: Literal["native", "legacy", "skip"],
+    hooks_mode: HookMode,
+) -> None:
+    for warning_text in gpg_warnings + hook_warnings:
+        warn(warning_text)
+    info(t("setup_hook_backend_selected", backend=hooks_backend, requested=hooks_mode))
+    if managers:
+        info(t("setup_hook_managers_detected", managers=", ".join(managers)))
+    if gpg_warnings or hook_warnings or managers:
+        print_blank()
+
+
+def _print_change_plan(changes: list[SetupChange]) -> None:
+    print_header(t("planned_changes", count=str(len(changes))))
+    for change in changes:
+        note = f"  [{change['note']}]" if change["note"] else ""
+        current = change["current"]
+        current_str = (
+            t("current_value", current=current) if current is not None else t("not_configured")
+        )
+        print_kv(change["key"], f"{_format_desired(change)}  {current_str}{note}")
+
+
+def _apply_changes(changes: list[SetupChange], cwd: Path) -> None:
+    for change in changes:
+        desired_text = _format_desired(change)
+        if _apply_change(change, cwd):
+            print_status_line("✓", change["key"], desired_text)
+        else:
+            print_status_line(
+                "✗",
+                change["key"],
+                t("config_failed", name=change["key"]),
+                ok_flag=False,
+            )
+
+
+def run_setup(
+    *,
+    dry_run: bool = False,
+    yes: bool = False,
+    as_json: bool = False,
+    hooks_mode: HookMode = "preserve",
+) -> int:
     root, err = require_root()
     if err:
         return err
@@ -125,37 +430,38 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
     cwd = root
 
     gpg_warnings = _check_gpg_state(cwd)
-    changes = _plan_changes(cwd)
+    changes, hook_warnings, managers, hooks_backend = _plan_changes(
+        repo_root=cwd,
+        hooks_mode=hooks_mode,
+    )
 
     if as_json:
         print_json(
-            {
-                "v": 2,
-                "dry_run": dry_run,
-                "root": str(cwd),
-                "changes": changes,
-                "warnings": gpg_warnings,
-                "ok": True,
-            }
+            _json_report(
+                dry_run=dry_run,
+                root=cwd,
+                changes=changes,
+                warnings=gpg_warnings + hook_warnings,
+                managers=managers,
+                hooks_mode=hooks_mode,
+                hooks_backend=hooks_backend,
+            )
         )
         return 0
 
-    for w in gpg_warnings:
-        warn(w)
-    if gpg_warnings:
-        print_blank()
+    _print_setup_context(
+        gpg_warnings=gpg_warnings,
+        hook_warnings=hook_warnings,
+        managers=managers,
+        hooks_backend=hooks_backend,
+        hooks_mode=hooks_mode,
+    )
 
     if not changes:
         ok(t("config_up_to_date"))
         return 0
 
-    print_header(t("planned_changes", count=str(len(changes))))
-    for c in changes:
-        note = f"  [{c['note']}]" if c.get("note") else ""
-        current_str = (
-            t("current_value", current=c["current"]) if c.get("current") else t("not_configured")
-        )
-        print_kv(c["key"], f"{c['desired']}  {current_str}{note}")
+    _print_change_plan(changes)
 
     if dry_run:
         return 0
@@ -166,12 +472,7 @@ def run_setup(*, dry_run: bool = False, yes: bool = False, as_json: bool = False
             return 0
         print_blank()
 
-    for c in changes:
-        r = git_run(["config", c["key"], c["desired"]], cwd=cwd, check=False)
-        if r.returncode == 0:
-            print_status_line("✓", c["key"], c["desired"])
-        else:
-            print_status_line("✗", c["key"], t("config_failed", name=c["key"]), ok_flag=False)
+    _apply_changes(changes, cwd)
 
     ok(t("setup_complete"))
     return 0
