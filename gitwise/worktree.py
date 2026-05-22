@@ -15,6 +15,7 @@ from .output import (
     print_header,
     print_json,
 )
+from .utils.json_envelope import ok_envelope, passthrough_envelope
 
 
 def _list_worktrees(cwd: Path) -> list[dict]:
@@ -110,21 +111,19 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) 
 
     if not orphaned and not pruned_lines:
         if as_json:
-            print_json({"v": 2, "cleaned": 0, "orphaned": 0, "dry_run": dry_run, "ok": True})
+            print_json(ok_envelope(cleaned=0, orphaned=0, dry_run=dry_run))
         else:
             ok(t("no_orphaned_worktrees", suffix=" (dry-run)" if dry_run else ""))
         return 0
 
     if as_json:
         print_json(
-            {
-                "v": 2,
-                "pruned": len(pruned_lines),
-                "orphaned": len(orphaned),
-                "orphaned_branches": [wt["branch"] for wt in orphaned],
-                "dry_run": dry_run,
-                "ok": True,
-            }
+            ok_envelope(
+                pruned=len(pruned_lines),
+                orphaned=len(orphaned),
+                orphaned_branches=[wt["branch"] for wt in orphaned],
+                dry_run=dry_run,
+            )
         )
         return 0
 
@@ -165,7 +164,10 @@ def run_worktree(
             return 1
         if as_json:
             rc, data = _worktree_new_json(branch, root)
-            print_json({"v": 2, **data})
+            if rc == 0:
+                print_json(ok_envelope(payload=data))
+            else:
+                print_json(passthrough_envelope(payload=data))
             return rc
         return _worktree_new(branch, root)
 

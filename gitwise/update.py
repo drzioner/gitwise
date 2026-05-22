@@ -5,19 +5,20 @@ from pathlib import Path
 from .git import run as git_run
 from .i18n import t
 from .output import error, info, print_dim, print_header, print_json
+from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
     install_dir = Path(__file__).parent.parent
     if not (install_dir / ".git").is_dir():
         if as_json:
-            print_json({"v": 2, "ok": False, "error": t("update_requires_git_clone")})
+            print_json(error_envelope(error=t("update_requires_git_clone")))
         else:
             error(t("update_requires_git_clone"))
         return 1
     if dry_run:
         if as_json:
-            print_json({"v": 2, "ok": True, "dry_run": True, "dir": str(install_dir)})
+            print_json(ok_envelope(dry_run=True, dir=str(install_dir)))
             return 0
         print_dim(t("update_dry_run", dir=str(install_dir)))
         return 0
@@ -25,17 +26,17 @@ def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
     r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
     if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
         if as_json:
-            print_json({"v": 2, "ok": True, "updated": True, "output": r.stdout.strip()})
+            print_json(ok_envelope(updated=True, output=r.stdout.strip()))
             return 0
         for line in r.stdout.strip().splitlines():
             info(line)
     elif r.returncode != 0:
         if as_json:
-            print_json({"v": 2, "ok": False, "error": r.stderr.strip() or t("error_updating")})
+            print_json(error_envelope(error=r.stderr.strip() or t("error_updating")))
             return 1
         error(r.stderr.strip() or t("error_updating"))
         return r.returncode
     elif as_json:
-        print_json({"v": 2, "ok": True, "updated": False, "output": t("already_up_to_date")})
+        print_json(ok_envelope(updated=False, output=t("already_up_to_date")))
         return 0
     return r.returncode

@@ -4,6 +4,8 @@ from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, print_diffstat, print_header, print_json
+from .utils.git_output import parse_diffstat_entries, parse_name_status_entries
+from .utils.json_envelope import ok_envelope
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
@@ -20,18 +22,7 @@ def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
-    entries: list[dict[str, str]] = []
-    for line in raw.splitlines():
-        if "|" not in line:
-            continue
-        parts = line.split("|", 1)
-        if len(parts) != 2:
-            continue
-        path = parts[0].strip()
-        changes = parts[1].strip()
-        if path:
-            entries.append({"path": path, "changes": changes})
-    return entries
+    return parse_diffstat_entries(raw)
 
 
 def _show_status_map(root, ref: str) -> dict[str, str]:
@@ -39,12 +30,9 @@ def _show_status_map(root, ref: str) -> dict[str, str]:
     if r.returncode != 0:
         return {}
     status_map: dict[str, str] = {}
-    for line in r.stdout.splitlines():
-        parts = line.split("\t")
-        if len(parts) < 2:
-            continue
-        status = parts[0][:1].upper()
-        path = parts[-1].strip()
+    for item in parse_name_status_entries(r.stdout):
+        status = str(item.get("status") or "")[:1].upper()
+        path = str(item.get("path") or "").strip()
         if path:
             status_map[path] = status
     return status_map
@@ -96,9 +84,7 @@ def run_show(
             error(t("git_show_failed", error=r.stderr.strip()))
             return 1
         data = _parse_show_json(r.stdout)
-        data["v"] = 2
-        data["ok"] = True
-        print_json(data)
+        print_json(ok_envelope(payload=data))
     else:
         if stat:
             r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)

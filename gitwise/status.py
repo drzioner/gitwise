@@ -12,6 +12,7 @@ from .output import (
     print_header,
     print_json,
 )
+from .utils.parsing import parse_two_ints
 
 
 def run_status(*, as_json: bool = False) -> int:
@@ -38,11 +39,9 @@ def run_status(*, as_json: bool = False) -> int:
             check=False,
         )
         if ab_r.returncode == 0:
-            parts = ab_r.stdout.strip().split()
-            if len(parts) == 2:
-                ahead_raw, behind_raw = parts[0], parts[1]
-                if ahead_raw.isdigit() and behind_raw.isdigit():
-                    ahead, behind = int(ahead_raw), int(behind_raw)
+            parsed = parse_two_ints(ab_r.stdout)
+            if parsed is not None:
+                ahead, behind = parsed
 
     if as_json:
         print_json(
