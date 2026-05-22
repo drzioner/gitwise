@@ -1,6 +1,6 @@
 # Command Reference
 
-[English](commands.md) | [Espanol](../es/reference/commands.md)
+[English](commands.md) | [Español](../es/reference/commands.md)
 
 Complete command reference for `gitwise`.
 

@@ -3,7 +3,7 @@
 Source: SECURITY.md
 Last sync: 2026-05-22
 
-[English](SECURITY.md) | [Espanol](SECURITY.es.md)
+[English](SECURITY.md) | [Español](SECURITY.es.md)
 
 ## Versiones soportadas
 

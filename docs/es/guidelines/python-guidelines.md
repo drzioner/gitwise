@@ -3,7 +3,7 @@
 Source: docs/guidelines/python-guidelines.md
 Last sync: 2026-05-22
 
-[English](../../guidelines/python-guidelines.md) | [Espanol](python-guidelines.md)
+[English](../../guidelines/python-guidelines.md) | [Español](python-guidelines.md)
 
 La guia detallada de Python se mantiene en ingles como fuente oficial.
 

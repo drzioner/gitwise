@@ -3,11 +3,11 @@
 Source: NOTES.md
 Last sync: 2026-05-22
 
-[English](NOTES.md) | [Espanol](NOTES.es.md)
+[English](NOTES.md) | [Español](NOTES.es.md)
 
 ## Stack: paquete Python + entry-point Bash corto
 
-Alternativa evaluada: Bash puro. Se descarto porque `clean --branches` y `setup`
+Alternativa evaluada: Bash puro. Se descartó porque `clean --branches` y `setup`
 requieren mejor manejo de errores, pathlib y tests con pytest. El startup de
 Python (~50ms) no es relevante para una CLI interactiva.
 

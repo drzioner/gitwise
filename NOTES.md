@@ -1,6 +1,6 @@
 # Design notes
 
-[English](NOTES.md) | [Espanol](NOTES.es.md)
+[English](NOTES.md) | [Español](NOTES.es.md)
 
 ## Stack: Python package + 6-line Bash entry-point
 

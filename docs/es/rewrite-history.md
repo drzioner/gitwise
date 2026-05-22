@@ -3,7 +3,7 @@
 Source: docs/rewrite-history.md
 Last sync: 2026-05-22
 
-[English](../rewrite-history.md) | [Espanol](rewrite-history.md)
+[English](../rewrite-history.md) | [Español](rewrite-history.md)
 
 gitwise no incluye un subcomando para reescritura de historial. Es una operacion
 de alto riesgo y `git-filter-repo` ya cubre este caso mejor.

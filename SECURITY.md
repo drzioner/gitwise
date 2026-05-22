@@ -1,6 +1,6 @@
 # Security Policy
 
-[English](SECURITY.md) | [Espanol](SECURITY.es.md)
+[English](SECURITY.md) | [Español](SECURITY.es.md)
 
 ## Supported versions
 

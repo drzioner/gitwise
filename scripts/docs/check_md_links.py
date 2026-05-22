@@ -27,7 +27,7 @@ def _resolve_link(root: Path, source_file: Path, link: str) -> Path | None:
     if not clean or _is_external_link(clean):
         return None
 
-    target = clean.split("#", 1)[0].strip()
+    target = clean.split()[0].split("#", 1)[0].strip()
     if not target:
         return None
 

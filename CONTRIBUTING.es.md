@@ -3,7 +3,7 @@
 Source: CONTRIBUTING.md
 Last sync: 2026-05-22
 
-[English](CONTRIBUTING.md) | [Espanol](CONTRIBUTING.es.md)
+[English](CONTRIBUTING.md) | [Español](CONTRIBUTING.es.md)
 
 Gracias por tu interes. Esta guia cubre lo necesario para contribuir.
 
@@ -59,8 +59,8 @@ def run_<command>(...) -> int:   # retorna codigo de salida
     # 6. Return exit code (0=ok, 1=error, 2=strict warnings)
 ```
 
-Un modulo por subcomando en `gitwise/`. En `tests/`, la estructura espeja a
-los modulos. Las pruebas invocan gitwise como subprocess via `run_gitwise()`
+Un módulo por subcomando en `gitwise/`. En `tests/`, la estructura refleja los
+módulos. Las pruebas invocan gitwise como subprocess vía `run_gitwise()`
 en `conftest.py`; no se usan mocks.
 
 ## Estilo de codigo
@@ -76,7 +76,7 @@ en `conftest.py`; no se usan mocks.
 ## Archivos clave
 
 ```
-gitwise/             # paquete Python — un modulo por subcomando
+gitwise/             # paquete Python — un módulo por subcomando
   __main__.py        # router argparse -> dispatch a run_<cmd>()
   setup_agents/      # coexistencia AGENTS.md/CLAUDE.md (modelo 5 buckets)
   _cli_setup_agents.py  # adaptador CLI para setup-agents
@@ -93,7 +93,7 @@ gitwise/             # paquete Python — un modulo por subcomando
   worktree.py        # helpers de worktree para agentes
 share/claude/        # templates copiados/mergeados en repos target
 share/hooks/         # hooks de Git (pre-commit, commit-msg)
-tests/               # pytest — espejo de modulos
+tests/               # pytest — espejo de módulos
 bin/gitwise          # wrapper shell -> python -m gitwise
 install.sh           # instala en ~/.local/bin
 ```

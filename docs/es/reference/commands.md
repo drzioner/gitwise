@@ -3,7 +3,7 @@
 Source: docs/reference/commands.md
 Last sync: 2026-05-22
 
-[English](../../reference/commands.md) | [Espanol](commands.md)
+[English](../../reference/commands.md) | [Español](commands.md)
 
 Referencia completa de comandos para `gitwise`.
 

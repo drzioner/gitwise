@@ -3,7 +3,7 @@
 Source: docs/why.md
 Last sync: 2026-05-22
 
-[English](../why.md) | [Espanol](why.md)
+[English](../why.md) | [Español](why.md)
 
 ## El problema
 

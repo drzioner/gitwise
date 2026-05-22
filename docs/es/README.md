@@ -3,7 +3,7 @@
 Source: docs/README.md
 Last sync: 2026-05-22
 
-[English](../README.md) | [Espanol](README.md)
+[English](../README.md) | [Español](README.md)
 
 Este indice organiza la documentacion de usuario y contribucion de gitwise.
 

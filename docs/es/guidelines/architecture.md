@@ -3,7 +3,7 @@
 Source: docs/guidelines/architecture.md
 Last sync: 2026-05-22
 
-[English](../../guidelines/architecture.md) | [Espanol](architecture.md)
+[English](../../guidelines/architecture.md) | [Español](architecture.md)
 
 La guia detallada de arquitectura se mantiene en ingles como fuente oficial.
 
