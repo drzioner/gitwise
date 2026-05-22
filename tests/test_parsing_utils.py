@@ -20,11 +20,14 @@ def test_stripped_non_empty_lines_trims_lines() -> None:
 def test_to_int_accepts_signed_string() -> None:
     assert to_int("-12") == -12
     assert to_int("+7") == 7
+    assert to_int("  42  ") == 42
+    assert to_int(None, default=9) == 9
     assert to_int("xx", default=3) == 3
 
 
 def test_parse_two_ints_parses_pair() -> None:
     assert parse_two_ints("3 4") == (3, 4)
+    assert parse_two_ints("-1 +2") == (-1, 2)
     assert parse_two_ints("x 4") is None
 
 

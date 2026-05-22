@@ -12,28 +12,20 @@ def stripped_non_empty_lines(text: str) -> list[str]:
 def to_int(value: object, *, default: int = 0) -> int:
     if isinstance(value, int):
         return value
-    if isinstance(value, str):
-        raw = value.strip()
-        if not raw:
-            return default
-        sign = 1
-        if raw[0] in {"+", "-"}:
-            sign = -1 if raw[0] == "-" else 1
-            raw = raw[1:]
-        if raw.isdigit():
-            return sign * int(raw)
-    return default
+    try:
+        return int(str(value).strip())
+    except (ValueError, TypeError):
+        return default
 
 
 def parse_two_ints(text: str) -> tuple[int, int] | None:
     parts = text.strip().split()
     if len(parts) != 2:
         return None
-    left = to_int(parts[0], default=10**9)
-    right = to_int(parts[1], default=10**9)
-    if left == 10**9 or right == 10**9:
+    try:
+        return int(parts[0]), int(parts[1])
+    except (ValueError, TypeError):
         return None
-    return left, right
 
 
 def dict_list(value: object) -> list[dict[str, object]]:
