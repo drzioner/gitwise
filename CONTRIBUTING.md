@@ -1,5 +1,7 @@
 # Contributing to gitwise
 
+[English](CONTRIBUTING.md) | [Espanol](CONTRIBUTING.es.md)
+
 Thanks for your interest! This guide covers everything you need to contribute.
 
 ## Quick start
@@ -73,7 +75,8 @@ structure. Tests invoke gitwise as a subprocess via `run_gitwise()` in
 ```
 gitwise/             # Python package — one module per subcommand
   __main__.py        # argparse router → dispatches to run_<cmd>()
-  setup_agents.py    # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
+  setup_agents/      # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
+  _cli_setup_agents.py  # CLI adapter for setup-agents
   git.py             # git subprocess helpers
   output.py          # output functions + confirm()
   snapshot.py        # generates .claude/git-snapshot.md
@@ -98,6 +101,7 @@ install.sh           # Installs to ~/.local/bin
 - PRs require at least one review (for external contributors)
 - Squash merge is preferred for clean history
 - Keep PRs focused — one feature or fix per PR
+- If docs are changed, update both English canonical docs and Spanish mirrors
 
 ## Reporting issues
 

@@ -1,16 +1,19 @@
-# gitwise — Roadmap de Features
+# gitwise - Product Roadmap
 
-Documento vivo con las funcionalidades propuestas para transformar gitwise de herramienta
-diagnóstica/setup en el hub central de git para humanos y agentes AI.
+[English](ROADMAP.md) | [Espanol](ROADMAP.es.md)
 
-## Estado Actual (v0.10.3)
+Living roadmap for turning gitwise into a practical Git hub for humans and coding agents.
 
-gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `audit`,
-`summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`, `diff`, `log`,
-`show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`, `health`, `stash`, `tag`,
-`merge`, `conflicts`, `suggest` (`commit-suggest`), `pick` (`cherry-pick`), `status`, `update`.
+## Current state (v0.14.2)
 
-**Phases 1-12 completadas.** 440+ tests, 630+ i18n keys (es/en), 1 runtime dep (`rich>=13.0`).
+gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `setup`,
+`audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
+`diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`,
+`health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
+`pick` (`cherry-pick`), `status`, `update`.
+
+Completed through Phase 12. Current baseline: 491 tests collected, 434 i18n keys (es/en),
+one runtime dependency (`rich>=13.0`).
 
 ---
 
@@ -24,7 +27,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 
 ## Phase 3 — AI Enhancements (MERGED, PR #9)
 
-`context`, `health`, `stash`, audit mejorado
+`context`, `health`, `stash`, improved audit
 
 ## Phase 4 — Advanced Workflows (MERGED, PR #10)
 
@@ -104,7 +107,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 
 ---
 
-## Nombres resueltos
+## Naming decisions (resolved)
 
 | Comando | Alias | Status |
 |---|---|---|
@@ -116,7 +119,7 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 
 ---
 
-## Mejoras a comandos existentes
+## Existing command enhancements
 
 | Comando | Mejora | Fase | Status |
 |---|---|---|---|
@@ -126,32 +129,32 @@ gitwise cubre 27+ comandos (con aliases): `doctor`, `setup-agents`, `setup`, `au
 | `diff` | Default a diffstat | Phase 5 | Done |
 | `log` | `--graph` flag | Phase 6 | Done |
 | `branches` | last-commit-date | Phase 6 | Done |
-| `log --json` | file stats por commit | Phase 5 | Done |
-| `context --json` | incluir health score | Phase 5 | Done |
+| `log --json` | file stats per commit | Phase 5 | Done |
+| `context --json` | include health score | Phase 5 | Done |
 | `update` | `--json` support | Phase 5 | Done |
 
 ---
 
-## Principios de Diseño
+## Design principles
 
-1. **Minimal deps**: `rich>=13.0` (terminal rendering) + stdlib + git subprocess. `shutil.which()` para detectar herramientas opcionales
-2. **`--json` en todo**: Para agentes AI (schema unificado v:2)
-3. **`--dry-run` en destructivos**: commit, sync, clean, stash drop, merge, tag delete
-4. **Delta automático**: Si `HAS_DELTA` + `IS_TTY`
-5. **i18n**: Strings via `t()` con keys en `_i18n_data.json`
-6. **Patrón**: `run_<command>(*, as_json=False) -> int`
-7. **Arquitectura**: validate → plan → dry-run → confirm → execute
-8. **Nombres claros**: Evitar colisiones con git builtins, usar terminologia consistente
+1. **Minimal deps**: `rich>=13.0` + stdlib + git subprocess. Optional tools via `shutil.which()`.
+2. **`--json` everywhere**: machine-friendly output for coding agents (v2 envelope).
+3. **`--dry-run` for destructive paths**: commit, sync, clean, stash drop, merge, tag delete.
+4. **Automatic delta rendering**: when `HAS_DELTA` and `IS_TTY`.
+5. **i18n model**: strings resolved through `t()` with keys in `_i18n_data.json`.
+6. **Subcommand pattern**: `run_<command>(*, as_json=False) -> int`.
+7. **Execution flow**: validate -> plan -> dry-run -> confirm -> execute.
+8. **Naming clarity**: avoid collisions with core git commands, keep consistent vocabulary.
 
 ---
 
 ## Deprioritized
 
-| Idea | Razón |
+| Idea | Reason |
 |---|---|
-| `gitwise init` | `setup` ya cubre la mayoria |
-| `gitwise remote` | Baja frecuencia, `git remote` es suficiente |
-| `gitwise ignore` | Baja frecuencia, edicion manual es suficiente |
-| Streaming JSON | Complejidad alta, beneficio bajo |
-| Manpage | `--help` es suficiente por ahora |
-| fzf interactive mode | Complejidad alta, requiere dependencia opcional |
+| `gitwise init` | mostly covered by `setup` |
+| `gitwise remote` | low-frequency workflow, `git remote` already sufficient |
+| `gitwise ignore` | low-frequency workflow, manual editing is usually enough |
+| Streaming JSON | high complexity, low practical gain |
+| Manpage | `--help` is enough for now |
+| fzf interactive mode | high complexity and optional dependency overhead |
