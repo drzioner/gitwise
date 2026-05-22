@@ -21,14 +21,16 @@ Tres capas de proteccion:
 
 1. **CLAUDE.md** (`setup-agents`) con instrucciones para comandos compactos
 2. **settings.json** (`setup-agents`) con allow/deny para comandos peligrosos
-3. **core.hooksPath** (`setup`) con hooks Git para GPG y conventional commits
+3. **Estrategia de hooks Git** (`setup`) con `--hooks-mode preserve|native|legacy|skip`
+   para validar GPG y conventional commits
 
 ## Por que no depender de PreToolUse/PostToolUse
 
 Issues [#6305](https://github.com/anthropics/claude-code/issues/6305),
 [#24327](https://github.com/anthropics/claude-code/issues/24327),
 [#34859](https://github.com/anthropics/claude-code/issues/34859) muestran que
-los hooks no siempre ejecutan de forma confiable en macOS.
+los hooks no siempre ejecutan de forma confiable en macOS. La proteccion GPG
+debe vivir en la capa Git (hooks nativos o `core.hooksPath`), no en Claude Code.
 
 ## Decisiones de diseno
 

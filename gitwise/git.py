@@ -82,6 +82,13 @@ def config(key: str, cwd: Path | None = None) -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+def config_all(key: str, cwd: Path | None = None) -> list[str]:
+    result = run(["config", "--get-all", key], cwd=cwd, check=False)
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
 def is_repo(path: Path | None = None) -> bool:
     result = run(["rev-parse", "--git-dir"], cwd=path, check=False)
     return result.returncode == 0
@@ -165,6 +172,14 @@ def version() -> tuple[int, int, int]:
 
             _debug(f"git version parse failed: {result.stdout.strip()!r}")
     return (0, 0, 0)
+
+
+def supports_config_hooks(cwd: Path | None = None) -> bool:
+    if version() < (2, 36, 0):
+        return False
+    result = run(["hook", "list", "pre-commit"], cwd=cwd, check=False)
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    return "not a git command" not in combined and "unknown subcommand" not in combined
 
 
 def validate_ref(ref: str) -> bool:

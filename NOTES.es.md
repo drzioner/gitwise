@@ -11,11 +11,11 @@ Alternativa evaluada: Bash puro. Se descarto porque `clean --branches` y `setup`
 requieren mejor manejo de errores, pathlib y tests con pytest. El startup de
 Python (~50ms) no es relevante para una CLI interactiva.
 
-## Enforcement GPG: core.hooksPath, no hooks de Claude Code
+## Enforcement GPG: estrategia de hooks Git, no hooks de Claude Code
 
 Issues `#6305` y `#24327` muestran que PreToolUse/PostToolUse no siempre son
-confiables en macOS. La proteccion GPG vive en `share/hooks/pre-commit`,
-instalado via `core.hooksPath`.
+confiables en macOS. La proteccion GPG vive en `share/hooks/pre-commit` y
+`setup` la instala con estrategia segura: `--hooks-mode preserve|native|legacy|skip`.
 
 `setup` nunca modifica `commit.gpgsign`; solo reporta estado.
 

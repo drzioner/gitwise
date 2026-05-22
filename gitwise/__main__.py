@@ -233,6 +233,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("setup", help="apply modern git defaults", parents=[parent])
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
+    p.add_argument(
+        "--hooks-mode",
+        choices=["preserve", "native", "legacy", "skip"],
+        default="preserve",
+        help="hooks strategy: preserve (default), native, legacy, or skip",
+    )
 
     p = sub.add_parser("audit", help="repository diagnostics", parents=[parent])
     p.add_argument("--quick", action="store_true")
@@ -453,7 +459,12 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
 def _run_setup(args: argparse.Namespace) -> int:
     from .setup import run_setup
 
-    return run_setup(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
+    return run_setup(
+        dry_run=args.dry_run,
+        yes=args.yes,
+        as_json=args.json,
+        hooks_mode=args.hooks_mode,
+    )
 
 
 def _run_audit(args: argparse.Namespace) -> int:

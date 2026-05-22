@@ -79,7 +79,7 @@ For all commands, examples, aliases, and JSON usage, see:
 
 `setup` and `setup-agents` never modify `commit.gpgsign` or `user.signingkey`.
 
-- Git layer: `core.hooksPath` hook validates signing key availability.
+- Git layer: `setup` manages hooks safely (`--hooks-mode preserve|native|legacy|skip`) to validate signing key availability and conventional commits.
 - Agent layer: deny-rules block `--no-gpg-sign`, `--no-verify`, and `-c commit.gpgsign=false`.
 
 ## Environment Variables

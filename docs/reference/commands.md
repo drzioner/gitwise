@@ -17,12 +17,23 @@ gitwise doctor --json
 
 ### `gitwise setup`
 
-Apply modern Git defaults (`fetch.prune`, histogram diff, hooks path, maintenance).
+Apply modern Git defaults (`fetch.prune`, histogram diff, maintenance, safe hook strategy).
 
 ```bash
 gitwise setup --dry-run
 gitwise setup --yes
+gitwise setup --hooks-mode preserve
+gitwise setup --hooks-mode native
+gitwise setup --hooks-mode legacy
+gitwise setup --hooks-mode skip
 ```
+
+`--hooks-mode` behavior:
+
+- `preserve` (default): keep existing hook managers/config (`lefthook`, `husky`, custom `core.hooksPath`) and avoid conflicts.
+- `native`: use Git config hooks (`hook.<name>.event` + `hook.<name>.command`) when supported by installed Git.
+- `legacy`: force Gitwise hooks via `core.hooksPath`.
+- `skip`: don't manage hooks in `setup`.
 
 ### `gitwise setup-agents`
 

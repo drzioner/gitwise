@@ -82,7 +82,7 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 
 `setup` y `setup-agents` nunca modifican `commit.gpgsign` ni `user.signingkey`.
 
-- Capa Git: hook en `core.hooksPath` valida disponibilidad de la clave.
+- Capa Git: `setup` gestiona hooks de forma segura (`--hooks-mode preserve|native|legacy|skip`) para validar disponibilidad de la clave y conventional commits.
 - Capa agente: deny-rules bloquean `--no-gpg-sign`, `--no-verify` y `-c commit.gpgsign=false`.
 
 ## Variables de entorno

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # gitwise commit-msg hook: verifies conventional commit format
-# Installed by: gitwise setup (via core.hooksPath)
+# Installed by: gitwise setup (legacy core.hooksPath or native Git config hooks)
 set -euo pipefail
 
 # Skip format check for git-generated merge/revert/squash/cherry-pick commits
