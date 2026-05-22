@@ -3,6 +3,15 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- documentation strategy migrated to bilingual model (English canonical + Spanish mirror)
+- README simplified as a quick-start landing page and command reference moved into `docs/reference/commands.md`
+- CI now enforces docs consistency checks for EN/ES pairing and internal markdown links
+- CI coverage report now exports `coverage.xml` and uploads to Codecov
+
 ## v0.14.2 (2026-05-22)
 
 ### Refactor

@@ -17,3 +17,5 @@ Brief description of the change.
 - [ ] Format passes (`ruff format --check gitwise/ tests/`)
 - [ ] Type check passes (`uvx basedpyright`)
 - [ ] New code has tests (if applicable)
+- [ ] If docs changed, English canonical docs were updated
+- [ ] If docs changed, Spanish mirrors were updated or marked as pending with reason

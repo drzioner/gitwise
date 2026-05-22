@@ -5,7 +5,7 @@ gitwise uses automated releases via commitizen. Every merge to `main` triggers t
 ## Automatic Release Flow
 
 ```
-merge to main → CI (12 jobs) → cz bump → git push --atomic (commit + tag) → gh release create
+merge to main → CI → cz bump → git push --atomic (commit + tag) → gh release create
 ```
 
 Commits prefixed with `bump:` are skipped to prevent infinite loops.

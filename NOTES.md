@@ -1,5 +1,7 @@
 # Design notes
 
+[English](NOTES.md) | [Espanol](NOTES.es.md)
+
 ## Stack: Python package + 6-line Bash entry-point
 
 Alternative considered: pure Bash. Rejected because `clean --branches` and
@@ -20,10 +22,14 @@ macOS. GPG protection lives in `share/hooks/pre-commit` installed via
 `setup` modifies git config (fetch.prune, diff.algorithm, etc.).
 They are independent — one can be used without the other.
 
-## summarize absorbs context
+## summarize and context are complementary
 
-The `context` subcommand was removed — it's `summarize --json`.
-Avoids duplication and confusion.
+`summarize` and `context` are both supported.
+
+- `summarize` focuses on compact status + commit history for day-to-day use.
+- `context` provides an enriched repository snapshot for LLM workflows.
+
+Keeping both avoids overloading one command with two different intents.
 
 ## eza is not used for branch listings
 

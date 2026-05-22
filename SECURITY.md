@@ -1,5 +1,7 @@
 # Security Policy
 
+[English](SECURITY.md) | [Espanol](SECURITY.es.md)
+
 ## Supported versions
 
 | Version | Supported |
@@ -37,11 +39,11 @@ You can also email **drzioner@gmail.com** with the subject `gitwise security: <b
 
 gitwise includes these security measures:
 
-- **Zero runtime dependencies** — no supply chain attack surface from third-party packages
+- **Minimal runtime dependencies** — one runtime dependency (`rich>=13.0`) and otherwise stdlib + git subprocess
 - **GPG signing enforcement** — pre-commit hook validates key availability
 - **Sandboxed symlinks** — `_safe_create_symlink` with TOCTOU protection and path traversal prevention
 - **No secrets in code** — credentials, tokens, and keys are never logged or stored
-- **Pinned CI actions** — all GitHub Actions pinned by SHA, not tag
+- **Pinned CI actions** — core third-party GitHub Actions are pinned by SHA, not mutable tags
 - **pip-audit in CI** — continuous dependency vulnerability scanning
 - **shellcheck** — static analysis on all shell scripts
 - **Branch protection** — main branch requires passing CI and review for external contributions
