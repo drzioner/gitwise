@@ -24,6 +24,7 @@ jobs:
       - run: uv sync --group dev
       - run: uv run python scripts/docs/check_i18n_pairs.py
       - run: uv run python scripts/docs/check_md_links.py
+      - run: uv run python scripts/docs/check_roadmap_baseline.py
 
   lint:
     name: Lint & Format
