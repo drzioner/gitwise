@@ -1027,13 +1027,45 @@
     "es": "no hay checks para este PR",
     "en": "no checks for this PR"
   },
+  "pr_check_state_cancel": {
+    "es": "cancelado",
+    "en": "cancelled"
+  },
+  "pr_check_state_fail": {
+    "es": "fallido",
+    "en": "failed"
+  },
+  "pr_check_state_other": {
+    "es": "otro",
+    "en": "other"
+  },
+  "pr_check_state_pass": {
+    "es": "ok",
+    "en": "pass"
+  },
+  "pr_check_state_pending": {
+    "es": "pendiente",
+    "en": "pending"
+  },
+  "pr_check_state_queued": {
+    "es": "en cola",
+    "en": "queued"
+  },
+  "pr_check_state_running": {
+    "es": "en ejecución",
+    "en": "running"
+  },
+  "pr_check_state_skip": {
+    "es": "omitido",
+    "en": "skipped"
+  },
   "pr_checks_summary": {
     "es": "Resumen",
     "en": "Summary"
   },
   "pr_checks_summary_value": {
-    "es": "{total} total | {passed} pass | {failed} fail | {running} running | {other} other",
-    "en": "{total} total | {passed} pass | {failed} fail | {running} running | {other} other"
+    "es": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}",
+    "en": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}"
   },
   "pr_checks_table_title": {
     "es": "Checks",
@@ -1430,6 +1462,10 @@
   "symlink_created_msg": {
     "es": "symlink: {file} → {target}",
     "en": "symlink: {file} → {target}"
+  },
+  "symlink_read_failed": {
+    "es": "no se pudo leer symlink {file}: {error}",
+    "en": "could not read symlink {file}: {error}"
   },
   "symlink_escapes_root": {
     "es": "Symlink target escapa del root del repositorio: {target}",

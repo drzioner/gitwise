@@ -56,3 +56,12 @@ def test_suggest_with_staged_json_pretty(tmp_git_repo):
     data = json.loads(r.stdout)
     assert data["ok"] is True
     assert "message" in data
+
+
+def test_suggest_numstat_binary_line_does_not_fail(tmp_git_repo):
+    (tmp_git_repo / "binary.dat").write_bytes(b"\x00\x01\x02")
+    _git(["add", "binary.dat"], cwd=tmp_git_repo)
+    r = run_gitwise("suggest", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["ok"] is True

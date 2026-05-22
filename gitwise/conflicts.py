@@ -21,10 +21,9 @@ def _conflict_markers(root: Path, filepath: str) -> int:
         return 0
     count = 0
     for line in r.stdout.splitlines():
-        try:
-            count += int(line.rsplit(":", 1)[-1])
-        except (ValueError, IndexError):
-            pass
+        marker_count = line.rsplit(":", 1)[-1]
+        if marker_count.isdigit():
+            count += int(marker_count)
     return count
 
 

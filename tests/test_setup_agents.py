@@ -341,6 +341,19 @@ def test_bucket5_broken_skills_symlink_aborts(tmp_git_repo):
     assert len(data["errors"]) >= 1
 
 
+def test_bucket5_invalid_skills_symlink_reports_read_error(tmp_git_repo):
+    claude_dir = tmp_git_repo / ".claude"
+    claude_dir.mkdir()
+    skills_link = claude_dir / "skills"
+    os.symlink(str(tmp_git_repo.parent / "missing-target"), skills_link)
+
+    result = _run_local("--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert any("roto" in e.lower() and "skills" in e.lower() for e in data["errors"])
+
+
 # ── Skills symlink granular con .agents/ ──────────────────────────────────────
 
 
