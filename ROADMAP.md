@@ -4,7 +4,7 @@
 
 Living roadmap for turning gitwise into a practical Git hub for humans and coding agents.
 
-## Current state (v0.14.2)
+## Current state (v0.15.0)
 
 gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `setup`,
 `audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,

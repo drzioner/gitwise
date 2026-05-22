@@ -7,7 +7,7 @@ Last sync: 2026-05-22
 
 Roadmap vivo para consolidar gitwise como hub practico de Git para humanos y agentes de codigo.
 
-## Estado actual (v0.14.2)
+## Estado actual (v0.15.0)
 
 gitwise actualmente incluye 27 comandos (con aliases): `doctor`, `setup-agents`, `setup`,
 `audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
