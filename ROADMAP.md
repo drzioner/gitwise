@@ -4,7 +4,7 @@
 
 Living roadmap for turning gitwise into a practical Git hub for humans and coding agents.
 
-## Current state (v0.14.2)
+## Current state (v0.15.0)
 
 gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `setup`,
 `audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
@@ -12,7 +12,7 @@ gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `s
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
 `pick` (`cherry-pick`), `status`, `update`.
 
-Completed through Phase 12. Current baseline: 491 tests collected, 434 i18n keys (es/en),
+Completed through Phase 12. Current baseline: 506 tests collected, 447 i18n keys (es/en),
 one runtime dependency (`rich>=13.0`).
 
 ---
