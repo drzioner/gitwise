@@ -19,6 +19,17 @@ from .output import (
     print_table,
 )
 
+_STATE_LABEL_KEYS: dict[str, str] = {
+    "pass": "pr_check_state_pass",
+    "fail": "pr_check_state_fail",
+    "running": "pr_check_state_running",
+    "pending": "pr_check_state_pending",
+    "queued": "pr_check_state_queued",
+    "cancel": "pr_check_state_cancel",
+    "skip": "pr_check_state_skip",
+    "other": "pr_check_state_other",
+}
+
 
 def _pr_status_code(state: str) -> str:
     normalized = state.strip().upper()
@@ -148,17 +159,7 @@ def _state_label(state: str) -> str:
 
 
 def _state_label_human(state: str) -> str:
-    mapping = {
-        "pass": "pr_check_state_pass",
-        "fail": "pr_check_state_fail",
-        "running": "pr_check_state_running",
-        "pending": "pr_check_state_pending",
-        "queued": "pr_check_state_queued",
-        "cancel": "pr_check_state_cancel",
-        "skip": "pr_check_state_skip",
-        "other": "pr_check_state_other",
-    }
-    return t(mapping.get(state, "")) if state in mapping else state
+    return t(_STATE_LABEL_KEYS[state]) if state in _STATE_LABEL_KEYS else state
 
 
 def _duration_from_check(check: dict[str, Any]) -> str:
@@ -480,9 +481,9 @@ def run_pr(
         if as_json:
             print_json(
                 {
+                    **payload,
                     "v": 2,
                     "ok": True,
-                    **payload,
                 }
             )
             return 0

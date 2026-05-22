@@ -212,6 +212,48 @@ def test_pr_view_json_uses_envelope(monkeypatch, tmp_git_repo: Path, capsys) -> 
     assert data["number"] == 42
 
 
+def test_pr_view_json_envelope_overrides_payload_reserved_keys(
+    monkeypatch, tmp_git_repo: Path, capsys
+) -> None:
+    payload = {
+        "number": 7,
+        "title": "Reserved keys check",
+        "state": "OPEN",
+        "isDraft": False,
+        "author": {"login": "alice"},
+        "headRefName": "feat/reserved",
+        "baseRefName": "main",
+        "url": "https://example.test/pr/7",
+        "createdAt": "2026-05-21T10:00:00Z",
+        "updatedAt": "2026-05-21T11:00:00Z",
+        "mergedAt": None,
+        "closedAt": None,
+        "mergeable": "MERGEABLE",
+        "reviewDecision": "APPROVED",
+        "additions": 1,
+        "deletions": 0,
+        "changedFiles": 1,
+        "labels": [],
+        "assignees": [],
+        "reviewRequests": [],
+        "body": "Line 1",
+        "v": 999,
+        "ok": False,
+    }
+
+    monkeypatch.setattr(pr_module, "_gh_available", lambda: True)
+    monkeypatch.setattr(pr_module, "require_root", lambda: (tmp_git_repo, None))
+    monkeypatch.setattr(pr_module, "_gh", lambda args, cwd: (0, json.dumps(payload), ""))
+
+    rc = pr_module.run_pr(action="view", selector="7", as_json=True)
+    out = capsys.readouterr().out
+    data = json.loads(out)
+
+    assert rc == 0
+    assert data["ok"] is True
+    assert data["v"] == 2
+
+
 def test_pr_selector_invalid(monkeypatch, tmp_git_repo: Path) -> None:
     monkeypatch.setattr(pr_module, "_gh_available", lambda: True)
     monkeypatch.setattr(pr_module, "require_root", lambda: (tmp_git_repo, None))
