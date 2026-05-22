@@ -4,6 +4,7 @@ from .git import require_root, stale_branches, worktree_branches
 from .git import run as git_run
 from .i18n import t
 from .output import error, info, print_dim, print_json, print_table
+from .utils.json_envelope import ok_envelope
 
 
 def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
@@ -59,6 +60,95 @@ _VALID_SORT_FIELDS = frozenset(
 )
 
 
+def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
+    if not names:
+        info(t("no_stale_branches"))
+        return 0
+    if as_json:
+        print_json(ok_envelope(stale_branches=names, count=len(names)))
+        return 0
+    for branch_name in names:
+        print_dim(branch_name)
+    return 0
+
+
+def _fetch_branch_rows(*, root, remote: bool, sort: str) -> list[dict[str, str]] | None:
+    wt_branches = worktree_branches(cwd=root)
+    ref_pattern = "refs/remotes/" if remote else "refs/heads/"
+    fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
+    result = git_run(
+        ["for-each-ref", f"--sort={sort}", f"--format={fmt}", ref_pattern],
+        cwd=root,
+        check=False,
+    )
+    if result.returncode != 0:
+        error(t("git_ref_failed", error=result.stderr.strip()))
+        return None
+    if not result.stdout.strip():
+        if remote:
+            info(t("no_remote_branches"))
+        else:
+            info(t("no_commits_yet"))
+        return []
+    return _parse_branches(result.stdout, wt_branches)
+
+
+def _build_branch_rows(
+    branches: list[dict[str, str]],
+) -> tuple[list[list[str]], set[int], int | None]:
+    rows: list[list[str]] = []
+    highlight_rows: set[int] = set()
+    current_idx: int | None = None
+    for idx, branch_item in enumerate(branches):
+        sha = branch_item["sha"][:8]
+        subject = branch_item["subject"][:40]
+        age = branch_item.get("age", "")
+        flags: list[str] = []
+        if branch_item.get("ahead"):
+            flags.append(f"↑{branch_item['ahead']}")
+        if branch_item.get("behind"):
+            flags.append(f"↓{branch_item['behind']}")
+        if branch_item.get("in_worktree") == "true":
+            flags.append("wt")
+        if branch_item.get("upstream"):
+            flags.append(f"→{branch_item['upstream']}")
+        status = " ".join(flags) if flags else ""
+        name_display = (
+            f"* {branch_item['name']}" if branch_item["current"] == "true" else branch_item["name"]
+        )
+        rows.append([name_display, sha, subject, age, status])
+        if branch_item["current"] == "true":
+            current_idx = idx
+            highlight_rows.add(idx)
+    return rows, highlight_rows, current_idx
+
+
+def _print_branch_table(branches: list[dict[str, str]]) -> None:
+    columns = [
+        (t("col_branch"), "name"),
+        (t("col_sha"), "sha"),
+        (t("col_subject"), "subject"),
+        (t("col_age"), "age"),
+        (t("col_status"), "status"),
+    ]
+    rows, highlight_rows, current_idx = _build_branch_rows(branches)
+    print_table(
+        title=t("branch_list_title_current", branch=branches[current_idx]["name"])
+        if current_idx is not None
+        else t("branch_list_title"),
+        columns=columns,
+        rows=rows,
+        highlight_rows=highlight_rows,
+    )
+
+
+def _validate_sort_field(sort: str) -> bool:
+    if sort in _VALID_SORT_FIELDS:
+        return True
+    error(t("invalid_sort_field", field=sort))
+    return False
+
+
 def run_branches(
     *,
     stale: bool = False,
@@ -74,89 +164,20 @@ def run_branches(
 
     if stale:
         names = stale_branches(cwd=root)
-        if not names:
-            info(t("no_stale_branches"))
-            return 0
-        if as_json:
-            print_json({"v": 2, "ok": True, "stale_branches": names, "count": len(names)})
-            return 0
-        for n in names:
-            print_dim(n)
-        return 0
+        return _print_stale_branches(names=names, as_json=as_json)
 
-    if sort not in _VALID_SORT_FIELDS:
-        error(t("invalid_sort_field", field=sort))
+    if not _validate_sort_field(sort):
         return 1
 
-    wt_branches = worktree_branches(cwd=root)
-
-    ref_pattern = "refs/remotes/" if remote else "refs/heads/"
-    fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
-
-    r = git_run(
-        ["for-each-ref", f"--sort={sort}", f"--format={fmt}", ref_pattern],
-        cwd=root,
-        check=False,
-    )
-    if r.returncode != 0:
-        error(t("git_ref_failed", error=r.stderr.strip()))
+    branches = _fetch_branch_rows(root=root, remote=remote, sort=sort)
+    if branches is None:
         return 1
-
-    if not r.stdout.strip():
-        if remote:
-            info(t("no_remote_branches"))
-        else:
-            info(t("no_commits_yet"))
+    if not branches:
         return 0
-
-    branches = _parse_branches(r.stdout, wt_branches)
 
     if as_json:
-        print_json({"v": 2, "ok": True, "branches": branches, "count": len(branches)})
+        print_json(ok_envelope(branches=branches, count=len(branches)))
         return 0
-
-    current_idx: int | None = None
-    columns = [
-        (t("col_branch"), "name"),
-        (t("col_sha"), "sha"),
-        (t("col_subject"), "subject"),
-        (t("col_age"), "age"),
-        (t("col_status"), "status"),
-    ]
-
-    rows: list[list[str]] = []
-    highlight_rows: set[int] = set()
-
-    for idx, b in enumerate(branches):
-        sha = b["sha"][:8]
-        subject = b["subject"][:40]
-        age = b.get("age", "")
-
-        flags: list[str] = []
-        if b.get("ahead"):
-            flags.append(f"↑{b['ahead']}")
-        if b.get("behind"):
-            flags.append(f"↓{b['behind']}")
-        if b.get("in_worktree") == "true":
-            flags.append("wt")
-        if b.get("upstream"):
-            flags.append(f"→{b['upstream']}")
-        status = " ".join(flags) if flags else ""
-
-        name_display = f"* {b['name']}" if b["current"] == "true" else b["name"]
-        rows.append([name_display, sha, subject, age, status])
-
-        if b["current"] == "true":
-            current_idx = idx
-            highlight_rows.add(idx)
-
-    print_table(
-        title=t("branch_list_title_current", branch=branches[current_idx]["name"])
-        if current_idx is not None
-        else t("branch_list_title"),
-        columns=columns,
-        rows=rows,
-        highlight_rows=highlight_rows,
-    )
+    _print_branch_table(branches)
 
     return 0

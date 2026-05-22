@@ -16,21 +16,12 @@ from .output import (
     print_table,
     warn,
 )
+from .utils.git_output import parse_diffstat_entries
+from .utils.json_envelope import ok_envelope
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
-    entries: list[dict[str, str]] = []
-    for line in raw.splitlines():
-        if "|" not in line:
-            continue
-        parts = line.split("|", 1)
-        if len(parts) != 2:
-            continue
-        path = parts[0].strip()
-        changes = parts[1].strip()
-        if path:
-            entries.append({"path": path, "changes": changes, "status": "M"})
-    return entries
+    return parse_diffstat_entries(raw, default_status="M")
 
 
 def _stash_list(root: Path) -> list[dict[str, str]]:
@@ -52,7 +43,7 @@ def _stash_list(root: Path) -> list[dict[str, str]]:
 def _cmd_list(root: Path, *, as_json: bool) -> int:
     stashes = _stash_list(root)
     if as_json:
-        print_json({"v": 2, "stashes": stashes, "count": len(stashes), "ok": True})
+        print_json(ok_envelope(stashes=stashes, count=len(stashes)))
         return 0
     if not stashes:
         ok(t("stash_empty"))
@@ -92,7 +83,7 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
         error(t("stash_not_found", index=str(index)))
         return 1
     if as_json:
-        print_json({"v": 2, "ref": ref, "stat": r.stdout.strip(), "ok": True})
+        print_json(ok_envelope(ref=ref, stat=r.stdout.strip()))
         return 0
     if patch:
         print_header(ref)
@@ -117,7 +108,7 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
         error(r.stderr.strip())
         return 1
     if as_json:
-        print_json({"v": 2, "popped": ref, "ok": True})
+        print_json(ok_envelope(popped=ref))
         return 0
     ok(t("stash_popped", ref=ref))
     return 0
@@ -133,7 +124,7 @@ def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> in
         error(r.stderr.strip())
         return 1
     if as_json:
-        print_json({"v": 2, "dropped": ref, "ok": True})
+        print_json(ok_envelope(dropped=ref))
         return 0
     ok(t("stash_dropped", ref=ref))
     return 0
@@ -146,7 +137,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         return 0
     if dry_run:
         if as_json:
-            print_json({"v": 2, "would_drop": len(stashes), "dry_run": True, "ok": True})
+            print_json(ok_envelope(would_drop=len(stashes), dry_run=True))
             return 0
         ok(t("stash_clean_dry", count=str(len(stashes))))
         return 0
@@ -158,7 +149,7 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
         error(r.stderr.strip())
         return 1
     if as_json:
-        print_json({"v": 2, "cleared": len(stashes), "ok": True})
+        print_json(ok_envelope(cleared=len(stashes)))
         return 0
     ok(t("stash_cleaned", count=str(len(stashes))))
     return 0

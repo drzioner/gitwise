@@ -7,6 +7,7 @@ from .git import require_root, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, info, print_json, print_table
+from .utils.json_envelope import ok_envelope
 
 
 def _build_log_args(
@@ -174,6 +175,112 @@ def _parse_log_table(raw: str) -> list[list[str]]:
     return rows
 
 
+def _run_log_json(
+    *,
+    root: Path,
+    author: str | None,
+    grep: str | None,
+    since: str | None,
+    until: str | None,
+    file: str | None,
+    max_count: int,
+) -> int:
+    try:
+        args = _build_log_json_args(
+            author=author,
+            grep=grep,
+            since=since,
+            until=until,
+            file=file,
+            max_count=max_count,
+        )
+    except ValueError:
+        return 1
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode != 0:
+        if "does not have any commits yet" in result.stderr:
+            print_json(ok_envelope(commits=[], count=0))
+            return 0
+        error(t("git_log_failed", error=result.stderr.strip()))
+        return 1
+    commits = _parse_log_json(result.stdout)
+    _enrich_with_stats(commits, root)
+    print_json(ok_envelope(commits=commits, count=len(commits)))
+    return 0
+
+
+def _run_log_human(
+    *,
+    root: Path,
+    oneline: bool,
+    graph: bool,
+    author: str | None,
+    grep: str | None,
+    since: str | None,
+    until: str | None,
+    file: str | None,
+    max_count: int,
+) -> int:
+    try:
+        args = _build_log_args(
+            oneline=oneline,
+            graph=graph,
+            author=author,
+            grep=grep,
+            since=since,
+            until=until,
+            file=file,
+            max_count=max_count,
+        )
+    except ValueError:
+        return 1
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode != 0:
+        if result.stderr and "does not have any commits yet" in result.stderr:
+            info(t("no_commits_yet"))
+            return 0
+        error(t("git_log_failed", error=result.stderr.strip()))
+        return 1
+    if not result.stdout.strip():
+        info(t("no_commits_yet"))
+        return 0
+    if _run_log_human_plain_or_graph(raw=result.stdout, graph=graph, oneline=oneline):
+        return 0
+
+    return _print_log_table(result.stdout)
+
+
+def _print_log_table(raw: str) -> int:
+    rows = _parse_log_table(raw)
+    if not rows:
+        info(t("no_commits_yet"))
+        return 0
+    columns = [
+        (t("col_sha"), "sha"),
+        (t("col_author"), "author"),
+        (t("col_date"), "date"),
+        (t("col_subject"), "subject"),
+    ]
+    print_table(
+        title=t("git_log_title"),
+        columns=columns,
+        rows=rows,
+        no_wrap_columns={0, 2},
+        min_widths={0: 7, 2: 10},
+        max_widths={0: 10, 1: 20},
+        overflow_columns={0: "crop", 1: "ellipsis", 2: "crop", 3: "ellipsis"},
+        column_ratios={3: 4},
+    )
+    return 0
+
+
+def _run_log_human_plain_or_graph(*, raw: str, graph: bool, oneline: bool) -> bool:
+    if graph or oneline:
+        bat_pipe(raw, language="gitlog")
+        return True
+    return False
+
+
 def run_log(
     *,
     as_json: bool = False,
@@ -193,71 +300,24 @@ def run_log(
         return 1
 
     if as_json:
-        try:
-            args = _build_log_json_args(
-                author=author, grep=grep, since=since, until=until, file=file, max_count=max_count
-            )
-        except ValueError:
-            return 1
-        r = git_run(args, cwd=root, check=False)
-        if r.returncode != 0:
-            if "does not have any commits yet" in r.stderr:
-                print_json({"v": 2, "ok": True, "commits": [], "count": 0})
-                return 0
-            error(t("git_log_failed", error=r.stderr.strip()))
-            return 1
-        commits = _parse_log_json(r.stdout)
-        _enrich_with_stats(commits, root)
-        print_json({"v": 2, "ok": True, "commits": commits, "count": len(commits)})
-    else:
-        try:
-            args = _build_log_args(
-                oneline=oneline,
-                graph=graph,
-                author=author,
-                grep=grep,
-                since=since,
-                until=until,
-                file=file,
-                max_count=max_count,
-            )
-        except ValueError:
-            return 1
-        r = git_run(args, cwd=root, check=False)
-        if r.returncode != 0:
-            if r.stderr and "does not have any commits yet" in r.stderr:
-                info(t("no_commits_yet"))
-                return 0
-            error(t("git_log_failed", error=r.stderr.strip()))
-            return 1
-        if not r.stdout.strip():
-            info(t("no_commits_yet"))
-            return 0
+        return _run_log_json(
+            root=root,
+            author=author,
+            grep=grep,
+            since=since,
+            until=until,
+            file=file,
+            max_count=max_count,
+        )
 
-        if graph or oneline:
-            bat_pipe(r.stdout, language="gitlog")
-        else:
-            rows = _parse_log_table(r.stdout)
-            if not rows:
-                info(t("no_commits_yet"))
-                return 0
-
-            columns = [
-                (t("col_sha"), "sha"),
-                (t("col_author"), "author"),
-                (t("col_date"), "date"),
-                (t("col_subject"), "subject"),
-            ]
-
-            print_table(
-                title=t("git_log_title"),
-                columns=columns,
-                rows=rows,
-                no_wrap_columns={0, 2},
-                min_widths={0: 7, 2: 10},
-                max_widths={0: 10, 1: 20},
-                overflow_columns={0: "crop", 1: "ellipsis", 2: "crop", 3: "ellipsis"},
-                column_ratios={3: 4},
-            )
-
-    return 0
+    return _run_log_human(
+        root=root,
+        oneline=oneline,
+        graph=graph,
+        author=author,
+        grep=grep,
+        since=since,
+        until=until,
+        file=file,
+        max_count=max_count,
+    )
