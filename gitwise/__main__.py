@@ -316,7 +316,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("pr", help="GitHub PR wrapper (requires gh)", parents=[parent])
     p.add_argument(
-        "action", nargs="?", default="list", choices=["list", "checks"], help="pr action"
+        "action",
+        nargs="?",
+        default="list",
+        choices=["list", "checks", "view", "comments"],
+        help="pr action",
+    )
+    p.add_argument(
+        "selector",
+        nargs="?",
+        default=None,
+        help="PR number/url/branch (default: current branch PR)",
     )
 
     p = sub.add_parser("undo", help="reflog-based undo", parents=[parent])
@@ -559,7 +569,7 @@ def _run_sync(args: argparse.Namespace) -> int:
 def _run_pr(args: argparse.Namespace) -> int:
     from .pr import run_pr
 
-    return run_pr(action=args.action, as_json=args.json)
+    return run_pr(action=args.action, selector=args.selector, as_json=args.json)
 
 
 def _run_undo(args: argparse.Namespace) -> int:

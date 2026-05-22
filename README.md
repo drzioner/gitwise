@@ -214,23 +214,33 @@ gitwise branches --json
 
 ### `gitwise sync`
 
-Pull with rebase + push in one step.
+Remote fetch with optional safe pull/push.
 
 ```bash
-gitwise sync              # pull --rebase + push
+gitwise sync              # fetch --prune
+gitwise sync --pull       # fetch + pull --ff-only
+gitwise sync --push       # fetch + push
 gitwise sync --dry-run
 gitwise sync --json
 ```
 
 ### `gitwise pr`
 
-Create a GitHub pull request with smart defaults.
+GitHub PR wrapper for listing, checks, details and comments.
 
 ```bash
-gitwise pr                # create PR from current branch
-gitwise pr --draft
-gitwise pr --json
+gitwise pr list
+gitwise pr checks 123
+gitwise pr view 123
+gitwise pr comments 123
+gitwise pr view 123 --json
 ```
+
+Human output is optimized for readability:
+
+- `pr checks` renders a structured table + compact summary (instead of raw gh output)
+- `pr comments` normalizes escaped line breaks from GitHub comments
+- `pr view` hides noisy fields for merged/closed PRs
 
 ### `gitwise undo`
 
