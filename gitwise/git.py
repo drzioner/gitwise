@@ -174,12 +174,12 @@ def version() -> tuple[int, int, int]:
     return (0, 0, 0)
 
 
+@functools.lru_cache(maxsize=1)
 def supports_config_hooks(cwd: Path | None = None) -> bool:
     if version() < (2, 36, 0):
         return False
-    result = run(["hook", "list", "pre-commit"], cwd=cwd, check=False)
-    combined = f"{result.stdout}\n{result.stderr}".lower()
-    return "not a git command" not in combined and "unknown subcommand" not in combined
+    result = run(["hook", "run", "--ignore-missing", "pre-commit"], cwd=cwd, check=False)
+    return result.returncode == 0
 
 
 def validate_ref(ref: str) -> bool:

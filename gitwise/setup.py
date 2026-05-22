@@ -148,22 +148,22 @@ def _same_path(left: Path, right: Path) -> bool:
     return os.path.realpath(str(left)) == os.path.realpath(str(right))
 
 
-def _active_hooks_dir(cwd: Path) -> Path | None:
-    configured = git_config("core.hooksPath", cwd=cwd)
+def _active_hooks_dir(repo_root: Path) -> Path | None:
+    configured = git_config("core.hooksPath", cwd=repo_root)
     if configured:
         configured_path = Path(configured)
         if configured_path.is_absolute():
             return configured_path
-        return cwd / configured_path
+        return repo_root / configured_path
 
-    repository_git_dir = git_dir(cwd)
+    repository_git_dir = git_dir(repo_root)
     if repository_git_dir is None:
         return None
     return repository_git_dir / "hooks"
 
 
-def _detect_existing_hook_events(cwd: Path, hooks_dir: Path) -> list[str]:
-    active_dir = _active_hooks_dir(cwd)
+def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
+    active_dir = _active_hooks_dir(repo_root)
     if active_dir is None:
         return []
     if _same_path(active_dir, hooks_dir):
@@ -291,14 +291,14 @@ def _choose_hooks_backend(
 
 def _plan_hook_changes(
     *,
-    cwd: Path,
+    repo_root: Path,
     hooks_mode: HookMode,
 ) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
     hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
-    managers = _detect_hook_managers(cwd)
-    existing_events = _detect_existing_hook_events(cwd, hooks_dir)
+    managers = _detect_hook_managers(repo_root)
+    existing_events = _detect_existing_hook_events(repo_root, hooks_dir)
     backend, warnings = _choose_hooks_backend(
-        cwd=cwd,
+        cwd=repo_root,
         hooks_mode=hooks_mode,
         hooks_dir=hooks_dir,
         managers=managers,
@@ -306,22 +306,23 @@ def _plan_hook_changes(
     )
 
     if backend == "native":
-        return _plan_native_hooks(cwd, hooks_dir), warnings, managers, backend
+        return _plan_native_hooks(repo_root, hooks_dir), warnings, managers, backend
     if backend == "legacy":
-        return _plan_legacy_hooks(cwd, hooks_dir), warnings, managers, backend
+        return _plan_legacy_hooks(repo_root, hooks_dir), warnings, managers, backend
     return [], warnings, managers, backend
 
 
 def _plan_changes(
     *,
-    cwd: Path,
+    repo_root: Path,
     hooks_mode: HookMode,
 ) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
     changes: list[SetupChange] = []
-    changes.extend(_plan_base_changes(cwd))
-    changes.extend(_plan_platform_feature_changes(cwd))
+    changes.extend(_plan_base_changes(repo_root))
+    changes.extend(_plan_platform_feature_changes(repo_root))
     hook_changes, hook_warnings, managers, backend = _plan_hook_changes(
-        cwd=cwd, hooks_mode=hooks_mode
+        repo_root=repo_root,
+        hooks_mode=hooks_mode,
     )
     changes.extend(hook_changes)
     return changes, hook_warnings, managers, backend
@@ -429,7 +430,10 @@ def run_setup(
     cwd = root
 
     gpg_warnings = _check_gpg_state(cwd)
-    changes, hook_warnings, managers, hooks_backend = _plan_changes(cwd=cwd, hooks_mode=hooks_mode)
+    changes, hook_warnings, managers, hooks_backend = _plan_changes(
+        repo_root=cwd,
+        hooks_mode=hooks_mode,
+    )
 
     if as_json:
         print_json(
