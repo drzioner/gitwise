@@ -13,6 +13,8 @@ from .output import (
     print_header,
     print_json,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
+from .utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
 def _ahead_behind(cwd: Path) -> dict[str, int]:
@@ -25,12 +27,11 @@ def _ahead_behind(cwd: Path) -> dict[str, int]:
     if r.returncode != 0:
         debug(f"ahead_behind failed: {r.stderr.strip()}")
         return {"ahead": 0, "behind": 0}
-    parts = r.stdout.strip().split()
-    if len(parts) == 2:
-        try:
-            return {"behind": int(parts[0]), "ahead": int(parts[1])}
-        except ValueError:
-            debug(f"ahead_behind parse failed: {r.stdout.strip()!r}")
+    parsed = parse_two_ints(r.stdout)
+    if parsed is not None:
+        behind, ahead = parsed
+        return {"behind": behind, "ahead": ahead}
+    debug(f"ahead_behind parse failed: {r.stdout.strip()!r}")
     return {"ahead": 0, "behind": 0}
 
 
@@ -42,7 +43,123 @@ def _unpushed_commits(cwd) -> list[str]:
     if r.returncode != 0:
         debug(f"unpushed_commits failed: {r.stderr.strip()}")
         return []
-    return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()]
+    return stripped_non_empty_lines(r.stdout)
+
+
+def _sync_dry_run_payload(
+    *,
+    branch: str,
+    pull: bool,
+    push: bool,
+    remote: str | None,
+    root: Path,
+) -> dict[str, object]:
+    ab = _ahead_behind(root)
+    unpushed = _unpushed_commits(root)
+    return {
+        "branch": branch,
+        "ahead": ab["ahead"],
+        "behind": ab["behind"],
+        "unpushed": unpushed,
+        "actions": _planned_actions(pull, push, ab, unpushed, remote),
+        "dry_run": True,
+    }
+
+
+def _print_sync_dry_run_human(*, pull: bool, push: bool, root: Path, remote: str | None) -> None:
+    ab = _ahead_behind(root)
+    unpushed = _unpushed_commits(root)
+    print_header(t("sync_dry_run_title"))
+    for action in _planned_actions(pull, push, ab, unpushed, remote):
+        print_bracket(action)
+    print_dim(t("dry_run_no_exec"))
+
+
+def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
+    result = git_run(
+        ["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False
+    )
+    if result.returncode == 0:
+        return 0
+    if as_json:
+        print_json(error_envelope(error=t("sync_fetch_failed", error=result.stderr.strip())))
+    else:
+        error(t("sync_fetch_failed", error=result.stderr.strip()))
+    return 1
+
+
+def _sync_pull(*, root: Path, as_json: bool) -> int:
+    result = git_run(["pull", "--ff-only"], cwd=root, check=False)
+    if result.returncode == 0:
+        return 0
+    if as_json:
+        print_json(error_envelope(error=t("sync_pull_diverged")))
+    else:
+        error(t("sync_pull_diverged"))
+    return 1
+
+
+def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
+    if branch in PROTECTED_BRANCHES:
+        if as_json:
+            print_json(error_envelope(error=t("sync_push_protected", branch=branch)))
+        else:
+            error(t("sync_push_protected", branch=branch))
+        return 1
+    result = git_run(["push"], cwd=root, check=False)
+    if result.returncode == 0:
+        return 0
+    if as_json:
+        print_json(error_envelope(error=t("sync_push_failed", error=result.stderr.strip())))
+    else:
+        error(t("sync_push_failed", error=result.stderr.strip()))
+    return 1
+
+
+def _print_sync_complete_human(*, branch: str, ahead: int, behind: int) -> None:
+    print_header(t("sync_complete_title"))
+    print_bracket(branch, t("sync_status", ahead=str(ahead), behind=str(behind)))
+
+
+def _sync_final_payload(*, branch: str, root: Path) -> dict[str, object]:
+    ab = _ahead_behind(root)
+    return {
+        "branch": branch,
+        "ahead": ab["ahead"],
+        "behind": ab["behind"],
+        "unpushed": _unpushed_commits(root),
+    }
+
+
+def _report_sync_final(*, as_json: bool, branch: str, root: Path) -> int:
+    payload = _sync_final_payload(branch=branch, root=root)
+    if as_json:
+        print_json(ok_envelope(payload=payload))
+        return 0
+    ahead = payload["ahead"]
+    behind = payload["behind"]
+    _print_sync_complete_human(
+        branch=branch,
+        ahead=ahead if isinstance(ahead, int) else 0,
+        behind=behind if isinstance(behind, int) else 0,
+    )
+    return 0
+
+
+def _run_sync_dry_run(
+    *, as_json: bool, branch: str, pull: bool, push: bool, remote: str | None, root: Path
+) -> int:
+    if as_json:
+        print_json(
+            ok_envelope(
+                payload=_sync_dry_run_payload(
+                    branch=branch, pull=pull, push=push, remote=remote, root=root
+                )
+            )
+        )
+        return 0
+    _print_sync_dry_run_human(pull=pull, push=push, root=root, remote=remote)
+    return 0
 
 
 def run_sync(
@@ -62,80 +179,30 @@ def run_sync(
     branch = current_branch(cwd=root) or ""
 
     if dry_run:
-        ab = _ahead_behind(root)
-        unpushed = _unpushed_commits(root)
-        if as_json:
-            print_json(
-                {
-                    "v": 2,
-                    "ok": True,
-                    "branch": branch,
-                    "ahead": ab["ahead"],
-                    "behind": ab["behind"],
-                    "unpushed": unpushed,
-                    "actions": _planned_actions(pull, push, ab, unpushed, remote),
-                    "dry_run": True,
-                }
-            )
-        else:
-            print_header(t("sync_dry_run_title"))
-            for action in _planned_actions(pull, push, ab, unpushed, remote):
-                print_bracket(action)
-            print_dim(t("dry_run_no_exec"))
-        return 0
+        return _run_sync_dry_run(
+            as_json=as_json,
+            branch=branch,
+            pull=pull,
+            push=push,
+            remote=remote,
+            root=root,
+        )
 
-    r = git_run(["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False)
-    if r.returncode != 0:
-        if as_json:
-            print_json(
-                {"v": 2, "ok": False, "error": t("sync_fetch_failed", error=r.stderr.strip())}
-            )
-        else:
-            error(t("sync_fetch_failed", error=r.stderr.strip()))
-        return 1
+    fetch_rc = _sync_fetch(root=root, remote=remote, as_json=as_json)
+    if fetch_rc != 0:
+        return fetch_rc
 
     if pull:
-        r = git_run(["pull", "--ff-only"], cwd=root, check=False)
-        if r.returncode != 0:
-            if as_json:
-                print_json({"v": 2, "ok": False, "error": t("sync_pull_diverged")})
-            else:
-                error(t("sync_pull_diverged"))
-            return 1
+        pull_rc = _sync_pull(root=root, as_json=as_json)
+        if pull_rc != 0:
+            return pull_rc
 
     if push:
-        if branch in PROTECTED_BRANCHES:
-            if as_json:
-                print_json({"v": 2, "ok": False, "error": t("sync_push_protected", branch=branch)})
-            else:
-                error(t("sync_push_protected", branch=branch))
-            return 1
-        r = git_run(["push"], cwd=root, check=False)
-        if r.returncode != 0:
-            if as_json:
-                print_json(
-                    {"v": 2, "ok": False, "error": t("sync_push_failed", error=r.stderr.strip())}
-                )
-            else:
-                error(t("sync_push_failed", error=r.stderr.strip()))
-            return 1
+        push_rc = _sync_push(root=root, branch=branch, as_json=as_json)
+        if push_rc != 0:
+            return push_rc
 
-    ab = _ahead_behind(root)
-    if as_json:
-        print_json(
-            {
-                "v": 2,
-                "ok": True,
-                "branch": branch,
-                "ahead": ab["ahead"],
-                "behind": ab["behind"],
-                "unpushed": _unpushed_commits(root),
-            }
-        )
-    else:
-        print_header(t("sync_complete_title"))
-        print_bracket(branch, t("sync_status", ahead=str(ab["ahead"]), behind=str(ab["behind"])))
-    return 0
+    return _report_sync_final(as_json=as_json, branch=branch, root=root)
 
 
 def _planned_actions(

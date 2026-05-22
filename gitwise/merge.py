@@ -14,6 +14,8 @@ from .output import (
     print_json,
     warn,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
+from .utils.parsing import to_int
 
 
 def _has_uncommitted(root: Path) -> bool:
@@ -24,6 +26,125 @@ def _has_uncommitted(root: Path) -> bool:
 def _branch_exists(root: Path, name: str) -> bool:
     r = git_run(["rev-parse", "--verify", "refs/heads/" + name], cwd=root, check=False)
     return r.returncode == 0
+
+
+def _validate_merge_target(*, root: Path, branch: str, cur: str | None) -> int:
+    if cur is None:
+        error(t("merge_detached_head"))
+        return 1
+    if not validate_ref(branch):
+        error(t("invalid_ref", ref=branch))
+        return 1
+    if not _branch_exists(root, branch):
+        error(t("merge_branch_not_found", branch=branch))
+        return 1
+    if branch == cur:
+        error(t("merge_same_branch"))
+        return 1
+    return 0
+
+
+def _ahead_behind_counts(*, root: Path, branch: str) -> tuple[int, int]:
+    ahead = git_run(["rev-list", "--count", f"{branch}..HEAD"], cwd=root, check=False)
+    behind = git_run(["rev-list", "--count", f"HEAD..{branch}"], cwd=root, check=False)
+    ahead_count = to_int(ahead.stdout, default=0) if ahead.returncode == 0 else 0
+    behind_count = to_int(behind.stdout, default=0) if behind.returncode == 0 else 0
+    return ahead_count, behind_count
+
+
+def _merge_warnings(*, root: Path, branch: str, ahead_count: int, behind_count: int) -> list[str]:
+    warnings: list[str] = []
+    if _has_uncommitted(root):
+        warnings.append(t("merge_uncommitted"))
+    if ahead_count > 0 and behind_count > 0:
+        warnings.append(t("merge_diverged", ahead=str(ahead_count), behind=str(behind_count)))
+    return warnings
+
+
+def _handle_merge_dry_run(
+    *,
+    as_json: bool,
+    rebase: bool,
+    branch: str,
+    cur: str,
+    ahead_count: int,
+    behind_count: int,
+    warnings: list[str],
+) -> int:
+    if as_json:
+        print_json(
+            ok_envelope(
+                dry_run=True,
+                action="rebase" if rebase else "merge",
+                branch=branch,
+                current=cur,
+                ahead=ahead_count,
+                behind=behind_count,
+                warnings=warnings,
+            )
+        )
+        return 0
+    action = t("merge_rebase_label") if rebase else t("merge_merge_label")
+    print_header(f"{action}: {branch} -> {cur}")
+    if ahead_count or behind_count:
+        print_bracket(t("status_ahead_label"), str(ahead_count))
+        print_bracket(t("status_behind_label"), str(behind_count))
+    for warning_msg in warnings:
+        warn(warning_msg)
+    return 0
+
+
+def _execute_merge(*, root: Path, branch: str, rebase: bool, no_ff: bool) -> tuple[bool, str]:
+    if rebase:
+        args = ["rebase", branch]
+    else:
+        args = ["merge"]
+        if no_ff:
+            args.append("--no-ff")
+        args.append(branch)
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode == 0:
+        return True, ""
+    err = (
+        t("merge_conflicts")
+        if ("CONFLICT" in result.stdout or "CONFLICT" in result.stderr)
+        else t("git_command_failed", cmd="merge/rebase", error=result.stderr.strip())
+    )
+    return False, err
+
+
+def _confirm_merge_warnings(*, warnings: list[str], yes: bool) -> bool:
+    if not warnings:
+        return True
+    for warning_msg in warnings:
+        warn(warning_msg)
+    if yes:
+        return True
+    if confirm(t("merge_proceed")):
+        return True
+    warn(t("aborted"))
+    return False
+
+
+def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool) -> int:
+    if as_json:
+        print_json(ok_envelope(merged=branch, into=cur))
+        return 0
+    label = (
+        t("merge_rebased", branch=branch, into=cur)
+        if rebase
+        else t("merge_ok", branch=branch, into=cur)
+    )
+    ok(label)
+    return 0
+
+
+def _report_merge_error(*, as_json: bool, err: str) -> int:
+    if as_json:
+        print_json(error_envelope(error=err))
+    else:
+        error(err)
+    return 1
 
 
 def run_merge(
@@ -42,102 +163,35 @@ def run_merge(
         return 1
 
     cur = current_branch(root)
-    if cur is None:
-        error(t("merge_detached_head"))
-        return 1
+    target_rc = _validate_merge_target(root=root, branch=branch, cur=cur)
+    if target_rc != 0:
+        return target_rc
+    assert cur is not None
 
-    if not validate_ref(branch):
-        error(t("invalid_ref", ref=branch))
-        return 1
-
-    if not _branch_exists(root, branch):
-        error(t("merge_branch_not_found", branch=branch))
-        return 1
-
-    if branch == cur:
-        error(t("merge_same_branch"))
-        return 1
-
-    warnings: list[str] = []
-    if _has_uncommitted(root):
-        warnings.append(t("merge_uncommitted"))
-
-    ahead = git_run(["rev-list", "--count", f"{branch}..HEAD"], cwd=root, check=False)
-    behind = git_run(["rev-list", "--count", f"HEAD..{branch}"], cwd=root, check=False)
-    try:
-        ahead_count = int(ahead.stdout.strip()) if ahead.returncode == 0 else 0
-        behind_count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
-    except ValueError:
-        from .output import debug
-
-        debug(
-            f"merge ahead/behind parse failed: {ahead.stdout.strip()!r} / {behind.stdout.strip()!r}"
-        )
-        ahead_count = behind_count = 0
-
-    if ahead_count > 0 and behind_count > 0:
-        warnings.append(t("merge_diverged", ahead=str(ahead_count), behind=str(behind_count)))
+    ahead_count, behind_count = _ahead_behind_counts(root=root, branch=branch)
+    warnings = _merge_warnings(
+        root=root,
+        branch=branch,
+        ahead_count=ahead_count,
+        behind_count=behind_count,
+    )
 
     if dry_run:
-        if as_json:
-            print_json(
-                {
-                    "v": 2,
-                    "dry_run": True,
-                    "action": "rebase" if rebase else "merge",
-                    "branch": branch,
-                    "current": cur,
-                    "ahead": ahead_count,
-                    "behind": behind_count,
-                    "warnings": warnings,
-                    "ok": True,
-                }
-            )
-            return 0
-        action = t("merge_rebase_label") if rebase else t("merge_merge_label")
-        print_header(f"{action}: {branch} → {cur}")
-        if ahead_count or behind_count:
-            print_bracket(t("status_ahead_label"), str(ahead_count))
-            print_bracket(t("status_behind_label"), str(behind_count))
-        for w in warnings:
-            warn(w)
-        return 0
-
-    if warnings:
-        for w in warnings:
-            warn(w)
-        if not yes and not confirm(t("merge_proceed")):
-            warn(t("aborted"))
-            return 1
-
-    if rebase:
-        args = ["rebase", branch]
-    else:
-        args = ["merge"]
-        if no_ff:
-            args.append("--no-ff")
-        args.append(branch)
-
-    r = git_run(args, cwd=root, check=False)
-    if r.returncode != 0:
-        err = (
-            t("merge_conflicts")
-            if ("CONFLICT" in r.stdout or "CONFLICT" in r.stderr)
-            else t("git_command_failed", cmd="merge/rebase", error=r.stderr.strip())
+        return _handle_merge_dry_run(
+            as_json=as_json,
+            rebase=rebase,
+            branch=branch,
+            cur=cur,
+            ahead_count=ahead_count,
+            behind_count=behind_count,
+            warnings=warnings,
         )
-        if as_json:
-            print_json({"v": 2, "ok": False, "error": err})
-        else:
-            error(err)
+
+    if not _confirm_merge_warnings(warnings=warnings, yes=yes):
         return 1
 
-    if as_json:
-        print_json({"v": 2, "merged": branch, "into": cur, "ok": True})
-        return 0
-    label = (
-        t("merge_rebased", branch=branch, into=cur)
-        if rebase
-        else t("merge_ok", branch=branch, into=cur)
-    )
-    ok(label)
-    return 0
+    success, err = _execute_merge(root=root, branch=branch, rebase=rebase, no_ff=no_ff)
+    if not success:
+        return _report_merge_error(as_json=as_json, err=err)
+
+    return _report_merge_success(as_json=as_json, branch=branch, cur=cur, rebase=rebase)

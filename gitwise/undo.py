@@ -4,6 +4,87 @@ from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import confirm, error, print_bracket, print_dim, print_header, print_json
+from .utils.json_envelope import ok_envelope
+
+
+def _resolve_undo_target(
+    *, ref: str | None, entries: list[dict[str, str]], steps: int
+) -> str | None:
+    if ref:
+        if not validate_ref(ref):
+            error(t("invalid_ref", ref=ref))
+            return None
+        return ref
+    if len(entries) >= steps + 1:
+        return entries[steps]["hash"]
+    error(t("undo_not_enough_history"))
+    return None
+
+
+def _print_undo_dry_run(*, target: str, soft: bool) -> None:
+    print_header(t("undo_dry_run_title"))
+    mode = "--soft" if soft else "--hard"
+    print_bracket(f"git reset {mode}", target[:12])
+
+
+def _reset_to_target(*, root, target: str, soft: bool) -> int:
+    args = ["reset", "--soft" if soft else "--hard", "--", target]
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode != 0:
+        error(result.stderr.strip())
+        return 1
+    return 0
+
+
+def _load_reflog_entries(*, root, steps: int) -> list[dict[str, str]] | None:
+    result = git_run(
+        ["reflog", "--format=%H|gd-ref:%gd|gs:%gs|msg:%s", f"--max-count={steps + 10}"],
+        cwd=root,
+        check=False,
+    )
+    if result.returncode != 0:
+        error(t("undo_reflog_failed"))
+        return None
+    entries = _parse_reflog(result.stdout)
+    if not entries:
+        error(t("undo_no_entries"))
+        return None
+    return entries
+
+
+def _run_undo_dry_run(
+    *, as_json: bool, target: str, soft: bool, entries: list[dict[str, str]], steps: int
+) -> int:
+    if as_json:
+        print_json(
+            ok_envelope(
+                target=target,
+                soft=soft,
+                dry_run=True,
+                entries=entries[: steps + 1],
+            )
+        )
+    else:
+        _print_undo_dry_run(target=target, soft=soft)
+    return 0
+
+
+def _confirm_hard_reset(*, soft: bool, yes: bool, target: str) -> bool:
+    if soft or yes:
+        return True
+    if confirm(t("undo_confirm_hard", ref=target[:12])):
+        return True
+    print_dim(t("cancelled"))
+    return False
+
+
+def _report_undo_complete(*, as_json: bool, target: str, soft: bool) -> int:
+    if as_json:
+        print_json(ok_envelope(target=target, soft=soft))
+        return 0
+    print_header(t("undo_complete_title"))
+    print_bracket(t("undo_reset_to"), target[:12])
+    return 0
 
 
 def _parse_reflog(raw: str) -> list[dict[str, str]]:
@@ -37,69 +118,28 @@ def run_undo(
     if root is None:
         return 1
 
-    r = git_run(
-        ["reflog", "--format=%H|gd-ref:%gd|gs:%gs|msg:%s", f"--max-count={steps + 10}"],
-        cwd=root,
-        check=False,
-    )
-    if r.returncode != 0:
-        error(t("undo_reflog_failed"))
+    entries = _load_reflog_entries(root=root, steps=steps)
+    if entries is None:
         return 1
 
-    entries = _parse_reflog(r.stdout)
-    if not entries:
-        error(t("undo_no_entries"))
-        return 1
-
-    if ref:
-        if not validate_ref(ref):
-            error(t("invalid_ref", ref=ref))
-            return 1
-        target = ref
-    elif len(entries) >= steps + 1:
-        target = entries[steps]["hash"]
-    else:
-        error(t("undo_not_enough_history"))
+    target = _resolve_undo_target(ref=ref, entries=entries, steps=steps)
+    if target is None:
         return 1
 
     if dry_run:
-        if as_json:
-            print_json(
-                {
-                    "v": 2,
-                    "ok": True,
-                    "target": target,
-                    "soft": soft,
-                    "dry_run": True,
-                    "entries": entries[: steps + 1],
-                }
-            )
-        else:
-            print_header(t("undo_dry_run_title"))
-            mode = "--soft" if soft else "--hard"
-            print_bracket(f"git reset {mode}", target[:12])
+        return _run_undo_dry_run(
+            as_json=as_json,
+            target=target,
+            soft=soft,
+            entries=entries,
+            steps=steps,
+        )
+
+    if not _confirm_hard_reset(soft=soft, yes=yes, target=target):
         return 0
 
-    if not soft and not yes:
-        if not confirm(t("undo_confirm_hard", ref=target[:12])):
-            print_dim(t("cancelled"))
-            return 0
+    reset_rc = _reset_to_target(root=root, target=target, soft=soft)
+    if reset_rc != 0:
+        return reset_rc
 
-    args = ["reset"]
-    if soft:
-        args.append("--soft")
-    else:
-        args.append("--hard")
-    args.extend(["--", target])
-
-    r = git_run(args, cwd=root, check=False)
-    if r.returncode != 0:
-        error(r.stderr.strip())
-        return 1
-
-    if as_json:
-        print_json({"v": 2, "ok": True, "target": target, "soft": soft})
-    else:
-        print_header(t("undo_complete_title"))
-        print_bracket(t("undo_reset_to"), target[:12])
-    return 0
+    return _report_undo_complete(as_json=as_json, target=target, soft=soft)

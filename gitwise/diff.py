@@ -16,6 +16,8 @@ from .output import (
     print_header,
     print_json,
 )
+from .utils.git_output import parse_name_status_entries
+from .utils.json_envelope import ok_envelope
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]
@@ -52,34 +54,13 @@ def _parse_diffstat_entries(lines: list[str]) -> list[DiffFileEntry]:
 
 def _parse_name_status_lines(lines: list[str]) -> dict[str, DiffFileEntry]:
     entries: dict[str, DiffFileEntry] = {}
-    for line in lines:
-        parts = line.split("\t")
-        if len(parts) < 2:
-            continue
-        status = parts[0].strip()
-        code = status[:1].upper() if status else ""
-        if code in {"R", "C"} and len(parts) >= 3:
-            old_path = parts[1].strip()
-            path = parts[2].strip()
-            if not path:
-                continue
-            rename_entry: DiffFileEntry = {"status": status, "path": path}
-            if code and code != status:
-                rename_entry["code"] = code
-            if old_path:
-                rename_entry["old_path"] = old_path
-            if len(status) > 1 and status[1:].isdigit():
-                rename_entry["score"] = status[1:]
-            entries[path] = rename_entry
-            continue
-
-        path = parts[-1].strip()
+    parsed = parse_name_status_entries("\n".join(lines))
+    for entry in parsed:
+        path = entry.get("path")
         if not path:
             continue
-        file_entry: DiffFileEntry = {"status": status, "path": path}
-        if code and code != status:
-            file_entry["code"] = code
-        entries[path] = file_entry
+        typed_entry: DiffFileEntry = dict(entry)
+        entries[path] = typed_entry
     return entries
 
 
@@ -162,108 +143,100 @@ def _has_commits(cwd: Path) -> bool:
     return git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode == 0
 
 
-def run_diff(
-    *,
-    staged: bool = False,
-    stat: bool = False,
-    name_only: bool = False,
-    full: bool = False,
-    as_json: bool = False,
-) -> int:
-    root, err = require_root()
-    if err:
-        return err
-    if root is None:
-        return 1
-    cwd = root
-
-    if not staged and not _has_commits(cwd):
-        if as_json:
-            print_json({"v": 2, "ok": True, "files": [], "count": 0, "note": t("no_commits_yet")})
-            return 0
-        info(t("no_commits_yet"))
-        return 0
-
+def _diff_cmd(*, use_stat: bool, staged: bool, name_only: bool, full: bool) -> list[str]:
     if full:
-        r = git_run(["--no-pager", "diff", "HEAD"], cwd=cwd, check=False)
-        if r.returncode != 0:
-            error(t("git_diff_failed", error=r.stderr.strip()))
-            return 1
+        return ["--no-pager", "diff", "HEAD"]
+    if use_stat:
+        return ["--no-pager", "diff", "--stat", "HEAD"]
+    if staged:
+        return ["--no-pager", "diff", "--name-status", "--staged"]
+    if name_only:
+        return ["--no-pager", "diff", "--name-only", "HEAD"]
+    return ["--no-pager", "diff", "--name-status", "HEAD"]
+
+
+def _print_diff_human_full(*, diff_text: str) -> None:
+    if HAS_DELTA:
+        print_dim(t("using_delta"))
+    bat_pipe(diff_text, language="diff")
+
+
+def _merge_stat_files(
+    *,
+    files: list[DiffFileEntry],
+    status_details: dict[str, DiffFileEntry],
+    numstat_details: dict[str, DiffFileEntry],
+) -> list[DiffFileEntry]:
+    merged_files: list[DiffFileEntry] = []
+    for item in files:
+        path_value = item.get("path")
+        if not isinstance(path_value, str) or not path_value:
+            continue
+        merged: DiffFileEntry = dict(item)
+        if path_value in status_details:
+            for key, value in status_details[path_value].items():
+                merged[key] = value
+        if path_value in numstat_details:
+            for key, value in numstat_details[path_value].items():
+                merged[key] = value
+        merged_files.append(merged)
+    return merged_files
+
+
+def _render_stat_output(
+    *,
+    files: list[DiffFileEntry],
+    cwd: Path,
+    staged: bool,
+    as_json: bool,
+) -> int:
+    if not files:
         if as_json:
-            print_json({"v": 2, "ok": True, "diff": r.stdout})
-        else:
-            if HAS_DELTA:
-                print_dim(t("using_delta"))
-            bat_pipe(r.stdout, language="diff")
+            print_json(ok_envelope(files=[], count=0))
+            return 0
+        info(t("no_uncommitted_changes"))
         return 0
 
-    use_stat = stat or (not staged and not name_only and not full)
-    if use_stat:
-        r = git_run(["--no-pager", "diff", "--stat", "HEAD"], cwd=cwd, check=False)
-    elif staged:
-        r = git_run(["--no-pager", "diff", "--name-status", "--staged"], cwd=cwd, check=False)
-    elif name_only:
-        r = git_run(["--no-pager", "diff", "--name-only", "HEAD"], cwd=cwd, check=False)
-    else:
-        r = git_run(["--no-pager", "diff", "--name-status", "HEAD"], cwd=cwd, check=False)
-
-    if r.returncode != 0:
-        error(t("git_diff_failed", error=r.stderr.strip()))
-        return 1
-
-    lines = [line for line in r.stdout.splitlines() if line.strip()]
-
-    if use_stat:
-        files = _parse_diffstat_entries(lines)
-        if not files:
-            if as_json:
-                print_json({"v": 2, "ok": True, "files": [], "count": 0})
-                return 0
-            info(t("no_uncommitted_changes"))
-            return 0
-        status_details = _name_status_details(cwd, staged=staged)
-        numstat_details = _numstat_details(cwd, staged=staged)
-        merged_files: list[DiffFileEntry] = []
-        for item in files:
-            path_value = item.get("path")
-            if not isinstance(path_value, str) or not path_value:
-                continue
-            merged: DiffFileEntry = dict(item)
-            if path_value in status_details:
-                for key, value in status_details[path_value].items():
-                    merged[key] = value
-            if path_value in numstat_details:
-                for key, value in numstat_details[path_value].items():
-                    merged[key] = value
-            merged_files.append(merged)
-
-        if as_json:
-            print_json(
-                {
-                    "v": 2,
-                    "ok": True,
-                    "files": merged_files,
-                    "count": len(merged_files),
-                    "totals": _diff_totals(merged_files),
-                }
+    status_details = _name_status_details(cwd, staged=staged)
+    numstat_details = _numstat_details(cwd, staged=staged)
+    merged_files = _merge_stat_files(
+        files=files,
+        status_details=status_details,
+        numstat_details=numstat_details,
+    )
+    if as_json:
+        print_json(
+            ok_envelope(
+                files=merged_files,
+                count=len(merged_files),
+                totals=_diff_totals(merged_files),
             )
-            return 0
-
-        styled_files = [
-            {
-                "path": str(f.get("path", "")),
-                "changes": str(f.get("changes", "")),
-                "status": str(f.get("code", f.get("status", "M"))),
-            }
-            for f in merged_files
-            if str(f.get("path", ""))
-        ]
-        print_diffstat(t("changed_files", count=str(len(styled_files))), styled_files)
+        )
         return 0
 
+    styled_files = [
+        {
+            "path": str(file_item.get("path", "")),
+            "changes": str(file_item.get("changes", "")),
+            "status": str(file_item.get("code", file_item.get("status", "M"))),
+        }
+        for file_item in merged_files
+        if str(file_item.get("path", ""))
+    ]
+    print_diffstat(t("changed_files", count=str(len(styled_files))), styled_files)
+    return 0
+
+
+def _render_non_stat_output(
+    *,
+    lines: list[str],
+    staged: bool,
+    name_only: bool,
+    as_json: bool,
+) -> int:
     if not lines:
         if as_json:
-            print_json({"v": 2, "ok": True, "files": [], "count": 0})
+            print_json(ok_envelope(files=[], count=0))
             return 0
         if staged:
             info(t("nothing_staged"))
@@ -281,10 +254,56 @@ def run_diff(
                 files.append({"status": parts[0].strip(), "path": parts[1].strip()})
 
     if as_json:
-        print_json({"v": 2, "ok": True, "files": files, "count": len(files)})
+        print_json(ok_envelope(files=files, count=len(files)))
         return 0
 
     print_header(t("changed_files", count=str(len(files))))
-    for f in files:
-        print_file_status(f["status"], f["path"])
+    for file_item in files:
+        print_file_status(file_item["status"], file_item["path"])
     return 0
+
+
+def run_diff(
+    *,
+    staged: bool = False,
+    stat: bool = False,
+    name_only: bool = False,
+    full: bool = False,
+    as_json: bool = False,
+) -> int:
+    root, err = require_root()
+    if err:
+        return err
+    if root is None:
+        return 1
+    cwd = root
+
+    if not staged and not _has_commits(cwd):
+        if as_json:
+            print_json(ok_envelope(files=[], count=0, note=t("no_commits_yet")))
+            return 0
+        info(t("no_commits_yet"))
+        return 0
+
+    use_stat = stat or (not staged and not name_only and not full)
+    cmd = _diff_cmd(use_stat=use_stat, staged=staged, name_only=name_only, full=full)
+    result = git_run(cmd, cwd=cwd, check=False)
+    if result.returncode != 0:
+        error(t("git_diff_failed", error=result.stderr.strip()))
+        return 1
+
+    if full:
+        if as_json:
+            print_json(ok_envelope(diff=result.stdout))
+        else:
+            _print_diff_human_full(diff_text=result.stdout)
+        return 0
+
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if use_stat:
+        files = _parse_diffstat_entries(lines)
+        return _render_stat_output(files=files, cwd=cwd, staged=staged, as_json=as_json)
+
+    return _render_non_stat_output(
+        lines=lines, staged=staged, name_only=name_only, as_json=as_json
+    )

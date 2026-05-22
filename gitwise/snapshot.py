@@ -7,6 +7,56 @@ from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import debug, print_header, print_json
+from .utils.json_envelope import ok_envelope
+
+
+def _append_branch_section(lines: list[str], *, root: Path) -> None:
+    branch = git_run(["branch", "--show-current"], cwd=root, check=False)
+    if branch.returncode != 0:
+        return
+    lines += [
+        t("section_current_branch"),
+        "```",
+        branch.stdout.strip() or "(detached HEAD)",
+        "```",
+        "",
+    ]
+
+
+def _append_status_section(lines: list[str], *, root: Path) -> None:
+    status = git_run(["status", "--short"], cwd=root, check=False)
+    if status.returncode != 0:
+        return
+    lines += [
+        t("section_status"),
+        "```",
+        status.stdout.strip() or t("status_clean"),
+        "```",
+        "",
+    ]
+
+
+def _append_log_section(lines: list[str], *, root: Path) -> None:
+    log = git_run(["--no-pager", "log", "--oneline", "-n", "10"], cwd=root, check=False)
+    if log.returncode == 0 and log.stdout.strip():
+        lines += [t("section_last_commits"), "```", log.stdout.strip(), "```", ""]
+
+
+def _append_stash_section(lines: list[str], *, root: Path) -> None:
+    stash = git_run(["stash", "list"], cwd=root, check=False)
+    if stash.returncode != 0 or not stash.stdout.strip():
+        return
+    stash_count = len(stash.stdout.strip().splitlines())
+    lines += [t("stashes_section", count=str(stash_count)), ""]
+
+
+def _append_worktrees_section(lines: list[str], *, root: Path) -> None:
+    worktrees = git_run(["worktree", "list", "--porcelain"], cwd=root, check=False)
+    if worktrees.returncode != 0:
+        return
+    wt_count = worktrees.stdout.count("worktree ")
+    if wt_count > 1:
+        lines += [t("worktrees_active", count=str(wt_count)), ""]
 
 
 def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
@@ -21,40 +71,11 @@ def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
 
     lines: list[str] = ["# Git Snapshot", "", f"generated_at: {generated_at}", ""]
 
-    branch = git_run(["branch", "--show-current"], cwd=root, check=False)
-    if branch.returncode == 0:
-        lines += [
-            t("section_current_branch"),
-            "```",
-            branch.stdout.strip() or "(detached HEAD)",
-            "```",
-            "",
-        ]
-
-    status = git_run(["status", "--short"], cwd=root, check=False)
-    if status.returncode == 0:
-        lines += [
-            t("section_status"),
-            "```",
-            status.stdout.strip() or t("status_clean"),
-            "```",
-            "",
-        ]
-
-    log = git_run(["--no-pager", "log", "--oneline", "-n", "10"], cwd=root, check=False)
-    if log.returncode == 0 and log.stdout.strip():
-        lines += [t("section_last_commits"), "```", log.stdout.strip(), "```", ""]
-
-    stash = git_run(["stash", "list"], cwd=root, check=False)
-    if stash.returncode == 0 and stash.stdout.strip():
-        stash_count = len(stash.stdout.strip().splitlines())
-        lines += [t("stashes_section", count=str(stash_count)), ""]
-
-    worktrees = git_run(["worktree", "list", "--porcelain"], cwd=root, check=False)
-    if worktrees.returncode == 0:
-        wt_count = worktrees.stdout.count("worktree ")
-        if wt_count > 1:
-            lines += [t("worktrees_active", count=str(wt_count)), ""]
+    _append_branch_section(lines, root=root)
+    _append_status_section(lines, root=root)
+    _append_log_section(lines, root=root)
+    _append_stash_section(lines, root=root)
+    _append_worktrees_section(lines, root=root)
 
     tmp = snapshot_path.with_suffix(".tmp")
     try:
@@ -77,7 +98,7 @@ def run_snapshot(*, as_json: bool = False) -> int:
     path = generate_snapshot(root)
 
     if as_json:
-        print_json({"v": 2, "path": str(path), "ok": True})
+        print_json(ok_envelope(path=str(path)))
         return 0
 
     print_header(t("snapshot_generated", path=str(path.relative_to(root))))

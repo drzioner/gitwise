@@ -4,6 +4,71 @@ from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import error, ok, print_json, warn
+from .utils.json_envelope import error_envelope, ok_envelope
+
+
+def _pick_mode_args(*, revert: bool, continue_: bool, abort: bool) -> list[str] | None:
+    base = "revert" if revert else "cherry-pick"
+    if continue_:
+        return [base, "--continue"]
+    if abort:
+        return [base, "--abort"]
+    return None
+
+
+def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode != 0:
+        error(result.stderr.strip())
+        return 1
+    if as_json:
+        if args[-1] == "--continue":
+            print_json(ok_envelope(continued=True))
+        else:
+            print_json(ok_envelope(aborted=True))
+        return 0
+    if args[-1] == "--continue":
+        ok(t("pick_continued"))
+    else:
+        ok(t("pick_aborted"))
+    return 0
+
+
+def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
+    if not refs:
+        if as_json:
+            print_json(error_envelope(error=t("pick_no_refs")))
+            return 1
+        error(t("pick_no_refs"))
+        return 1
+    for ref in refs:
+        if not validate_ref(ref):
+            error(t("invalid_ref", ref=ref))
+            return 1
+    return 0
+
+
+def _run_pick_dry_run(*, action: str, refs: list[str], as_json: bool) -> int:
+    if as_json:
+        print_json(ok_envelope(dry_run=True, action=action, refs=refs))
+        return 0
+    ok(t("pick_dry", action=action, refs=", ".join(refs)))
+    return 0
+
+
+def _run_pick_execute(*, root, action: str, refs: list[str], as_json: bool) -> int:
+    result = git_run([action, "--"] + refs, cwd=root, check=False)
+    if result.returncode != 0:
+        if "CONFLICT" in result.stdout or "CONFLICT" in result.stderr:
+            warn(t("pick_conflicts"))
+        else:
+            error(result.stderr.strip())
+        return 1
+    if as_json:
+        print_json(ok_envelope(action=action, refs=refs))
+        return 0
+    ok(t("pick_ok", action=action, refs=", ".join(refs)))
+    return 0
 
 
 def run_pick(
@@ -21,60 +86,17 @@ def run_pick(
     if root is None:
         return 1
 
-    if continue_:
-        r = git_run([("revert" if revert else "cherry-pick"), "--continue"], cwd=root, check=False)
-        if r.returncode != 0:
-            error(r.stderr.strip())
-            return 1
-        if as_json:
-            print_json({"v": 2, "continued": True, "ok": True})
-            return 0
-        ok(t("pick_continued"))
-        return 0
+    mode_args = _pick_mode_args(revert=revert, continue_=continue_, abort=abort)
+    if mode_args is not None:
+        return _run_pick_mode(root=root, args=mode_args, as_json=as_json)
 
-    if abort:
-        r = git_run([("revert" if revert else "cherry-pick"), "--abort"], cwd=root, check=False)
-        if r.returncode != 0:
-            error(r.stderr.strip())
-            return 1
-        if as_json:
-            print_json({"v": 2, "aborted": True, "ok": True})
-            return 0
-        ok(t("pick_aborted"))
-        return 0
-
-    if not refs:
-        if as_json:
-            print_json({"v": 2, "ok": False, "error": t("pick_no_refs")})
-            return 1
-        error(t("pick_no_refs"))
-        return 1
-
-    for ref in refs:
-        if not validate_ref(ref):
-            error(t("invalid_ref", ref=ref))
-            return 1
+    refs_rc = _validate_pick_refs(refs, as_json=as_json)
+    if refs_rc != 0:
+        return refs_rc
 
     action = "revert" if revert else "cherry-pick"
 
     if dry_run:
-        if as_json:
-            print_json({"v": 2, "dry_run": True, "action": action, "refs": refs, "ok": True})
-            return 0
-        ok(t("pick_dry", action=action, refs=", ".join(refs)))
-        return 0
+        return _run_pick_dry_run(action=action, refs=refs, as_json=as_json)
 
-    args = [action, "--"] + refs
-    r = git_run(args, cwd=root, check=False)
-    if r.returncode != 0:
-        if "CONFLICT" in r.stdout or "CONFLICT" in r.stderr:
-            warn(t("pick_conflicts"))
-        else:
-            error(r.stderr.strip())
-        return 1
-
-    if as_json:
-        print_json({"v": 2, "action": action, "refs": refs, "ok": True})
-        return 0
-    ok(t("pick_ok", action=action, refs=", ".join(refs)))
-    return 0
+    return _run_pick_execute(root=root, action=action, refs=refs, as_json=as_json)

@@ -6,6 +6,8 @@ from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, print_bracket, print_file_status, print_header, print_json
+from .utils.json_envelope import error_envelope, ok_envelope
+from .utils.parsing import stripped_non_empty_lines
 
 _TYPE_MAP: list[tuple[str, str]] = [
     (r"/test", "test"),
@@ -70,6 +72,43 @@ def _staged_with_status(root) -> list[tuple[str, str]]:
     return pairs
 
 
+def _collect_staged_files(root) -> tuple[list[str], dict[str, str]]:
+    r = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
+    if r.returncode != 0:
+        raise RuntimeError("staged_diff_failed")
+    staged_files = stripped_non_empty_lines(r.stdout)
+    staged_pairs = _staged_with_status(root)
+    staged_map = {path: status for status, path in staged_pairs}
+    return staged_files, staged_map
+
+
+def _numstat_totals(root) -> tuple[int, int]:
+    stat = git_run(["diff", "--cached", "--numstat"], cwd=root, check=False)
+    additions = deletions = 0
+    if stat.returncode != 0:
+        return additions, deletions
+    for line in stat.stdout.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        added = parts[0]
+        removed = parts[1]
+        if added != "-" and added.isdigit():
+            additions += int(added)
+        if removed != "-" and removed.isdigit():
+            deletions += int(removed)
+    return additions, deletions
+
+
+def _print_suggest_human(
+    message: str, staged_files: list[str], staged_map: dict[str, str]
+) -> None:
+    print_header(t("suggest_message", message=message))
+    print_bracket(t("suggest_type", type=_infer_type(staged_files)))
+    for file_path in staged_files:
+        print_file_status(staged_map.get(file_path, "M"), file_path)
+
+
 def run_suggest(*, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
@@ -77,50 +116,33 @@ def run_suggest(*, as_json: bool = False) -> int:
     if root is None:
         return 1
 
-    r = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
-    if r.returncode != 0:
+    try:
+        staged_files, staged_map = _collect_staged_files(root)
+    except RuntimeError:
         error(t("suggest_diff_failed"))
         return 1
-    staged_files = [line.strip() for line in r.stdout.splitlines() if line.strip()]
-    staged_pairs = _staged_with_status(root)
-    staged_map = {path: status for status, path in staged_pairs}
+
     if not staged_files:
         if as_json:
-            print_json({"v": 2, "ok": False, "error": t("suggest_no_staged")})
+            print_json(error_envelope(error=t("suggest_no_staged")))
             return 1
         error(t("suggest_no_staged"))
         return 1
 
-    stat = git_run(["diff", "--cached", "--numstat"], cwd=root, check=False)
-    additions = deletions = 0
-    if stat.returncode == 0:
-        for line in stat.stdout.splitlines():
-            parts = line.split()
-            if len(parts) >= 2:
-                added = parts[0]
-                removed = parts[1]
-                if added != "-" and added.isdigit():
-                    additions += int(added)
-                if removed != "-" and removed.isdigit():
-                    deletions += int(removed)
+    additions, deletions = _numstat_totals(root)
 
     message = _build_message(staged_files, additions, deletions)
 
     if as_json:
         print_json(
-            {
-                "v": 2,
-                "message": message,
-                "files": staged_files,
-                "additions": additions,
-                "deletions": deletions,
-                "ok": True,
-            }
+            ok_envelope(
+                message=message,
+                files=staged_files,
+                additions=additions,
+                deletions=deletions,
+            )
         )
         return 0
 
-    print_header(t("suggest_message", message=message))
-    print_bracket(t("suggest_type", type=_infer_type(staged_files)))
-    for f in staged_files:
-        print_file_status(staged_map.get(f, "M"), f)
+    _print_suggest_human(message, staged_files, staged_map)
     return 0

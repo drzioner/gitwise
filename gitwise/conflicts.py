@@ -6,13 +6,15 @@ from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, ok, print_accent, print_blank, print_dim, print_header, print_json
+from .utils.json_envelope import error_envelope, ok_envelope
+from .utils.parsing import stripped_non_empty_lines, to_int
 
 
 def _find_conflict_files(root: Path) -> list[str]:
     r = git_run(["diff", "--name-only", "--diff-filter=U"], cwd=root, check=False)
     if r.returncode != 0 or not r.stdout.strip():
         return []
-    return [line.strip() for line in r.stdout.splitlines() if line.strip()]
+    return stripped_non_empty_lines(r.stdout)
 
 
 def _conflict_markers(root: Path, filepath: str) -> int:
@@ -22,9 +24,58 @@ def _conflict_markers(root: Path, filepath: str) -> int:
     count = 0
     for line in r.stdout.splitlines():
         marker_count = line.rsplit(":", 1)[-1]
-        if marker_count.isdigit():
-            count += int(marker_count)
+        count += max(to_int(marker_count, default=0), 0)
     return count
+
+
+def _resolve_all_conflicts(*, root: Path, conflicts: list[str], strategy: str) -> int:
+    checkout_flag = "--ours" if strategy == "ours" else "--theirs"
+    result = git_run(["checkout", checkout_flag, "--"] + conflicts, cwd=root, check=False)
+    if result.returncode != 0:
+        error(result.stderr.strip())
+        return 1
+    git_run(["add", "--"] + conflicts, cwd=root, check=False)
+    return 0
+
+
+def _conflict_details(root: Path, conflicts: list[str]) -> list[dict[str, str | int]]:
+    details: list[dict[str, str | int]] = []
+    for file_path in conflicts:
+        markers = _conflict_markers(root, file_path)
+        details.append({"file": file_path, "markers": markers})
+    return details
+
+
+def _report_no_conflicts(*, as_json: bool) -> int:
+    if as_json:
+        print_json(ok_envelope(conflicts=[], count=0))
+        return 0
+    ok(t("conflicts_none"))
+    return 0
+
+
+def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_json: bool) -> int:
+    rc = _resolve_all_conflicts(root=root, conflicts=conflicts, strategy=strategy)
+    if rc != 0:
+        return rc
+    if as_json:
+        print_json(ok_envelope(resolved=len(conflicts), strategy=strategy))
+        return 0
+    key = "conflicts_resolved_ours" if strategy == "ours" else "conflicts_resolved_theirs"
+    ok(t(key, count=str(len(conflicts))))
+    return 0
+
+
+def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_json: bool) -> int:
+    if as_json:
+        print_json(error_envelope(error=t("merge_conflicts"), conflicts=details, count=count))
+        return 0
+    print_header(t("conflicts_found", count=str(count)))
+    for detail in details:
+        print_accent(f"  {detail['file']}  ({detail['markers']} {t('markers_label')})")
+    print_blank()
+    print_dim(t("conflicts_hint"))
+    return 1
 
 
 def run_conflicts(
@@ -42,48 +93,20 @@ def run_conflicts(
     conflicts = _find_conflict_files(root)
 
     if not conflicts:
-        if as_json:
-            print_json({"v": 2, "conflicts": [], "count": 0, "ok": True})
-            return 0
-        ok(t("conflicts_none"))
-        return 0
+        return _report_no_conflicts(as_json=as_json)
 
     if ours:
-        r = git_run(["checkout", "--ours", "--"] + conflicts, cwd=root, check=False)
-        if r.returncode != 0:
-            error(r.stderr.strip())
-            return 1
-        git_run(["add", "--"] + conflicts, cwd=root, check=False)
-        if as_json:
-            print_json({"v": 2, "resolved": len(conflicts), "strategy": "ours", "ok": True})
-            return 0
-        ok(t("conflicts_resolved_ours", count=str(len(conflicts))))
-        return 0
+        return _resolve_by_strategy(
+            root=root, conflicts=conflicts, strategy="ours", as_json=as_json
+        )
 
     if theirs:
-        r = git_run(["checkout", "--theirs", "--"] + conflicts, cwd=root, check=False)
-        if r.returncode != 0:
-            error(r.stderr.strip())
-            return 1
-        git_run(["add", "--"] + conflicts, cwd=root, check=False)
-        if as_json:
-            print_json({"v": 2, "resolved": len(conflicts), "strategy": "theirs", "ok": True})
-            return 0
-        ok(t("conflicts_resolved_theirs", count=str(len(conflicts))))
-        return 0
+        return _resolve_by_strategy(
+            root=root,
+            conflicts=conflicts,
+            strategy="theirs",
+            as_json=as_json,
+        )
 
-    details: list[dict[str, str | int]] = []
-    for f in conflicts:
-        markers = _conflict_markers(root, f)
-        details.append({"file": f, "markers": markers})
-
-    if as_json:
-        print_json({"v": 2, "conflicts": details, "count": len(conflicts), "ok": False})
-        return 0
-
-    print_header(t("conflicts_found", count=str(len(conflicts))))
-    for d in details:
-        print_accent(f"  {d['file']}  ({d['markers']} {t('markers_label')})")
-    print_blank()
-    print_dim(t("conflicts_hint"))
-    return 1
+    details = _conflict_details(root, conflicts)
+    return _report_conflicts(details=details, count=len(conflicts), as_json=as_json)
