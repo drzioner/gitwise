@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pytest
+from gitwise.i18n import set_locale
 from gitwise.setup_agents.exec import (
     PlanExecutionError,
     SymlinkConflict,
@@ -12,6 +13,8 @@ from gitwise.setup_agents.exec import (
     _safe_create_symlink,
     _undo_partial,
 )
+from gitwise.setup_agents.plan import _bucket4_default, _bucket4_replace
+from gitwise.setup_agents.providers.claude import ADAPTER as CLAUDE_PROVIDER
 from gitwise.setup_agents.state import (
     _classify_path,
     _detect_rules,
@@ -20,6 +23,7 @@ from gitwise.setup_agents.state import (
     _has_marker,
     reset_caches,
 )
+from gitwise.setup_agents.types import StateDict
 
 
 class TestClassifyPath:
@@ -340,3 +344,63 @@ class TestDetectRules:
         (rules_dir / "no_fm.md").write_text("plain text\n")
         warnings = _detect_rules(tmp_path)
         assert len(warnings) > 0
+
+
+class TestPlanI18nKeys:
+    def test_bucket4_default_emits_existing_key(self, tmp_path: Path) -> None:
+        set_locale("en")
+        claude_md = tmp_path / "CLAUDE.md"
+        agents_actions: list[dict] = []
+        state: StateDict = {
+            "c_state": "symlink_valid",
+            "a_state": "regular",
+            "agents_dir": False,
+            "skills_state": "absent",
+            "skills_target": None,
+            "supports_symlinks": True,
+            "errors": [],
+            "rules_warnings": [],
+        }
+
+        _, _, warnings = _bucket4_default(state, claude_md, agents_actions)
+        assert len(warnings) == 1
+        assert "claude_md_symlink_other" not in warnings[0]
+        assert "CLAUDE.md" in warnings[0]
+
+    def test_bucket4_replace_emits_existing_key(self, tmp_path: Path) -> None:
+        set_locale("en")
+        claude_md = tmp_path / "CLAUDE.md"
+        claude_md.write_text("custom\n", encoding="utf-8")
+
+        _, actions, warnings = _bucket4_replace([], claude_md)
+        assert len(actions) == 1
+        assert actions[0]["action"] == "claude-md-replace-with-symlink"
+        assert len(warnings) == 1
+        assert "claude_md_replaced" not in warnings[0]
+        assert "CLAUDE.md" in warnings[0]
+
+
+class TestClaudeProviderWrapper:
+    def test_plan_settings_returns_create_or_merge(self, tmp_git_repo: Path) -> None:
+        actions, warnings = CLAUDE_PROVIDER.plan_settings(tmp_git_repo)
+        assert len(actions) == 1
+        assert actions[0]["file"] == ".claude/settings.json"
+        assert actions[0]["action"] in {"create", "merge"}
+        assert isinstance(warnings, list)
+
+    def test_plan_rules_returns_create_or_skip(self, tmp_git_repo: Path) -> None:
+        actions, warnings = CLAUDE_PROVIDER.plan_rules(tmp_git_repo)
+        assert len(actions) == 1
+        assert actions[0]["file"] == ".claude/rules/gitwise.md"
+        assert actions[0]["action"] in {"create", "skip"}
+        assert isinstance(warnings, list)
+
+    def test_plan_snapshot_uses_frozen_time_flag(self) -> None:
+        actions = CLAUDE_PROVIDER.plan_snapshot(frozen_time=True)
+        assert actions == [
+            {
+                "file": ".claude/git-snapshot.md",
+                "action": "generate",
+                "frozen_time": True,
+            }
+        ]
