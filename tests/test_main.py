@@ -59,6 +59,36 @@ def test_command_help_json():
     assert isinstance(data["options"], list)
 
 
+def test_completions_bash_outputs_script():
+    result = _run("completions", "bash")
+    assert result.returncode == 0
+    assert "_shtab_gitwise_option_strings" in result.stdout
+
+
+def test_completions_zsh_outputs_script():
+    result = _run("completions", "zsh")
+    assert result.returncode == 0
+    assert "#compdef gitwise" in result.stdout
+
+
+def test_completions_fish_outputs_script():
+    result = _run("completions", "fish")
+    assert result.returncode == 0
+    assert "complete -c 'gitwise'" in result.stdout
+
+
+def test_completions_default_shell_is_bash():
+    result = _run("completions")
+    assert result.returncode == 0
+    assert "_shtab_gitwise_option_strings" in result.stdout
+
+
+def test_completions_respects_prog_name():
+    result = _run("completions", "bash", "--prog", "gw")
+    assert result.returncode == 0
+    assert "_shtab_gw_option_strings" in result.stdout
+
+
 def test_json_compact_by_default(tmp_git_repo):
     result = _run("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0

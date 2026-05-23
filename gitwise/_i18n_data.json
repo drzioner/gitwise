@@ -267,6 +267,10 @@
     "es": "completado en {elapsed}s",
     "en": "completed in {elapsed}s"
   },
+  "completions_unsupported_shell": {
+    "es": "shell no soportado para completions: {shell}",
+    "en": "unsupported shell for completions: {shell}"
+  },
   "config_failed": {
     "es": "config {name}: falló (continuando)",
     "en": "config {name}: failed (continuing)"
@@ -714,6 +718,14 @@
   "health_upstream": {
     "es": "sin rama seguimiento",
     "en": "no upstream"
+  },
+  "help_group_options": {
+    "es": "opciones",
+    "en": "options"
+  },
+  "help_group_positional_arguments": {
+    "es": "argumentos posicionales",
+    "en": "positional arguments"
   },
   "hint_prefix": {
     "es": "sugerencia",

@@ -14,6 +14,8 @@ import shutil
 import unicodedata
 from typing import Literal
 
+from .i18n import t
+
 ColorDepth = Literal["truecolor", "256color", "16color"]
 
 DARK_FG = "#CDD6F4"
@@ -267,3 +269,93 @@ def _colorize_help_line(line: str, tokens: ThemeTokens) -> str:
     indent, opts = m.group(1), m.group(2)
     rest = line[m.end() :]
     return f"{indent}{hex_to_ansi_fg(tokens.accent)}{opts}{ANSI_RESET}{rest}"
+
+
+class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Rich-argparse bridge that preserves gitwise theme and no-color behavior."""
+
+    _FORMATTER: type[argparse.RawDescriptionHelpFormatter] | None = None
+    _DEFAULT_GROUP_NAME_FORMATTER: object | None = None
+
+    def __new__(
+        cls,
+        prog: str,
+        indent_increment: int = 2,
+        max_help_position: int = 24,
+        width: int | None = None,
+    ) -> argparse.RawDescriptionHelpFormatter:
+        if os.environ.get("NO_COLOR", "") != "" or os.environ.get(
+            "GITWISE_NO_COLOR", ""
+        ).lower() in (
+            "1",
+            "true",
+        ):
+            return GitwiseHelpFormatter(
+                prog,
+                indent_increment=indent_increment,
+                max_help_position=max_help_position,
+                width=width,
+            )
+
+        formatter_cls = cls._formatter_cls()
+        help_formatter = formatter_cls(
+            prog,
+            indent_increment=indent_increment,
+            max_help_position=max_help_position,
+            width=width,
+        )
+        cls._apply_theme(help_formatter)
+        return help_formatter
+
+    @classmethod
+    def _formatter_cls(cls) -> type[argparse.RawDescriptionHelpFormatter]:
+        formatter = cls._FORMATTER
+        if formatter is not None:
+            return formatter
+
+        import importlib
+
+        rich_argparse = importlib.import_module("rich_argparse")
+        formatter = rich_argparse.RawDescriptionRichHelpFormatter
+        cls._FORMATTER = formatter
+        return formatter
+
+    @staticmethod
+    def _apply_theme(help_formatter: argparse.RawDescriptionHelpFormatter) -> None:
+        theme_name = os.environ.get("GITWISE_THEME", "").lower()
+        if theme_name not in {"dark", "light"}:
+            theme_name = "dark"
+        theme_tokens = build_theme(theme_name)
+
+        styles = getattr(help_formatter, "styles", None)
+        if isinstance(styles, dict):
+            styles.update(
+                {
+                    "argparse.args": theme_tokens.accent,
+                    "argparse.groups": theme_tokens.brand,
+                    "argparse.metavar": theme_tokens.secondary,
+                    "argparse.prog": theme_tokens.dim,
+                    "argparse.help": theme_tokens.fg,
+                    "argparse.text": theme_tokens.fg,
+                    "argparse.syntax": f"bold {theme_tokens.accent}",
+                    "argparse.default": f"italic {theme_tokens.secondary}",
+                }
+            )
+
+        formatter_cls = type(help_formatter)
+        if GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER is None:
+            GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER = getattr(
+                formatter_cls, "group_name_formatter", str.title
+            )
+
+        default_group_formatter = GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER
+        if callable(default_group_formatter):
+            setattr(  # noqa: B010
+                formatter_cls,
+                "group_name_formatter",
+                lambda name: (
+                    t(f"help_group_{str(name).lower().replace(' ', '_')}")
+                    if str(name).lower().replace(" ", "_") in {"options", "positional_arguments"}
+                    else default_group_formatter(name)
+                ),
+            )
