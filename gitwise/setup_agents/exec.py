@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -53,7 +54,22 @@ def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
 
 
 def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
-    """Minimal rollback: revert symlinks created and restore .bak files."""
+    """Transactional rollback: restore pre-action snapshots for all touched paths."""
+    snapshots_by_path: dict[str, dict[str, str | bytes | None]] = {}
+    for action in actions_done:
+        pre_state = action.get("_pre_state")
+        if isinstance(pre_state, list):
+            for snap in pre_state:
+                if isinstance(snap, dict):
+                    path_key = str(snap.get("path", ""))
+                    if path_key and path_key not in snapshots_by_path:
+                        snapshots_by_path[path_key] = snap
+
+    if snapshots_by_path:
+        _restore_snapshots(list(snapshots_by_path.values()))
+        return
+
+    # Backward-compatibility fallback for legacy tests/actions without snapshots.
     for action in reversed(actions_done):
         act = action.get("action", "")
         file_key = action.get("file", "")
@@ -86,6 +102,134 @@ def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
                 debug(t("debug_rollback_deleted", file=file_key))
         except OSError as e:
             warn(t("debug_rollback_failed", file=file_key, error=str(e)))
+
+
+def _capture_snapshot(path: Path) -> dict[str, str | bytes | None]:
+    if path.is_symlink():
+        try:
+            target = os.readlink(path)
+        except OSError:
+            target = None
+        return {
+            "path": str(path),
+            "kind": "symlink",
+            "target": target,
+            "content": None,
+        }
+    if path.exists():
+        if path.is_dir():
+            return {
+                "path": str(path),
+                "kind": "dir",
+                "target": None,
+                "content": None,
+            }
+        try:
+            content = path.read_bytes()
+        except OSError:
+            content = b""
+        return {
+            "path": str(path),
+            "kind": "file",
+            "target": None,
+            "content": content,
+        }
+    return {
+        "path": str(path),
+        "kind": "absent",
+        "target": None,
+        "content": None,
+    }
+
+
+def _remove_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink(missing_ok=True)
+        return
+    if path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def _restore_snapshot(snapshot: dict[str, str | bytes | None]) -> None:
+    path = Path(str(snapshot["path"]))
+    kind = snapshot["kind"]
+
+    if kind == "absent":
+        _remove_path(path)
+        return
+
+    if kind == "dir":
+        if path.is_symlink() or path.is_file():
+            _remove_path(path)
+        path.mkdir(parents=True, exist_ok=True)
+        return
+
+    if kind == "symlink":
+        _remove_path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        target = snapshot.get("target")
+        if isinstance(target, str):
+            os.symlink(target, path)
+        return
+
+    if kind == "file":
+        _remove_path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        content = snapshot.get("content")
+        if isinstance(content, bytes):
+            path.write_bytes(content)
+        else:
+            path.write_text("", encoding="utf-8")
+
+
+def _restore_snapshots(snapshots: list[dict[str, str | bytes | None]]) -> None:
+    seen: set[str] = set()
+    ordered = sorted(
+        snapshots,
+        key=lambda s: len(Path(str(s["path"])).parts),
+        reverse=True,
+    )
+    for snap in ordered:
+        key = str(snap["path"])
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            _restore_snapshot(snap)
+            debug(t("debug_rollback_restored", file=Path(key).name, backup="snapshot"))
+        except OSError as e:
+            warn(t("debug_rollback_failed", file=Path(key).name, error=str(e)))
+
+
+def _touched_paths(action: dict[str, Any], root: Path) -> list[Path]:
+    paths: list[Path] = []
+    act = action.get("action", "")
+    file_key = action.get("file", "")
+
+    if act in ("managed-block-create", "managed-block-replace"):
+        path_value = action.get("_path")
+        if isinstance(path_value, str):
+            paths.append(Path(path_value))
+    elif isinstance(file_key, str) and file_key:
+        paths.append(root / file_key)
+
+    backup_path = action.get("backup_path")
+    if isinstance(backup_path, str) and backup_path:
+        paths.append(Path(backup_path))
+
+    agents_skill = action.get("agents_skill")
+    if isinstance(agents_skill, str) and agents_skill:
+        paths.append(Path(agents_skill))
+
+    dedup: list[Path] = []
+    seen: set[str] = set()
+    for p in paths:
+        key = str(p)
+        if key in seen:
+            continue
+        seen.add(key)
+        dedup.append(p)
+    return dedup
 
 
 def _apply_managed_block(action: dict[str, Any]) -> None:
@@ -205,6 +349,15 @@ def _exec_skill_md(action: dict[str, Any], root: Path) -> None:
     ok(t("created", file=file_key))
 
 
+def _exec_agents_skill_md(action: dict[str, Any], root: Path) -> None:
+    file_key = action["file"]
+    target = root / file_key
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(action["content"], encoding="utf-8")
+    action["_created"] = True
+    ok(t("created", file=file_key))
+
+
 def _exec_rule(action: dict[str, Any], root: Path) -> None:
     file_key = action["file"]
     path = root / file_key
@@ -257,6 +410,8 @@ def _match_file_key(file_key: str, act: str) -> Callable[[dict[str, Any], Path],
         return _exec_claude_skill
     if file_key.startswith(".claude/skills/") and file_key.endswith("/SKILL.md"):
         return _exec_skill_md
+    if file_key.startswith(".agents/skills/") and file_key.endswith("/SKILL.md"):
+        return _exec_agents_skill_md
     if file_key.startswith(".claude/rules/") and file_key.endswith(".md"):
         return _exec_rule
     if file_key in (".claude/git-snapshot.md", ".agents/git-snapshot.md"):
@@ -282,13 +437,15 @@ def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
                 actions_done.append(action)
                 continue
 
+            pre_state = [_capture_snapshot(p) for p in _touched_paths(action, root)]
+            action["_pre_state"] = pre_state
+            actions_done.append(action)
+
             handler = _match_file_key(file_key, act)
             if handler is not None:
                 handler(action, root)
             else:
                 warn(t("unknown_action", action=act, file=file_key))
-
-            actions_done.append(action)
 
     except (SymlinkConflict, OSError) as exc:
         warn(t("action_failed", error=str(exc), count=str(len(actions_done))))

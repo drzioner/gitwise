@@ -285,3 +285,14 @@ Use temporary dual coverage:
 - [x] Critical risks identified
 - [x] Acceptance and release criteria defined
 - [x] PR #1 implementation started
+
+---
+
+## Post-merge completion notes (2026-05-23)
+
+- [x] Canonical default in local clean repo (`setup-agents --local --yes`) is active
+- [x] `--adapters` remains supported as compatibility alias while `--providers` is public
+- [x] Legacy migration flow (`--migrate-legacy-claude`) shipped and documented
+- [x] JSON v3 contract with compatibility keys validated in tests
+- [x] CHANGELOG/CHANGELOG.es synchronization automated in release workflow
+- [x] Rollback hardened with transactional snapshots and mid-failure tests

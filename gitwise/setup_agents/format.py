@@ -20,8 +20,17 @@ def _canonical_layout_local(state: StateDict) -> str:
     return "claude_only"
 
 
-def _canonical_layout_local_with_flags(*, state: StateDict, migrate_legacy_claude: bool) -> str:
+def _canonical_layout_local_with_actions(
+    *,
+    state: StateDict,
+    actions: list[ActionDict],
+    migrate_legacy_claude: bool,
+) -> str:
     if migrate_legacy_claude:
+        return "agents_dir"
+    if any(a.get("file") == "AGENTS.md" for a in actions):
+        return "agents_md"
+    if any(str(a.get("file", "")).startswith(".agents/") for a in actions):
         return "agents_dir"
     return _canonical_layout_local(state)
 
@@ -137,8 +146,9 @@ def format_json_output_local(
         "dry_run": dry_run,
         "root": str(root),
         "mode": "local",
-        "canonical_layout": _canonical_layout_local_with_flags(
+        "canonical_layout": _canonical_layout_local_with_actions(
             state=state,
+            actions=actions,
             migrate_legacy_claude=migrate_legacy_claude,
         ),
         "bucket": bucket,

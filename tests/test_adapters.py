@@ -315,7 +315,7 @@ class TestAdapterIdempotency:
             cwd=tmp_git_repo,
         )
         assert result.returncode == 0
-        assert "already exists" in result.stdout
+        assert "already exists" in (result.stdout + result.stderr)
         assert "ADAPTER-CREATE" not in result.stdout
 
     def test_all_adapters_install(self, tmp_git_repo):

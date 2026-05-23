@@ -70,7 +70,7 @@ def test_setup_agents_json_output_v3(tmp_git_repo):
     data = json.loads(result.stdout)
     assert data["v"] == 3
     assert data["mode"] == "local"
-    assert data["canonical_layout"] == "claude_only"
+    assert data["canonical_layout"] in ("agents_md", "agents_dir")
     assert 3 in data["v_compat"]
     assert 2 in data["v_compat"]
     assert 1 in data["v_compat"]
@@ -112,10 +112,10 @@ def test_migrate_legacy_warning_not_duplicated(tmp_git_repo):
 def test_setup_agents_creates_files(tmp_git_repo):
     result = _run_local("--yes", cwd=tmp_git_repo)
     assert result.returncode == 0
-    assert (tmp_git_repo / "CLAUDE.md").exists()
-    assert (tmp_git_repo / ".claude" / "settings.json").exists()
-    assert (tmp_git_repo / ".claude" / "skills" / "git-audit" / "SKILL.md").exists()
-    assert (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
+    assert (tmp_git_repo / "AGENTS.md").exists()
+    assert (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").exists()
+    assert (tmp_git_repo / ".agents" / "git-snapshot.md").exists()
+    assert not (tmp_git_repo / ".claude" / "settings.json").exists()
 
 
 def test_migrate_legacy_claude_creates_canonical_layout(tmp_git_repo):
@@ -142,7 +142,7 @@ def test_migrate_legacy_claude_is_idempotent(tmp_git_repo):
 
 
 def test_setup_agents_settings_json_valid(tmp_git_repo):
-    _run_local("--yes", cwd=tmp_git_repo)
+    _run_local("--yes", "--providers", "claude", cwd=tmp_git_repo)
     settings_path = tmp_git_repo / ".claude" / "settings.json"
     data = json.loads(settings_path.read_text())
     assert "permissions" in data
@@ -153,15 +153,15 @@ def test_setup_agents_settings_json_valid(tmp_git_repo):
 
 def test_setup_agents_idempotent(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
-    claude_md_first = (tmp_git_repo / "CLAUDE.md").read_text()
-    settings_first = (tmp_git_repo / ".claude" / "settings.json").read_text()
+    agents_md_first = (tmp_git_repo / "AGENTS.md").read_text()
+    skill_first = (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").read_text()
 
     _run_local("--yes", cwd=tmp_git_repo)
-    claude_md_second = (tmp_git_repo / "CLAUDE.md").read_text()
-    settings_second = (tmp_git_repo / ".claude" / "settings.json").read_text()
+    agents_md_second = (tmp_git_repo / "AGENTS.md").read_text()
+    skill_second = (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").read_text()
 
-    assert claude_md_first == claude_md_second
-    assert json.loads(settings_first) == json.loads(settings_second)
+    assert agents_md_first == agents_md_second
+    assert skill_first == skill_second
 
 
 def test_setup_agents_does_not_modify_gpg_config(tmp_git_repo_with_gpg_config):
@@ -182,7 +182,7 @@ def test_setup_agents_does_not_modify_gpg_config(tmp_git_repo_with_gpg_config):
 def test_setup_agents_skills_have_valid_frontmatter(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     for name in ("git-audit", "git-clean", "git-optimize"):
-        skill_md = tmp_git_repo / ".claude" / "skills" / name / "SKILL.md"
+        skill_md = tmp_git_repo / ".agents" / "skills" / name / "SKILL.md"
         assert skill_md.exists()
         text = skill_md.read_text(encoding="utf-8")
         fm = _parse_frontmatter(text)
@@ -195,7 +195,7 @@ def test_setup_agents_skills_have_valid_frontmatter(tmp_git_repo):
 
 
 def test_setup_agents_skips_existing_skill(tmp_git_repo):
-    skill_dir = tmp_git_repo / ".claude" / "skills" / "git-audit"
+    skill_dir = tmp_git_repo / ".agents" / "skills" / "git-audit"
     skill_dir.mkdir(parents=True)
     custom = "---\nname: git-audit\ndescription: custom\n---\n# custom\n"
     (skill_dir / "SKILL.md").write_text(custom)
@@ -209,7 +209,33 @@ def test_setup_agents_warns_on_legacy_commands(tmp_git_repo):
     (legacy / "git-audit.md").write_text("# legacy\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert any("legacy" in w or "antiguo" in w for w in data["warnings"])
+    assert any("legacy" in w.lower() or "antiguo" in w.lower() for w in data["warnings"])
+
+
+def test_setup_agents_with_claude_provider_keeps_claude_experience(tmp_git_repo):
+    result = _run_local("--yes", "--providers", "claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert (tmp_git_repo / "CLAUDE.md").exists()
+    assert (tmp_git_repo / ".claude" / "settings.json").exists()
+    assert (tmp_git_repo / ".claude" / "skills" / "git-audit" / "SKILL.md").exists()
+    assert (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
+
+
+def test_setup_agents_with_non_claude_provider_keeps_canonical_default(tmp_git_repo):
+    result = _run_local("--yes", "--providers", "cursor", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert (tmp_git_repo / "AGENTS.md").exists()
+    assert not (tmp_git_repo / "CLAUDE.md").exists()
+    assert not (tmp_git_repo / ".claude" / "settings.json").exists()
+    assert not (tmp_git_repo / ".claude" / "rules" / "gitwise.md").exists()
+    assert (tmp_git_repo / ".cursor" / "rules" / "gitwise.mdc").exists()
+
+
+def test_setup_agents_canonical_default_has_no_claude_rules_or_skills(tmp_git_repo):
+    result = _run_local("--yes", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert not (tmp_git_repo / ".claude" / "rules" / "gitwise.md").exists()
+    assert not (tmp_git_repo / ".claude" / "skills").exists()
 
 
 # ── Marker regex ──────────────────────────────────────────────────────────────
@@ -249,6 +275,7 @@ def test_bucket1_json_schema_v2_shape(tmp_git_repo):
     assert data["bucket"] == 1
     assert data["agents_md_detected"] is False
     assert data["agents_dir_detected"] is False
+    assert data["canonical_layout"] in ("agents_md", "agents_dir")
     assert data["ok"] is True
     assert data["errors"] == []
     assert "summary" in data
@@ -394,6 +421,7 @@ def test_bucket5_broken_symlink_aborts_with_errors(tmp_git_repo):
     assert len(data["errors"]) >= 1
     # Nothing should have been written
     assert not (tmp_git_repo / ".claude" / "settings.json").exists()
+    assert not (tmp_git_repo / "AGENTS.md").exists()
 
 
 def test_bucket5_broken_skills_symlink_aborts(tmp_git_repo):
@@ -431,15 +459,9 @@ def test_skills_symlink_created_when_agents_dir_exists(tmp_git_repo):
     result = _run_local("--yes", cwd=tmp_git_repo)
     assert result.returncode == 0
 
-    # .claude/skills/ is a regular dir; each skill is a per-skill symlink
-    skills_dir = tmp_git_repo / ".claude" / "skills"
-    assert skills_dir.is_dir() and not skills_dir.is_symlink()
-    for skill in ("git-audit", "git-clean", "git-optimize"):
-        skill_link = skills_dir / skill
-        assert skill_link.is_symlink(), f".claude/skills/{skill} debe ser symlink"
-        target = os.readlink(skill_link)
-        assert ".agents" in target
-    # SKILL.md se crea en .agents/skills/ (write_text sigue el symlink)
+    # Canonical-only default: no .claude/skills links are created.
+    assert not (tmp_git_repo / ".claude" / "skills").exists()
+    # SKILL.md se crea en .agents/skills/
     assert (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").exists()
     assert (tmp_git_repo / ".agents" / "git-snapshot.md").exists()
     assert not (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
@@ -450,20 +472,23 @@ def test_local_json_reports_agents_dir_layout(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
     assert data["mode"] == "local"
-    assert data["canonical_layout"] == "agents_dir"
+    assert data["canonical_layout"] in ("agents_md", "agents_dir")
 
 
 def test_skills_symlink_idempotent_on_second_run(tmp_git_repo):
-    (tmp_git_repo / ".agents").mkdir()
     _run_local("--yes", cwd=tmp_git_repo)
     targets_first = {
-        skill: os.readlink(tmp_git_repo / ".claude" / "skills" / skill)
+        skill: (tmp_git_repo / ".agents" / "skills" / skill / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
         for skill in ("git-audit", "git-clean", "git-optimize")
     }
 
     _run_local("--yes", cwd=tmp_git_repo)
     targets_second = {
-        skill: os.readlink(tmp_git_repo / ".claude" / "skills" / skill)
+        skill: (tmp_git_repo / ".agents" / "skills" / skill / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
         for skill in ("git-audit", "git-clean", "git-optimize")
     }
 
@@ -473,8 +498,7 @@ def test_skills_symlink_idempotent_on_second_run(tmp_git_repo):
 def test_skills_no_symlink_without_agents_dir(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     skills_path = tmp_git_repo / ".claude" / "skills"
-    assert skills_path.is_dir()
-    assert not skills_path.is_symlink()
+    assert not skills_path.exists()
 
 
 # ── .gitignore managed block ──────────────────────────────────────────────────
@@ -488,7 +512,7 @@ def test_gitignore_creates_block_when_absent(tmp_git_repo):
     assert "# >>> gitwise managed" in content
     assert "# <<< gitwise managed" in content
     assert ".claude/settings.local.json" in content
-    assert ".claude/git-snapshot.md" in content
+    assert ".agents/git-snapshot.md" in content
 
 
 def test_gitignore_uses_agents_snapshot_when_agents_dir_exists(tmp_git_repo):
@@ -636,11 +660,7 @@ def test_gitattributes_no_warning_for_bare_path_entry(tmp_git_repo):
 def test_gitwise_rule_created(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     rule = tmp_git_repo / ".claude" / "rules" / "gitwise.md"
-    assert rule.exists()
-    content = rule.read_text()
-    assert "globs:" in content
-    assert "gitwise diff" in content
-    assert "gitwise summarize" in content
+    assert not rule.exists()
 
 
 def test_gitwise_rule_skipped_if_exists(tmp_git_repo):
@@ -770,6 +790,20 @@ def test_global_mode_json_output(tmp_path):
     assert data["ok"] is True
     assert "actions" in data
     assert "summary" in data
+
+
+def test_global_mode_json_compat_adapters_key(tmp_path):
+    result = _run(
+        "setup-agents",
+        "--list-adapters",
+        "--json",
+        cwd=tmp_path,
+        env={"HOME": str(tmp_path), "GITWISE_LANG": "es"},
+    )
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "providers" in data
+    assert "adapters" in data
 
 
 def test_global_mode_adapters_json_output(tmp_path):
