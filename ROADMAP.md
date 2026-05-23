@@ -12,7 +12,7 @@ gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `s
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
 `pick` (`cherry-pick`), `status`, `update`.
 
-Completed through Phase 12. Current baseline: 512 tests collected, 447 i18n keys (es/en),
+Completed through Phase 12. Current baseline: 522 tests collected, 447 i18n keys (es/en),
 one runtime dependency (`rich>=13.0`).
 
 ---
@@ -138,7 +138,7 @@ one runtime dependency (`rich>=13.0`).
 ## Design principles
 
 1. **Minimal deps**: `rich>=13.0` + stdlib + git subprocess. Optional tools via `shutil.which()`.
-2. **`--json` everywhere**: machine-friendly output for coding agents (v2 envelope).
+2. **`--json` everywhere**: machine-friendly output for coding agents (v2 envelope; `setup-agents` now v3).
 3. **`--dry-run` for destructive paths**: commit, sync, clean, stash drop, merge, tag delete.
 4. **Automatic delta rendering**: when `HAS_DELTA` and `IS_TTY`.
 5. **i18n model**: strings resolved through `t()` with keys in `_i18n_data.json`.

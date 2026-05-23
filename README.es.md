@@ -5,7 +5,7 @@ Last sync: 2026-05-22
 
 [English](README.md) | [Español](README.es.md)
 
-CLI de Python para optimizar flujos de Git e integracion con Claude Code.
+CLI de Python para optimizar flujos de Git e integracion con agentes de codigo.
 
 [![CI](https://github.com/drzioner/gitwise/actions/workflows/ci.yml/badge.svg)](https://github.com/drzioner/gitwise/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/drzioner/gitwise/graph/badge.svg)](https://codecov.io/gh/drzioner/gitwise)
@@ -54,7 +54,7 @@ gitwise summarize
 |---|---|
 | `gitwise doctor` | Verifica Python, git, plataforma y herramientas opcionales |
 | `gitwise setup` | Aplica defaults modernos de Git de forma segura |
-| `gitwise setup-agents` | Instala config de Claude/adapters en global o local |
+| `gitwise setup-agents` | Instala layout canonico de agentes + config opcional de providers |
 | `gitwise audit` | Detecta ramas stale, gaps de graph/cache, blobs grandes |
 | `gitwise summarize` | Contexto compacto para humanos y agentes |
 | `gitwise diff` | Vista enfocada de cambios (`--stat`, `--staged`, `--patch`) |
