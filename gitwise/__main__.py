@@ -10,6 +10,28 @@ from .i18n import t
 from .output import print_dim, print_json, set_json_pretty
 
 
+def _is_log_json_enabled() -> bool:
+    import os
+
+    return os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
+
+
+def _should_show_rich_traceback() -> bool:
+    return (not _is_log_json_enabled()) and sys.stderr.isatty()
+
+
+def _install_rich_traceback() -> None:
+    if not _should_show_rich_traceback():
+        return
+    try:
+        import importlib
+
+        rich_traceback_install = importlib.import_module("rich.traceback").install
+        rich_traceback_install(show_locals=False)
+    except ImportError:
+        return
+
+
 def _json_safe(value: object) -> object:
     if value is argparse.SUPPRESS:
         return None
@@ -746,6 +768,8 @@ def main() -> int:
     from ._runtime_config import reset_runtime_config
     from .i18n import set_locale
 
+    _install_rich_traceback()
+
     parser = _build_parser()
     raw_argv = sys.argv[1:]
     wants_json_pretty = "--json-pretty" in raw_argv or "--pretty" in raw_argv
@@ -797,6 +821,8 @@ def main() -> int:
         except SystemExit:
             raise
         except Exception:
+            if _should_show_rich_traceback():
+                raise
             from .output import error as _error
 
             _error(t("unexpected_error"))

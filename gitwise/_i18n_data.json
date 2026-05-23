@@ -715,6 +715,10 @@
     "es": "sin rama seguimiento",
     "en": "no upstream"
   },
+  "hint_prefix": {
+    "es": "sugerencia",
+    "en": "hint"
+  },
   "hook_install_note": {
     "es": "instala hooks GPG + conventional commits",
     "en": "installs GPG + conventional commit hooks"

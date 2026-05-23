@@ -87,6 +87,7 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
         print_json(
             error_envelope(
                 error=t("sync_fetch_failed", error=result.stderr.strip()),
+                code="sync_fetch_failed",
                 hint=t("sync_hint"),
             )
         )
@@ -101,7 +102,13 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
     if result.returncode == 0:
         return 0
     if as_json:
-        print_json(error_envelope(error=t("sync_pull_diverged"), hint=t("sync_hint")))
+        print_json(
+            error_envelope(
+                error=t("sync_pull_diverged"),
+                code="sync_pull_diverged",
+                hint=t("sync_hint"),
+            )
+        )
     else:
         error(t("sync_pull_diverged"))
     return 1
@@ -113,6 +120,7 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
             print_json(
                 error_envelope(
                     error=t("sync_push_protected", branch=branch),
+                    code="sync_push_protected",
                     hint=t("sync_push_protected_hint"),
                 )
             )
@@ -127,6 +135,7 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
         print_json(
             error_envelope(
                 error=t("sync_push_failed", error=result.stderr.strip()),
+                code="sync_push_failed",
                 hint=t("sync_hint"),
             )
         )

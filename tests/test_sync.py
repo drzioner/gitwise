@@ -28,7 +28,9 @@ def test_sync_push_protected_json_includes_hint(tmp_git_repo: Path) -> None:
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
-    assert "hint" in data
+    assert "errors" in data
+    assert data["errors"][0]["code"] == "sync_push_protected"
+    assert "hint" in data["errors"][0]
 
 
 def test_sync_no_remote(tmp_git_repo: Path) -> None:

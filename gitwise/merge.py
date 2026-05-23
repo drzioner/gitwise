@@ -137,9 +137,9 @@ def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool)
 
 def _report_merge_error(*, as_json: bool, err: str) -> int:
     if as_json:
-        print_json(error_envelope(error=err, hint=t("merge_hint")))
+        print_json(error_envelope(error=err, code="merge_error", hint=t("merge_hint")))
     else:
-        error(err)
+        error(err, hint=t("merge_hint"))
     return 1
 
 
