@@ -175,7 +175,7 @@ class ClaudeAdapter(AdapterConfig):
                             "target_relative": _AGENTS_MD,
                         }
                     ],
-                    [t("legacy_migration_mode")],
+                    [],
                 )
             return (
                 2,
@@ -187,19 +187,19 @@ class ClaudeAdapter(AdapterConfig):
                         "content": self.pointer_template(),
                     }
                 ],
-                [t("legacy_migration_mode")],
+                [],
             )
 
         if c_state == "regular":
             _bucket, replace_actions, replace_warnings = self.bucket4_replace(
                 agents_actions, claude_md
             )
-            return 4, replace_actions, [t("legacy_migration_mode")] + replace_warnings
+            return 4, replace_actions, replace_warnings
 
         _bucket, fallback_actions, fallback_warnings = self.bucket4_default(
             state, claude_md, agents_actions
         )
-        return 4, fallback_actions, [t("legacy_migration_mode")] + fallback_warnings
+        return 4, fallback_actions, fallback_warnings
 
     def bucket4_default(
         self,

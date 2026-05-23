@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from gitwise.i18n import t
 from gitwise.setup_agents.plan_gitfiles import (
     gitattributes_block_basic,
     gitattributes_block_extended,
@@ -128,7 +129,6 @@ def _plan_actions(
         state,
         global_skills=global_skills,
         force_agents_layout=has_agents_layout,
-        migrate_legacy_claude=migrate_legacy_claude,
     )
     rules_actions, rules_warnings = _plan_rules(root)
 
@@ -174,4 +174,6 @@ def _plan_actions(
         + git_file_warnings
         + state["rules_warnings"]
     )
+    if migrate_legacy_claude:
+        warnings.append(t("legacy_migration_mode"))
     return actions, warnings, [], bucket, state

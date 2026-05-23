@@ -90,6 +90,25 @@ def test_setup_agents_json_output_v3_migrate_legacy(tmp_git_repo):
     assert any("migr" in w.lower() for w in data["warnings"])
 
 
+def test_setup_agents_json_strict_warnings_returns_error(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# claude\n")
+    (tmp_git_repo / "AGENTS.md").write_text("# agents\n")
+    result = _run_local("--json", "--dry-run", "--strict", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert any("strict" in e.lower() for e in data["errors"])
+
+
+def test_migrate_legacy_warning_not_duplicated(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# legacy\n")
+    result = _run_local("--json", "--dry-run", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    migration_warnings = [w for w in data["warnings"] if "migr" in w.lower()]
+    assert len(migration_warnings) == 1
+
+
 def test_setup_agents_creates_files(tmp_git_repo):
     result = _run_local("--yes", cwd=tmp_git_repo)
     assert result.returncode == 0

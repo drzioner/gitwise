@@ -451,7 +451,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
 
         adapter_list = list_providers()
         if args.json:
-            print_json({"providers": adapter_list})
+            print_json({"providers": adapter_list, "adapters": adapter_list})
         else:
             from .output import info
 

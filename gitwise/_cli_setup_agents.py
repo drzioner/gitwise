@@ -272,6 +272,10 @@ def _run_setup_local(
         actions.extend(adapter_actions)
         all_warnings.extend(adapter_warnings)
 
+    if strict and all_warnings and as_json:
+        plan_errors.append({"reason": t("strict_warnings"), "file": ""})
+        has_errors = True
+
     if as_json:
         if has_errors:
             print_json(
@@ -310,7 +314,7 @@ def _run_setup_local(
     for w in all_warnings:
         warn(w)
 
-    if all_warnings and strict:
+    if strict and all_warnings:
         error(t("strict_warnings"))
         return 2
 

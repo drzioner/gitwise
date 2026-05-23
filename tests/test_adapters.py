@@ -17,14 +17,17 @@ class TestListAdapters:
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert "providers" in data
+        assert "adapters" in data
         for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
             assert name in data["providers"]
+            assert name in data["adapters"]
 
     def test_list_adapters_alias_still_works(self):
         result = run_gitwise("setup-agents", "--list-adapters", "--json")
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert "providers" in data
+        assert "adapters" in data
 
     def test_single_adapter_claude_no_extra_adapter_actions(self, tmp_git_repo):
         result = run_gitwise(

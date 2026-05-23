@@ -161,7 +161,6 @@ def plan_skills(
     state: StateDict,
     global_skills: frozenset[str] = frozenset(),
     force_agents_layout: bool = False,
-    migrate_legacy_claude: bool = False,
 ) -> tuple[list[dict], list[str]]:
     actions: list[dict] = []
     warnings: list[str] = []
@@ -204,9 +203,6 @@ def plan_skills(
             )
             actions += sk_actions
             warnings += sk_warnings
-
-    if migrate_legacy_claude:
-        warnings.append(t("legacy_migration_mode"))
 
     legacy_dir = root / ".claude" / "commands"
     for skill in _SKILLS:
