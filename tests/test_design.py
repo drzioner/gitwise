@@ -1,5 +1,7 @@
 """Tests for gitwise.design — design system tokens, themes, and utilities."""
 
+import argparse
+
 from gitwise.design import (
     ACCENT_HEX,
     ANSI_BOLD,
@@ -576,3 +578,50 @@ class TestReadOscResponse:
                 assert result is not None
                 assert "rgb:" in result
                 assert "\x1b[" not in result
+
+
+class TestRichHelpFormatterCaching:
+    def test_no_color_cache_updates_when_env_changes(self, monkeypatch):
+        from gitwise.design import GitwiseRichHelpFormatter
+
+        GitwiseRichHelpFormatter._NO_COLOR_ENV_KEY = None
+        GitwiseRichHelpFormatter._NO_COLOR_ENABLED = False
+
+        monkeypatch.delenv("NO_COLOR", raising=False)
+        monkeypatch.delenv("GITWISE_NO_COLOR", raising=False)
+        assert GitwiseRichHelpFormatter._no_color_enabled() is False
+        assert GitwiseRichHelpFormatter._NO_COLOR_ENV_KEY == ("", "")
+
+        monkeypatch.setenv("GITWISE_NO_COLOR", "1")
+        assert GitwiseRichHelpFormatter._no_color_enabled() is True
+        assert GitwiseRichHelpFormatter._NO_COLOR_ENV_KEY == ("", "1")
+
+    def test_theme_cache_updates_when_env_changes(self, monkeypatch):
+        from gitwise.design import GitwiseRichHelpFormatter
+
+        GitwiseRichHelpFormatter._THEME_ENV_VALUE = None
+        GitwiseRichHelpFormatter._THEME_NAME = "dark"
+
+        monkeypatch.setenv("GITWISE_THEME", "light")
+        assert GitwiseRichHelpFormatter._theme_name() == "light"
+
+        monkeypatch.setenv("GITWISE_THEME", "blue")
+        assert GitwiseRichHelpFormatter._theme_name() == "dark"
+
+    def test_group_name_localization_installed_once(self):
+        from gitwise.design import GitwiseRichHelpFormatter
+        from gitwise.i18n import t
+
+        class DummyFormatter(argparse.RawDescriptionHelpFormatter):
+            group_name_formatter = staticmethod(str.upper)
+
+        GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER = None
+        GitwiseRichHelpFormatter._install_group_name_localization(DummyFormatter)
+        installed = DummyFormatter.group_name_formatter
+
+        assert callable(installed)
+        assert installed("options") == t("help_group_options")
+        assert installed("custom") == "CUSTOM"
+
+        GitwiseRichHelpFormatter._install_group_name_localization(DummyFormatter)
+        assert DummyFormatter.group_name_formatter is installed

@@ -38,6 +38,20 @@ def test_root_help_json():
     assert isinstance(data["commands"], list)
 
 
+def test_root_help_epilog_is_localized_en():
+    result = _run("--help", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 0
+    assert "Environment:" in result.stdout
+    assert "GITWISE_DEBUG=1" in result.stdout
+
+
+def test_root_help_epilog_is_localized_es():
+    result = _run("--help", env={"GITWISE_LANG": "es"})
+    assert result.returncode == 0
+    assert "Entorno:" in result.stdout
+    assert "GITWISE_DEBUG=1" in result.stdout
+
+
 def test_root_help_json_pretty_without_json_flag():
     result = _run("--help", "--json-pretty")
     assert result.returncode == 0

@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import unicodedata
+from collections.abc import Callable
 from typing import Literal
 
 from .i18n import t
@@ -275,7 +276,11 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
     """Rich-argparse bridge that preserves gitwise theme and no-color behavior."""
 
     _FORMATTER: type[argparse.RawDescriptionHelpFormatter] | None = None
-    _DEFAULT_GROUP_NAME_FORMATTER: object | None = None
+    _DEFAULT_GROUP_NAME_FORMATTER: Callable[[str], object] | None = None
+    _NO_COLOR_ENV_KEY: tuple[str, str] | None = None
+    _NO_COLOR_ENABLED = False
+    _THEME_ENV_VALUE: str | None = None
+    _THEME_NAME = "dark"
 
     def __new__(
         cls,
@@ -284,12 +289,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
         max_help_position: int = 24,
         width: int | None = None,
     ) -> argparse.RawDescriptionHelpFormatter:
-        if os.environ.get("NO_COLOR", "") != "" or os.environ.get(
-            "GITWISE_NO_COLOR", ""
-        ).lower() in (
-            "1",
-            "true",
-        ):
+        if cls._no_color_enabled():
             return GitwiseHelpFormatter(
                 prog,
                 indent_increment=indent_increment,
@@ -320,12 +320,47 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
         cls._FORMATTER = formatter
         return formatter
 
-    @staticmethod
-    def _apply_theme(help_formatter: argparse.RawDescriptionHelpFormatter) -> None:
-        theme_name = os.environ.get("GITWISE_THEME", "").lower()
-        if theme_name not in {"dark", "light"}:
-            theme_name = "dark"
-        theme_tokens = build_theme(theme_name)
+    @classmethod
+    def _no_color_enabled(cls) -> bool:
+        env_key = (os.environ.get("NO_COLOR", ""), os.environ.get("GITWISE_NO_COLOR", "").lower())
+        if env_key != cls._NO_COLOR_ENV_KEY:
+            cls._NO_COLOR_ENV_KEY = env_key
+            cls._NO_COLOR_ENABLED = env_key[0] != "" or env_key[1] in ("1", "true")
+        return cls._NO_COLOR_ENABLED
+
+    @classmethod
+    def _theme_name(cls) -> str:
+        env_theme = os.environ.get("GITWISE_THEME", "").lower()
+        if env_theme != cls._THEME_ENV_VALUE:
+            cls._THEME_ENV_VALUE = env_theme
+            cls._THEME_NAME = env_theme if env_theme in {"dark", "light"} else "dark"
+        return cls._THEME_NAME
+
+    @classmethod
+    def _install_group_name_localization(
+        cls, formatter_cls: type[argparse.RawDescriptionHelpFormatter]
+    ) -> None:
+        if cls._DEFAULT_GROUP_NAME_FORMATTER is not None:
+            return
+
+        formatter_obj = getattr(formatter_cls, "group_name_formatter", str.title)
+        if not callable(formatter_obj):
+            return
+
+        default_group_formatter: Callable[[str], object] = formatter_obj
+        cls._DEFAULT_GROUP_NAME_FORMATTER = default_group_formatter
+
+        def localized_group_formatter(name: object) -> str:
+            normalized = str(name).lower().replace(" ", "_")
+            if normalized in {"options", "positional_arguments"}:
+                return t(f"help_group_{normalized}")
+            return str(default_group_formatter(str(name)))
+
+        setattr(formatter_cls, "group_name_formatter", localized_group_formatter)  # noqa: B010
+
+    @classmethod
+    def _apply_theme(cls, help_formatter: argparse.RawDescriptionHelpFormatter) -> None:
+        theme_tokens = build_theme(cls._theme_name())
 
         styles = getattr(help_formatter, "styles", None)
         if isinstance(styles, dict):
@@ -342,20 +377,4 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
                 }
             )
 
-        formatter_cls = type(help_formatter)
-        if GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER is None:
-            GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER = getattr(
-                formatter_cls, "group_name_formatter", str.title
-            )
-
-        default_group_formatter = GitwiseRichHelpFormatter._DEFAULT_GROUP_NAME_FORMATTER
-        if callable(default_group_formatter):
-            setattr(  # noqa: B010
-                formatter_cls,
-                "group_name_formatter",
-                lambda name: (
-                    t(f"help_group_{str(name).lower().replace(' ', '_')}")
-                    if str(name).lower().replace(" ", "_") in {"options", "positional_arguments"}
-                    else default_group_formatter(name)
-                ),
-            )
+        cls._install_group_name_localization(type(help_formatter))

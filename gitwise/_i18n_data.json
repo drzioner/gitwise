@@ -727,6 +727,10 @@
     "es": "argumentos posicionales",
     "en": "positional arguments"
   },
+  "help_root_environment_epilog": {
+    "es": "Entorno:\n  GITWISE_DEBUG=1          imprime logs debug de subprocess git\n  GITWISE_LOG_JSON=1       logs estructurados en stderr (JSON lines)\n  GITWISE_JSON_PRETTY=1    activa JSON con formato por defecto\n  GITWISE_LANG=es|en       fuerza el locale de salida\n  GITWISE_THEME=dark|light|auto override de tema de color\n  GITWISE_NO_COLOR=1       desactiva salida ANSI color\n  GITWISE_OUTPUT=agent     modo de salida orientado a máquina\n  GITWISE_AGENT=1          alias para forzar modo agent\n  GITWISE_GIT_TIMEOUT=<s>  timeout de subprocess git en segundos\n  GITWISE_WIDTH=<cols>     override del ancho de salida\n  GITWISE_BIN_DIR=<path>   destino de instalación para install.sh",
+    "en": "Environment:\n  GITWISE_DEBUG=1          print git subprocess debug logs\n  GITWISE_LOG_JSON=1       structured stderr logs (JSON lines)\n  GITWISE_JSON_PRETTY=1    pretty-print JSON output by default\n  GITWISE_LANG=es|en       force output locale\n  GITWISE_THEME=dark|light|auto color theme override\n  GITWISE_NO_COLOR=1       disable ANSI color output\n  GITWISE_OUTPUT=agent     machine-oriented output mode\n  GITWISE_AGENT=1          alias to force agent output mode\n  GITWISE_GIT_TIMEOUT=<s>  git subprocess timeout in seconds\n  GITWISE_WIDTH=<cols>     override output width\n  GITWISE_BIN_DIR=<path>   install destination for install.sh"
+  },
   "hint_prefix": {
     "es": "sugerencia",
     "en": "hint"

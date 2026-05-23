@@ -9,21 +9,6 @@ from .design import GitwiseRichHelpFormatter
 from .i18n import t
 from .output import print_dim, print_json, set_json_pretty
 
-_ROOT_HELP_EPILOG = (
-    "Environment:\n"
-    "  GITWISE_DEBUG=1          print git subprocess debug logs\n"
-    "  GITWISE_LOG_JSON=1       structured stderr logs (JSON lines)\n"
-    "  GITWISE_JSON_PRETTY=1    pretty-print JSON output by default\n"
-    "  GITWISE_LANG=es|en       force output locale\n"
-    "  GITWISE_THEME=dark|light|auto color theme override\n"
-    "  GITWISE_NO_COLOR=1       disable ANSI color output\n"
-    "  GITWISE_OUTPUT=agent     machine-oriented output mode\n"
-    "  GITWISE_AGENT=1          alias to force agent output mode\n"
-    "  GITWISE_GIT_TIMEOUT=<s>  git subprocess timeout in seconds\n"
-    "  GITWISE_WIDTH=<cols>     override output width\n"
-    "  GITWISE_BIN_DIR=<path>   install destination for install.sh"
-)
-
 
 def _is_log_json_enabled() -> bool:
     import os
@@ -45,6 +30,10 @@ def _install_rich_traceback() -> None:
         rich_traceback_install(show_locals=False)
     except ImportError:
         return
+
+
+def _root_help_epilog() -> str:
+    return t("help_root_environment_epilog")
 
 
 def _json_safe(value: object) -> object:
@@ -281,7 +270,7 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="gitwise",
         description="CLI for optimizing git workflows and coding agents integration",
         formatter_class=GitwiseRichHelpFormatter,
-        epilog=_ROOT_HELP_EPILOG,
+        epilog=_root_help_epilog(),
         parents=[parent],
     )
     parser.add_argument("--version", action="version", version=f"gitwise {__version__}")
