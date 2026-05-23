@@ -24,7 +24,11 @@ classifiers = [
     "Topic :: Software Development :: Version Control :: Git",
     "Typing :: Typed",
 ]
-dependencies = ["rich>=13.0"]
+dependencies = [
+    "rich>=13.0",
+    "rich-argparse>=1.8.0",
+    "shtab>=1.8.0",
+]
 
 [dependency-groups]
 dev = [

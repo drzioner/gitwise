@@ -67,3 +67,8 @@ def test_pick_dry_run_json_pretty(tmp_git_repo):
 def test_cherry_pick_alias(tmp_git_repo):
     r = run_gitwise("cherry-pick", "HEAD", "--dry-run", cwd=tmp_git_repo)
     assert r.returncode == 0
+
+
+def test_pick_abort_non_interactive_without_conflict_returns_error(tmp_git_repo):
+    r = run_gitwise("pick", "--abort", cwd=tmp_git_repo)
+    assert r.returncode == 1

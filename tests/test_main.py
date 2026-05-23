@@ -38,6 +38,20 @@ def test_root_help_json():
     assert isinstance(data["commands"], list)
 
 
+def test_root_help_epilog_is_localized_en():
+    result = _run("--help", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 0
+    assert "Environment:" in result.stdout
+    assert "GITWISE_DEBUG=1" in result.stdout
+
+
+def test_root_help_epilog_is_localized_es():
+    result = _run("--help", env={"GITWISE_LANG": "es"})
+    assert result.returncode == 0
+    assert "Entorno:" in result.stdout
+    assert "GITWISE_DEBUG=1" in result.stdout
+
+
 def test_root_help_json_pretty_without_json_flag():
     result = _run("--help", "--json-pretty")
     assert result.returncode == 0
@@ -57,6 +71,36 @@ def test_command_help_json():
     assert data["scope"] == "command"
     assert data["command"] == "diff"
     assert isinstance(data["options"], list)
+
+
+def test_completions_bash_outputs_script():
+    result = _run("completions", "bash")
+    assert result.returncode == 0
+    assert "_shtab_gitwise_option_strings" in result.stdout
+
+
+def test_completions_zsh_outputs_script():
+    result = _run("completions", "zsh")
+    assert result.returncode == 0
+    assert "#compdef gitwise" in result.stdout
+
+
+def test_completions_fish_outputs_script():
+    result = _run("completions", "fish")
+    assert result.returncode == 0
+    assert "complete -c 'gitwise'" in result.stdout
+
+
+def test_completions_default_shell_is_bash():
+    result = _run("completions")
+    assert result.returncode == 0
+    assert "_shtab_gitwise_option_strings" in result.stdout
+
+
+def test_completions_respects_prog_name():
+    result = _run("completions", "bash", "--prog", "gw")
+    assert result.returncode == 0
+    assert "_shtab_gw_option_strings" in result.stdout
 
 
 def test_json_compact_by_default(tmp_git_repo):

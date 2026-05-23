@@ -28,7 +28,7 @@ def _print_undo_dry_run(*, target: str, soft: bool) -> None:
 
 
 def _reset_to_target(*, root, target: str, soft: bool) -> int:
-    args = ["reset", "--soft" if soft else "--hard", "--", target]
+    args = ["reset", "--soft" if soft else "--hard", target]
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         error(result.stderr.strip())

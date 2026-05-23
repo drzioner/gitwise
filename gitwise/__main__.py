@@ -5,7 +5,7 @@ import sys
 import time
 
 from . import __version__
-from .design import GitwiseHelpFormatter
+from .design import GitwiseRichHelpFormatter
 from .i18n import t
 from .output import print_dim, print_json, set_json_pretty
 
@@ -30,6 +30,10 @@ def _install_rich_traceback() -> None:
         rich_traceback_install(show_locals=False)
     except ImportError:
         return
+
+
+def _root_help_epilog() -> str:
+    return t("help_root_environment_epilog")
 
 
 def _json_safe(value: object) -> object:
@@ -157,6 +161,88 @@ def _help_payload(
     return payload
 
 
+def _build_completions_script(*, shell: str, prog: str) -> str:
+    parser = _build_parser()
+    parser.prog = prog
+
+    if shell in ("bash", "zsh"):
+        import importlib
+
+        shtab_complete = importlib.import_module("shtab").complete
+        return shtab_complete(parser, shell=shell)
+
+    if shell == "fish":
+        return _build_fish_completions_script(parser=parser, prog=prog)
+
+    raise ValueError(f"unsupported shell: {shell}")
+
+
+def _fish_escape(text: str) -> str:
+    return text.replace("'", "\\'")
+
+
+def _build_fish_option_line(*, prog: str, condition: str, flag: str, help_text: str) -> str:
+    escaped_help = _fish_escape(help_text)
+    escaped_prog = _fish_escape(prog)
+    escaped_condition = _fish_escape(condition)
+    if flag.startswith("--"):
+        return (
+            f"complete -c '{escaped_prog}' -n \"{escaped_condition}\" "
+            f"-l {flag[2:]} -d '{escaped_help}'"
+        )
+    if flag.startswith("-") and len(flag) == 2:
+        return (
+            f"complete -c '{escaped_prog}' -n \"{escaped_condition}\" "
+            f"-s {flag[1:]} -d '{escaped_help}'"
+        )
+    return ""
+
+
+def _build_fish_completions_script(*, parser: argparse.ArgumentParser, prog: str) -> str:
+    escaped_prog = _fish_escape(prog)
+    lines: list[str] = [f"# fish completion for {escaped_prog}"]
+
+    sub_action = _subparsers_action(parser)
+    command_names = sorted(sub_action.choices.keys()) if sub_action else []
+
+    if command_names:
+        joined = " ".join(command_names)
+        lines.append(
+            f"complete -c '{escaped_prog}' -f -n \"__fish_use_subcommand\" -a '{_fish_escape(joined)}'"
+        )
+
+    for action in parser._actions:
+        if action.dest == "help" or isinstance(action, argparse._SubParsersAction):
+            continue
+        for flag in action.option_strings:
+            line = _build_fish_option_line(
+                prog=prog,
+                condition="__fish_use_subcommand",
+                flag=flag,
+                help_text="" if action.help is argparse.SUPPRESS else (action.help or ""),
+            )
+            if line:
+                lines.append(line)
+
+    if sub_action is not None:
+        for command, command_parser in sorted(sub_action.choices.items()):
+            condition = f"__fish_seen_subcommand_from {command}"
+            for action in command_parser._actions:
+                if action.dest == "help" or isinstance(action, argparse._SubParsersAction):
+                    continue
+                for flag in action.option_strings:
+                    line = _build_fish_option_line(
+                        prog=prog,
+                        condition=condition,
+                        flag=flag,
+                        help_text="" if action.help is argparse.SUPPRESS else (action.help or ""),
+                    )
+                    if line:
+                        lines.append(line)
+
+    return "\n".join(lines) + "\n"
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument(
@@ -183,7 +269,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gitwise",
         description="CLI for optimizing git workflows and coding agents integration",
-        formatter_class=GitwiseHelpFormatter,
+        formatter_class=GitwiseRichHelpFormatter,
+        epilog=_root_help_epilog(),
         parents=[parent],
     )
     parser.add_argument("--version", action="version", version=f"gitwise {__version__}")
@@ -450,6 +537,24 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
 
     p = sub.add_parser("status", help="enhanced git status for humans and AI", parents=[parent])
+
+    p = sub.add_parser(
+        "completions",
+        help="print shell completion script (bash/zsh/fish)",
+        parents=[parent],
+    )
+    p.add_argument(
+        "shell",
+        choices=["bash", "zsh", "fish"],
+        default="bash",
+        nargs="?",
+        help="target shell for completion script",
+    )
+    p.add_argument(
+        "--prog",
+        default="gitwise",
+        help="command name used inside completion script (default: gitwise)",
+    )
 
     return parser
 
@@ -728,6 +833,26 @@ def _run_status(args: argparse.Namespace) -> int:
     return run_status(as_json=args.json)
 
 
+def _run_completions(args: argparse.Namespace) -> int:
+    shell = args.shell
+    prog = args.prog
+    try:
+        script = _build_completions_script(shell=shell, prog=prog)
+    except RuntimeError as e:
+        from .output import error as _error
+
+        _error(str(e))
+        return 1
+    except ValueError:
+        from .output import error as _error
+
+        _error(t("completions_unsupported_shell", shell=shell))
+        return 1
+
+    print(script)
+    return 0
+
+
 _DISPATCH: dict = {
     "doctor": _run_doctor,
     "setup-agents": _run_setup_agents,
@@ -759,6 +884,7 @@ _DISPATCH: dict = {
     "cherry-pick": _run_pick,
     "update": _run_update,
     "status": _run_status,
+    "completions": _run_completions,
 }
 
 

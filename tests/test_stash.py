@@ -53,3 +53,29 @@ def test_stash_show_patch(tmp_git_repo):
     r = run_gitwise("stash", "show", "--patch", cwd=tmp_git_repo)
     assert r.returncode == 0
     assert "diff" in r.stdout or "stash@" in r.stdout
+
+
+def test_stash_drop_non_interactive_requires_yes(tmp_git_repo):
+    from conftest import _git
+
+    (tmp_git_repo / "drop-me.txt").write_text("drop me\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+
+    r = run_gitwise("stash", "drop", cwd=tmp_git_repo)
+    assert r.returncode == 1
+
+    listed = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    data = json.loads(listed.stdout)
+    assert data["count"] == 1
+
+
+def test_stash_drop_with_yes_non_interactive_succeeds(tmp_git_repo):
+    from conftest import _git
+
+    (tmp_git_repo / "drop-yes.txt").write_text("drop yes\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+
+    r = run_gitwise("stash", "drop", "--yes", cwd=tmp_git_repo)
+    assert r.returncode == 0

@@ -12,7 +12,10 @@ import os
 import re
 import shutil
 import unicodedata
+from collections.abc import Callable
 from typing import Literal
+
+from .i18n import t
 
 ColorDepth = Literal["truecolor", "256color", "16color"]
 
@@ -267,3 +270,111 @@ def _colorize_help_line(line: str, tokens: ThemeTokens) -> str:
     indent, opts = m.group(1), m.group(2)
     rest = line[m.end() :]
     return f"{indent}{hex_to_ansi_fg(tokens.accent)}{opts}{ANSI_RESET}{rest}"
+
+
+class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Rich-argparse bridge that preserves gitwise theme and no-color behavior."""
+
+    _FORMATTER: type[argparse.RawDescriptionHelpFormatter] | None = None
+    _DEFAULT_GROUP_NAME_FORMATTER: Callable[[str], object] | None = None
+    _NO_COLOR_ENV_KEY: tuple[str, str] | None = None
+    _NO_COLOR_ENABLED = False
+    _THEME_ENV_VALUE: str | None = None
+    _THEME_NAME = "dark"
+
+    def __new__(
+        cls,
+        prog: str,
+        indent_increment: int = 2,
+        max_help_position: int = 24,
+        width: int | None = None,
+    ) -> argparse.RawDescriptionHelpFormatter:
+        if cls._no_color_enabled():
+            return GitwiseHelpFormatter(
+                prog,
+                indent_increment=indent_increment,
+                max_help_position=max_help_position,
+                width=width,
+            )
+
+        formatter_cls = cls._formatter_cls()
+        help_formatter = formatter_cls(
+            prog,
+            indent_increment=indent_increment,
+            max_help_position=max_help_position,
+            width=width,
+        )
+        cls._apply_theme(help_formatter)
+        return help_formatter
+
+    @classmethod
+    def _formatter_cls(cls) -> type[argparse.RawDescriptionHelpFormatter]:
+        formatter = cls._FORMATTER
+        if formatter is not None:
+            return formatter
+
+        import importlib
+
+        rich_argparse = importlib.import_module("rich_argparse")
+        formatter = rich_argparse.RawDescriptionRichHelpFormatter
+        cls._FORMATTER = formatter
+        return formatter
+
+    @classmethod
+    def _no_color_enabled(cls) -> bool:
+        env_key = (os.environ.get("NO_COLOR", ""), os.environ.get("GITWISE_NO_COLOR", "").lower())
+        if env_key != cls._NO_COLOR_ENV_KEY:
+            cls._NO_COLOR_ENV_KEY = env_key
+            cls._NO_COLOR_ENABLED = env_key[0] != "" or env_key[1] in ("1", "true")
+        return cls._NO_COLOR_ENABLED
+
+    @classmethod
+    def _theme_name(cls) -> str:
+        env_theme = os.environ.get("GITWISE_THEME", "").lower()
+        if env_theme != cls._THEME_ENV_VALUE:
+            cls._THEME_ENV_VALUE = env_theme
+            cls._THEME_NAME = env_theme if env_theme in {"dark", "light"} else "dark"
+        return cls._THEME_NAME
+
+    @classmethod
+    def _install_group_name_localization(
+        cls, formatter_cls: type[argparse.RawDescriptionHelpFormatter]
+    ) -> None:
+        if cls._DEFAULT_GROUP_NAME_FORMATTER is not None:
+            return
+
+        formatter_obj = getattr(formatter_cls, "group_name_formatter", str.title)
+        if not callable(formatter_obj):
+            return
+
+        default_group_formatter: Callable[[str], object] = formatter_obj
+        cls._DEFAULT_GROUP_NAME_FORMATTER = default_group_formatter
+
+        def localized_group_formatter(name: object) -> str:
+            normalized = str(name).lower().replace(" ", "_")
+            if normalized in {"options", "positional_arguments"}:
+                return t(f"help_group_{normalized}")
+            return str(default_group_formatter(str(name)))
+
+        setattr(formatter_cls, "group_name_formatter", localized_group_formatter)  # noqa: B010
+
+    @classmethod
+    def _apply_theme(cls, help_formatter: argparse.RawDescriptionHelpFormatter) -> None:
+        theme_tokens = build_theme(cls._theme_name())
+
+        styles = getattr(help_formatter, "styles", None)
+        if isinstance(styles, dict):
+            styles.update(
+                {
+                    "argparse.args": theme_tokens.accent,
+                    "argparse.groups": theme_tokens.brand,
+                    "argparse.metavar": theme_tokens.secondary,
+                    "argparse.prog": theme_tokens.dim,
+                    "argparse.help": theme_tokens.fg,
+                    "argparse.text": theme_tokens.fg,
+                    "argparse.syntax": f"bold {theme_tokens.accent}",
+                    "argparse.default": f"italic {theme_tokens.secondary}",
+                }
+            )
+
+        cls._install_group_name_localization(type(help_formatter))

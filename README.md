@@ -87,7 +87,26 @@ For all commands, examples, aliases, and JSON usage, see:
 | Variable | Description |
 |---|---|
 | `GITWISE_DEBUG=1` | Print each `git` subprocess command to stderr |
+| `GITWISE_LOG_JSON=1` | Emit structured stderr logs as JSON lines |
+| `GITWISE_JSON_PRETTY=1` | Pretty-print JSON output by default |
+| `GITWISE_LANG=es|en` | Force output locale |
+| `GITWISE_THEME=dark|light|auto` | Override color theme selection |
+| `GITWISE_NO_COLOR=1` | Disable ANSI color output |
+| `GITWISE_OUTPUT=agent` | Force machine-oriented output mode |
+| `GITWISE_AGENT=1` | Alias to enable agent output mode |
+| `GITWISE_GIT_TIMEOUT=<seconds>` | Override git subprocess timeout |
+| `GITWISE_WIDTH=<columns>` | Override output width |
 | `GITWISE_BIN_DIR` | Install location (default: `~/.local/bin`) |
+
+## Shell Completions
+
+Generate completions script per shell:
+
+```bash
+gitwise completions bash > ~/.local/share/bash-completion/completions/gitwise
+gitwise completions zsh > ~/.zsh/completions/_gitwise
+gitwise completions fish > ~/.config/fish/completions/gitwise.fish
+```
 
 ## Demo
 

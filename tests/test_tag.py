@@ -79,3 +79,27 @@ def test_tag_delete_dry_run_non_interactive_succeeds_without_yes(tmp_git_repo):
     listed = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
     data = json.loads(listed.stdout)
     assert any(tag["name"] == "v0.1.0" for tag in data["tags"])
+
+
+def test_tag_delete_non_interactive_requires_yes(tmp_git_repo):
+    create = run_gitwise("tag", "create", "v0.2.0", cwd=tmp_git_repo)
+    assert create.returncode == 0
+
+    delete = run_gitwise("tag", "delete", "v0.2.0", cwd=tmp_git_repo)
+    assert delete.returncode == 1
+
+    listed = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
+    data = json.loads(listed.stdout)
+    assert any(tag["name"] == "v0.2.0" for tag in data["tags"])
+
+
+def test_tag_delete_with_yes_non_interactive_succeeds(tmp_git_repo):
+    create = run_gitwise("tag", "create", "v0.3.0", cwd=tmp_git_repo)
+    assert create.returncode == 0
+
+    delete = run_gitwise("tag", "delete", "v0.3.0", "--yes", cwd=tmp_git_repo)
+    assert delete.returncode == 0
+
+    listed = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
+    data = json.loads(listed.stdout)
+    assert all(tag["name"] != "v0.3.0" for tag in data["tags"])

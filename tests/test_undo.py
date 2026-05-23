@@ -34,3 +34,25 @@ def test_undo_with_ref(tmp_git_repo: Path) -> None:
     head = r.stdout.strip()
     r2 = run_gitwise("undo", head, "--dry-run", cwd=tmp_git_repo)
     assert r2.returncode == 0
+
+
+def test_undo_hard_non_interactive_requires_yes(tmp_git_repo: Path) -> None:
+    _git(["commit", "--allow-empty", "--no-gpg-sign", "-m", "chore: second commit"], tmp_git_repo)
+    before = _git(["rev-parse", "HEAD"], tmp_git_repo).stdout.strip()
+
+    r = run_gitwise("undo", cwd=tmp_git_repo)
+    assert r.returncode == 0
+
+    after = _git(["rev-parse", "HEAD"], tmp_git_repo).stdout.strip()
+    assert after == before
+
+
+def test_undo_hard_with_yes_non_interactive_succeeds(tmp_git_repo: Path) -> None:
+    _git(["commit", "--allow-empty", "--no-gpg-sign", "-m", "chore: second commit"], tmp_git_repo)
+    before = _git(["rev-parse", "HEAD"], tmp_git_repo).stdout.strip()
+
+    r = run_gitwise("undo", "--yes", cwd=tmp_git_repo)
+    assert r.returncode == 0
+
+    after = _git(["rev-parse", "HEAD"], tmp_git_repo).stdout.strip()
+    assert after != before
