@@ -7,18 +7,27 @@ from conftest import run_gitwise
 
 class TestListAdapters:
     def test_list_adapters_shows_all_seven(self):
-        result = run_gitwise("setup-agents", "--list-adapters")
+        result = run_gitwise("setup-agents", "--list-providers")
         assert result.returncode == 0
         for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
             assert name in result.stdout
 
     def test_list_adapters_in_json_mode(self):
+        result = run_gitwise("setup-agents", "--list-providers", "--json")
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert "providers" in data
+        assert "adapters" in data
+        for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
+            assert name in data["providers"]
+            assert name in data["adapters"]
+
+    def test_list_adapters_alias_still_works(self):
         result = run_gitwise("setup-agents", "--list-adapters", "--json")
         assert result.returncode == 0
         data = json.loads(result.stdout)
+        assert "providers" in data
         assert "adapters" in data
-        for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
-            assert name in data["adapters"]
 
     def test_single_adapter_claude_no_extra_adapter_actions(self, tmp_git_repo):
         result = run_gitwise(
@@ -26,7 +35,7 @@ class TestListAdapters:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "claude",
             cwd=tmp_git_repo,
         )
@@ -41,7 +50,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             cwd=tmp_git_repo,
         )
@@ -55,7 +64,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "aider",
             cwd=tmp_git_repo,
         )
@@ -69,7 +78,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "codex",
             cwd=tmp_git_repo,
         )
@@ -82,7 +91,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "opencode",
             cwd=tmp_git_repo,
         )
@@ -95,7 +104,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "continue",
             cwd=tmp_git_repo,
         )
@@ -108,7 +117,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "pi",
             cwd=tmp_git_repo,
         )
@@ -121,7 +130,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "aider",
             cwd=tmp_git_repo,
@@ -137,7 +146,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor,aider",
             cwd=tmp_git_repo,
         )
@@ -151,7 +160,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "none",
             cwd=tmp_git_repo,
         )
@@ -164,7 +173,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "claude-only",
             cwd=tmp_git_repo,
         )
@@ -178,13 +187,46 @@ class TestAdapterDryRun:
             "--dry-run",
             "--yes",
             "--json",
-            "--adapters",
+            "--providers",
             "claude-only",
             cwd=tmp_git_repo,
         )
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert any(a.get("file") == ".claude/settings.json" for a in data.get("actions", []))
+        assert any("deprecated alias" in w for w in data.get("warnings", []))
+
+    def test_adapters_claude_only_warns_in_global_mode(self, tmp_path):
+        result = run_gitwise(
+            "setup-agents",
+            "--dry-run",
+            "--yes",
+            "--json",
+            "--providers",
+            "claude-only",
+            cwd=tmp_path,
+            env={"HOME": str(tmp_path), "GITWISE_LANG": "en"},
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["mode"] == "global"
+        assert any("deprecated alias" in w for w in data.get("warnings", []))
+
+    def test_global_mode_allows_adapters(self, tmp_path):
+        result = run_gitwise(
+            "setup-agents",
+            "--dry-run",
+            "--yes",
+            "--json",
+            "--providers",
+            "cursor",
+            cwd=tmp_path,
+            env={"HOME": str(tmp_path), "GITWISE_LANG": "en"},
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["mode"] == "global"
+        assert any(a.get("file") == ".cursor/rules/gitwise.mdc" for a in data.get("actions", []))
 
     def test_adapters_none_with_others_errors(self, tmp_git_repo):
         result = run_gitwise(
@@ -192,7 +234,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "none",
             cwd=tmp_git_repo,
@@ -206,7 +248,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "claude-only",
             "cursor",
             cwd=tmp_git_repo,
@@ -220,7 +262,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "cursor",
             cwd=tmp_git_repo,
@@ -245,7 +287,7 @@ class TestAdapterDryRun:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "nonexistent",
             cwd=tmp_git_repo,
         )
@@ -259,7 +301,7 @@ class TestAdapterIdempotency:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             cwd=tmp_git_repo,
         )
@@ -268,7 +310,7 @@ class TestAdapterIdempotency:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             cwd=tmp_git_repo,
         )
@@ -281,7 +323,7 @@ class TestAdapterIdempotency:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "continue",
             "opencode",
@@ -306,7 +348,7 @@ class TestAdapterIdempotency:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "continue",
             "opencode",
@@ -320,7 +362,7 @@ class TestAdapterIdempotency:
             "--local",
             "--dry-run",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             "continue",
             "opencode",
@@ -339,7 +381,7 @@ class TestAdapterContent:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "cursor",
             cwd=tmp_git_repo,
         )
@@ -353,7 +395,7 @@ class TestAdapterContent:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "aider",
             cwd=tmp_git_repo,
         )
@@ -366,7 +408,7 @@ class TestAdapterContent:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "codex",
             cwd=tmp_git_repo,
         )
@@ -379,7 +421,7 @@ class TestAdapterContent:
             "setup-agents",
             "--local",
             "--yes",
-            "--adapters",
+            "--providers",
             "aider",
             cwd=tmp_git_repo,
         )
@@ -394,7 +436,7 @@ class TestAdapterContent:
             "--dry-run",
             "--yes",
             "--json",
-            "--adapters",
+            "--providers",
             "cursor",
             cwd=tmp_git_repo,
         )

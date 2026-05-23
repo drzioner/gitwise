@@ -38,6 +38,7 @@ def _plan_single_skill(
     root: Path,
     has_agents_dir: bool,
     global_skills: frozenset[str],
+    force_agents_layout: bool,
     check_global_available: bool,
     symlink_mismatch_key: str,
     symlink_broken_key: str,
@@ -52,7 +53,7 @@ def _plan_single_skill(
     skill_file = f".claude/skills/{skill}/SKILL.md"
     c_skill_state = _classify_path(claude_skill)
 
-    if has_agents_dir:
+    if has_agents_dir or force_agents_layout:
         agents_skill = agents_skills_dir / skill
         target_rel = os.path.relpath(str(agents_skill), str(claude_skill.parent))
 
@@ -159,13 +160,14 @@ def plan_skills(
     root: Path,
     state: StateDict,
     global_skills: frozenset[str] = frozenset(),
+    force_agents_layout: bool = False,
 ) -> tuple[list[dict], list[str]]:
     actions: list[dict] = []
     warnings: list[str] = []
 
     claude_skills = root / ".claude" / "skills"
     skills_state = state["skills_state"]
-    has_agents_dir = state["agents_dir"]
+    has_agents_dir = state["agents_dir"] or force_agents_layout
 
     if skills_state == "symlink_valid":
         for skill in _SKILLS:
@@ -193,6 +195,7 @@ def plan_skills(
                 root=root,
                 has_agents_dir=has_agents_dir,
                 global_skills=global_skills,
+                force_agents_layout=force_agents_layout,
                 check_global_available=False,
                 symlink_mismatch_key="skill_symlink_diferente",
                 symlink_broken_key="skill_symlink_broken",
@@ -240,6 +243,7 @@ def plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
                 root=home,
                 has_agents_dir=has_agents_dir,
                 global_skills=frozenset(),
+                force_agents_layout=False,
                 check_global_available=True,
                 symlink_mismatch_key="global_skill_symlink_diferente",
                 symlink_broken_key="global_skill_symlink_broken",

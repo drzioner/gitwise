@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from gitwise.i18n import t
 from gitwise.setup_agents.plan_gitfiles import (
     gitattributes_block_basic,
     gitattributes_block_extended,
@@ -20,8 +21,8 @@ from gitwise.setup_agents.state import (
 from gitwise.setup_agents.types import StateDict
 
 
-def _snapshot_file_for_state(state: StateDict) -> str:
-    if state["agents_dir"]:
+def _snapshot_file_for_state(*, has_agents_layout: bool) -> str:
+    if has_agents_layout:
         return ".agents/git-snapshot.md"
     return ".claude/git-snapshot.md"
 
@@ -87,12 +88,14 @@ def _resolve_canonical_doc(
     state: StateDict,
     no_symlinks: bool = False,
     replace_claude_with_symlink: bool = False,
+    migrate_legacy_claude: bool = False,
 ) -> tuple[int, list[dict], list[str]]:
     return CLAUDE_PROVIDER.resolve_canonical_doc(
         root,
         state,
         no_symlinks=no_symlinks,
         replace_claude_with_symlink=replace_claude_with_symlink,
+        migrate_legacy_claude=migrate_legacy_claude,
     )
 
 
@@ -100,6 +103,7 @@ def _plan_actions(
     root: Path,
     no_symlinks: bool = False,
     replace_claude_with_symlink: bool = False,
+    migrate_legacy_claude: bool = False,
     no_git_files: bool = False,
     frozen_time: bool = False,
 ) -> tuple[list[dict], list[str], list[dict], int, StateDict]:
@@ -115,14 +119,21 @@ def _plan_actions(
         state,
         no_symlinks=no_symlinks,
         replace_claude_with_symlink=replace_claude_with_symlink,
+        migrate_legacy_claude=migrate_legacy_claude,
     )
     settings_actions, settings_warnings = _plan_settings_json(root)
     global_skills = detect_global_skills()
-    skills_actions, skills_warnings = plan_skills(root, state, global_skills=global_skills)
+    has_agents_layout = state["agents_dir"] or migrate_legacy_claude
+    skills_actions, skills_warnings = plan_skills(
+        root,
+        state,
+        global_skills=global_skills,
+        force_agents_layout=has_agents_layout,
+    )
     rules_actions, rules_warnings = _plan_rules(root)
 
     has_agents_md = state["a_state"] != "absent"
-    has_agents_dir = state["agents_dir"]
+    has_agents_dir = has_agents_layout
 
     git_file_actions: list[dict] = []
     git_file_warnings: list[str] = []
@@ -149,7 +160,7 @@ def _plan_actions(
         + git_file_actions
         + [
             {
-                "file": _snapshot_file_for_state(state),
+                "file": _snapshot_file_for_state(has_agents_layout=has_agents_layout),
                 "action": "generate",
                 "frozen_time": frozen_time,
             }
@@ -163,4 +174,6 @@ def _plan_actions(
         + git_file_warnings
         + state["rules_warnings"]
     )
+    if migrate_legacy_claude:
+        warnings.append(t("legacy_migration_mode"))
     return actions, warnings, [], bucket, state

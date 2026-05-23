@@ -205,6 +205,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="bucket 4: replace CLAUDE.md with symlink to AGENTS.md — --local only",
     )
     p.add_argument(
+        "--migrate-legacy-claude",
+        action="store_true",
+        dest="migrate_legacy_claude",
+        help="migrate legacy Claude-only layout to canonical AGENTS/.agents — --local only",
+    )
+    p.add_argument(
         "--frozen-time",
         action="store_true",
         dest="frozen_time",
@@ -217,17 +223,30 @@ def _build_parser() -> argparse.ArgumentParser:
         help="don't touch .gitignore or .gitattributes — --local only",
     )
     p.add_argument(
+        "--providers",
+        nargs="*",
+        default=None,
+        dest="providers",
+        help="install config for coding providers (comma-separated: claude,cursor or multiple: --providers claude cursor)",
+    )
+    p.add_argument(
         "--adapters",
         nargs="*",
         default=None,
         dest="adapters",
-        help="install config for coding agents/providers (comma-separated: claude,cursor or multiple: --adapters claude cursor)",
+        help=argparse.SUPPRESS,
+    )
+    p.add_argument(
+        "--list-providers",
+        action="store_true",
+        dest="list_providers",
+        help="list available providers and exit",
     )
     p.add_argument(
         "--list-adapters",
         action="store_true",
         dest="list_adapters",
-        help="list available adapters and exit",
+        help=argparse.SUPPRESS,
     )
 
     p = sub.add_parser("setup", help="apply modern git defaults", parents=[parent])
@@ -426,18 +445,24 @@ def _run_doctor(args: argparse.Namespace) -> int:
 
 
 def _run_setup_agents(args: argparse.Namespace) -> int:
-    if getattr(args, "list_adapters", False):
+    if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
         from .i18n import t as _t
-        from .setup_agents.providers import list_adapters
+        from .setup_agents.providers import list_providers
 
-        adapter_list = list_adapters()
+        adapter_list = list_providers()
         if args.json:
-            print_json({"adapters": adapter_list})
+            print_json({"providers": adapter_list, "adapters": adapter_list})
         else:
             from .output import info
 
-            info(_t("adapters_available", list=", ".join(adapter_list)))
+            info(_t("providers_available", list=", ".join(adapter_list)))
         return 0
+
+    providers: list[str] | None = args.providers
+    adapters_legacy_used = False
+    if args.adapters is not None:
+        adapters_legacy_used = True
+        providers = args.adapters if providers is None else providers + args.adapters
 
     from ._cli_setup_agents import run_setup_agents
 
@@ -450,9 +475,11 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
         no_symlinks=args.no_symlinks,
         strict=args.strict,
         replace_claude_with_symlink=args.replace_claude_with_symlink,
+        migrate_legacy_claude=args.migrate_legacy_claude,
         frozen_time=args.frozen_time,
         no_git_files=args.no_git_files,
-        adapters=args.adapters,
+        providers=providers,
+        adapters_legacy_used=adapters_legacy_used,
     )
 
 

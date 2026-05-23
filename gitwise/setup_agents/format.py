@@ -20,6 +20,12 @@ def _canonical_layout_local(state: StateDict) -> str:
     return "claude_only"
 
 
+def _canonical_layout_local_with_flags(*, state: StateDict, migrate_legacy_claude: bool) -> str:
+    if migrate_legacy_claude:
+        return "agents_dir"
+    return _canonical_layout_local(state)
+
+
 def _canonical_layout_global(*, has_agents_dir: bool) -> str:
     if has_agents_dir:
         return "agents_dir"
@@ -50,12 +56,42 @@ def format_json_output_global(
     }
 
 
+def format_json_output_global_error(
+    *,
+    home: Path,
+    warnings: list[str],
+    errors: list[str],
+    has_agents_dir: bool,
+    dry_run: bool = False,
+) -> dict[str, object]:
+    return {
+        "v": _SETUP_AGENTS_SCHEMA_VERSION,
+        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
+        "dry_run": dry_run,
+        "root": str(home / ".claude"),
+        "mode": "global",
+        "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
+        "actions": [],
+        "warnings": warnings,
+        "errors": errors,
+        "summary": {
+            "created": 0,
+            "appended": 0,
+            "symlinked": 0,
+            "skipped": 0,
+            "errored": len(errors),
+        },
+        "ok": False,
+    }
+
+
 def format_json_output_local_error(
     *,
     root: Path,
     dry_run: bool = False,
     plan_errors: list[dict[str, str]],
     all_warnings: list[str],
+    migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
@@ -63,7 +99,7 @@ def format_json_output_local_error(
         "dry_run": dry_run,
         "root": str(root),
         "mode": "local",
-        "canonical_layout": "unknown",
+        "canonical_layout": "agents_dir" if migrate_legacy_claude else "unknown",
         "bucket": 5,
         "agents_md_detected": False,
         "agents_dir_detected": False,
@@ -92,6 +128,7 @@ def format_json_output_local(
     all_warnings: list[str],
     rules_warnings: list[str],
     state: StateDict,
+    migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
     summary = build_action_summary(actions)
     return {
@@ -100,7 +137,10 @@ def format_json_output_local(
         "dry_run": dry_run,
         "root": str(root),
         "mode": "local",
-        "canonical_layout": _canonical_layout_local(state),
+        "canonical_layout": _canonical_layout_local_with_flags(
+            state=state,
+            migrate_legacy_claude=migrate_legacy_claude,
+        ),
         "bucket": bucket,
         "agents_md_detected": state["a_state"] != "absent",
         "agents_dir_detected": state["agents_dir"],

@@ -29,6 +29,10 @@ def list_adapters() -> list[str]:
     return sorted(ADAPTERS.keys())
 
 
+def list_providers() -> list[str]:
+    return list_adapters()
+
+
 def resolve_adapter_selection(
     names: list[str] | None,
 ) -> tuple[list[AdapterConfig], list[str]]:

@@ -124,6 +124,41 @@ def test_setup_agents_json(tmp_git_repo):
     assert "actions" in data
 
 
+def test_setup_agents_list_providers_json(tmp_git_repo):
+    result = _run("setup-agents", "--list-providers", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "providers" in data
+    assert "adapters" in data
+    assert "claude" in data["providers"]
+    assert "claude" in data["adapters"]
+
+
+def test_setup_agents_list_adapters_alias_json(tmp_git_repo):
+    result = _run("setup-agents", "--list-adapters", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "providers" in data
+    assert "adapters" in data
+    assert "claude" in data["providers"]
+    assert "claude" in data["adapters"]
+
+
+def test_setup_agents_migrate_legacy_flag(tmp_git_repo):
+    result = _run(
+        "setup-agents",
+        "--local",
+        "--dry-run",
+        "--yes",
+        "--migrate-legacy-claude",
+        "--json",
+        cwd=tmp_git_repo,
+    )
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["canonical_layout"] == "agents_dir"
+
+
 def test_timing_shown_for_slow_commands(tmp_git_repo):
     result = _run("summarize", cwd=tmp_git_repo, env={"GITWISE_LANG": "en"})
     assert result.returncode == 0

@@ -82,6 +82,33 @@ def test_setup_agents_json_output_v3(tmp_git_repo):
     assert "summary" in data
 
 
+def test_setup_agents_json_output_v3_migrate_legacy(tmp_git_repo):
+    result = _run_local("--json", "--dry-run", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["canonical_layout"] == "agents_dir"
+    assert any("migr" in w.lower() for w in data["warnings"])
+
+
+def test_setup_agents_json_strict_warnings_returns_error(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# claude\n")
+    (tmp_git_repo / "AGENTS.md").write_text("# agents\n")
+    result = _run_local("--json", "--dry-run", "--strict", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert any("strict" in e.lower() for e in data["errors"])
+
+
+def test_migrate_legacy_warning_not_duplicated(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# legacy\n")
+    result = _run_local("--json", "--dry-run", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    migration_warnings = [w for w in data["warnings"] if "migr" in w.lower()]
+    assert len(migration_warnings) == 1
+
+
 def test_setup_agents_creates_files(tmp_git_repo):
     result = _run_local("--yes", cwd=tmp_git_repo)
     assert result.returncode == 0
@@ -89,6 +116,29 @@ def test_setup_agents_creates_files(tmp_git_repo):
     assert (tmp_git_repo / ".claude" / "settings.json").exists()
     assert (tmp_git_repo / ".claude" / "skills" / "git-audit" / "SKILL.md").exists()
     assert (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
+
+
+def test_migrate_legacy_claude_creates_canonical_layout(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# legacy claude\n", encoding="utf-8")
+    result = _run_local("--yes", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    agents_md = tmp_git_repo / "AGENTS.md"
+    assert agents_md.exists()
+    claude_md = tmp_git_repo / "CLAUDE.md"
+    assert claude_md.is_symlink()
+    assert os.readlink(claude_md) == "AGENTS.md"
+    assert (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").exists()
+    assert (tmp_git_repo / ".agents" / "git-snapshot.md").exists()
+
+
+def test_migrate_legacy_claude_is_idempotent(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# legacy claude\n", encoding="utf-8")
+    first = _run_local("--yes", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    second = _run_local("--yes", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert first.returncode == 0
+    assert second.returncode == 0
+    assert (tmp_git_repo / "AGENTS.md").exists()
+    assert (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").exists()
 
 
 def test_setup_agents_settings_json_valid(tmp_git_repo):
@@ -314,6 +364,19 @@ def test_bucket4_replace_flag_creates_backup_and_symlink(tmp_git_repo):
     baks = list(tmp_git_repo.glob("CLAUDE.md.bak*"))
     assert len(baks) >= 1
     assert baks[0].read_text() == "# claude content\n"
+
+
+def test_migrate_legacy_flag_creates_backup_and_symlink(tmp_git_repo):
+    (tmp_git_repo / "CLAUDE.md").write_text("# claude content\n")
+    (tmp_git_repo / "AGENTS.md").write_text("# agents content\n")
+
+    result = _run_local("--yes", "--migrate-legacy-claude", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    claude_md = tmp_git_repo / "CLAUDE.md"
+    assert claude_md.is_symlink()
+    assert os.readlink(claude_md) == "AGENTS.md"
+    baks = list(tmp_git_repo.glob("CLAUDE.md.bak*"))
+    assert len(baks) >= 1
 
 
 # ── Bucket 5 — estado inválido, aborta limpio ─────────────────────────────────
@@ -658,6 +721,12 @@ def test_global_mode_installs_to_claude_dir(tmp_path):
         assert (tmp_path / ".claude" / "skills" / skill / "SKILL.md").exists()
 
 
+def test_global_mode_with_adapter_creates_provider_files(tmp_path):
+    result = _run_global("--yes", "--providers", "cursor", fake_home=tmp_path)
+    assert result.returncode == 0
+    assert (tmp_path / ".cursor" / "rules" / "gitwise.mdc").exists()
+
+
 def test_global_mode_works_outside_git_repo(tmp_path):
     """Global mode does not require a git repo."""
     non_git = tmp_path / "not-a-repo"
@@ -665,6 +734,29 @@ def test_global_mode_works_outside_git_repo(tmp_path):
     result = _run_global("--yes", fake_home=tmp_path, cwd=non_git)
     assert result.returncode == 0
     assert (tmp_path / ".claude" / "settings.json").exists()
+
+
+def test_global_mode_rejects_migrate_legacy_flag(tmp_path):
+    result = _run_global("--json", "--dry-run", "--migrate-legacy-claude", fake_home=tmp_path)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert any("local" in e.lower() for e in data["errors"])
+
+
+def test_global_mode_strict_warnings_fails_with_deprecated_alias(tmp_path):
+    result = _run_global(
+        "--json",
+        "--dry-run",
+        "--strict",
+        "--providers",
+        "claude-only",
+        fake_home=tmp_path,
+    )
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert any("strict" in e.lower() for e in data["errors"])
 
 
 def test_global_mode_json_output(tmp_path):
@@ -678,6 +770,14 @@ def test_global_mode_json_output(tmp_path):
     assert data["ok"] is True
     assert "actions" in data
     assert "summary" in data
+
+
+def test_global_mode_adapters_json_output(tmp_path):
+    result = _run_global("--json", "--dry-run", "--providers", "cursor", fake_home=tmp_path)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["mode"] == "global"
+    assert any(a.get("file") == ".cursor/rules/gitwise.mdc" for a in data.get("actions", []))
 
 
 def test_global_mode_json_reports_agents_layout_when_present(tmp_path):
@@ -696,6 +796,13 @@ def test_global_mode_idempotent(tmp_path):
     settings_second = json.loads((tmp_path / ".claude" / "settings.json").read_text())
 
     assert settings_first == settings_second
+
+
+def test_global_mode_with_claude_only_warns_alias(tmp_path):
+    result = _run_global("--json", "--dry-run", "--providers", "claude-only", fake_home=tmp_path)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert any("alias" in w.lower() for w in data["warnings"])
 
 
 def test_global_no_skills_flag(tmp_path):

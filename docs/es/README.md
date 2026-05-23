@@ -10,6 +10,7 @@ Este indice organiza la documentacion de usuario y contribucion de gitwise.
 ## Empieza aqui
 
 - [Referencia de comandos](reference/commands.md)
+- [Guia de migracion setup-agents (0.17)](MIGRATION-0.17.md)
 - [Por que gitwise](why.md)
 - [Reescribir historial Git de forma segura](rewrite-history.md)
 

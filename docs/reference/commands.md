@@ -40,15 +40,18 @@ gitwise setup --hooks-mode skip
 Install canonical agents files globally (default) or in the current repo (`--local`).
 
 - Canonical-first layout: `AGENTS.md` + `.agents/skills/`
-- Provider integrations (Claude, Cursor, Continue, opencode, Codex, Aider, Pi) stay optional via `--adapters`
-- Deprecated compatibility alias: `--adapters claude-only` is treated as `claude`
+- Provider integrations (Claude, Cursor, Continue, opencode, Codex, Aider, Pi) stay optional via `--providers`
+- Deprecated compatibility alias: `--providers claude-only` is treated as `claude`
+- `--migrate-legacy-claude` forces migration from legacy Claude-only layout to canonical layout in local mode
 - `--json` output for this command uses schema `v=3` with `canonical_layout` and `v_compat: [1, 2, 3]`
 
 ```bash
 gitwise setup-agents --local --dry-run
 gitwise setup-agents --local --yes
-gitwise setup-agents --list-adapters
-gitwise setup-agents --local --yes --adapters cursor aider
+gitwise setup-agents --local --yes --migrate-legacy-claude
+gitwise setup-agents --list-providers
+gitwise setup-agents --dry-run --providers cursor
+gitwise setup-agents --local --yes --providers cursor aider
 ```
 
 ## Daily context and review

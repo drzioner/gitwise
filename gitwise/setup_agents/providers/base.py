@@ -13,6 +13,7 @@ from gitwise.setup_agents.types import ActionDict, StateDict
 class AdapterFlags(TypedDict, total=False):
     no_symlinks: bool
     replace_claude_with_symlink: bool
+    migrate_legacy_claude: bool
     frozen_time: bool
     no_git_files: bool
     core_claude_planned: bool

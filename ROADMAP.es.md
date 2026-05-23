@@ -15,7 +15,7 @@ gitwise actualmente incluye 27 comandos (con aliases): `doctor`, `setup-agents`,
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
 `pick` (`cherry-pick`), `status`, `update`.
 
-Completado hasta la Phase 12. Baseline actual: 524 tests recolectados, 447 keys i18n (es/en),
+Completado hasta la Phase 12. Baseline actual: 541 tests recolectados, 451 keys i18n (es/en),
 una dependencia runtime (`rich>=13.0`).
 
 ---
@@ -102,7 +102,7 @@ una dependencia runtime (`rich>=13.0`).
 ## Phase 12 - Multi-Agent Adapters & Coverage (v0.12.0)
 
 - `setup_agents/adapters/` con registry para 6 agentes
-- Flags `--adapters` y `--list-adapters`
+- Flags `--providers` y `--list-providers` (`--adapters`/`--list-adapters` quedan como aliases de compatibilidad)
 - Adapters: Cursor, Continue, opencode, Codex, Aider, Pi
 - Templates en `share/<adapter>/`
 - Cobertura con patch de subprocess

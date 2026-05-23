@@ -132,6 +132,13 @@ def _exec_claude_md(action: dict[str, Any], root: Path) -> None:
 
 def _exec_agents_md(action: dict[str, Any], root: Path) -> None:
     path = root / _AGENTS_MD
+    act = action.get("action", "append")
+    if act == "create":
+        path.write_text(action["content"], encoding="utf-8")
+        action["_created"] = True
+        ok(t("created", file=_AGENTS_MD))
+        return
+
     existing = path.read_text(encoding="utf-8")
     sep = "\n" if existing.endswith("\n") else "\n\n"
     path.write_text(existing + sep + action["content"], encoding="utf-8")
