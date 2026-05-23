@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.21.0 (2026-05-23)
+## v0.22.0 (2026-05-23)
 
 ### Feat
 
-- **cli**: add P2 commands/schema introspection with resilient dependency fallbacks (#40)
+- **schema**: add versioned schema catalog and CI validation (#41)
