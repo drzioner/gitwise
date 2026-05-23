@@ -625,3 +625,23 @@ class TestRichHelpFormatterCaching:
 
         GitwiseRichHelpFormatter._install_group_name_localization(DummyFormatter)
         assert DummyFormatter.group_name_formatter is installed
+
+
+class TestRichArgparseFallback:
+    def test_formatter_cls_fallback_when_rich_argparse_missing(self, monkeypatch):
+        import importlib
+
+        from gitwise.design import GitwiseHelpFormatter, GitwiseRichHelpFormatter
+
+        original_import_module = importlib.import_module
+
+        def fake_import_module(name: str, package: str | None = None):
+            if name == "rich_argparse":
+                raise ModuleNotFoundError("No module named 'rich_argparse'")
+            return original_import_module(name, package)
+
+        monkeypatch.setattr(importlib, "import_module", fake_import_module)
+        GitwiseRichHelpFormatter._FORMATTER = None
+
+        formatter_cls = GitwiseRichHelpFormatter._formatter_cls()
+        assert formatter_cls is GitwiseHelpFormatter

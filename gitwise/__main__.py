@@ -243,6 +243,145 @@ def _build_fish_completions_script(*, parser: argparse.ArgumentParser, prog: str
     return "\n".join(lines) + "\n"
 
 
+def _canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
+    prog = command_parser.prog.strip()
+    if not prog:
+        return ""
+    parts = prog.split()
+    return parts[-1] if parts else ""
+
+
+def _commands_metadata(parser: argparse.ArgumentParser) -> list[dict[str, object]]:
+    sub_action = _subparsers_action(parser)
+    if sub_action is None:
+        return []
+
+    help_by_parser_id: dict[int, str] = {}
+    for pseudo in sub_action._choices_actions:
+        parser_name = str(pseudo.dest)
+        parser_obj = sub_action.choices.get(parser_name)
+        if parser_obj is None:
+            continue
+        parser_id = id(parser_obj)
+        if parser_id not in help_by_parser_id:
+            help_by_parser_id[parser_id] = pseudo.help or ""
+
+    entries: list[dict[str, object]] = []
+    seen_parser_ids: set[int] = set()
+    for command_parser in sub_action.choices.values():
+        parser_id = id(command_parser)
+        if parser_id in seen_parser_ids:
+            continue
+        seen_parser_ids.add(parser_id)
+
+        canonical_name = _canonical_command_name(command_parser)
+        aliases = sorted(
+            [
+                name
+                for name, candidate in sub_action.choices.items()
+                if candidate is command_parser and name != canonical_name
+            ]
+        )
+
+        entries.append(
+            {
+                "name": canonical_name,
+                "help": help_by_parser_id.get(parser_id, command_parser.description or ""),
+                "aliases": aliases,
+                "supports_json": True,
+            }
+        )
+
+    return sorted(entries, key=lambda item: str(item["name"]))
+
+
+def _json_type_for_action(action: argparse.Action) -> str:
+    if isinstance(action, argparse._StoreTrueAction | argparse._StoreFalseAction):
+        return "boolean"
+
+    action_type = getattr(action, "type", None)
+    if action_type is int:
+        return "integer"
+    if action_type is float:
+        return "number"
+    return "string"
+
+
+def _action_property_schema(action: argparse.Action) -> dict[str, object]:
+    value_schema: dict[str, object] = {"type": _json_type_for_action(action)}
+
+    if action.choices:
+        value_schema["enum"] = [_json_safe(choice) for choice in action.choices]
+
+    description = "" if action.help is argparse.SUPPRESS else (action.help or "")
+    if description:
+        value_schema["description"] = description
+
+    if action.default is not argparse.SUPPRESS and action.default is not None:
+        value_schema["default"] = _json_safe(action.default)
+
+    nargs = action.nargs
+    if nargs in ("*", "+") or (isinstance(nargs, int) and nargs > 1):
+        array_schema: dict[str, object] = {
+            "type": "array",
+            "items": value_schema,
+        }
+        if nargs == "+":
+            array_schema["minItems"] = 1
+        if isinstance(nargs, int) and nargs > 1:
+            array_schema["minItems"] = nargs
+            array_schema["maxItems"] = nargs
+        return array_schema
+
+    return value_schema
+
+
+def _action_required(action: argparse.Action) -> bool:
+    if action.option_strings:
+        return bool(getattr(action, "required", False))
+
+    nargs = action.nargs
+    if nargs in (None, "+"):
+        return True
+    if isinstance(nargs, int):
+        return nargs > 0
+    return False
+
+
+def _command_input_schema(command_parser: argparse.ArgumentParser) -> dict[str, object]:
+    properties: dict[str, object] = {}
+    required: list[str] = []
+
+    for action in command_parser._actions:
+        if action.dest == "help" or isinstance(action, argparse._SubParsersAction):
+            continue
+        properties[action.dest] = _action_property_schema(action)
+        if _action_required(action):
+            required.append(action.dest)
+
+    schema: dict[str, object] = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": f"https://gitwise.dev/schemas/v1/input/{_canonical_command_name(command_parser)}.json",
+        "title": f"gitwise {_canonical_command_name(command_parser)} cli input",
+        "type": "object",
+        "additionalProperties": False,
+        "properties": properties,
+    }
+    if required:
+        schema["required"] = sorted(set(required))
+
+    return schema
+
+
+def _resolve_command_parser(
+    *, parser: argparse.ArgumentParser, name: str
+) -> argparse.ArgumentParser | None:
+    sub_action = _subparsers_action(parser)
+    if sub_action is None:
+        return None
+    return sub_action.choices.get(name)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument(
@@ -537,6 +676,19 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
 
     p = sub.add_parser("status", help="enhanced git status for humans and AI", parents=[parent])
+
+    p = sub.add_parser(
+        "commands",
+        help="list available subcommands and metadata",
+        parents=[parent],
+    )
+
+    p = sub.add_parser(
+        "schema",
+        help="print JSON schema for a command",
+        parents=[parent],
+    )
+    p.add_argument("name", help="command name to inspect")
 
     p = sub.add_parser(
         "completions",
@@ -838,6 +990,17 @@ def _run_completions(args: argparse.Namespace) -> int:
     prog = args.prog
     try:
         script = _build_completions_script(shell=shell, prog=prog)
+    except ModuleNotFoundError:
+        from .output import error as _error
+        from .utils.json_envelope import error_envelope
+
+        hint = t("missing_dependency_hint")
+        message = t("missing_dependency_completions_shtab")
+        if args.json:
+            print_json(error_envelope(error=message, code="missing_dependency", hint=hint))
+        else:
+            _error(message, hint=hint)
+        return 1
     except RuntimeError as e:
         from .output import error as _error
 
@@ -849,7 +1012,95 @@ def _run_completions(args: argparse.Namespace) -> int:
         _error(t("completions_unsupported_shell", shell=shell))
         return 1
 
+    if args.json:
+        print_json(
+            {
+                "v": 2,
+                "ok": True,
+                "kind": "completions",
+                "schema": "gitwise/completions/v1",
+                "version": __version__,
+                "shell": shell,
+                "prog": prog,
+                "script": script,
+            }
+        )
+        return 0
+
     print(script)
+    return 0
+
+
+def _run_commands(args: argparse.Namespace) -> int:
+    parser = _build_parser()
+    commands: list[dict[str, object]] = _commands_metadata(parser)
+    payload = {
+        "v": 2,
+        "ok": True,
+        "kind": "commands",
+        "schema": "gitwise/commands/v1",
+        "version": __version__,
+        "commands": commands,
+    }
+
+    if args.json:
+        print_json(payload)
+        return 0
+
+    for item in commands:
+        aliases = item["aliases"]
+        aliases_list = aliases if isinstance(aliases, list) else []
+        alias_text = (
+            f" (aliases: {', '.join(str(alias) for alias in aliases_list)})"
+            if aliases_list
+            else ""
+        )
+        print(f"{item['name']}: {item['help']}{alias_text}")
+    return 0
+
+
+def _run_schema(args: argparse.Namespace) -> int:
+    from .utils.json_envelope import error_envelope
+
+    parser = _build_parser()
+    command_parser = _resolve_command_parser(parser=parser, name=args.name)
+    if command_parser is None:
+        if args.json:
+            print_json(
+                error_envelope(
+                    error=f"unknown command: {args.name}",
+                    code="unknown_command",
+                    hint="run `gitwise commands --json` to list available commands",
+                    schema="gitwise/schema/v1",
+                    kind="schema",
+                )
+            )
+        else:
+            from .output import error as _error
+
+            _error(
+                f"unknown command: {args.name}",
+                hint="run `gitwise commands --json` to list available commands",
+            )
+        return 1
+
+    canonical_name = _canonical_command_name(command_parser)
+    payload = {
+        "v": 2,
+        "ok": True,
+        "kind": "schema",
+        "schema": "gitwise/schema/v1",
+        "version": __version__,
+        "command": canonical_name,
+        "schema_kind": "cli_input",
+        "json_schema": _command_input_schema(command_parser),
+    }
+
+    if args.json:
+        print_json(payload)
+        return 0
+
+    print_json(payload)
     return 0
 
 
@@ -885,6 +1136,8 @@ _DISPATCH: dict = {
     "update": _run_update,
     "status": _run_status,
     "completions": _run_completions,
+    "commands": _run_commands,
+    "schema": _run_schema,
 }
 
 
