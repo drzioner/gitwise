@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.20.0 (2026-05-23)
+## v0.21.0 (2026-05-23)
 
 ### Feat
 
-- implement P1 completions, rich help, and env docs (#38)
+- **cli**: add P2 commands/schema introspection with resilient dependency fallbacks (#40)
