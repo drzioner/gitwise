@@ -219,8 +219,13 @@ def _exec_adapter_create(action: dict[str, Any], root: Path) -> None:
 def _exec_snapshot(action: dict[str, Any], root: Path) -> None:
     from gitwise.snapshot import generate_snapshot as _gen_snapshot
 
-    _gen_snapshot(root, frozen_time=action.get("frozen_time", False))
-    ok(t("snapshot_generated", path=".claude/git-snapshot.md"))
+    snapshot_file = action.get("file", ".claude/git-snapshot.md")
+    _gen_snapshot(
+        root,
+        frozen_time=action.get("frozen_time", False),
+        relative_path=snapshot_file,
+    )
+    ok(t("snapshot_generated", path=snapshot_file))
 
 
 def _exec_managed_block(action: dict[str, Any], root: Path) -> None:
@@ -247,7 +252,7 @@ def _match_file_key(file_key: str, act: str) -> Callable[[dict[str, Any], Path],
         return _exec_skill_md
     if file_key.startswith(".claude/rules/") and file_key.endswith(".md"):
         return _exec_rule
-    if file_key == ".claude/git-snapshot.md":
+    if file_key in (".claude/git-snapshot.md", ".agents/git-snapshot.md"):
         return _exec_snapshot
     if act in ("managed-block-create", "managed-block-replace"):
         return _exec_managed_block

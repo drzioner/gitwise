@@ -64,11 +64,14 @@ def test_setup_agents_dry_run_no_changes(tmp_git_repo):
     assert not (tmp_git_repo / ".claude" / "settings.json").exists()
 
 
-def test_setup_agents_json_output_v2(tmp_git_repo):
+def test_setup_agents_json_output_v3(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 2
+    assert data["v"] == 3
+    assert data["mode"] == "local"
+    assert data["canonical_layout"] == "claude_only"
+    assert 3 in data["v_compat"]
     assert 2 in data["v_compat"]
     assert 1 in data["v_compat"]
     assert data["ok"] is True
@@ -186,7 +189,7 @@ def test_marker_regex_no_false_positive():
     assert not _MARKER_RE.search("# Convenciones git para este proyecto\n")  # single #
 
 
-# ── Bucket 1 (no AGENTS.md) — zero-regression JSON schema v2 ─────────────────
+# ── Bucket 1 (no AGENTS.md) — JSON schema v3 contract ────────────────────────
 
 
 def test_bucket1_json_schema_v2_shape(tmp_git_repo):
@@ -229,6 +232,8 @@ def test_bucket2_json_reports_correct_bucket(tmp_git_repo):
     (tmp_git_repo / "AGENTS.md").write_text("# project agents\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
+    assert data["mode"] == "local"
+    assert data["canonical_layout"] == "agents_md"
     assert data["bucket"] == 2
     assert data["agents_md_detected"] is True
     assert data["ok"] is True
@@ -373,6 +378,16 @@ def test_skills_symlink_created_when_agents_dir_exists(tmp_git_repo):
         assert ".agents" in target
     # SKILL.md se crea en .agents/skills/ (write_text sigue el symlink)
     assert (tmp_git_repo / ".agents" / "skills" / "git-audit" / "SKILL.md").exists()
+    assert (tmp_git_repo / ".agents" / "git-snapshot.md").exists()
+    assert not (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
+
+
+def test_local_json_reports_agents_dir_layout(tmp_git_repo):
+    (tmp_git_repo / ".agents").mkdir()
+    result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
+    data = json.loads(result.stdout)
+    assert data["mode"] == "local"
+    assert data["canonical_layout"] == "agents_dir"
 
 
 def test_skills_symlink_idempotent_on_second_run(tmp_git_repo):
@@ -411,6 +426,14 @@ def test_gitignore_creates_block_when_absent(tmp_git_repo):
     assert "# <<< gitwise managed" in content
     assert ".claude/settings.local.json" in content
     assert ".claude/git-snapshot.md" in content
+
+
+def test_gitignore_uses_agents_snapshot_when_agents_dir_exists(tmp_git_repo):
+    (tmp_git_repo / ".agents").mkdir()
+    _run_local("--yes", cwd=tmp_git_repo)
+    content = (tmp_git_repo / ".gitignore").read_text()
+    assert ".agents/git-snapshot.md" in content
+    assert ".claude/git-snapshot.md" not in content
 
 
 def test_gitignore_appends_block_to_existing(tmp_git_repo):
@@ -472,6 +495,14 @@ def test_gitattributes_agents_extended_when_agents_md(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     content = (tmp_git_repo / ".gitattributes").read_text()
     assert "AGENTS.md text=auto eol=lf" in content
+
+
+def test_gitattributes_uses_agents_snapshot_when_agents_dir_exists(tmp_git_repo):
+    (tmp_git_repo / ".agents").mkdir()
+    _run_local("--yes", cwd=tmp_git_repo)
+    content = (tmp_git_repo / ".gitattributes").read_text()
+    assert ".agents/git-snapshot.md merge=ours linguist-generated=true" in content
+    assert ".claude/git-snapshot.md merge=ours linguist-generated=true" not in content
 
 
 # ── --strict flag ─────────────────────────────────────────────────────────────
@@ -640,11 +671,21 @@ def test_global_mode_json_output(tmp_path):
     result = _run_global("--json", "--dry-run", fake_home=tmp_path)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 2
+    assert data["v"] == 3
     assert data["mode"] == "global"
+    assert data["canonical_layout"] == "claude_only"
+    assert 3 in data["v_compat"]
     assert data["ok"] is True
     assert "actions" in data
     assert "summary" in data
+
+
+def test_global_mode_json_reports_agents_layout_when_present(tmp_path):
+    (tmp_path / ".agents").mkdir()
+    result = _run_global("--json", "--dry-run", fake_home=tmp_path)
+    data = json.loads(result.stdout)
+    assert data["mode"] == "global"
+    assert data["canonical_layout"] == "agents_dir"
 
 
 def test_global_mode_idempotent(tmp_path):

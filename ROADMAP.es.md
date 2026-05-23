@@ -15,7 +15,7 @@ gitwise actualmente incluye 27 comandos (con aliases): `doctor`, `setup-agents`,
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
 `pick` (`cherry-pick`), `status`, `update`.
 
-Completado hasta la Phase 12. Baseline actual: 512 tests recolectados, 447 keys i18n (es/en),
+Completado hasta la Phase 12. Baseline actual: 524 tests recolectados, 447 keys i18n (es/en),
 una dependencia runtime (`rich>=13.0`).
 
 ---
@@ -141,7 +141,7 @@ una dependencia runtime (`rich>=13.0`).
 ## Principios de diseno
 
 1. **Dependencias minimas**: `rich>=13.0` + stdlib + subprocess de git.
-2. **`--json` en todos los comandos**: salida util para agentes.
+2. **`--json` en todos los comandos**: salida util para agentes (envelope v2; `setup-agents` ahora v3).
 3. **`--dry-run` para operaciones destructivas**.
 4. **Delta automatico** cuando hay TTY.
 5. **i18n centralizado** con `t()` y `_i18n_data.json`.

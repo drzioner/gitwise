@@ -119,7 +119,7 @@ def test_setup_agents_json(tmp_git_repo):
     result = _run("setup-agents", "--local", "--yes", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["v"] == 2
+    assert data["v"] == 3
     assert "bucket" in data
     assert "actions" in data
 

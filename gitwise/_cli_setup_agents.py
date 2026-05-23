@@ -31,7 +31,9 @@ def _run_setup_global(
     as_json: bool = False,
     no_skills: bool = False,
 ) -> int:
-    """Installs global Claude Code artifacts to ~/.claude/. No git repo required."""
+    """Installs global setup-agents artifacts to home config dirs. No git repo required."""
+    agents_dir = home / ".agents"
+    has_agents_dir = agents_dir.is_dir() and not agents_dir.is_symlink()
     try:
         actions, warnings, _ = _plan_actions_global(home, no_skills=no_skills)
     except FileNotFoundError as e:
@@ -41,7 +43,11 @@ def _run_setup_global(
     if as_json:
         print_json(
             format_json_output_global(
-                home=home, actions=actions, warnings=warnings, dry_run=dry_run
+                home=home,
+                actions=actions,
+                warnings=warnings,
+                has_agents_dir=has_agents_dir,
+                dry_run=dry_run,
             )
         )
         return 0

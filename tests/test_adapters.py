@@ -171,6 +171,21 @@ class TestAdapterDryRun:
         assert result.returncode == 0
         assert "ADAPTER-CREATE" not in result.stdout
 
+    def test_adapters_claude_only_aliases_to_claude(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--json",
+            "--adapters",
+            "claude-only",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert any(a.get("file") == ".claude/settings.json" for a in data.get("actions", []))
+
     def test_adapters_none_with_others_errors(self, tmp_git_repo):
         result = run_gitwise(
             "setup-agents",
@@ -184,6 +199,20 @@ class TestAdapterDryRun:
         )
         assert result.returncode == 1
         assert "cannot be combined" in result.stderr or "cannot be combined" in result.stdout
+
+    def test_adapters_claude_only_with_others_is_allowed(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--adapters",
+            "claude-only",
+            "cursor",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        assert ".cursor/rules/gitwise.mdc" in result.stdout
 
     def test_duplicate_adapter_idempotent(self, tmp_git_repo):
         result = run_gitwise(
