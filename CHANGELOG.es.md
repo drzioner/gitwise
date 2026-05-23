@@ -14,17 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.18.0 (2026-05-23)
+## v0.19.0 (2026-05-23)
 
 ### Feat
 
-- **release**: auto-sync CHANGELOG.es on bump
-
-### Fix
-
-- **ci**: eliminate workflow_call auth failure and cache collisions on main (#36)
-- **setup-agents**: restore rollback correctness and isolate claude core
-
-### Refactor
-
-- **setup-agents**: canonical local default and transactional rollback
+- close P0 agent safety and JSON error consistency (#37)
