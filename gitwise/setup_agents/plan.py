@@ -11,6 +11,8 @@ from gitwise.setup_agents.plan_gitfiles import (
     plan_managed_block,
 )
 from gitwise.setup_agents.plan_skills import (
+    _SKILLS,
+    _read_skill_template,
     plan_skills,
 )
 from gitwise.setup_agents.providers import detect_global_skills
@@ -25,6 +27,52 @@ def _snapshot_file_for_state(*, has_agents_layout: bool) -> str:
     if has_agents_layout:
         return ".agents/git-snapshot.md"
     return ".claude/git-snapshot.md"
+
+
+def _is_clean_repo_for_canonical_default(
+    *,
+    state: StateDict,
+    migrate_legacy_claude: bool,
+    force_claude_core: bool,
+) -> bool:
+    if migrate_legacy_claude or force_claude_core:
+        return False
+    return state["a_state"] == "absent" and state["c_state"] == "absent"
+
+
+def _plan_canonical_skills(root: Path) -> list[dict]:
+    actions: list[dict] = []
+    for skill in _SKILLS:
+        skill_dir = root / ".agents" / "skills" / skill
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_dir.exists():
+            actions.append({"file": f".agents/skills/{skill}", "action": "mkdir"})
+        if skill_file.exists():
+            actions.append(
+                {
+                    "file": f".agents/skills/{skill}/SKILL.md",
+                    "action": "skip",
+                    "reason": t("already_exists"),
+                }
+            )
+        else:
+            actions.append(
+                {
+                    "file": f".agents/skills/{skill}/SKILL.md",
+                    "action": "create",
+                    "content": _read_skill_template(skill),
+                }
+            )
+    return actions
+
+
+def _legacy_skill_warnings(root: Path) -> list[str]:
+    warnings: list[str] = []
+    legacy_dir = root / ".claude" / "commands"
+    for skill in _SKILLS:
+        if (legacy_dir / f"{skill}.md").exists():
+            warnings.append(t("legacy_commands", skill=skill))
+    return warnings
 
 
 def _plan_settings_json(root: Path) -> tuple[list[dict], list[str]]:
@@ -104,6 +152,7 @@ def _plan_actions(
     no_symlinks: bool = False,
     replace_claude_with_symlink: bool = False,
     migrate_legacy_claude: bool = False,
+    force_claude_core: bool = False,
     no_git_files: bool = False,
     frozen_time: bool = False,
 ) -> tuple[list[dict], list[str], list[dict], int, StateDict]:
@@ -114,25 +163,51 @@ def _plan_actions(
         ]
         return [], [], err_actions, 5, state
 
-    bucket, doc_actions, doc_warnings = _resolve_canonical_doc(
-        root,
-        state,
-        no_symlinks=no_symlinks,
-        replace_claude_with_symlink=replace_claude_with_symlink,
+    canonical_clean = _is_clean_repo_for_canonical_default(
+        state=state,
         migrate_legacy_claude=migrate_legacy_claude,
+        force_claude_core=force_claude_core,
     )
-    settings_actions, settings_warnings = _plan_settings_json(root)
-    global_skills = detect_global_skills()
-    has_agents_layout = state["agents_dir"] or migrate_legacy_claude
-    skills_actions, skills_warnings = plan_skills(
-        root,
-        state,
-        global_skills=global_skills,
-        force_agents_layout=has_agents_layout,
-    )
-    rules_actions, rules_warnings = _plan_rules(root)
 
-    has_agents_md = state["a_state"] != "absent"
+    global_skills = detect_global_skills()
+
+    if canonical_clean:
+        bucket = 1
+        doc_actions = [
+            {
+                "file": "AGENTS.md",
+                "action": "create",
+                "content": CLAUDE_PROVIDER.build_template(root),
+            }
+        ]
+        doc_warnings: list[str] = []
+        settings_actions: list[dict] = []
+        settings_warnings: list[str] = []
+        skills_actions = _plan_canonical_skills(root)
+        skills_warnings = [t("skill_globally_available", skill=skill) for skill in global_skills]
+        skills_warnings += _legacy_skill_warnings(root)
+        rules_actions: list[dict] = []
+        rules_warnings: list[str] = []
+        has_agents_layout = True
+    else:
+        bucket, doc_actions, doc_warnings = _resolve_canonical_doc(
+            root,
+            state,
+            no_symlinks=no_symlinks,
+            replace_claude_with_symlink=replace_claude_with_symlink,
+            migrate_legacy_claude=migrate_legacy_claude,
+        )
+        settings_actions, settings_warnings = _plan_settings_json(root)
+        has_agents_layout = state["agents_dir"] or migrate_legacy_claude
+        skills_actions, skills_warnings = plan_skills(
+            root,
+            state,
+            global_skills=global_skills,
+            force_agents_layout=has_agents_layout,
+        )
+        rules_actions, rules_warnings = _plan_rules(root)
+
+    has_agents_md = state["a_state"] != "absent" or canonical_clean
     has_agents_dir = has_agents_layout
 
     git_file_actions: list[dict] = []

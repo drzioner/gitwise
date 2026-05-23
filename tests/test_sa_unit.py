@@ -274,7 +274,7 @@ class TestExecuteActions:
         ]
         with pytest.raises(PlanExecutionError):
             _execute_actions(tmp_path, actions)
-        assert not (tmp_path / "CLAUDE.md").exists()
+        assert (tmp_path / "CLAUDE.md").read_text(encoding="utf-8") == "# Claude\n"
 
     def test_generate_snapshot_to_agents_path(self, tmp_path: Path) -> None:
         actions = [
@@ -285,6 +285,53 @@ class TestExecuteActions:
         assert snapshot.exists()
         content = snapshot.read_text(encoding="utf-8")
         assert "generated_at: 1970-01-01T00:00:00Z" in content
+
+    def test_transactional_rollback_restores_managed_block_append(self, tmp_path: Path) -> None:
+        gitignore = tmp_path / ".gitignore"
+        gitignore.write_text("node_modules/\n", encoding="utf-8")
+        actions = [
+            {
+                "file": ".gitignore",
+                "action": "managed-block-create",
+                "_path": str(gitignore),
+                "content": "# managed\n*.pyc\n",
+                "_append": True,
+            },
+            {"file": "CLAUDE.md", "action": "symlink-create", "target_relative": "/etc/passwd"},
+        ]
+        with pytest.raises(PlanExecutionError):
+            _execute_actions(tmp_path, actions)
+        assert gitignore.read_text(encoding="utf-8") == "node_modules/\n"
+
+    def test_transactional_rollback_restores_append_on_agents_md(self, tmp_path: Path) -> None:
+        agents_md = tmp_path / "AGENTS.md"
+        agents_md.write_text("# Existing\n", encoding="utf-8")
+        actions = [
+            {"file": "AGENTS.md", "action": "append", "content": "## Added\n"},
+            {"file": "CLAUDE.md", "action": "symlink-create", "target_relative": "/etc/passwd"},
+        ]
+        with pytest.raises(PlanExecutionError):
+            _execute_actions(tmp_path, actions)
+        assert agents_md.read_text(encoding="utf-8") == "# Existing\n"
+
+    def test_transactional_rollback_restores_managed_block_replace(self, tmp_path: Path) -> None:
+        gitattributes = tmp_path / ".gitattributes"
+        original = "CLAUDE.md text=auto eol=lf\n"
+        gitattributes.write_text(original, encoding="utf-8")
+        actions = [
+            {
+                "file": ".gitattributes",
+                "action": "managed-block-replace",
+                "_path": str(gitattributes),
+                "content": "# >>> gitwise managed (do not edit between markers) >>>\nnew\n# <<< gitwise managed <<<\n",
+                "_start_idx": 0,
+                "_end_idx": len(original),
+            },
+            {"file": "CLAUDE.md", "action": "symlink-create", "target_relative": "/etc/passwd"},
+        ]
+        with pytest.raises(PlanExecutionError):
+            _execute_actions(tmp_path, actions)
+        assert gitattributes.read_text(encoding="utf-8") == original
 
 
 class TestHasMarker:
