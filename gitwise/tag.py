@@ -190,12 +190,12 @@ def _run_tag_delete(
     if not validate_ref(name):
         error(t("invalid_ref", ref=name))
         return 1
-    if not yes and not confirm(t("confirm_tag_delete", name=name)):
-        warn(t("aborted"))
-        return 1
     if dry_run:
         ok(t("tag_delete_dry", name=name))
         return 0
+    if not yes and not confirm(t("confirm_tag_delete", name=name)):
+        warn(t("aborted"))
+        return 1
 
     result = git_run(["tag", "-d", name], cwd=root, check=False)
     if result.returncode != 0:

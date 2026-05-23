@@ -79,3 +79,13 @@ def test_worktree_no_subcommand(tmp_git_repo: Path) -> None:
 def test_worktree_new_no_branch(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "new", cwd=tmp_git_repo)
     assert result.returncode == 1
+
+
+def test_worktree_new_rejects_parent_traversal_branch(tmp_git_repo: Path) -> None:
+    result = run_gitwise("worktree", "new", "../evil", cwd=tmp_git_repo)
+    assert result.returncode == 1
+
+
+def test_worktree_new_rejects_absolute_like_branch(tmp_git_repo: Path) -> None:
+    result = run_gitwise("worktree", "new", "/tmp/evil", cwd=tmp_git_repo)
+    assert result.returncode == 1

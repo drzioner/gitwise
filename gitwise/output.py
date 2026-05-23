@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -197,9 +199,12 @@ def warn(msg: str) -> None:
         print(f"{prefix}: {msg}", file=sys.stderr)
 
 
-def error(msg: str) -> None:
+def error(msg: str, *, hint: str | None = None) -> None:
     if _LOG_JSON:
-        _structured_log("error", msg)
+        if hint:
+            _structured_log("error", msg, hint=hint)
+        else:
+            _structured_log("error", msg)
         return
     prefix = t("error")
     if _should_use_rich():
@@ -207,8 +212,15 @@ def error(msg: str) -> None:
         text.append(f"{prefix}: ", style="error")
         text.append(msg)
         _get_stderr_console().print(text)
+        if hint:
+            hint_text = Text()
+            hint_text.append(f"{t('hint_prefix')}: ", style="dim")
+            hint_text.append(hint, style="dim")
+            _get_stderr_console().print(hint_text)
     else:
         print(f"{prefix}: {msg}", file=sys.stderr)
+        if hint:
+            print(f"{t('hint_prefix')}: {hint}", file=sys.stderr)
 
 
 def ok(msg: str) -> None:
@@ -249,11 +261,42 @@ def print_blank() -> None:
 
 
 def confirm(prompt: str) -> bool:
+    if not sys.stdin.isatty():
+        return False
+
+    if _should_use_rich():
+        try:
+            import importlib
+
+            prompt_mod = importlib.import_module("rich.prompt")
+            resp = prompt_mod.Prompt.ask(
+                prompt,
+                default="",
+                show_default=False,
+                show_choices=False,
+                console=_get_console(),
+            )
+            return resp.strip().lower() in confirm_responses()
+        except (EOFError, KeyboardInterrupt):
+            return False
+
     try:
         resp = input(prompt).strip().lower()
     except (EOFError, KeyboardInterrupt):
         return False
     return resp in confirm_responses()
+
+
+@contextmanager
+def status(message: str) -> Iterator[None]:
+    if _should_use_rich():
+        with _get_console().status(message):
+            yield
+        return
+
+    if get_runtime_config().debug:
+        print_dim(message)
+    yield
 
 
 def bat_pipe(text: str, language: str = "plain") -> None:

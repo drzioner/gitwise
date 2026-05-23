@@ -21,6 +21,8 @@ def ok_envelope(
 def error_envelope(
     *,
     error: str,
+    code: str | None = None,
+    hint: str | None = None,
     payload: Mapping[str, object] | None = None,
     version: int = 2,
     **extra: object,
@@ -32,6 +34,13 @@ def error_envelope(
     data["v"] = version
     data["ok"] = False
     data["error"] = error
+    err_item: dict[str, object] = {
+        "code": code or "error",
+        "message": error,
+    }
+    if hint:
+        err_item["hint"] = hint
+    data["errors"] = [err_item]
     return data
 
 

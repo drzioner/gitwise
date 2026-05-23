@@ -4,8 +4,8 @@ from pathlib import Path
 
 from gitwise.git import config as git_config
 from gitwise.git import is_repo, repo_root
-from gitwise.i18n import confirm_responses, t
-from gitwise.output import error, info, ok, print_json, warn
+from gitwise.i18n import t
+from gitwise.output import confirm, error, info, ok, print_json, warn
 from gitwise.setup_agents import (
     _SKILLS,
     PlanExecutionError,
@@ -163,11 +163,7 @@ def _run_setup_global(
             if a["action"] not in ("skip", "symlink-skip", "managed-block-skip"):
                 info(f"  [{a['action'].upper()}] {a['file']}")
         info("")
-        try:
-            resp = input(t("continue_prompt")).strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            resp = ""
-        if resp not in confirm_responses():
+        if not confirm(t("continue_prompt")):
             info(t("cancelled"))
             return 0
         info("")
@@ -341,11 +337,7 @@ def _run_setup_local(
             if a["action"] not in ("skip", "symlink-skip", "managed-block-skip"):
                 info(f"  [{a['action'].upper()}] {a['file']}")
         info("")
-        try:
-            resp = input(t("continue_prompt")).strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            resp = ""
-        if resp not in confirm_responses():
+        if not confirm(t("continue_prompt")):
             info(t("cancelled"))
             return 0
         info("")

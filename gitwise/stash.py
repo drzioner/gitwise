@@ -17,7 +17,7 @@ from .output import (
     warn,
 )
 from .utils.git_output import parse_diffstat_entries
-from .utils.json_envelope import ok_envelope
+from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
@@ -80,7 +80,11 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
         stat_args = ["stash", "show", "-p", ref]
     r = git_run(stat_args, cwd=root, check=False)
     if r.returncode != 0:
-        error(t("stash_not_found", index=str(index)))
+        msg = t("stash_not_found", index=str(index))
+        if as_json:
+            print_json(error_envelope(error=msg, code="stash_not_found", hint=t("stash_hint")))
+            return 1
+        error(msg, hint=t("stash_hint"))
         return 1
     if as_json:
         print_json(ok_envelope(ref=ref, stat=r.stdout.strip()))

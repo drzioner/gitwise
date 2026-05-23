@@ -76,6 +76,16 @@ def test_log_author_filter(tmp_git_repo: Path) -> None:
     assert r.returncode == 0
 
 
+def test_log_author_rejects_nested_quantifiers(tmp_git_repo: Path) -> None:
+    r = run_gitwise("log", "--author=(a+)+b", cwd=tmp_git_repo)
+    assert r.returncode == 1
+
+
+def test_log_author_rejects_newline_injection(tmp_git_repo: Path) -> None:
+    r = run_gitwise("log", "--author=alice\nbob", cwd=tmp_git_repo)
+    assert r.returncode == 1
+
+
 def test_log_grep_valid(tmp_git_repo: Path) -> None:
     r = run_gitwise("log", "--grep=chore", cwd=tmp_git_repo)
     assert r.returncode == 0

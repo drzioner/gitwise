@@ -15,6 +15,16 @@ def test_merge_not_found(tmp_git_repo):
     assert r.returncode == 1
 
 
+def test_merge_not_found_json_includes_hint(tmp_git_repo):
+    r = run_gitwise("merge", "nonexistent", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert "errors" in data
+    assert data["errors"][0]["code"] == "merge_error"
+    assert "hint" in data["errors"][0]
+
+
 def test_merge_dry_run(tmp_git_repo):
     _git(["checkout", "-b", "feature-test"], cwd=tmp_git_repo)
     _git(["checkout", "main"], cwd=tmp_git_repo)

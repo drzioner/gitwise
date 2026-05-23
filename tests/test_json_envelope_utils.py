@@ -17,3 +17,20 @@ def test_error_envelope_sets_error_and_reserved_keys() -> None:
     assert data["ok"] is False
     assert data["error"] == "boom"
     assert data["detail"] == "x"
+    errors = data["errors"]
+    assert isinstance(errors, list)
+    first = errors[0]
+    assert isinstance(first, dict)
+    assert first["code"] == "error"
+    assert first["message"] == "boom"
+
+
+def test_error_envelope_supports_code_and_hint() -> None:
+    data = error_envelope(error="boom", code="boom_code", hint="try x")
+    errors = data["errors"]
+    assert isinstance(errors, list)
+    first = errors[0]
+    assert isinstance(first, dict)
+    assert first["code"] == "boom_code"
+    assert first["message"] == "boom"
+    assert first["hint"] == "try x"

@@ -715,6 +715,10 @@
     "es": "sin rama seguimiento",
     "en": "no upstream"
   },
+  "hint_prefix": {
+    "es": "sugerencia",
+    "en": "hint"
+  },
   "hook_install_note": {
     "es": "instala hooks GPG + conventional commits",
     "en": "installs GPG + conventional commit hooks"
@@ -818,6 +822,10 @@
   "merge_rebased": {
     "es": "Rebase completado: {branch} → {into}",
     "en": "Rebase completed: {branch} → {into}"
+  },
+  "merge_hint": {
+    "es": "Revisa conflictos o usa --dry-run para ver advertencias antes de ejecutar.",
+    "en": "Review conflicts or use --dry-run to inspect warnings before running."
   },
   "merge_same_branch": {
     "es": "No se puede mezclar una branch consigo misma",
@@ -1419,6 +1427,10 @@
     "es": "Stash {ref} restaurado",
     "en": "Stash {ref} restored"
   },
+  "stash_hint": {
+    "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
+    "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."
+  },
   "stash_unknown_action": {
     "es": "Acción desconocida: {action}",
     "en": "Unknown action: {action}"
@@ -1466,6 +1478,42 @@
   "status_untracked_label": {
     "es": "sin seguimiento",
     "en": "untracked"
+  },
+  "status_sync_fetch": {
+    "es": "Sincronizando: fetch...",
+    "en": "Syncing: fetch..."
+  },
+  "status_sync_pull": {
+    "es": "Sincronizando: pull...",
+    "en": "Syncing: pull..."
+  },
+  "status_sync_push": {
+    "es": "Sincronizando: push...",
+    "en": "Syncing: push..."
+  },
+  "status_optimize_commit_graph": {
+    "es": "Optimizando: actualizando commit-graph...",
+    "en": "Optimizing: updating commit-graph..."
+  },
+  "status_optimize_repack": {
+    "es": "Optimizando: repack...",
+    "en": "Optimizing: repack..."
+  },
+  "status_optimize_prune": {
+    "es": "Optimizando: prune...",
+    "en": "Optimizing: prune..."
+  },
+  "status_audit_stashes": {
+    "es": "Auditando: revisando stashes...",
+    "en": "Auditing: checking stashes..."
+  },
+  "status_audit_blobs": {
+    "es": "Auditando: buscando blobs grandes...",
+    "en": "Auditing: scanning large blobs..."
+  },
+  "status_audit_sizer": {
+    "es": "Auditando: ejecutando git-sizer...",
+    "en": "Auditing: running git-sizer..."
   },
   "step_commit_graph": {
     "es": "git commit-graph write --reachable --changed-paths",
@@ -1578,6 +1626,14 @@
   "sync_push_failed": {
     "es": "push falló: {error}",
     "en": "push failed: {error}"
+  },
+  "sync_hint": {
+    "es": "Verifica remote/upstream y prueba con --dry-run antes de reintentar.",
+    "en": "Check remote/upstream and try --dry-run before retrying."
+  },
+  "sync_push_protected_hint": {
+    "es": "Haz push desde una branch de feature y abre PR hacia la rama protegida.",
+    "en": "Push from a feature branch and open a PR into the protected branch."
   },
   "sync_push_protected": {
     "es": "no se puede hacer push a rama protegida: {branch}",
@@ -1794,6 +1850,10 @@
   "invalid_grep_pattern": {
     "es": "patrón de búsqueda inválido o peligroso: {pattern}",
     "en": "invalid or unsafe grep pattern: {pattern}"
+  },
+  "invalid_author_pattern": {
+    "es": "patrón de author inválido o peligroso: {pattern}",
+    "en": "invalid or unsafe author pattern: {pattern}"
   },
   "unexpected_error": {
     "es": "error inesperado. Ejecuta con GITWISE_DEBUG=1 para más detalles.",

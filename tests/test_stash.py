@@ -22,6 +22,11 @@ def test_stash_list_json(tmp_git_repo):
 def test_stash_show_missing(tmp_git_repo):
     r = run_gitwise("stash", "show", "--json", cwd=tmp_git_repo)
     assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert "errors" in data
+    assert data["errors"][0]["code"] == "stash_not_found"
+    assert "hint" in data["errors"][0]
 
 
 def test_stash_clean_dry(tmp_git_repo):
