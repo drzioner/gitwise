@@ -1,11 +1,5 @@
-"""Aider adapter — .aider.conf.yml + CONVENTIONS.md."""
+"""Backward-compatible shim for Aider provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.aider import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="aider",
-    display_name="Aider",
-    config_paths=(".aider.conf.yml", "CONVENTIONS.md"),
-    template_paths=("aider.conf.yml.template", "CONVENTIONS.md.template"),
-    template_dir="share/aider",
-)
+__all__ = ["ADAPTER"]

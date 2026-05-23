@@ -1,11 +1,5 @@
-"""Continue adapter — .continue/rules/*.md."""
+"""Backward-compatible shim for Continue provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.continue_adapter import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="continue",
-    display_name="Continue",
-    config_paths=(".continue/rules/gitwise.md",),
-    template_paths=("rules/gitwise.md.template",),
-    template_dir="share/continue",
-)
+__all__ = ["ADAPTER"]

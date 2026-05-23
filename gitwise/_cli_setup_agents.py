@@ -18,6 +18,8 @@ from gitwise.setup_agents.format import (
     format_json_output_local,
     format_json_output_local_error,
 )
+from gitwise.setup_agents.providers.base import AdapterContext
+from gitwise.setup_agents.state import _AGENTS_MD, _gpg_ready
 
 
 def _run_setup_global(
@@ -131,14 +133,34 @@ def _run_setup_local(
 
     has_errors = bool(plan_errors)
     all_warnings = gpg_warnings + warnings
+    home = Path.home()
+    global_skills = frozenset(
+        s for s in _SKILLS if (home / ".claude" / "skills" / s / "SKILL.md").exists()
+    )
 
     if adapters:
-        from gitwise.setup_agents.adapters import plan_adapter_actions
+        from gitwise.setup_agents.providers import plan_adapter_actions
 
         expanded = []
         for a in adapters:
             expanded.extend(part.strip() for part in a.split(",") if part.strip())
-        adapter_actions, adapter_errors, adapter_warnings = plan_adapter_actions(expanded, root)
+        adapter_context: AdapterContext = {
+            "state": state,
+            "canonical_doc_path": _AGENTS_MD,
+            "global_skills": global_skills,
+            "supports_symlinks": state["supports_symlinks"],
+            "gpg_ready": _gpg_ready(root),
+            "flags": {
+                "no_symlinks": no_symlinks,
+                "replace_claude_with_symlink": replace_claude_with_symlink,
+                "frozen_time": frozen_time,
+                "no_git_files": no_git_files,
+                "core_claude_planned": True,
+            },
+        }
+        adapter_actions, adapter_errors, adapter_warnings = plan_adapter_actions(
+            expanded, root, context=adapter_context
+        )
         if adapter_errors:
             plan_errors.extend({"reason": e, "file": ""} for e in adapter_errors)
             has_errors = True
