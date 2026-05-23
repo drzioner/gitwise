@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.19.0 (2026-05-23)
+## v0.20.0 (2026-05-23)
 
 ### Feat
 
-- close P0 agent safety and JSON error consistency (#37)
+- implement P1 completions, rich help, and env docs (#38)
