@@ -13,7 +13,11 @@ from gitwise.__main__ import (
     _commands_metadata,
     _resolve_command_parser,
 )
-from gitwise.schema import list_command_input_schema_files, load_command_input_schema
+from gitwise.schema import (
+    command_input_schema_path,
+    list_command_input_schema_files,
+    load_command_input_schema,
+)
 from jsonschema import Draft202012Validator
 
 
@@ -72,7 +76,7 @@ def main() -> int:
         payload = load_command_input_schema(command=command, version=version)
         if payload is None:
             continue
-        path = Path("share") / "schemas" / version / "input" / f"{command}.json"
+        path = command_input_schema_path(command=command, version=version)
         errors.extend(_validate_schema_document(path, payload, command=command, version=version))
 
         command_parser = _resolve_command_parser(parser=parser, name=command)

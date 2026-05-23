@@ -57,6 +57,9 @@ gitwise summarize
 | `gitwise diff` | Focused changed-file view (`--stat`, `--staged`, `--patch`) |
 | `gitwise worktree` | Create and clean worktree-based branch setups |
 | `gitwise status` | Enhanced status with staged/unstaged and ahead/behind |
+| `gitwise commands --json` | List subcommands with aliases and metadata |
+| `gitwise schema <command> --json` | Return versioned JSON Schema for command inputs |
+| `gitwise completions <shell>` | Generate shell completion scripts (bash/zsh/fish) |
 | `gitwise pr` | List/check/view PRs via GitHub CLI |
 
 For all commands, examples, aliases, and JSON usage, see:

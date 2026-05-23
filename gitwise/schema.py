@@ -3,26 +3,25 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 SCHEMA_VERSION_DEFAULT = "v1"
 
 
-def _schema_roots() -> list[Path]:
+@lru_cache(maxsize=1)
+def _schema_roots() -> tuple[Path, ...]:
     package_dir = Path(__file__).resolve().parent
-    site_packages_dir = package_dir.parent
-    return [
-        site_packages_dir / "share" / "schemas",
-        package_dir.parent / "share" / "schemas",
-    ]
+    return (package_dir.parent / "share" / "schemas",)
 
 
 def schema_root(version: str = SCHEMA_VERSION_DEFAULT) -> Path:
-    for candidate in _schema_roots():
+    roots = _schema_roots()
+    for candidate in roots:
         version_root = candidate / version
         if version_root.is_dir():
             return version_root
-    return _schema_roots()[0] / version
+    return roots[0] / version
 
 
 def command_input_schema_path(*, command: str, version: str = SCHEMA_VERSION_DEFAULT) -> Path:

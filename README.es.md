@@ -5,7 +5,7 @@ Last sync: 2026-05-22
 
 [English](README.md) | [Español](README.es.md)
 
-CLI de Python para optimizar flujos de Git e integracion con agentes de codigo.
+CLI de Python para optimizar flujos de Git e integración con agentes de código.
 
 [![CI](https://github.com/drzioner/gitwise/actions/workflows/ci.yml/badge.svg)](https://github.com/drzioner/gitwise/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/drzioner/gitwise/graph/badge.svg)](https://codecov.io/gh/drzioner/gitwise)
@@ -26,20 +26,20 @@ gitwise resuelve tres problemas comunes:
 - git >= 2.29
 - macOS o Linux
 
-## Instalacion
+## Instalación
 
 ```bash
 git clone https://github.com/drzioner/gitwise.git ~/.local/share/gitwise
 bash ~/.local/share/gitwise/install.sh
 ```
 
-Actualizar una instalacion existente:
+Actualizar una instalación existente:
 
 ```bash
 gitwise update
 ```
 
-## Inicio rapido
+## Inicio rápido
 
 ```bash
 gitwise doctor
@@ -48,18 +48,21 @@ gitwise setup-agents --local --dry-run
 gitwise summarize
 ```
 
-## Comandos mas usados
+## Comandos más usados
 
-| Comando | Proposito |
+| Comando | Propósito |
 |---|---|
 | `gitwise doctor` | Verifica Python, git, plataforma y herramientas opcionales |
 | `gitwise setup` | Aplica defaults modernos de Git de forma segura |
-| `gitwise setup-agents` | Instala layout canonico de agentes + config opcional de providers |
+| `gitwise setup-agents` | Instala layout canónico de agentes + configuración opcional de providers |
 | `gitwise audit` | Detecta ramas stale, gaps de graph/cache, blobs grandes |
 | `gitwise summarize` | Contexto compacto para humanos y agentes |
 | `gitwise diff` | Vista enfocada de cambios (`--stat`, `--staged`, `--patch`) |
 | `gitwise worktree` | Crea y limpia flujos por worktree |
 | `gitwise status` | Status mejorado con staged/unstaged y ahead/behind |
+| `gitwise commands --json` | Lista subcomandos con aliases y metadata |
+| `gitwise schema <command> --json` | Retorna JSON Schema versionado para inputs de comandos |
+| `gitwise completions <shell>` | Genera scripts de completions (bash/zsh/fish) |
 | `gitwise pr` | Lista/check/view de PRs con GitHub CLI |
 
 Para todos los comandos, ejemplos, aliases y uso JSON:
@@ -67,16 +70,16 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 - [Command reference (English)](docs/reference/commands.md)
 - [Referencia de comandos (Español)](docs/es/reference/commands.md)
 
-## Documentacion
+## Documentación
 
 - [Documentation index (English)](docs/README.md)
-- [Indice de documentacion (Español)](docs/es/README.md)
+- [Índice de documentación (Español)](docs/es/README.md)
 - [Contributing guide](CONTRIBUTING.md)
-- [Guia de contribucion](CONTRIBUTING.es.md)
+- [Guía de contribución](CONTRIBUTING.es.md)
 - [Security policy](SECURITY.md)
-- [Politica de seguridad](SECURITY.es.md)
+- [Política de seguridad](SECURITY.es.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Codigo de conducta](CODE_OF_CONDUCT.es.md)
+- [Código de conducta](CODE_OF_CONDUCT.es.md)
 
 ## Modelo de seguridad y GPG
 
@@ -87,19 +90,19 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 
 ## Variables de entorno
 
-| Variable | Descripcion |
+| Variable | Descripción |
 |---|---|
 | `GITWISE_DEBUG=1` | Muestra cada comando `git` ejecutado por subprocess en stderr |
-| `GITWISE_LOG_JSON=1` | Emite logs estructurados en stderr como lineas JSON |
+| `GITWISE_LOG_JSON=1` | Emite logs estructurados en stderr como líneas JSON |
 | `GITWISE_JSON_PRETTY=1` | Formatea JSON en modo pretty por defecto |
 | `GITWISE_LANG=es|en` | Fuerza el locale de salida |
-| `GITWISE_THEME=dark|light|auto` | Fuerza seleccion de tema de color |
+| `GITWISE_THEME=dark|light|auto` | Fuerza selección de tema de color |
 | `GITWISE_NO_COLOR=1` | Desactiva salida ANSI con color |
-| `GITWISE_OUTPUT=agent` | Fuerza modo de salida orientado a maquina |
+| `GITWISE_OUTPUT=agent` | Fuerza modo de salida orientado a máquina |
 | `GITWISE_AGENT=1` | Alias para habilitar modo agent |
 | `GITWISE_GIT_TIMEOUT=<segundos>` | Override del timeout de subprocess git |
 | `GITWISE_WIDTH=<columnas>` | Override del ancho de salida |
-| `GITWISE_BIN_DIR` | Directorio de instalacion (default: `~/.local/bin`) |
+| `GITWISE_BIN_DIR` | Directorio de instalación (default: `~/.local/bin`) |
 
 ## Completions de shell
 
