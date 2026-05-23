@@ -315,8 +315,6 @@ class ClaudeAdapter(AdapterConfig):
         return actions, warnings, []
 
     def plan(self, root: Path, context: AdapterContext) -> tuple[list[ActionDict], list[str]]:
-        if self.name != "claude":
-            return [], []
         if context["flags"].get("core_claude_planned", False):
             return [], []
         actions: list[ActionDict] = []

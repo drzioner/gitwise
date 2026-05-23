@@ -10,9 +10,9 @@ from gitwise.setup_agents.plan_gitfiles import (
     plan_managed_block,
 )
 from gitwise.setup_agents.plan_skills import (
-    _SKILLS,
     plan_skills,
 )
+from gitwise.setup_agents.providers import detect_global_skills
 from gitwise.setup_agents.providers.claude import ADAPTER as CLAUDE_PROVIDER
 from gitwise.setup_agents.state import (
     _detect_state,
@@ -111,10 +111,7 @@ def _plan_actions(
         replace_claude_with_symlink=replace_claude_with_symlink,
     )
     settings_actions, settings_warnings = _plan_settings_json(root)
-    home = Path.home()
-    global_skills = frozenset(
-        s for s in _SKILLS if (home / ".claude" / "skills" / s / "SKILL.md").exists()
-    )
+    global_skills = detect_global_skills()
     skills_actions, skills_warnings = plan_skills(root, state, global_skills=global_skills)
     rules_actions, rules_warnings = _plan_rules(root)
 

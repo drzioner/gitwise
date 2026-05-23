@@ -49,6 +49,15 @@ def resolve_adapter_selection(
     return resolved, errors
 
 
+def detect_global_skills(home: Path | None = None) -> frozenset[str]:
+    home_dir = home or Path.home()
+    return frozenset(
+        skill_name
+        for skill_name in _SKILLS
+        if (home_dir / ".claude" / "skills" / skill_name / "SKILL.md").exists()
+    )
+
+
 def plan_adapter_actions(
     adapter_names: list[str] | None,
     root: Path,
@@ -61,13 +70,10 @@ def plan_adapter_actions(
         return [], errors, []
     if context is None:
         state = _detect_state(root)
-        home = Path.home()
         context = {
             "state": state,
             "canonical_doc_path": _AGENTS_MD,
-            "global_skills": frozenset(
-                s for s in _SKILLS if (home / ".claude" / "skills" / s / "SKILL.md").exists()
-            ),
+            "global_skills": detect_global_skills(),
             "supports_symlinks": state["supports_symlinks"],
             "gpg_ready": _gpg_ready(root),
             "flags": {},

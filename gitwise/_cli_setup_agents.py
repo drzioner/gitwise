@@ -18,6 +18,7 @@ from gitwise.setup_agents.format import (
     format_json_output_local,
     format_json_output_local_error,
 )
+from gitwise.setup_agents.providers import detect_global_skills
 from gitwise.setup_agents.providers.base import AdapterContext
 from gitwise.setup_agents.state import _AGENTS_MD, _gpg_ready
 
@@ -133,10 +134,7 @@ def _run_setup_local(
 
     has_errors = bool(plan_errors)
     all_warnings = gpg_warnings + warnings
-    home = Path.home()
-    global_skills = frozenset(
-        s for s in _SKILLS if (home / ".claude" / "skills" / s / "SKILL.md").exists()
-    )
+    global_skills = detect_global_skills()
 
     if adapters:
         from gitwise.setup_agents.providers import plan_adapter_actions
