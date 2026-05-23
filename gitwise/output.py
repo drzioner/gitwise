@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -287,7 +288,7 @@ def confirm(prompt: str) -> bool:
 
 
 @contextmanager
-def status(message: str):
+def status(message: str) -> Iterator[None]:
     if _should_use_rich():
         with _get_console().status(message):
             yield
