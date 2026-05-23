@@ -15,12 +15,14 @@ from gitwise.setup_agents import (
 )
 from gitwise.setup_agents.format import (
     format_json_output_global,
+    format_json_output_global_error,
     format_json_output_local,
     format_json_output_local_error,
 )
 from gitwise.setup_agents.providers import detect_global_skills
 from gitwise.setup_agents.providers.base import AdapterContext
 from gitwise.setup_agents.state import _AGENTS_MD, _gpg_ready
+from gitwise.setup_agents.types import StateDict
 
 
 def _run_setup_global(
@@ -30,22 +32,103 @@ def _run_setup_global(
     yes: bool = False,
     as_json: bool = False,
     no_skills: bool = False,
+    providers: list[str] | None = None,
+    no_symlinks: bool = False,
+    strict: bool = False,
+    migrate_legacy_claude: bool = False,
 ) -> int:
     """Installs global setup-agents artifacts to home config dirs. No git repo required."""
     agents_dir = home / ".agents"
     has_agents_dir = agents_dir.is_dir() and not agents_dir.is_symlink()
+    has_errors = False
+    errors: list[str] = []
+    all_warnings: list[str] = []
     try:
         actions, warnings, _ = _plan_actions_global(home, no_skills=no_skills)
     except FileNotFoundError as e:
+        if as_json:
+            print_json(
+                format_json_output_global_error(
+                    home=home,
+                    warnings=[],
+                    errors=[str(e)],
+                    has_agents_dir=has_agents_dir,
+                    dry_run=dry_run,
+                )
+            )
+            return 1
         error(str(e))
         return 1
 
+    all_warnings.extend(warnings)
+
+    if providers:
+        from gitwise.setup_agents.providers import plan_adapter_actions
+
+        expanded = []
+        for adapter in providers:
+            expanded.extend(part.strip() for part in adapter.split(",") if part.strip())
+        if "claude-only" in expanded:
+            all_warnings.append(
+                t("adapter_alias_deprecated", alias="claude-only", target="claude")
+            )
+        state: StateDict = {
+            "a_state": "absent",
+            "c_state": "regular",
+            "agents_dir": has_agents_dir,
+            "skills_state": "regular",
+            "skills_target": None,
+            "supports_symlinks": True,
+            "errors": [],
+            "rules_warnings": [],
+        }
+        adapter_context: AdapterContext = {
+            "state": state,
+            "canonical_doc_path": _AGENTS_MD,
+            "global_skills": detect_global_skills(home),
+            "supports_symlinks": True,
+            "gpg_ready": False,
+            "flags": {
+                "no_symlinks": no_symlinks,
+                "replace_claude_with_symlink": False,
+                "migrate_legacy_claude": migrate_legacy_claude,
+                "frozen_time": False,
+                "no_git_files": False,
+                "core_claude_planned": True,
+            },
+        }
+        adapter_actions, adapter_errors, adapter_warnings = plan_adapter_actions(
+            expanded,
+            home,
+            context=adapter_context,
+        )
+        if adapter_errors:
+            errors.extend(adapter_errors)
+            has_errors = True
+        actions.extend(adapter_actions)
+        all_warnings.extend(adapter_warnings)
+
+    if strict and all_warnings:
+        errors.append(t("strict_warnings"))
+        has_errors = True
+
     if as_json:
+        if has_errors:
+            print_json(
+                format_json_output_global_error(
+                    home=home,
+                    warnings=all_warnings,
+                    errors=errors,
+                    has_agents_dir=has_agents_dir,
+                    dry_run=dry_run,
+                )
+            )
+            return 1
         print_json(
             format_json_output_global(
                 home=home,
                 actions=actions,
-                warnings=warnings,
+                warnings=all_warnings,
                 has_agents_dir=has_agents_dir,
                 dry_run=dry_run,
             )
@@ -55,10 +138,15 @@ def _run_setup_global(
     info(t("configuring_agents_global", path=str(home / ".claude")))
     info("")
 
-    for w in warnings:
+    for w in all_warnings:
         warn(w)
-    if warnings:
+    if all_warnings:
         info("")
+
+    if has_errors:
+        for err_text in errors:
+            error(err_text)
+        return 1
 
     if dry_run:
         info(t("dry_run_nothing"))
@@ -104,9 +192,11 @@ def _run_setup_local(
     no_symlinks: bool = False,
     strict: bool = False,
     replace_claude_with_symlink: bool = False,
+    migrate_legacy_claude: bool = False,
     frozen_time: bool = False,
     no_git_files: bool = False,
-    adapters: list[str] | None = None,
+    providers: list[str] | None = None,
+    adapters_legacy_used: bool = False,
 ) -> int:
     cwd = target or Path.cwd()
 
@@ -131,6 +221,7 @@ def _run_setup_local(
             root,
             no_symlinks=no_symlinks,
             replace_claude_with_symlink=replace_claude_with_symlink,
+            migrate_legacy_claude=migrate_legacy_claude,
             no_git_files=no_git_files,
             frozen_time=frozen_time,
         )
@@ -142,12 +233,21 @@ def _run_setup_local(
     all_warnings = gpg_warnings + warnings
     global_skills = detect_global_skills()
 
-    if adapters:
+    if adapters_legacy_used:
+        all_warnings.append(
+            t("adapter_alias_deprecated", alias="--adapters", target="--providers")
+        )
+
+    if providers:
         from gitwise.setup_agents.providers import plan_adapter_actions
 
         expanded = []
-        for a in adapters:
+        for a in providers:
             expanded.extend(part.strip() for part in a.split(",") if part.strip())
+        if "claude-only" in expanded:
+            all_warnings.append(
+                t("adapter_alias_deprecated", alias="claude-only", target="claude")
+            )
         adapter_context: AdapterContext = {
             "state": state,
             "canonical_doc_path": _AGENTS_MD,
@@ -157,6 +257,7 @@ def _run_setup_local(
             "flags": {
                 "no_symlinks": no_symlinks,
                 "replace_claude_with_symlink": replace_claude_with_symlink,
+                "migrate_legacy_claude": migrate_legacy_claude,
                 "frozen_time": frozen_time,
                 "no_git_files": no_git_files,
                 "core_claude_planned": True,
@@ -175,7 +276,11 @@ def _run_setup_local(
         if has_errors:
             print_json(
                 format_json_output_local_error(
-                    root=root, dry_run=dry_run, plan_errors=plan_errors, all_warnings=all_warnings
+                    root=root,
+                    dry_run=dry_run,
+                    plan_errors=plan_errors,
+                    all_warnings=all_warnings,
+                    migrate_legacy_claude=migrate_legacy_claude,
                 )
             )
             return 1
@@ -189,6 +294,7 @@ def _run_setup_local(
                 all_warnings=all_warnings,
                 rules_warnings=state["rules_warnings"],
                 state=state,
+                migrate_legacy_claude=migrate_legacy_claude,
             )
         )
         return 0
@@ -271,9 +377,11 @@ def run_setup_agents(
     no_symlinks: bool = False,
     strict: bool = False,
     replace_claude_with_symlink: bool = False,
+    migrate_legacy_claude: bool = False,
     frozen_time: bool = False,
     no_git_files: bool = False,
-    adapters: list[str] | None = None,
+    providers: list[str] | None = None,
+    adapters_legacy_used: bool = False,
 ) -> int:
     """Dispatcher: global mode (default) or per-repo mode (--local)."""
     if local:
@@ -285,17 +393,46 @@ def run_setup_agents(
             no_symlinks=no_symlinks,
             strict=strict,
             replace_claude_with_symlink=replace_claude_with_symlink,
+            migrate_legacy_claude=migrate_legacy_claude,
             frozen_time=frozen_time,
             no_git_files=no_git_files,
-            adapters=adapters,
+            providers=providers,
+            adapters_legacy_used=adapters_legacy_used,
         )
-    if adapters:
-        error(t("adapters_require_local"))
+    if migrate_legacy_claude:
+        if as_json:
+            print_json(
+                format_json_output_global_error(
+                    home=Path.home(),
+                    warnings=[],
+                    errors=[t("migrate_requires_local")],
+                    has_agents_dir=False,
+                    dry_run=dry_run,
+                )
+            )
+            return 1
+        error(t("migrate_requires_local"))
         return 1
+    if providers:
+        return _run_setup_global(
+            Path.home(),
+            dry_run=dry_run,
+            yes=yes,
+            as_json=as_json,
+            no_skills=no_skills,
+            providers=providers,
+            no_symlinks=no_symlinks,
+            strict=strict,
+            migrate_legacy_claude=migrate_legacy_claude,
+        )
     return _run_setup_global(
         Path.home(),
         dry_run=dry_run,
         yes=yes,
         as_json=as_json,
         no_skills=no_skills,
+        providers=None,
+        no_symlinks=no_symlinks,
+        strict=strict,
+        migrate_legacy_claude=migrate_legacy_claude,
     )

@@ -136,6 +136,71 @@ class ClaudeAdapter(AdapterConfig):
             ]
         return 2, agents_actions + claude_actions, []
 
+    def _migrate_legacy_claude_only(
+        self,
+        *,
+        root: Path,
+        state: StateDict,
+        template: str,
+        supports_symlinks: bool,
+    ) -> tuple[int, list[ActionDict], list[str]]:
+        claude_md = root / _CLAUDE_MD
+        c_state = state["c_state"]
+
+        if c_state == "regular":
+            try:
+                agents_content = claude_md.read_text(encoding="utf-8")
+            except OSError:
+                agents_content = template
+        else:
+            agents_content = template
+
+        agents_actions: list[ActionDict] = [
+            {
+                "file": _AGENTS_MD,
+                "action": "create",
+                "content": agents_content,
+            }
+        ]
+
+        if c_state == "absent":
+            if supports_symlinks:
+                return (
+                    2,
+                    agents_actions
+                    + [
+                        {
+                            "file": _CLAUDE_MD,
+                            "action": "symlink-create",
+                            "target_relative": _AGENTS_MD,
+                        }
+                    ],
+                    [t("legacy_migration_mode")],
+                )
+            return (
+                2,
+                agents_actions
+                + [
+                    {
+                        "file": _CLAUDE_MD,
+                        "action": "create",
+                        "content": self.pointer_template(),
+                    }
+                ],
+                [t("legacy_migration_mode")],
+            )
+
+        if c_state == "regular":
+            _bucket, replace_actions, replace_warnings = self.bucket4_replace(
+                agents_actions, claude_md
+            )
+            return 4, replace_actions, [t("legacy_migration_mode")] + replace_warnings
+
+        _bucket, fallback_actions, fallback_warnings = self.bucket4_default(
+            state, claude_md, agents_actions
+        )
+        return 4, fallback_actions, [t("legacy_migration_mode")] + fallback_warnings
+
     def bucket4_default(
         self,
         state: StateDict,
@@ -242,6 +307,7 @@ class ClaudeAdapter(AdapterConfig):
         *,
         no_symlinks: bool = False,
         replace_claude_with_symlink: bool = False,
+        migrate_legacy_claude: bool = False,
     ) -> tuple[int, list[ActionDict], list[str]]:
         a_state = state["a_state"]
         c_state = state["c_state"]
@@ -251,6 +317,13 @@ class ClaudeAdapter(AdapterConfig):
         template = self.build_template(root)
 
         if a_state == "absent":
+            if migrate_legacy_claude:
+                return self._migrate_legacy_claude_only(
+                    root=root,
+                    state=state,
+                    template=template,
+                    supports_symlinks=supports_symlinks,
+                )
             return self.bucket1_no_agents(state, root, template)
 
         agents_actions: list[ActionDict] = []
@@ -261,7 +334,7 @@ class ClaudeAdapter(AdapterConfig):
             return self.bucket2_agents_no_claude(root, supports_symlinks, template)
 
         if c_state in ("symlink_valid", "regular"):
-            if c_state == "regular" and replace_claude_with_symlink:
+            if c_state == "regular" and (replace_claude_with_symlink or migrate_legacy_claude):
                 return self.bucket4_replace(agents_actions, claude_md)
             return self.bucket3(state, claude_md, agents_md, agents_actions)
 

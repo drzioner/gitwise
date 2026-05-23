@@ -3,6 +3,7 @@
 from gitwise.setup_agents.exec import PlanExecutionError, SymlinkConflict, _execute_actions
 from gitwise.setup_agents.format import (
     format_json_output_global,
+    format_json_output_global_error,
     format_json_output_local,
     format_json_output_local_error,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "_plan_actions_global",
     "build_action_summary",
     "format_json_output_global",
+    "format_json_output_global_error",
     "format_json_output_local",
     "format_json_output_local_error",
 ]
