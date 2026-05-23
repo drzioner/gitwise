@@ -80,6 +80,8 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 - [Política de seguridad](SECURITY.es.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Código de conducta](CODE_OF_CONDUCT.es.md)
+- [Git conventions](CONVENTIONS.md)
+- [Convenciones Git](CONVENTIONS.es.md)
 
 ## Modelo de seguridad y GPG
 
@@ -95,8 +97,8 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 | `GITWISE_DEBUG=1` | Muestra cada comando `git` ejecutado por subprocess en stderr |
 | `GITWISE_LOG_JSON=1` | Emite logs estructurados en stderr como líneas JSON |
 | `GITWISE_JSON_PRETTY=1` | Formatea JSON en modo pretty por defecto |
-| `GITWISE_LANG=es|en` | Fuerza el locale de salida |
-| `GITWISE_THEME=dark|light|auto` | Fuerza selección de tema de color |
+| `GITWISE_LANG=es` / `GITWISE_LANG=en` | Fuerza el locale de salida |
+| `GITWISE_THEME=dark` / `GITWISE_THEME=light` / `GITWISE_THEME=auto` | Fuerza selección de tema de color |
 | `GITWISE_NO_COLOR=1` | Desactiva salida ANSI con color |
 | `GITWISE_OUTPUT=agent` | Fuerza modo de salida orientado a máquina |
 | `GITWISE_AGENT=1` | Alias para habilitar modo agent |
