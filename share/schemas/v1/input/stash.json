@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/stash.json",
+  "title": "gitwise stash cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "list",
+        "show",
+        "pop",
+        "drop",
+        "clear",
+        "clean"
+      ],
+      "default": "list"
+    },
+    "index": {
+      "type": "integer",
+      "description": "stash index (default: 0)",
+      "default": 0
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "dry run (clear only)",
+      "default": false
+    },
+    "yes": {
+      "type": "boolean",
+      "description": "skip confirmation",
+      "default": false
+    },
+    "patch": {
+      "type": "boolean",
+      "description": "show full patch (show only)",
+      "default": false
+    }
+  }
+}

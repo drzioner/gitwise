@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/log.json",
+  "title": "gitwise log cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "oneline": {
+      "type": "boolean",
+      "description": "one line per commit",
+      "default": false
+    },
+    "graph": {
+      "type": "boolean",
+      "description": "show branch topology graph",
+      "default": false
+    },
+    "author": {
+      "type": "string",
+      "description": "filter by author"
+    },
+    "grep": {
+      "type": "string",
+      "description": "filter by message pattern"
+    },
+    "since": {
+      "type": "string",
+      "description": "show commits since date"
+    },
+    "until": {
+      "type": "string",
+      "description": "show commits until date"
+    },
+    "file": {
+      "type": "string",
+      "description": "show commits for file"
+    },
+    "max_count": {
+      "type": "integer",
+      "description": "max commits",
+      "default": 20
+    }
+  }
+}

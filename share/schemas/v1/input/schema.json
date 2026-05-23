@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/schema.json",
+  "title": "gitwise schema cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "name": {
+      "type": "string",
+      "description": "command name to inspect"
+    },
+    "version": {
+      "type": "string",
+      "description": "schema catalog version (default: v1)",
+      "default": "v1"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

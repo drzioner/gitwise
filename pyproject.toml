@@ -38,6 +38,7 @@ dev = [
     "commitizen>=4.0",
     "basedpyright>=1.0",
     "pip-audit>=0.0.13",
+    "jsonschema>=4.23.0",
 ]
 
 [build-system]

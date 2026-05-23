@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/pick.json",
+  "title": "gitwise pick cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "commit refs to pick/revert"
+      }
+    },
+    "revert": {
+      "type": "boolean",
+      "description": "revert instead of cherry-pick",
+      "default": false
+    },
+    "continue_": {
+      "type": "boolean",
+      "description": "continue after conflict",
+      "default": false
+    },
+    "abort": {
+      "type": "boolean",
+      "description": "abort in-progress pick/revert",
+      "default": false
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show without executing",
+      "default": false
+    }
+  }
+}

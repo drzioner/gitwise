@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/tag.json",
+  "title": "gitwise tag cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "list",
+        "latest",
+        "create",
+        "delete"
+      ],
+      "default": "list"
+    },
+    "name": {
+      "type": "string",
+      "description": "tag name (for create/delete)"
+    },
+    "bump": {
+      "type": "string",
+      "enum": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "description": "bump semver part"
+    },
+    "message": {
+      "type": "string",
+      "description": "annotated tag message"
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show without executing",
+      "default": false
+    },
+    "yes": {
+      "type": "boolean",
+      "description": "skip confirmation",
+      "default": false
+    }
+  }
+}
