@@ -7,15 +7,29 @@ from gitwise.i18n import t
 from gitwise.setup_agents.state import _classify_path
 from gitwise.setup_agents.types import StateDict
 
-_SHARE_DIR = Path(__file__).parent.parent.parent / "share" / "claude"
+_SHARE_CLAUDE_DIR = Path(__file__).parent.parent.parent / "share" / "claude"
+_SHARE_AGENTS_DIR = Path(__file__).parent.parent.parent / "share" / "agents"
 _SKILLS: tuple[str, ...] = ("git-audit", "git-clean", "git-optimize")
 
 
 def _read_template(name: str) -> str:
-    path = _SHARE_DIR / name
+    path = _SHARE_CLAUDE_DIR / name
     if not path.exists():
         raise FileNotFoundError(t("template_not_found", path=str(path)))
     return path.read_text(encoding="utf-8")
+
+
+def _read_skill_template(skill: str) -> str:
+    candidates = (
+        _SHARE_AGENTS_DIR / "skills" / skill / "SKILL.md",
+        _SHARE_CLAUDE_DIR / "skills" / skill / "SKILL.md",
+    )
+    for path in candidates:
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    raise FileNotFoundError(
+        t("template_not_found", path=str(_SHARE_AGENTS_DIR / "skills" / skill / "SKILL.md"))
+    )
 
 
 def _plan_single_skill(
@@ -60,7 +74,7 @@ def _plan_single_skill(
                     {
                         "file": skill_file,
                         "action": "create",
-                        "content": _read_template(f"skills/{skill}/SKILL.md"),
+                        "content": _read_skill_template(skill),
                     }
                 )
         elif c_skill_state == "symlink_valid":
@@ -78,7 +92,7 @@ def _plan_single_skill(
                         {
                             "file": skill_file,
                             "action": "create",
-                            "content": _read_template(f"skills/{skill}/SKILL.md"),
+                            "content": _read_skill_template(skill),
                         }
                     )
             else:
@@ -118,7 +132,7 @@ def _plan_single_skill(
                         {
                             "file": skill_file,
                             "action": "create",
-                            "content": _read_template(f"skills/{skill}/SKILL.md"),
+                            "content": _read_skill_template(skill),
                         }
                     )
     else:
@@ -134,7 +148,7 @@ def _plan_single_skill(
                 {
                     "file": skill_file,
                     "action": "create",
-                    "content": _read_template(f"skills/{skill}/SKILL.md"),
+                    "content": _read_skill_template(skill),
                 }
             )
 
@@ -169,7 +183,7 @@ def plan_skills(
                     {
                         "file": skill_file,
                         "action": "create",
-                        "content": _read_template(f"skills/{skill}/SKILL.md"),
+                        "content": _read_skill_template(skill),
                     }
                 )
     else:

@@ -20,6 +20,12 @@ from gitwise.setup_agents.state import (
 from gitwise.setup_agents.types import StateDict
 
 
+def _snapshot_file_for_state(state: StateDict) -> str:
+    if state["agents_dir"]:
+        return ".agents/git-snapshot.md"
+    return ".claude/git-snapshot.md"
+
+
 def _plan_settings_json(root: Path) -> tuple[list[dict], list[str]]:
     return CLAUDE_PROVIDER.plan_settings(root)
 
@@ -122,7 +128,7 @@ def _plan_actions(
     git_file_warnings: list[str] = []
     if not no_git_files and bucket != 5:
         if has_agents_md or has_agents_dir:
-            gi_block = gitignore_block_extended(has_agents_md)
+            gi_block = gitignore_block_extended(has_agents_md, has_agents_dir=has_agents_dir)
             ga_block = gitattributes_block_extended(has_agents_md, has_agents_dir)
         else:
             gi_block = gitignore_block_basic()
@@ -141,7 +147,13 @@ def _plan_actions(
         + skills_actions
         + rules_actions
         + git_file_actions
-        + CLAUDE_PROVIDER.plan_snapshot(frozen_time=frozen_time)
+        + [
+            {
+                "file": _snapshot_file_for_state(state),
+                "action": "generate",
+                "frozen_time": frozen_time,
+            }
+        ]
     )
     warnings = (
         doc_warnings

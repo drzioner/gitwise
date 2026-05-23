@@ -20,8 +20,8 @@
     "en": "available adapters: {list}"
   },
   "adapters_none_with_others": {
-    "es": "\"none\" o \"claude-only\" no se pueden combinar con otros adaptadores",
-    "en": "\"none\" or \"claude-only\" cannot be combined with other adapters"
+    "es": "\"none\" no se puede combinar con otros adaptadores",
+    "en": "\"none\" cannot be combined with other adapters"
   },
   "adapters_require_local": {
     "es": "los adaptadores requieren --local",

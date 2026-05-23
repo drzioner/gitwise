@@ -1,4 +1,4 @@
-"""Generates .claude/git-snapshot.md — static repo context for Claude."""
+"""Generates git snapshot file for session context."""
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,9 +59,14 @@ def _append_worktrees_section(lines: list[str], *, root: Path) -> None:
         lines += [t("worktrees_active", count=str(wt_count)), ""]
 
 
-def generate_snapshot(root: Path, *, frozen_time: bool = False) -> Path:
-    """Write .claude/git-snapshot.md in repo root. Updates generated_at on every call."""
-    snapshot_path = root / ".claude" / "git-snapshot.md"
+def generate_snapshot(
+    root: Path,
+    *,
+    frozen_time: bool = False,
+    relative_path: str = ".claude/git-snapshot.md",
+) -> Path:
+    """Write snapshot markdown in repo root. Updates generated_at on every call."""
+    snapshot_path = root / Path(relative_path)
     snapshot_path.parent.mkdir(parents=True, exist_ok=True)
 
     if frozen_time:

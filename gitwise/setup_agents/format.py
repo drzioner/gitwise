@@ -4,9 +4,20 @@ from pathlib import Path
 
 from gitwise.setup_agents.types import ActionDict, StateDict, build_action_summary
 
+_SETUP_AGENTS_SCHEMA_VERSION = 3
+_SETUP_AGENTS_SCHEMA_COMPAT = [1, 2, 3]
+
 
 def _action_summaries(actions: list[ActionDict]) -> list[dict[str, str]]:
     return [{"file": a["file"], "action": a["action"]} for a in actions]
+
+
+def _canonical_layout_local(state: StateDict) -> str:
+    if state["agents_dir"]:
+        return "agents_dir"
+    if state["a_state"] != "absent":
+        return "agents_md"
+    return "claude_only"
 
 
 def format_json_output_global(
@@ -14,15 +25,17 @@ def format_json_output_global(
     home: Path,
     actions: list[ActionDict],
     warnings: list[str],
+    has_agents_dir: bool,
     dry_run: bool = False,
 ) -> dict[str, object]:
     summary = build_action_summary(actions)
     return {
-        "v": 2,
-        "v_compat": [1, 2],
+        "v": _SETUP_AGENTS_SCHEMA_VERSION,
+        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
         "dry_run": dry_run,
         "root": str(home / ".claude"),
         "mode": "global",
+        "canonical_layout": "agents+claude" if has_agents_dir else "claude_home",
         "actions": _action_summaries(actions),
         "warnings": warnings,
         "errors": [],
@@ -39,10 +52,12 @@ def format_json_output_local_error(
     all_warnings: list[str],
 ) -> dict[str, object]:
     return {
-        "v": 2,
-        "v_compat": [1, 2],
+        "v": _SETUP_AGENTS_SCHEMA_VERSION,
+        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
         "dry_run": dry_run,
         "root": str(root),
+        "mode": "local",
+        "canonical_layout": "unknown",
         "bucket": 5,
         "agents_md_detected": False,
         "agents_dir_detected": False,
@@ -74,10 +89,12 @@ def format_json_output_local(
 ) -> dict[str, object]:
     summary = build_action_summary(actions)
     return {
-        "v": 2,
-        "v_compat": [1, 2],
+        "v": _SETUP_AGENTS_SCHEMA_VERSION,
+        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
         "dry_run": dry_run,
         "root": str(root),
+        "mode": "local",
+        "canonical_layout": _canonical_layout_local(state),
         "bucket": bucket,
         "agents_md_detected": state["a_state"] != "absent",
         "agents_dir_detected": state["agents_dir"],

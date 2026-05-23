@@ -276,6 +276,16 @@ class TestExecuteActions:
             _execute_actions(tmp_path, actions)
         assert not (tmp_path / "CLAUDE.md").exists()
 
+    def test_generate_snapshot_to_agents_path(self, tmp_path: Path) -> None:
+        actions = [
+            {"file": ".agents/git-snapshot.md", "action": "generate", "frozen_time": True},
+        ]
+        _execute_actions(tmp_path, actions)
+        snapshot = tmp_path / ".agents" / "git-snapshot.md"
+        assert snapshot.exists()
+        content = snapshot.read_text(encoding="utf-8")
+        assert "generated_at: 1970-01-01T00:00:00Z" in content
+
 
 class TestHasMarker:
     def test_with_git_conventions_marker(self, tmp_path: Path) -> None:

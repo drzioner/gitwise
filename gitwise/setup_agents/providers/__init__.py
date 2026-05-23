@@ -34,13 +34,18 @@ def resolve_adapter_selection(
 ) -> tuple[list[AdapterConfig], list[str]]:
     if not names:
         return [], []
-    if "none" in names or "claude-only" in names:
-        if len(names) > 1:
+    normalized = ["claude" if name == "claude-only" else name for name in names]
+    if "none" in normalized:
+        if len(normalized) > 1:
             return [], [t("adapters_none_with_others")]
         return [], []
     resolved: list[AdapterConfig] = []
+    seen: set[str] = set()
     errors: list[str] = []
-    for name in names:
+    for name in normalized:
+        if name in seen:
+            continue
+        seen.add(name)
         cfg = ADAPTERS.get(name)
         if cfg is None:
             errors.append(t("unknown_adapter", name=name))

@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+import gitwise.setup_agents.plan_skills as plan_skills_module
 from gitwise.setup_agents.plan_gitfiles import (
     _MANAGED_MARKER_END,
     _MANAGED_MARKER_START,
@@ -35,6 +36,11 @@ class TestGitignoreBlocks:
         block_no = gitignore_block_extended(has_agents_md=False)
         assert "AGENTS.md.bak*" not in block_no
 
+    def test_extended_uses_agents_snapshot_when_agents_dir(self) -> None:
+        block = gitignore_block_extended(has_agents_md=True, has_agents_dir=True)
+        assert ".agents/git-snapshot.md" in block
+        assert ".claude/git-snapshot.md" not in block
+
     def test_blocks_end_with_newline_after_marker(self) -> None:
         basic = gitignore_block_basic()
         extended = gitignore_block_extended(has_agents_md=True)
@@ -56,6 +62,8 @@ class TestGitattributesBlocks:
     def test_extended_includes_agents_dir(self) -> None:
         block = gitattributes_block_extended(has_agents_md=True, has_agents_dir=True)
         assert ".agents/skills/**/SKILL.md text=auto eol=lf" in block
+        assert ".agents/git-snapshot.md merge=ours linguist-generated=true" in block
+        assert ".claude/git-snapshot.md merge=ours linguist-generated=true" not in block
 
     def test_extended_no_agents_excludes_agents_line(self) -> None:
         block = gitattributes_block_extended(has_agents_md=False, has_agents_dir=False)
@@ -358,3 +366,15 @@ class TestPlanGlobalSkills:
 
         actions, _warnings = plan_global_skills(home)
         assert all(a["action"] == "skip" for a in actions)
+
+
+class TestSkillTemplateResolution:
+    def test_read_skill_template_prefers_agents_share(self) -> None:
+        content = plan_skills_module._read_skill_template("git-audit")
+        assert "Diagnostica el repositorio git" in content
+
+    def test_read_skill_template_fallbacks_to_claude_share(self, monkeypatch) -> None:
+        missing = Path("/tmp/path-that-does-not-exist-123")
+        monkeypatch.setattr(plan_skills_module, "_SHARE_AGENTS_DIR", missing)
+        content = plan_skills_module._read_skill_template("git-clean")
+        assert "gitwise clean --branches --dry-run --json" in content

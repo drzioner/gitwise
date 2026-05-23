@@ -160,7 +160,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="gitwise",
-        description="CLI for optimizing git workflows and Claude Code integration",
+        description="CLI for optimizing git workflows and coding agents integration",
         formatter_class=GitwiseHelpFormatter,
         parents=[parent],
     )
@@ -172,13 +172,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "setup-agents",
-        help="install skills/rules/settings into ~/.claude/ (default) or current repo (--local)",
+        help="install canonical agents layout + optional providers globally or locally",
         parents=[parent],
     )
     p.add_argument(
         "--local",
         action="store_true",
-        help="install into .claude/ of current repo instead of global ~/.claude/",
+        help="install into current repo instead of global home",
     )
     p.add_argument(
         "--no-skills",

@@ -8,6 +8,12 @@ _MANAGED_MARKER_START = "# >>> gitwise managed (do not edit between markers) >>>
 _MANAGED_MARKER_END = "# <<< gitwise managed <<<"
 
 
+def _snapshot_path_for_block(*, has_agents_dir: bool) -> str:
+    if has_agents_dir:
+        return ".agents/git-snapshot.md"
+    return ".claude/git-snapshot.md"
+
+
 def gitignore_block_basic() -> str:
     lines = [
         _MANAGED_MARKER_START,
@@ -15,7 +21,7 @@ def gitignore_block_basic() -> str:
         ".claude/settings.local.json",
         ".claude/.credentials.json",
         "# Snapshot regenerated each gitwise run (timestamps change)",
-        ".claude/git-snapshot.md",
+        _snapshot_path_for_block(has_agents_dir=False),
         "# Backups from gitwise setup-agents",
         "*.bak",
         "CLAUDE.md.bak*",
@@ -24,14 +30,14 @@ def gitignore_block_basic() -> str:
     return "\n".join(lines) + "\n"
 
 
-def gitignore_block_extended(has_agents_md: bool) -> str:
+def gitignore_block_extended(has_agents_md: bool, has_agents_dir: bool = False) -> str:
     lines = [
         _MANAGED_MARKER_START,
         "# Claude Code local/personal files (do not commit)",
         ".claude/settings.local.json",
         ".claude/.credentials.json",
         "# Snapshot regenerated each gitwise run (timestamps change)",
-        ".claude/git-snapshot.md",
+        _snapshot_path_for_block(has_agents_dir=has_agents_dir),
         "# Backups from gitwise setup-agents",
         "*.bak",
         "CLAUDE.md.bak*",
@@ -46,7 +52,7 @@ def gitattributes_block_basic() -> str:
     lines = [
         _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
-        ".claude/git-snapshot.md merge=ours linguist-generated=true",
+        f"{_snapshot_path_for_block(has_agents_dir=False)} merge=ours linguist-generated=true",
         "# Convention files: force LF for cross-platform consistency",
         "CLAUDE.md text=auto eol=lf",
         ".claude/skills/**/SKILL.md text=auto eol=lf",
@@ -59,7 +65,7 @@ def gitattributes_block_extended(has_agents_md: bool, has_agents_dir: bool) -> s
     lines = [
         _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
-        ".claude/git-snapshot.md merge=ours linguist-generated=true",
+        f"{_snapshot_path_for_block(has_agents_dir=has_agents_dir)} merge=ours linguist-generated=true",
         "# Convention files: force LF for cross-platform consistency",
         "CLAUDE.md text=auto eol=lf",
     ]
