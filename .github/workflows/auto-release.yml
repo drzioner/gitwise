@@ -77,6 +77,18 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Sync CHANGELOG.es.md
+        if: steps.bump.outputs.no_bump == 'false'
+        run: uv run python scripts/docs/sync_changelog_es.py
+
+      - name: Commit synchronized CHANGELOG.es.md
+        if: steps.bump.outputs.no_bump == 'false'
+        run: |
+          if ! git diff --quiet -- CHANGELOG.es.md; then
+            git add CHANGELOG.es.md
+            git commit -m "docs(changelog): sync CHANGELOG.es from CHANGELOG"
+          fi
+
       - name: Push bump commit & tag
         if: steps.bump.outputs.no_bump == 'false' && inputs.dry-run == false
         run: git push --atomic origin main "refs/tags/${{ steps.bump.outputs.tag }}"

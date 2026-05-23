@@ -3,6 +3,12 @@ from pathlib import Path
 from scripts.docs.check_md_links import _resolve_link
 
 
+def test_changelog_es_summary_heading_exists() -> None:
+    root = Path(__file__).resolve().parents[1]
+    es = (root / "CHANGELOG.es.md").read_text(encoding="utf-8")
+    assert "## Ultimo release (resumen canonico)" in es
+
+
 def test_resolve_link_with_title(tmp_path: Path) -> None:
     root = tmp_path
     docs_dir = root / "docs"
