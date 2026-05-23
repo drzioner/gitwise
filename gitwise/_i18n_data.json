@@ -1475,6 +1475,42 @@
     "es": "sin seguimiento",
     "en": "untracked"
   },
+  "status_sync_fetch": {
+    "es": "Sincronizando: fetch...",
+    "en": "Syncing: fetch..."
+  },
+  "status_sync_pull": {
+    "es": "Sincronizando: pull...",
+    "en": "Syncing: pull..."
+  },
+  "status_sync_push": {
+    "es": "Sincronizando: push...",
+    "en": "Syncing: push..."
+  },
+  "status_optimize_commit_graph": {
+    "es": "Optimizando: actualizando commit-graph...",
+    "en": "Optimizing: updating commit-graph..."
+  },
+  "status_optimize_repack": {
+    "es": "Optimizando: repack...",
+    "en": "Optimizing: repack..."
+  },
+  "status_optimize_prune": {
+    "es": "Optimizando: prune...",
+    "en": "Optimizing: prune..."
+  },
+  "status_audit_stashes": {
+    "es": "Auditando: revisando stashes...",
+    "en": "Auditing: checking stashes..."
+  },
+  "status_audit_blobs": {
+    "es": "Auditando: buscando blobs grandes...",
+    "en": "Auditing: scanning large blobs..."
+  },
+  "status_audit_sizer": {
+    "es": "Auditando: ejecutando git-sizer...",
+    "en": "Auditing: running git-sizer..."
+  },
   "step_commit_graph": {
     "es": "git commit-graph write --reachable --changed-paths",
     "en": "git commit-graph write --reachable --changed-paths"

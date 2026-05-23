@@ -12,6 +12,7 @@ from .output import (
     print_dim,
     print_header,
     print_json,
+    status,
 )
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import parse_two_ints, stripped_non_empty_lines
@@ -76,9 +77,10 @@ def _print_sync_dry_run_human(*, pull: bool, push: bool, root: Path, remote: str
 
 
 def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
-    result = git_run(
-        ["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False
-    )
+    with status(t("status_sync_fetch")):
+        result = git_run(
+            ["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False
+        )
     if result.returncode == 0:
         return 0
     if as_json:
@@ -94,7 +96,8 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
 
 
 def _sync_pull(*, root: Path, as_json: bool) -> int:
-    result = git_run(["pull", "--ff-only"], cwd=root, check=False)
+    with status(t("status_sync_pull")):
+        result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
     if as_json:
@@ -116,7 +119,8 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
         else:
             error(t("sync_push_protected", branch=branch))
         return 1
-    result = git_run(["push"], cwd=root, check=False)
+    with status(t("status_sync_push")):
+        result = git_run(["push"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
     if as_json:

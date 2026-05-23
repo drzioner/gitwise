@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -273,6 +274,18 @@ def confirm(prompt: str) -> bool:
     except (EOFError, KeyboardInterrupt):
         return False
     return resp in confirm_responses()
+
+
+@contextmanager
+def status(message: str):
+    if _should_use_rich():
+        with _get_console().status(message):
+            yield
+        return
+
+    if get_runtime_config().debug:
+        print_dim(message)
+    yield
 
 
 def bat_pipe(text: str, language: str = "plain") -> None:

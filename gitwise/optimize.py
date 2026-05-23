@@ -20,6 +20,7 @@ from .output import (
     print_json,
     print_section,
     print_status_line,
+    status,
     warn,
 )
 
@@ -124,19 +125,22 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
             return 0
         print_blank()
 
-    graph_ok = _write_commit_graph(cwd)
+    with status(t("status_optimize_commit_graph")):
+        graph_ok = _write_commit_graph(cwd)
     if graph_ok:
         ok(t("commit_graph_updated"))
     else:
         warn(t("commit_graph_failed"))
 
-    repack_ok = _repack(cwd)
+    with status(t("status_optimize_repack")):
+        repack_ok = _repack(cwd)
     if repack_ok:
         ok(t("repack_complete"))
     else:
         warn(t("repack_failed"))
 
-    prune_ok = _prune(cwd)
+    with status(t("status_optimize_prune")):
+        prune_ok = _prune(cwd)
     if prune_ok:
         ok(t("prune_complete"))
     else:

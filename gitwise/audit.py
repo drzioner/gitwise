@@ -26,6 +26,7 @@ from .output import (
     print_error_styled,
     print_header,
     print_json,
+    status,
 )
 
 _STALE_DAYS = 30
@@ -215,7 +216,8 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
                 }
             )
 
-    old_stashes = _find_old_stashes(cwd)
+    with status(t("status_audit_stashes")):
+        old_stashes = _find_old_stashes(cwd)
     if old_stashes:
         findings.append(
             {
@@ -234,7 +236,8 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
 
     large_blobs: list[dict] = []
     if not quick:
-        large_blobs = _find_large_blobs(cwd)
+        with status(t("status_audit_blobs")):
+            large_blobs = _find_large_blobs(cwd)
         if large_blobs:
             findings.append(
                 {
@@ -261,7 +264,11 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             }
         )
 
-    sizer = _run_git_sizer(cwd) if not quick else None
+    if quick:
+        sizer = None
+    else:
+        with status(t("status_audit_sizer")):
+            sizer = _run_git_sizer(cwd)
 
     _has_remote = has_remote(cwd)
     _has_upstream = has_upstream(cwd)
