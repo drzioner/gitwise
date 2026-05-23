@@ -1,11 +1,5 @@
-"""Pi adapter — .pi/agent/skills/gitwise.md."""
+"""Backward-compatible shim for Pi provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.pi import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="pi",
-    display_name="Pi",
-    config_paths=(".pi/agent/skills/gitwise.md",),
-    template_paths=("skills/gitwise.md.template",),
-    template_dir="share/pi",
-)
+__all__ = ["ADAPTER"]

@@ -41,3 +41,7 @@ Se conservan como analisis y snapshots historicos:
 - [Action plan v0.12](../action-plan-v0.12.md)
 - [Review analysis report](../review-analysis-report.md)
 - [Labels](../labels.md)
+
+## Planes activos
+
+- [Plan de refactor setup-agents AI agents-first](../plans/setup-agents-ai-agents-first.md)

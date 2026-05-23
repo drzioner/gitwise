@@ -1,11 +1,5 @@
-"""Cursor adapter — .cursor/rules/*.mdc (MDC format with YAML frontmatter)."""
+"""Backward-compatible shim for Cursor provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.cursor import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="cursor",
-    display_name="Cursor",
-    config_paths=(".cursor/rules/gitwise.mdc",),
-    template_paths=("rules/gitwise.mdc.template",),
-    template_dir="share/cursor",
-)
+__all__ = ["ADAPTER"]

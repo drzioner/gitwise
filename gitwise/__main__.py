@@ -221,7 +221,7 @@ def _build_parser() -> argparse.ArgumentParser:
         nargs="*",
         default=None,
         dest="adapters",
-        help="install config for coding agents (comma-separated: cursor,aider or multiple: --adapters cursor aider)",
+        help="install config for coding agents/providers (comma-separated: claude,cursor or multiple: --adapters claude cursor)",
     )
     p.add_argument(
         "--list-adapters",
@@ -428,7 +428,7 @@ def _run_doctor(args: argparse.Namespace) -> int:
 def _run_setup_agents(args: argparse.Namespace) -> int:
     if getattr(args, "list_adapters", False):
         from .i18n import t as _t
-        from .setup_agents.adapters import list_adapters
+        from .setup_agents.providers import list_adapters
 
         adapter_list = list_adapters()
         if args.json:

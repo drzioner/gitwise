@@ -6,10 +6,10 @@ from conftest import run_gitwise
 
 
 class TestListAdapters:
-    def test_list_adapters_shows_all_six(self):
+    def test_list_adapters_shows_all_seven(self):
         result = run_gitwise("setup-agents", "--list-adapters")
         assert result.returncode == 0
-        for name in ("cursor", "continue", "opencode", "codex", "aider", "pi"):
+        for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
             assert name in result.stdout
 
     def test_list_adapters_in_json_mode(self):
@@ -17,8 +17,21 @@ class TestListAdapters:
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert "adapters" in data
-        for name in ("cursor", "continue", "opencode", "codex", "aider", "pi"):
+        for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
             assert name in data["adapters"]
+
+    def test_single_adapter_claude_no_extra_adapter_actions(self, tmp_git_repo):
+        result = run_gitwise(
+            "setup-agents",
+            "--local",
+            "--dry-run",
+            "--yes",
+            "--adapters",
+            "claude",
+            cwd=tmp_git_repo,
+        )
+        assert result.returncode == 0
+        assert "ADAPTER-CREATE" not in result.stdout
 
 
 class TestAdapterDryRun:

@@ -36,3 +36,7 @@ These are retained as historical analysis and planning snapshots:
 - [Action plan v0.12](action-plan-v0.12.md)
 - [Review analysis report](review-analysis-report.md)
 - [Labels](labels.md)
+
+## Active plans
+
+- [setup-agents AI agents-first refactor plan](plans/setup-agents-ai-agents-first.md)

@@ -1,11 +1,5 @@
-"""Codex (OpenAI) adapter — .codex/agents/*.toml."""
+"""Backward-compatible shim for Codex provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.codex import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="codex",
-    display_name="Codex",
-    config_paths=(".codex/agents/gitwise.toml",),
-    template_paths=("agents/gitwise.toml.template",),
-    template_dir="share/codex",
-)
+__all__ = ["ADAPTER"]

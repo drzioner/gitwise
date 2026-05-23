@@ -1,11 +1,5 @@
-"""OpenCode adapter — .opencode/agents/*.md."""
+"""Backward-compatible shim for OpenCode provider."""
 
-from gitwise.setup_agents.adapters.base import AdapterConfig
+from gitwise.setup_agents.providers.opencode import ADAPTER
 
-ADAPTER = AdapterConfig(
-    name="opencode",
-    display_name="OpenCode",
-    config_paths=(".opencode/agents/gitwise.md",),
-    template_paths=("agents/gitwise.md.template",),
-    template_dir="share/opencode",
-)
+__all__ = ["ADAPTER"]

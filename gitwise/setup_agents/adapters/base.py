@@ -1,14 +1,5 @@
-"""Base types for the adapter registry system."""
+"""Backward-compatible shim for provider base types."""
 
-from __future__ import annotations
+from gitwise.setup_agents.providers.base import AdapterConfig
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class AdapterConfig:
-    name: str
-    display_name: str
-    config_paths: tuple[str, ...]
-    template_paths: tuple[str, ...]
-    template_dir: str
+__all__ = ["AdapterConfig"]
