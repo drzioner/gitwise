@@ -3,6 +3,7 @@
 import argparse
 import sys
 import time
+from typing import TypedDict
 
 from . import __version__
 from .design import GitwiseRichHelpFormatter
@@ -243,6 +244,13 @@ def _build_fish_completions_script(*, parser: argparse.ArgumentParser, prog: str
     return "\n".join(lines) + "\n"
 
 
+class CommandMetadata(TypedDict):
+    name: str
+    help: str
+    aliases: list[str]
+    supports_json: bool
+
+
 def _canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
     prog = command_parser.prog.strip()
     if not prog:
@@ -251,7 +259,7 @@ def _canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
     return parts[-1] if parts else ""
 
 
-def _commands_metadata(parser: argparse.ArgumentParser) -> list[dict[str, object]]:
+def _commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
     sub_action = _subparsers_action(parser)
     if sub_action is None:
         return []
@@ -266,7 +274,7 @@ def _commands_metadata(parser: argparse.ArgumentParser) -> list[dict[str, object
         if parser_id not in help_by_parser_id:
             help_by_parser_id[parser_id] = pseudo.help or ""
 
-    entries: list[dict[str, object]] = []
+    entries: list[CommandMetadata] = []
     seen_parser_ids: set[int] = set()
     for command_parser in sub_action.choices.values():
         parser_id = id(command_parser)
@@ -1033,7 +1041,7 @@ def _run_completions(args: argparse.Namespace) -> int:
 
 def _run_commands(args: argparse.Namespace) -> int:
     parser = _build_parser()
-    commands: list[dict[str, object]] = _commands_metadata(parser)
+    commands = _commands_metadata(parser)
     payload = {
         "v": 2,
         "ok": True,
@@ -1047,11 +1055,11 @@ def _run_commands(args: argparse.Namespace) -> int:
         print_json(payload)
         return 0
 
+    aliases_label = t("aliases_label")
     for item in commands:
-        aliases = item["aliases"]
-        aliases_list = aliases if isinstance(aliases, list) else []
+        aliases_list = item["aliases"]
         alias_text = (
-            f" (aliases: {', '.join(str(alias) for alias in aliases_list)})"
+            f" ({aliases_label}: {', '.join(str(alias) for alias in aliases_list)})"
             if aliases_list
             else ""
         )
@@ -1065,12 +1073,14 @@ def _run_schema(args: argparse.Namespace) -> int:
     parser = _build_parser()
     command_parser = _resolve_command_parser(parser=parser, name=args.name)
     if command_parser is None:
+        message = t("schema_unknown_command", name=args.name)
+        hint = t("schema_unknown_command_hint")
         if args.json:
             print_json(
                 error_envelope(
-                    error=f"unknown command: {args.name}",
+                    error=message,
                     code="unknown_command",
-                    hint="run `gitwise commands --json` to list available commands",
+                    hint=hint,
                     schema="gitwise/schema/v1",
                     kind="schema",
                 )
@@ -1078,10 +1088,7 @@ def _run_schema(args: argparse.Namespace) -> int:
         else:
             from .output import error as _error
 
-            _error(
-                f"unknown command: {args.name}",
-                hint="run `gitwise commands --json` to list available commands",
-            )
+            _error(message, hint=hint)
         return 1
 
     canonical_name = _canonical_command_name(command_parser)
@@ -1095,10 +1102,6 @@ def _run_schema(args: argparse.Namespace) -> int:
         "schema_kind": "cli_input",
         "json_schema": _command_input_schema(command_parser),
     }
-
-    if args.json:
-        print_json(payload)
-        return 0
 
     print_json(payload)
     return 0

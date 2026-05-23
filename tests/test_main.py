@@ -84,6 +84,12 @@ def test_commands_json_lists_metadata():
     assert any(item["name"] == "status" for item in data["commands"])
 
 
+def test_commands_human_output_localized_aliases_label():
+    result = _run("commands", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 0
+    assert "(aliases:" in result.stdout
+
+
 def test_schema_json_for_known_command():
     result = _run("schema", "status", "--json")
     assert result.returncode == 0
@@ -106,12 +112,20 @@ def test_schema_boolean_flags_are_boolean_not_array():
 
 
 def test_schema_json_for_unknown_command_returns_error_envelope():
-    result = _run("schema", "nonexistent-command-xyz", "--json")
+    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "en"})
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
     assert data["error"] == "unknown command: nonexistent-command-xyz"
     assert data["errors"][0]["code"] == "unknown_command"
+
+
+def test_schema_unknown_command_is_localized_es():
+    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "es"})
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["error"] == "comando desconocido: nonexistent-command-xyz"
+    assert "ejecuta `gitwise commands --json`" in data["errors"][0]["hint"]
 
 
 def test_completions_bash_outputs_script():
