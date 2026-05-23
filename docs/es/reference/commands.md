@@ -40,13 +40,18 @@ Comportamiento de `--hooks-mode`:
 
 ### `gitwise setup-agents`
 
-Instala archivos canonicos de agentes en global (default) o en el repo actual (`--local`).
+Instala providers en modo global (default) o agentes canonical-first en el repo actual (`--local`).
 
 - Layout canonico primero: `AGENTS.md` + `.agents/skills/`
 - Integraciones de provider (Claude, Cursor, Continue, opencode, Codex, Aider, Pi) opcionales via `--providers`
 - Alias de compatibilidad deprecado: `--providers claude-only` se interpreta como `claude`
 - `--migrate-legacy-claude` fuerza migracion de layout legacy Claude-only a layout canonico en modo local
 - La salida `--json` de este comando usa schema `v=3` con `canonical_layout` y `v_compat: [1, 2, 3]`
+
+Nota de comportamiento por defecto:
+
+- `--local` sin providers crea solo layout canonico (`AGENTS.md` + `.agents/skills/*`)
+- Los artefactos de Claude se crean solo cuando habilitas el provider explicitamente (`--providers claude`)
 
 ```bash
 gitwise setup-agents --local --dry-run
