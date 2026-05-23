@@ -14,12 +14,17 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.17.0 (2026-05-23)
+## v0.18.0 (2026-05-23)
 
 ### Feat
 
-- **setup-agents**: add providers flag and legacy migration flow
+- **release**: auto-sync CHANGELOG.es on bump
 
 ### Fix
 
-- **setup-agents**: address PR review feedback and strict JSON behavior
+- **ci**: eliminate workflow_call auth failure and cache collisions on main (#36)
+- **setup-agents**: restore rollback correctness and isolate claude core
+
+### Refactor
+
+- **setup-agents**: canonical local default and transactional rollback
