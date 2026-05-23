@@ -871,6 +871,14 @@
     "es": "ejecuta `gitwise commands --json` para listar comandos disponibles",
     "en": "run `gitwise commands --json` to list available commands"
   },
+  "schema_file_missing": {
+    "es": "schema no encontrado para comando '{command}' en versión {version}",
+    "en": "schema not found for command '{command}' in version {version}"
+  },
+  "schema_file_missing_hint": {
+    "es": "ejecuta `gitwise schema <command> --version v1 --json` o verifica `share/schemas/v1/input/*.json`",
+    "en": "run `gitwise schema <command> --version v1 --json` or verify `share/schemas/v1/input/*.json`"
+  },
   "migrated_skill": {
     "es": "migrado: {file} → {target} (symlink)",
     "en": "migrated: {file} → {target} (symlink)"

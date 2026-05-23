@@ -97,6 +97,7 @@ def test_schema_json_for_known_command():
     assert data["ok"] is True
     assert data["kind"] == "schema"
     assert data["schema"] == "gitwise/schema/v1"
+    assert data["schema_version"] == "v1"
     assert data["command"] == "status"
     assert data["schema_kind"] == "cli_input"
     assert data["json_schema"]["$schema"] == "https://json-schema.org/draft/2020-12/schema"
@@ -126,6 +127,14 @@ def test_schema_unknown_command_is_localized_es():
     data = json.loads(result.stdout)
     assert data["error"] == "comando desconocido: nonexistent-command-xyz"
     assert "ejecuta `gitwise commands --json`" in data["errors"][0]["hint"]
+
+
+def test_schema_unknown_version_returns_schema_not_found():
+    result = _run("schema", "status", "--version", "v999", "--json", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "schema_not_found"
 
 
 def test_completions_bash_outputs_script():

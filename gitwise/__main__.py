@@ -697,6 +697,11 @@ def _build_parser() -> argparse.ArgumentParser:
         parents=[parent],
     )
     p.add_argument("name", help="command name to inspect")
+    p.add_argument(
+        "--version",
+        default="v1",
+        help="schema catalog version (default: v1)",
+    )
 
     p = sub.add_parser(
         "completions",
@@ -1068,6 +1073,7 @@ def _run_commands(args: argparse.Namespace) -> int:
 
 
 def _run_schema(args: argparse.Namespace) -> int:
+    from .schema import load_command_input_schema
     from .utils.json_envelope import error_envelope
 
     parser = _build_parser()
@@ -1092,15 +1098,36 @@ def _run_schema(args: argparse.Namespace) -> int:
         return 1
 
     canonical_name = _canonical_command_name(command_parser)
+    command_schema = load_command_input_schema(command=canonical_name, version=args.version)
+    if command_schema is None:
+        message = t("schema_file_missing", command=canonical_name, version=args.version)
+        hint = t("schema_file_missing_hint")
+        if args.json:
+            print_json(
+                error_envelope(
+                    error=message,
+                    code="schema_not_found",
+                    hint=hint,
+                    schema="gitwise/schema/v1",
+                    kind="schema",
+                )
+            )
+        else:
+            from .output import error as _error
+
+            _error(message, hint=hint)
+        return 1
+
     payload = {
         "v": 2,
         "ok": True,
         "kind": "schema",
         "schema": "gitwise/schema/v1",
         "version": __version__,
+        "schema_version": args.version,
         "command": canonical_name,
         "schema_kind": "cli_input",
-        "json_schema": _command_input_schema(command_parser),
+        "json_schema": command_schema,
     }
 
     print_json(payload)

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/undo.json",
+  "title": "gitwise undo cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "ref": {
+      "type": "string",
+      "description": "target ref (default: HEAD~1)"
+    },
+    "soft": {
+      "type": "boolean",
+      "description": "soft reset (keep working tree)",
+      "default": false
+    },
+    "steps": {
+      "type": "integer",
+      "description": "number of steps back",
+      "default": 1
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show without resetting",
+      "default": false
+    },
+    "yes": {
+      "type": "boolean",
+      "description": "skip confirmation for --hard",
+      "default": false
+    }
+  }
+}

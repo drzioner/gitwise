@@ -1,4 +1,4 @@
-# Codigo de conducta
+# Código de conducta
 
 Source: CODE_OF_CONDUCT.md
 Last sync: 2026-05-22
@@ -13,34 +13,34 @@ todas las personas que participan en este proyecto.
 ## Comportamiento esperado
 
 - Mantener un trato respetuoso y constructivo.
-- Asumir buena intencion y hacer preguntas para aclarar.
-- Enfocar el feedback en ideas, codigo y resultados, no en personas.
+- Asumir buena intención y hacer preguntas para aclarar.
+- Enfocar el feedback en ideas, código y resultados, no en personas.
 - Aceptar y aplicar feedback util.
 
 ## Comportamiento inaceptable
 
 - Acoso, ataques personales o lenguaje discriminatorio.
-- Trolling, intimidacion o interrupcion sostenida.
-- Publicar informacion privada sin consentimiento.
-- Cualquier conducta que haga insegura la participacion.
+- Trolling, intimidación o interrupción sostenida.
+- Publicar información privada sin consentimiento.
+- Cualquier conducta que haga insegura la participación.
 
 ## Alcance
 
-Este codigo aplica a espacios del proyecto: issues, pull requests, discussions y
-canales oficiales de comunicacion.
+Este código aplica a espacios del proyecto: issues, pull requests, discussions y
+canales oficiales de comunicación.
 
 ## Reportes
 
-Si experimentas o presencias comportamiento inaceptable, reportalo a
+Si experimentas o presencias comportamiento inaceptable, repórtalo a
 `drzioner@gmail.com` con asunto `gitwise conduct report`.
 
 Revisaremos los reportes de forma oportuna y con confidencialidad.
 
-## Aplicacion
+## Aplicación
 
 Los maintainers pueden eliminar comentarios, cerrar conversaciones o bloquear
-contribuciones que violen esta politica.
+contribuciones que violen esta política.
 
-## Atribucion
+## Atribución
 
-Esta politica esta inspirada en Contributor Covenant y adaptada para este proyecto.
+Esta política está inspirada en Contributor Covenant y adaptada para este proyecto.

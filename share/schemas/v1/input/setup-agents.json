@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/input/setup-agents.json",
+  "title": "gitwise setup-agents cli input",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en"
+      ],
+      "description": "output language (default: auto-detect from locale)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "dark",
+        "light",
+        "auto"
+      ],
+      "description": "color theme: dark, light, or auto-detect (default: auto)"
+    },
+    "json": {
+      "type": "boolean",
+      "description": "output JSON",
+      "default": false
+    },
+    "json_pretty": {
+      "type": "boolean",
+      "description": "pretty-print JSON output",
+      "default": false
+    },
+    "local": {
+      "type": "boolean",
+      "description": "install into current repo instead of global home",
+      "default": false
+    },
+    "no_skills": {
+      "type": "boolean",
+      "description": "skip skills installation (global mode only)",
+      "default": false
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show actions without executing",
+      "default": false
+    },
+    "yes": {
+      "type": "boolean",
+      "description": "skip confirmation",
+      "default": false
+    },
+    "no_symlinks": {
+      "type": "boolean",
+      "description": "force @AGENTS.md import fallback (no symlinks) \u2014 --local only",
+      "default": false
+    },
+    "strict": {
+      "type": "boolean",
+      "description": "treat warnings as errors (CI) \u2014 --local only",
+      "default": false
+    },
+    "replace_claude_with_symlink": {
+      "type": "boolean",
+      "description": "bucket 4: replace CLAUDE.md with symlink to AGENTS.md \u2014 --local only",
+      "default": false
+    },
+    "migrate_legacy_claude": {
+      "type": "boolean",
+      "description": "migrate legacy Claude-only layout to canonical AGENTS/.agents \u2014 --local only",
+      "default": false
+    },
+    "frozen_time": {
+      "type": "boolean",
+      "description": "freeze snapshot timestamp \u2014 --local only",
+      "default": false
+    },
+    "no_git_files": {
+      "type": "boolean",
+      "description": "don't touch .gitignore or .gitattributes \u2014 --local only",
+      "default": false
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "install config for coding providers (comma-separated: claude,cursor or multiple: --providers claude cursor)"
+      }
+    },
+    "adapters": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "list_providers": {
+      "type": "boolean",
+      "description": "list available providers and exit",
+      "default": false
+    },
+    "list_adapters": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
