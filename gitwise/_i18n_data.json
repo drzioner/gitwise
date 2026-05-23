@@ -819,6 +819,10 @@
     "es": "Rebase completado: {branch} → {into}",
     "en": "Rebase completed: {branch} → {into}"
   },
+  "merge_hint": {
+    "es": "Revisa conflictos o usa --dry-run para ver advertencias antes de ejecutar.",
+    "en": "Review conflicts or use --dry-run to inspect warnings before running."
+  },
   "merge_same_branch": {
     "es": "No se puede mezclar una branch consigo misma",
     "en": "Cannot merge a branch into itself"
@@ -1419,6 +1423,10 @@
     "es": "Stash {ref} restaurado",
     "en": "Stash {ref} restored"
   },
+  "stash_hint": {
+    "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
+    "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."
+  },
   "stash_unknown_action": {
     "es": "Acción desconocida: {action}",
     "en": "Unknown action: {action}"
@@ -1578,6 +1586,14 @@
   "sync_push_failed": {
     "es": "push falló: {error}",
     "en": "push failed: {error}"
+  },
+  "sync_hint": {
+    "es": "Verifica remote/upstream y prueba con --dry-run antes de reintentar.",
+    "en": "Check remote/upstream and try --dry-run before retrying."
+  },
+  "sync_push_protected_hint": {
+    "es": "Haz push desde una branch de feature y abre PR hacia la rama protegida.",
+    "en": "Push from a feature branch and open a PR into the protected branch."
   },
   "sync_push_protected": {
     "es": "no se puede hacer push a rama protegida: {branch}",

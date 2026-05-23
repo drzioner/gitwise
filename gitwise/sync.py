@@ -82,7 +82,12 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
     if result.returncode == 0:
         return 0
     if as_json:
-        print_json(error_envelope(error=t("sync_fetch_failed", error=result.stderr.strip())))
+        print_json(
+            error_envelope(
+                error=t("sync_fetch_failed", error=result.stderr.strip()),
+                hint=t("sync_hint"),
+            )
+        )
     else:
         error(t("sync_fetch_failed", error=result.stderr.strip()))
     return 1
@@ -93,7 +98,7 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
     if result.returncode == 0:
         return 0
     if as_json:
-        print_json(error_envelope(error=t("sync_pull_diverged")))
+        print_json(error_envelope(error=t("sync_pull_diverged"), hint=t("sync_hint")))
     else:
         error(t("sync_pull_diverged"))
     return 1
@@ -102,7 +107,12 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
 def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
     if branch in PROTECTED_BRANCHES:
         if as_json:
-            print_json(error_envelope(error=t("sync_push_protected", branch=branch)))
+            print_json(
+                error_envelope(
+                    error=t("sync_push_protected", branch=branch),
+                    hint=t("sync_push_protected_hint"),
+                )
+            )
         else:
             error(t("sync_push_protected", branch=branch))
         return 1
@@ -110,7 +120,12 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
     if result.returncode == 0:
         return 0
     if as_json:
-        print_json(error_envelope(error=t("sync_push_failed", error=result.stderr.strip())))
+        print_json(
+            error_envelope(
+                error=t("sync_push_failed", error=result.stderr.strip()),
+                hint=t("sync_hint"),
+            )
+        )
     else:
         error(t("sync_push_failed", error=result.stderr.strip()))
     return 1

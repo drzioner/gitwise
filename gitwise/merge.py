@@ -28,20 +28,16 @@ def _branch_exists(root: Path, name: str) -> bool:
     return r.returncode == 0
 
 
-def _validate_merge_target(*, root: Path, branch: str, cur: str | None) -> int:
+def _validate_merge_target(*, root: Path, branch: str, cur: str | None) -> str | None:
     if cur is None:
-        error(t("merge_detached_head"))
-        return 1
+        return t("merge_detached_head")
     if not validate_ref(branch):
-        error(t("invalid_ref", ref=branch))
-        return 1
+        return t("invalid_ref", ref=branch)
     if not _branch_exists(root, branch):
-        error(t("merge_branch_not_found", branch=branch))
-        return 1
+        return t("merge_branch_not_found", branch=branch)
     if branch == cur:
-        error(t("merge_same_branch"))
-        return 1
-    return 0
+        return t("merge_same_branch")
+    return None
 
 
 def _ahead_behind_counts(*, root: Path, branch: str) -> tuple[int, int]:
@@ -141,7 +137,7 @@ def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool)
 
 def _report_merge_error(*, as_json: bool, err: str) -> int:
     if as_json:
-        print_json(error_envelope(error=err))
+        print_json(error_envelope(error=err, hint=t("merge_hint")))
     else:
         error(err)
     return 1
@@ -163,9 +159,9 @@ def run_merge(
         return 1
 
     cur = current_branch(root)
-    target_rc = _validate_merge_target(root=root, branch=branch, cur=cur)
-    if target_rc != 0:
-        return target_rc
+    target_err = _validate_merge_target(root=root, branch=branch, cur=cur)
+    if target_err is not None:
+        return _report_merge_error(as_json=as_json, err=target_err)
     assert cur is not None
 
     ahead_count, behind_count = _ahead_behind_counts(root=root, branch=branch)
