@@ -1795,6 +1795,10 @@
     "es": "patrón de búsqueda inválido o peligroso: {pattern}",
     "en": "invalid or unsafe grep pattern: {pattern}"
   },
+  "invalid_author_pattern": {
+    "es": "patrón de author inválido o peligroso: {pattern}",
+    "en": "invalid or unsafe author pattern: {pattern}"
+  },
   "unexpected_error": {
     "es": "error inesperado. Ejecuta con GITWISE_DEBUG=1 para más detalles.",
     "en": "unexpected error. Run with GITWISE_DEBUG=1 for details."

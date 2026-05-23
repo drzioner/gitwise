@@ -3,7 +3,7 @@
 import subprocess
 from pathlib import Path
 
-from .git import require_root, validate_grep_pattern
+from .git import require_root, validate_author_pattern, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, info, print_json, print_table
@@ -30,6 +30,9 @@ def _build_log_args(
         args.append("--format=%h\t%an\t%ad\t%s")
         args.append("--date=short")
     if author:
+        if not validate_author_pattern(author):
+            error(t("invalid_author_pattern", pattern=author[:50]))
+            raise ValueError(f"unsafe author pattern: {author[:50]}")
         args.append(f"--author={author}")
     if grep:
         if not validate_grep_pattern(grep):
@@ -62,6 +65,9 @@ def _build_log_json_args(
         "--date=iso",
     ]
     if author:
+        if not validate_author_pattern(author):
+            error(t("invalid_author_pattern", pattern=author[:50]))
+            raise ValueError(f"unsafe author pattern: {author[:50]}")
         args.append(f"--author={author}")
     if grep:
         if not validate_grep_pattern(grep):

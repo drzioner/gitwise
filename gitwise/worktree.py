@@ -52,6 +52,9 @@ def _find_orphaned(cwd: Path) -> list[dict]:
 
 def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
     """Core worktree creation logic. Returns (rc, path, error_or_data)."""
+    if branch.startswith("/") or branch.startswith("../") or "/../" in branch:
+        return 1, None, {"ok": False, "error": t("invalid_branch_name", name=branch)}
+
     safe_name = re.sub(r"^\.+", "", branch.replace("/", "-"))
     wt_path = root.parent / (safe_name or "worktree")
 

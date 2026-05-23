@@ -204,6 +204,20 @@ def validate_grep_pattern(pattern: str) -> bool:
     return True
 
 
+def validate_author_pattern(pattern: str) -> bool:
+    if len(pattern) > _GREP_MAX_LEN:
+        return False
+    if "\n" in pattern or "\r" in pattern or "\x00" in pattern:
+        return False
+    if _NESTED_QUANTIFIER_RE.search(pattern):
+        return False
+    try:
+        re.compile(pattern)
+    except re.error:
+        return False
+    return True
+
+
 PROTECTED_BRANCHES: frozenset[str] = frozenset(
     {"main", "master", "develop", "dev", "trunk", "release"}
 )
