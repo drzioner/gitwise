@@ -271,6 +271,18 @@
     "es": "shell no soportado para completions: {shell}",
     "en": "unsupported shell for completions: {shell}"
   },
+  "aliases_label": {
+    "es": "aliases",
+    "en": "aliases"
+  },
+  "missing_dependency_completions_shtab": {
+    "es": "dependencia faltante: shtab (requerida para completions bash/zsh)",
+    "en": "missing dependency: shtab (required for bash/zsh completions)"
+  },
+  "missing_dependency_hint": {
+    "es": "usa `uv run python -m gitwise ...` o instala deps con `uv sync`",
+    "en": "use `uv run python -m gitwise ...` or install dependencies with `uv sync`"
+  },
   "config_failed": {
     "es": "config {name}: falló (continuando)",
     "en": "config {name}: failed (continuing)"
@@ -850,6 +862,14 @@
   "merge_uncommitted": {
     "es": "Hay cambios sin confirmar",
     "en": "There are uncommitted changes"
+  },
+  "schema_unknown_command": {
+    "es": "comando desconocido: {name}",
+    "en": "unknown command: {name}"
+  },
+  "schema_unknown_command_hint": {
+    "es": "ejecuta `gitwise commands --json` para listar comandos disponibles",
+    "en": "run `gitwise commands --json` to list available commands"
   },
   "migrated_skill": {
     "es": "migrado: {file} → {target} (symlink)",

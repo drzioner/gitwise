@@ -315,7 +315,10 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
         import importlib
 
-        rich_argparse = importlib.import_module("rich_argparse")
+        try:
+            rich_argparse = importlib.import_module("rich_argparse")
+        except ModuleNotFoundError:
+            return GitwiseHelpFormatter
         formatter = rich_argparse.RawDescriptionRichHelpFormatter
         cls._FORMATTER = formatter
         return formatter

@@ -73,6 +73,61 @@ def test_command_help_json():
     assert isinstance(data["options"], list)
 
 
+def test_commands_json_lists_metadata():
+    result = _run("commands", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["kind"] == "commands"
+    assert data["schema"] == "gitwise/commands/v1"
+    assert isinstance(data["commands"], list)
+    assert any(item["name"] == "status" for item in data["commands"])
+
+
+def test_commands_human_output_localized_aliases_label():
+    result = _run("commands", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 0
+    assert "(aliases:" in result.stdout
+
+
+def test_schema_json_for_known_command():
+    result = _run("schema", "status", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["kind"] == "schema"
+    assert data["schema"] == "gitwise/schema/v1"
+    assert data["command"] == "status"
+    assert data["schema_kind"] == "cli_input"
+    assert data["json_schema"]["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    assert data["json_schema"]["type"] == "object"
+
+
+def test_schema_boolean_flags_are_boolean_not_array():
+    result = _run("schema", "status", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["json_schema"]["properties"]["json"]["type"] == "boolean"
+    assert data["json_schema"]["properties"]["json_pretty"]["type"] == "boolean"
+
+
+def test_schema_json_for_unknown_command_returns_error_envelope():
+    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "en"})
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert data["error"] == "unknown command: nonexistent-command-xyz"
+    assert data["errors"][0]["code"] == "unknown_command"
+
+
+def test_schema_unknown_command_is_localized_es():
+    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "es"})
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["error"] == "comando desconocido: nonexistent-command-xyz"
+    assert "ejecuta `gitwise commands --json`" in data["errors"][0]["hint"]
+
+
 def test_completions_bash_outputs_script():
     result = _run("completions", "bash")
     assert result.returncode == 0
@@ -101,6 +156,38 @@ def test_completions_respects_prog_name():
     result = _run("completions", "bash", "--prog", "gw")
     assert result.returncode == 0
     assert "_shtab_gw_option_strings" in result.stdout
+
+
+def test_completions_json_returns_envelope():
+    result = _run("completions", "bash", "--json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["kind"] == "completions"
+    assert data["schema"] == "gitwise/completions/v1"
+    assert data["shell"] == "bash"
+    assert "_shtab_gitwise_option_strings" in data["script"]
+
+
+def test_completions_json_handles_missing_shtab(monkeypatch, capsys):
+    from argparse import Namespace
+
+    from gitwise import __main__ as main_mod
+
+    def raise_missing_dependency(*, shell: str, prog: str) -> str:
+        del shell, prog
+        raise ModuleNotFoundError("No module named 'shtab'")
+
+    monkeypatch.setattr(main_mod, "_build_completions_script", raise_missing_dependency)
+
+    rc = main_mod._run_completions(Namespace(shell="bash", prog="gitwise", json=True))
+    assert rc == 1
+
+    out = capsys.readouterr().out
+    data = json.loads(out)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "missing_dependency"
+    assert "shtab" in data["error"]
 
 
 def test_json_compact_by_default(tmp_git_repo):
