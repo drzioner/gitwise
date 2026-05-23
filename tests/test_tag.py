@@ -67,3 +67,15 @@ def test_tag_create_annotated(tmp_git_repo):
     r = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
     data = json.loads(r.stdout)
     assert data["count"] == 1
+
+
+def test_tag_delete_dry_run_non_interactive_succeeds_without_yes(tmp_git_repo):
+    create = run_gitwise("tag", "create", "v0.1.0", cwd=tmp_git_repo)
+    assert create.returncode == 0
+
+    dry_run_delete = run_gitwise("tag", "delete", "v0.1.0", "--dry-run", cwd=tmp_git_repo)
+    assert dry_run_delete.returncode == 0
+
+    listed = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
+    data = json.loads(listed.stdout)
+    assert any(tag["name"] == "v0.1.0" for tag in data["tags"])

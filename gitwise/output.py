@@ -249,6 +249,25 @@ def print_blank() -> None:
 
 
 def confirm(prompt: str) -> bool:
+    if not sys.stdin.isatty():
+        return False
+
+    if _should_use_rich():
+        try:
+            import importlib
+
+            prompt_mod = importlib.import_module("rich.prompt")
+            resp = prompt_mod.Prompt.ask(
+                prompt,
+                default="",
+                show_default=False,
+                show_choices=False,
+                console=_get_console(),
+            )
+            return resp.strip().lower() in confirm_responses()
+        except (EOFError, KeyboardInterrupt):
+            return False
+
     try:
         resp = input(prompt).strip().lower()
     except (EOFError, KeyboardInterrupt):

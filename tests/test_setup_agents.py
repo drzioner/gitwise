@@ -64,6 +64,13 @@ def test_setup_agents_dry_run_no_changes(tmp_git_repo):
     assert not (tmp_git_repo / ".claude" / "settings.json").exists()
 
 
+def test_setup_agents_without_yes_non_interactive_cancels(tmp_git_repo):
+    result = _run_local(cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "cancel" in (result.stdout + result.stderr).lower()
+    assert not (tmp_git_repo / "AGENTS.md").exists()
+
+
 def test_setup_agents_json_output_v3(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     assert result.returncode == 0
