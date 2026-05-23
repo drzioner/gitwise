@@ -20,6 +20,12 @@ def _canonical_layout_local(state: StateDict) -> str:
     return "claude_only"
 
 
+def _canonical_layout_global(*, has_agents_dir: bool) -> str:
+    if has_agents_dir:
+        return "agents_dir"
+    return "claude_only"
+
+
 def format_json_output_global(
     *,
     home: Path,
@@ -35,7 +41,7 @@ def format_json_output_global(
         "dry_run": dry_run,
         "root": str(home / ".claude"),
         "mode": "global",
-        "canonical_layout": "agents+claude" if has_agents_dir else "claude_home",
+        "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
         "actions": _action_summaries(actions),
         "warnings": warnings,
         "errors": [],

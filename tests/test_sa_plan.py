@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import gitwise.setup_agents.plan_skills as plan_skills_module
+import pytest
 from gitwise.setup_agents.plan_gitfiles import (
     _MANAGED_MARKER_END,
     _MANAGED_MARKER_START,
@@ -378,3 +379,28 @@ class TestSkillTemplateResolution:
         monkeypatch.setattr(plan_skills_module, "_SHARE_AGENTS_DIR", missing)
         content = plan_skills_module._read_skill_template("git-clean")
         assert "gitwise clean --branches --dry-run --json" in content
+
+    def test_read_skill_template_ignores_directory_candidate(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        agents_dir = tmp_path / "share" / "agents"
+        claude_dir = tmp_path / "share" / "claude"
+        bad_skill_path = agents_dir / "skills" / "git-audit" / "SKILL.md"
+        bad_skill_path.mkdir(parents=True)
+        fallback_skill_path = claude_dir / "skills" / "git-audit" / "SKILL.md"
+        fallback_skill_path.parent.mkdir(parents=True)
+        fallback_skill_path.write_text("fallback content", encoding="utf-8")
+
+        monkeypatch.setattr(plan_skills_module, "_SHARE_AGENTS_DIR", agents_dir)
+        monkeypatch.setattr(plan_skills_module, "_SHARE_CLAUDE_DIR", claude_dir)
+
+        content = plan_skills_module._read_skill_template("git-audit")
+        assert content == "fallback content"
+
+    def test_read_template_requires_file(self, tmp_path: Path, monkeypatch) -> None:
+        share_claude = tmp_path / "share" / "claude"
+        (share_claude / "skills").mkdir(parents=True)
+        monkeypatch.setattr(plan_skills_module, "_SHARE_CLAUDE_DIR", share_claude)
+
+        with pytest.raises(FileNotFoundError):
+            plan_skills_module._read_template("skills")

@@ -41,6 +41,7 @@ Install canonical agents files globally (default) or in the current repo (`--loc
 
 - Canonical-first layout: `AGENTS.md` + `.agents/skills/`
 - Provider integrations (Claude, Cursor, Continue, opencode, Codex, Aider, Pi) stay optional via `--adapters`
+- Deprecated compatibility alias: `--adapters claude-only` is treated as `claude`
 - `--json` output for this command uses schema `v=3` with `canonical_layout` and `v_compat: [1, 2, 3]`
 
 ```bash

@@ -14,7 +14,7 @@ _SKILLS: tuple[str, ...] = ("git-audit", "git-clean", "git-optimize")
 
 def _read_template(name: str) -> str:
     path = _SHARE_CLAUDE_DIR / name
-    if not path.exists():
+    if not path.is_file():
         raise FileNotFoundError(t("template_not_found", path=str(path)))
     return path.read_text(encoding="utf-8")
 
@@ -25,7 +25,7 @@ def _read_skill_template(skill: str) -> str:
         _SHARE_CLAUDE_DIR / "skills" / skill / "SKILL.md",
     )
     for path in candidates:
-        if path.exists():
+        if path.is_file():
             return path.read_text(encoding="utf-8")
     raise FileNotFoundError(
         t("template_not_found", path=str(_SHARE_AGENTS_DIR / "skills" / skill / "SKILL.md"))

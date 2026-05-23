@@ -673,7 +673,7 @@ def test_global_mode_json_output(tmp_path):
     data = json.loads(result.stdout)
     assert data["v"] == 3
     assert data["mode"] == "global"
-    assert data["canonical_layout"] == "claude_home"
+    assert data["canonical_layout"] == "claude_only"
     assert 3 in data["v_compat"]
     assert data["ok"] is True
     assert "actions" in data
@@ -685,7 +685,7 @@ def test_global_mode_json_reports_agents_layout_when_present(tmp_path):
     result = _run_global("--json", "--dry-run", fake_home=tmp_path)
     data = json.loads(result.stdout)
     assert data["mode"] == "global"
-    assert data["canonical_layout"] == "agents+claude"
+    assert data["canonical_layout"] == "agents_dir"
 
 
 def test_global_mode_idempotent(tmp_path):
