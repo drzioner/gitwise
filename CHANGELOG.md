@@ -3,6 +3,21 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.18.0 (2026-05-23)
+
+### Feat
+
+- **release**: auto-sync CHANGELOG.es on bump
+
+### Fix
+
+- **ci**: eliminate workflow_call auth failure and cache collisions on main (#36)
+- **setup-agents**: restore rollback correctness and isolate claude core
+
+### Refactor
+
+- **setup-agents**: canonical local default and transactional rollback
+
 ## v0.17.0 (2026-05-23)
 
 ### Feat
