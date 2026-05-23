@@ -55,16 +55,18 @@ def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
 
 def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
     """Transactional rollback: restore pre-action snapshots for all touched paths."""
-    snapshots: list[dict[str, str | bytes | None]] = []
-    for action in reversed(actions_done):
+    snapshots_by_path: dict[str, dict[str, str | bytes | None]] = {}
+    for action in actions_done:
         pre_state = action.get("_pre_state")
         if isinstance(pre_state, list):
             for snap in pre_state:
                 if isinstance(snap, dict):
-                    snapshots.append(snap)
+                    path_key = str(snap.get("path", ""))
+                    if path_key and path_key not in snapshots_by_path:
+                        snapshots_by_path[path_key] = snap
 
-    if snapshots:
-        _restore_snapshots(snapshots)
+    if snapshots_by_path:
+        _restore_snapshots(list(snapshots_by_path.values()))
         return
 
     # Backward-compatibility fallback for legacy tests/actions without snapshots.

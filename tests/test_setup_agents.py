@@ -221,6 +221,16 @@ def test_setup_agents_with_claude_provider_keeps_claude_experience(tmp_git_repo)
     assert (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
 
 
+def test_setup_agents_with_non_claude_provider_keeps_canonical_default(tmp_git_repo):
+    result = _run_local("--yes", "--providers", "cursor", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert (tmp_git_repo / "AGENTS.md").exists()
+    assert not (tmp_git_repo / "CLAUDE.md").exists()
+    assert not (tmp_git_repo / ".claude" / "settings.json").exists()
+    assert not (tmp_git_repo / ".claude" / "rules" / "gitwise.md").exists()
+    assert (tmp_git_repo / ".cursor" / "rules" / "gitwise.mdc").exists()
+
+
 def test_setup_agents_canonical_default_has_no_claude_rules_or_skills(tmp_git_repo):
     result = _run_local("--yes", cwd=tmp_git_repo)
     assert result.returncode == 0

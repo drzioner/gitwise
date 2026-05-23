@@ -274,7 +274,7 @@ class TestExecuteActions:
         ]
         with pytest.raises(PlanExecutionError):
             _execute_actions(tmp_path, actions)
-        assert (tmp_path / "CLAUDE.md").read_text(encoding="utf-8") == "# Claude\n"
+        assert not (tmp_path / "CLAUDE.md").exists()
 
     def test_generate_snapshot_to_agents_path(self, tmp_path: Path) -> None:
         actions = [

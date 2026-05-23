@@ -220,7 +220,7 @@ def _run_setup_local(
     if providers:
         for provider in providers:
             provider_tokens.extend(part.strip() for part in provider.split(",") if part.strip())
-    force_claude_core = any(token != "none" for token in provider_tokens)
+    force_claude_core = any(token in ("claude", "claude-only") for token in provider_tokens)
 
     try:
         actions, warnings, plan_errors, bucket, state = _plan_actions(
@@ -265,7 +265,7 @@ def _run_setup_local(
                 "migrate_legacy_claude": migrate_legacy_claude,
                 "frozen_time": frozen_time,
                 "no_git_files": no_git_files,
-                "core_claude_planned": True,
+                "core_claude_planned": force_claude_core,
             },
         }
         adapter_actions, adapter_errors, adapter_warnings = plan_adapter_actions(
