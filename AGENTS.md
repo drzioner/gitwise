@@ -139,6 +139,8 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Commit without GPG (`--no-gpg-sign` is only allowed in test fixtures, never in real commits)
 - Add `--global` to `npm config set` or similar package manager globals
 - Run `python -m gitwise` without verifying it uses the venv Python (colors silently break if system Python is used)
+- Use `gh pr merge --admin` to bypass branch protection — if a check fails, rerun the failed job (`gh run rerun --job <id>`) and wait for all checks to pass before merging
+- Merge a PR that has any failing checks — all checks must be green, no exceptions
 
 ## Scoped Rules
 
