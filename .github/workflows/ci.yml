@@ -93,7 +93,7 @@ jobs:
       - run: uv run pytest -q --tb=short --cov=gitwise --cov-report=term-missing --cov-report=xml
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # v5
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v5
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
