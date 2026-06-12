@@ -96,63 +96,93 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 1
 
     steps = _get_steps()
+
+    if dry_run:
+        if as_json:
+            print_json(
+                {
+                    "v": 2,
+                    "dry_run": True,
+                    "applied": False,
+                    "steps": [{"name": n, "desc": d} for n, d in steps],
+                    "ok": True,
+                }
+            )
+            return 0
+        print_header(t("optimizing", root=str(cwd)))
+        print_blank()
+        for _name, desc in steps:
+            print_status_line("›", desc, t("pending"), ok_flag=False)
+        print_blank()
+        print_dim(t("dry_run_no_exec"))
+        return 0
+
+    if not as_json:
+        print_header(t("optimizing", root=str(cwd)))
+        print_blank()
+        for _name, desc in steps:
+            print_status_line("›", desc, t("pending"), ok_flag=False)
+        print_blank()
+        if not yes:
+            if not confirm(t("confirm_optimize")):
+                print_dim(t("cancelled"))
+                return 0
+            print_blank()
+
+    size_before = _repo_size_kb(cwd)
+
+    if as_json:
+        graph_ok = _write_commit_graph(cwd)
+        repack_ok = _repack(cwd)
+        prune_ok = _prune(cwd)
+    else:
+        with status(t("status_optimize_commit_graph")):
+            graph_ok = _write_commit_graph(cwd)
+        if graph_ok:
+            ok(t("commit_graph_updated"))
+        else:
+            warn(t("commit_graph_failed"))
+
+        with status(t("status_optimize_repack")):
+            repack_ok = _repack(cwd)
+        if repack_ok:
+            ok(t("repack_complete"))
+        else:
+            warn(t("repack_failed"))
+
+        with status(t("status_optimize_prune")):
+            prune_ok = _prune(cwd)
+        if prune_ok:
+            ok(t("prune_complete"))
+        else:
+            warn(t("prune_not_critical"))
+
+    size_after = _repo_size_kb(cwd)
+    saved = size_before - size_after
+
     if as_json:
         print_json(
             {
                 "v": 2,
-                "dry_run": dry_run,
-                "steps": [{"name": n, "desc": d} for n, d in steps],
-                "ok": True,
+                "dry_run": False,
+                "applied": True,
+                "steps": [
+                    {"name": "commit-graph", "desc": t("step_commit_graph"), "ok": graph_ok},
+                    {"name": "repack", "desc": t("step_repack"), "ok": repack_ok},
+                    {"name": "prune", "desc": t("step_prune"), "ok": prune_ok},
+                ],
+                "size_before_kb": size_before,
+                "size_after_kb": size_after,
+                "saved_kb": saved,
+                "ok": graph_ok or repack_ok,
             }
         )
-        return 0
-
-    size_before = _repo_size_kb(cwd)
-    print_header(t("optimizing", root=str(cwd)))
-    print_blank()
-    for _name, desc in steps:
-        print_status_line("›", desc, t("pending"), ok_flag=False)
-
-    print_blank()
-
-    if dry_run:
-        print_dim(t("dry_run_no_exec"))
-        return 0
-
-    if not yes:
-        if not confirm(t("confirm_optimize")):
-            print_dim(t("cancelled"))
-            return 0
-        print_blank()
-
-    with status(t("status_optimize_commit_graph")):
-        graph_ok = _write_commit_graph(cwd)
-    if graph_ok:
-        ok(t("commit_graph_updated"))
     else:
-        warn(t("commit_graph_failed"))
-
-    with status(t("status_optimize_repack")):
-        repack_ok = _repack(cwd)
-    if repack_ok:
-        ok(t("repack_complete"))
-    else:
-        warn(t("repack_failed"))
-
-    with status(t("status_optimize_prune")):
-        prune_ok = _prune(cwd)
-    if prune_ok:
-        ok(t("prune_complete"))
-    else:
-        warn(t("prune_not_critical"))
-
-    size_after = _repo_size_kb(cwd)
-    saved = size_before - size_after
-    print_section(t("summary"))
-    if saved > 0:
-        ok(t("space_freed", saved=str(saved), before=str(size_before), after=str(size_after)))
-    else:
-        ok(t("repo_size", size=str(size_after)))
+        print_section(t("summary"))
+        if saved > 0:
+            ok(t("space_freed", saved=str(saved), before=str(size_before), after=str(size_after)))
+        else:
+            ok(t("repo_size", size=str(size_after)))
 
     if not graph_ok and not repack_ok:
         return 1

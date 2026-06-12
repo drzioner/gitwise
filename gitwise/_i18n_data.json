@@ -1656,8 +1656,12 @@
     "en": "fetch failed: {error}"
   },
   "sync_pull_diverged": {
-    "es": "pull falló: el branch local y el remoto han divergido (usa merge o rebase)",
-    "en": "pull failed: local and remote have diverged (use merge or rebase)"
+    "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
+    "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)"
+  },
+  "sync_pull_diverged_hint": {
+    "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",
+    "en": "Inspect state with: gitwise sync --dry-run --json. Reconcile with: git pull --rebase (recommended) or git pull --no-rebase. Then: gitwise sync --push."
   },
   "sync_pull_ff": {
     "es": "pull --ff-only",

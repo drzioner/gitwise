@@ -96,21 +96,31 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
     return 1
 
 
+_SYNC_PULL_DIVERGED_COMMANDS = (
+    "gitwise sync --dry-run --json",
+    "git pull --rebase",
+    "git pull --no-rebase",
+    "gitwise sync --push",
+)
+
+
 def _sync_pull(*, root: Path, as_json: bool) -> int:
     with status(t("status_sync_pull")):
         result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
+    hint = t("sync_pull_diverged_hint")
     if as_json:
         print_json(
             error_envelope(
                 error=t("sync_pull_diverged"),
                 code="sync_pull_diverged",
-                hint=t("sync_hint"),
+                hint=hint,
+                suggested_commands=list(_SYNC_PULL_DIVERGED_COMMANDS),
             )
         )
     else:
-        error(t("sync_pull_diverged"))
+        error(t("sync_pull_diverged"), hint=hint)
     return 1
 
 

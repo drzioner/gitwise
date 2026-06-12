@@ -49,5 +49,32 @@ def test_optimize_json_output(
 
     data = json.loads(capsys.readouterr().out)
     assert data["ok"] is True
+    assert data["dry_run"] is True
+    assert data["applied"] is False
     assert "steps" in data
     assert len(data["steps"]) > 0
+
+
+def test_optimize_json_executes_steps(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_git_repo: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Regression for Issue #45: --json must execute steps when --dry-run is absent."""
+    import json
+
+    monkeypatch.chdir(tmp_git_repo)
+
+    gd = git_dir(tmp_git_repo)
+    assert gd is not None
+    graph_path = gd / "objects" / "info" / "commit-graph"
+    assert not graph_path.exists()
+
+    rc = run_optimize(dry_run=False, yes=True, as_json=True)
+    assert rc == 0
+
+    data = json.loads(capsys.readouterr().out)
+    assert data["dry_run"] is False
+    assert data["applied"] is True
+    assert all(s.get("ok") for s in data["steps"] if s["name"] == "commit-graph")
+    assert graph_path.exists()

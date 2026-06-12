@@ -79,56 +79,99 @@ def run_clean(
 
     deletable, skipped = _categorize(cwd)
 
-    if as_json:
+    if dry_run:
+        if as_json:
+            print_json(
+                {
+                    "v": 2,
+                    "dry_run": True,
+                    "applied": False,
+                    "deletable": deletable,
+                    "skipped": skipped,
+                    "ok": True,
+                }
+            )
+            return 0
+        if not deletable and not skipped:
+            ok(t("no_stale_branches"))
+            return 0
+        if skipped:
+            print_header(t("protected_stale_branches", count=str(len(skipped))))
+            for s in skipped:
+                print_bracket(s["branch"], s["reason"])
+            print_blank()
+        if not deletable:
+            ok(t("no_deletable_branches"))
+            return 0
+        print_header(t("branches_to_delete", count=str(len(deletable))))
+        for branch in deletable:
+            print_bracket(branch)
+        print_blank()
+        print_dim(t("dry_run_no_delete"))
+        print_dim(t("clean_to_delete"))
+        return 0
+
+    if not as_json:
+        if not deletable and not skipped:
+            ok(t("no_stale_branches"))
+            return 0
+        if skipped:
+            print_header(t("protected_stale_branches", count=str(len(skipped))))
+            for s in skipped:
+                print_bracket(s["branch"], s["reason"])
+            print_blank()
+        if not deletable:
+            ok(t("no_deletable_branches"))
+            return 0
+        print_header(t("branches_to_delete", count=str(len(deletable))))
+        for branch in deletable:
+            print_bracket(branch)
+        print_blank()
+        if not yes:
+            if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
+                print_dim(t("cancelled"))
+                return 0
+            print_blank()
+    elif not deletable:
         print_json(
             {
                 "v": 2,
-                "dry_run": dry_run,
-                "deletable": deletable,
+                "dry_run": False,
+                "applied": True,
+                "deleted": [],
                 "skipped": skipped,
+                "errors": [],
                 "ok": True,
             }
         )
         return 0
 
-    if not deletable and not skipped:
-        ok(t("no_stale_branches"))
-        return 0
-
-    if skipped:
-        print_header(t("protected_stale_branches", count=str(len(skipped))))
-        for s in skipped:
-            print_bracket(s["branch"], s["reason"])
-        print_blank()
-
-    if not deletable:
-        ok(t("no_deletable_branches"))
-        return 0
-
-    print_header(t("branches_to_delete", count=str(len(deletable))))
-    for branch in deletable:
-        print_bracket(branch)
-    print_blank()
-
-    if dry_run:
-        print_dim(t("dry_run_no_delete"))
-        print_dim(t("clean_to_delete"))
-        return 0
-
-    if not yes:
-        if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
-            print_dim(t("cancelled"))
-            return 0
-        print_blank()
-
-    errors: list[str] = []
+    deleted: list[str] = []
+    errors: list[dict[str, str]] = []
     for branch in deletable:
         r = git_run(["branch", "-D", branch], cwd=cwd, check=False)
         if r.returncode == 0:
-            print_success(t("branch_deleted", branch=branch))
+            deleted.append(branch)
+            if not as_json:
+                print_success(t("branch_deleted", branch=branch))
         else:
-            errors.append(branch)
-            warn(t("could_not_delete", branch=branch, error=r.stderr.strip()))
+            errors.append({"branch": branch, "error": r.stderr.strip()})
+            if not as_json:
+                warn(t("could_not_delete", branch=branch, error=r.stderr.strip()))
+
+    if as_json:
+        print_json(
+            {
+                "v": 2,
+                "dry_run": False,
+                "applied": True,
+                "deleted": deleted,
+                "skipped": skipped,
+                "errors": errors,
+                "ok": not errors,
+            }
+        )
+        return 1 if errors else 0
 
     if errors:
         return 1
