@@ -23,6 +23,7 @@ from .output import (
     status,
     warn,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _gc_is_running(cwd: Path) -> bool:
@@ -100,13 +101,13 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     if dry_run:
         if as_json:
             print_json(
-                {
-                    "v": 2,
-                    "dry_run": True,
-                    "applied": False,
-                    "steps": [{"name": n, "desc": d} for n, d in steps],
-                    "ok": True,
-                }
+                ok_envelope(
+                    payload={
+                        "dry_run": True,
+                        "applied": False,
+                        "steps": [{"name": n, "desc": d} for n, d in steps],
+                    }
+                )
             )
             return 0
         print_header(t("optimizing", root=str(cwd)))
@@ -116,6 +117,16 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         print_blank()
         print_dim(t("dry_run_no_exec"))
         return 0
+
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
 
     if not as_json:
         print_header(t("optimizing", root=str(cwd)))
@@ -160,23 +171,37 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     size_after = _repo_size_kb(cwd)
     saved = size_before - size_after
 
+    if not graph_ok and not repack_ok:
+        rc = 1
+    elif not prune_ok:
+        rc = 2
+    else:
+        rc = 0
+
     if as_json:
-        print_json(
-            {
-                "v": 2,
-                "dry_run": False,
-                "applied": True,
-                "steps": [
-                    {"name": "commit-graph", "desc": t("step_commit_graph"), "ok": graph_ok},
-                    {"name": "repack", "desc": t("step_repack"), "ok": repack_ok},
-                    {"name": "prune", "desc": t("step_prune"), "ok": prune_ok},
-                ],
-                "size_before_kb": size_before,
-                "size_after_kb": size_after,
-                "saved_kb": saved,
-                "ok": graph_ok or repack_ok,
-            }
-        )
+        payload: dict[str, object] = {
+            "dry_run": False,
+            "applied": True,
+            "steps": [
+                {"name": "commit-graph", "desc": t("step_commit_graph"), "ok": graph_ok},
+                {"name": "repack", "desc": t("step_repack"), "ok": repack_ok},
+                {"name": "prune", "desc": t("step_prune"), "ok": prune_ok},
+            ],
+            "size_before_kb": size_before,
+            "size_after_kb": size_after,
+            "saved_kb": saved,
+            "rc": rc,
+        }
+        if rc == 0:
+            print_json(ok_envelope(payload=payload))
+        else:
+            print_json(
+                error_envelope(
+                    error=t("optimize_partial_failure"),
+                    code="optimize_partial_failure",
+                    payload=payload,
+                )
+            )
     else:
         print_section(t("summary"))
         if saved > 0:
@@ -184,6 +209,4 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         else:
             ok(t("repo_size", size=str(size_after)))
 
-    if not graph_ok and not repack_ok:
-        return 1
-    return 2 if not prune_ok else 0
+    return rc

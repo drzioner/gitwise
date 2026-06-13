@@ -76,5 +76,24 @@ def test_optimize_json_executes_steps(
     data = json.loads(capsys.readouterr().out)
     assert data["dry_run"] is False
     assert data["applied"] is True
+    assert data["rc"] == 0
+    assert data["ok"] is True
     assert all(s.get("ok") for s in data["steps"] if s["name"] == "commit-graph")
     assert graph_path.exists()
+
+
+def test_optimize_json_requires_yes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_git_repo: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Q1: --json on a write command must require --yes explicitly."""
+    import json
+
+    monkeypatch.chdir(tmp_git_repo)
+    rc = run_optimize(dry_run=False, yes=False, as_json=True)
+    assert rc == 2
+    data = json.loads(capsys.readouterr().out)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    assert "hint" in data["errors"][0]

@@ -22,6 +22,7 @@ from .output import (
     print_status_line,
     warn,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
 
 HookMode = Literal["preserve", "native", "legacy", "skip"]
 
@@ -361,7 +362,6 @@ def _json_report(
     hooks_backend: Literal["native", "legacy", "skip"],
 ) -> dict[str, object]:
     return {
-        "v": 2,
         "dry_run": dry_run,
         "root": str(root),
         "changes": changes,
@@ -369,7 +369,6 @@ def _json_report(
         "hook_managers": managers,
         "hooks_mode_requested": hooks_mode,
         "hooks_backend": hooks_backend,
-        "ok": True,
     }
 
 
@@ -446,14 +445,17 @@ def run_setup(
     if dry_run:
         if as_json:
             print_json(
-                _json_report(
-                    dry_run=True,
-                    root=cwd,
-                    changes=changes,
-                    warnings=gpg_warnings + hook_warnings,
-                    managers=managers,
-                    hooks_mode=hooks_mode,
-                    hooks_backend=hooks_backend,
+                ok_envelope(
+                    payload=_json_report(
+                        dry_run=True,
+                        root=cwd,
+                        changes=changes,
+                        warnings=gpg_warnings + hook_warnings,
+                        managers=managers,
+                        hooks_mode=hooks_mode,
+                        hooks_backend=hooks_backend,
+                    ),
+                    applied=False,
                 )
             )
             return 0
@@ -469,6 +471,16 @@ def run_setup(
             return 0
         _print_change_plan(changes)
         return 0
+
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
 
     if not as_json:
         _print_setup_context(
@@ -490,18 +502,21 @@ def run_setup(
 
     if not changes:
         if as_json:
-            report = _json_report(
-                dry_run=False,
-                root=cwd,
-                changes=[],
-                warnings=gpg_warnings + hook_warnings,
-                managers=managers,
-                hooks_mode=hooks_mode,
-                hooks_backend=hooks_backend,
+            print_json(
+                ok_envelope(
+                    payload=_json_report(
+                        dry_run=False,
+                        root=cwd,
+                        changes=[],
+                        warnings=gpg_warnings + hook_warnings,
+                        managers=managers,
+                        hooks_mode=hooks_mode,
+                        hooks_backend=hooks_backend,
+                    ),
+                    applied=True,
+                    results=[],
+                )
             )
-            report["applied"] = True
-            report["results"] = []
-            print_json(report)
         return 0
 
     results = _apply_changes(changes, cwd, quiet=as_json)
@@ -519,9 +534,17 @@ def run_setup(
         report["applied"] = True
         report["results"] = results
         all_ok = all(bool(r.get("applied")) for r in results)
-        report["ok"] = all_ok
-        print_json(report)
-        return 0 if all_ok else 1
+        if all_ok:
+            print_json(ok_envelope(payload=report))
+            return 0
+        print_json(
+            error_envelope(
+                error=t("setup_partial_failure"),
+                code="setup_partial_failure",
+                payload=report,
+            )
+        )
+        return 1
 
     ok(t("setup_complete"))
     return 0

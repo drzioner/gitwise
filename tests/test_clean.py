@@ -200,6 +200,7 @@ def test_clean_json_executes_delete(
     data = json.loads(capsys.readouterr().out)
     assert data["dry_run"] is False
     assert data["applied"] is True
+    assert data["ok"] is True
     assert "deleted" in data
     assert len(data["deleted"]) == 3
 
@@ -210,6 +211,21 @@ def test_clean_json_executes_delete(
         text=True,
     )
     assert r.stdout.strip() == ""
+
+
+def test_clean_json_requires_yes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_git_repo_with_stale: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Q1: clean --json without --yes must return yes_required envelope."""
+    monkeypatch.chdir(tmp_git_repo_with_stale)
+    rc = run_clean(branches=True, refs=False, dry_run=False, yes=False, as_json=True)
+    assert rc == 2
+    data = json.loads(capsys.readouterr().out)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    assert len(stale_branches(tmp_git_repo_with_stale)) == 3
 
 
 def test_active_worktree_protected(
