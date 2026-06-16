@@ -47,7 +47,7 @@ jobs:
           subject-path: dist/*.whl
           sbom-path: dist/sbom.cyclonedx.json
 
-      - uses: actions/upload-artifact@4cee1c8a67ec5ea04f6c8a5c4a0e8d9c7a9c5e3f # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist
           path: |
@@ -61,7 +61,7 @@ jobs:
     needs: build
     environment: pypi
     steps:
-      - uses: actions/download-artifact@65c8ea437f870e2e6857950e9ad2c61c66dca8c8 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: dist
           path: dist/
