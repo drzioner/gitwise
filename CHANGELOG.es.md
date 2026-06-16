@@ -1,7 +1,7 @@
 # Historial de cambios
 
 Source: CHANGELOG.md
-Last sync: 2026-05-23
+Last sync: 2026-06-16
 
 [English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
 
@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.22.0 (2026-05-23)
+## v0.22.1 (2026-06-16)
 
-### Feat
+### Fix
 
-- **schema**: add versioned schema catalog and CI validation (#41)
+- --json execute write commands + sync --pull diverged hints (closes #45, #43) (#50)
