@@ -167,7 +167,8 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     root, err = require_root()
     if err:
         return err
-    assert root is not None
+    if root is None:
+        return 1
     cwd = root
 
     findings: list[dict[str, Any]] = []
@@ -287,7 +288,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
 
     health = compute_health(
         cwd,
-        _has_remote_gpg=gpg,
+        _gpg_override=gpg,
         _has_commit_graph=has_commit_graph_val,
         _has_remote=_has_remote,
         _has_upstream=_has_upstream,

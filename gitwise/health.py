@@ -278,7 +278,7 @@ def _remaining_health_state(
 def compute_health(
     root: Path,
     *,
-    _has_remote_gpg: dict | None = None,
+    _gpg_override: dict | None = None,
     _has_commit_graph: bool | None = None,
     _has_remote: bool | None = None,
     _has_upstream: bool | None = None,
@@ -297,7 +297,7 @@ def compute_health(
         root=root,
         score=score,
         breakdown=breakdown,
-        gpg_override=_has_remote_gpg,
+        gpg_override=_gpg_override,
     )
 
     score, branches, stale, has_cg, stashes, untracked, commits = _remaining_health_state(

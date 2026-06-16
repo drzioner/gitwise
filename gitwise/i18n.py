@@ -74,7 +74,7 @@ def set_mode(mode: OutputMode) -> None:
 
 
 def t(key: str, **kwargs: str) -> str:
-    cached_key = f"{_state.locale}:{key}:{sorted(kwargs.items())}"
+    cached_key = f"{_state.locale}:{key}:{json.dumps(kwargs, sort_keys=True, default=str)}"
     if cached_key in _CACHE and "GITWISE_DEBUG" not in os.environ:
         return _CACHE[cached_key]
     entry = _STRINGS.get(key)

@@ -174,7 +174,6 @@ def version() -> tuple[int, int, int]:
     return (0, 0, 0)
 
 
-@functools.lru_cache(maxsize=1)
 def supports_config_hooks(cwd: Path | None = None) -> bool:
     if version() < (2, 36, 0):
         return False
@@ -189,7 +188,8 @@ def validate_ref(ref: str) -> bool:
 def validate_branch_name(name: str) -> bool:
     if not name or name.startswith("-"):
         return False
-    return not (".." in name or "~" in name or ":" in name or " " in name)
+    result = run(["check-ref-format", f"refs/heads/{name}"], check=False)
+    return result.returncode == 0
 
 
 def validate_grep_pattern(pattern: str) -> bool:

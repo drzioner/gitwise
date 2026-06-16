@@ -256,7 +256,7 @@ def _get_tokens_for_help() -> ThemeTokens | None:
         if theme == "auto":
             theme = "dark"
         return build_theme(theme)
-    except Exception:
+    except (OSError, KeyError, ValueError):
         return None
 
 

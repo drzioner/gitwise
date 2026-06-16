@@ -33,7 +33,7 @@ _DEFAULT_PROTECTED: frozenset[str] = frozenset(
 
 def _categorize(
     cwd: Path, extra_protected: set[str] | None = None
-) -> tuple[list[str], list[dict]]:
+) -> tuple[list[str], list[dict[str, str]]]:
     """Returns (deletable, skipped_with_reasons) for all stale branches."""
     protected = _DEFAULT_PROTECTED | (extra_protected or set())
     checked_out = current_branch(cwd)
