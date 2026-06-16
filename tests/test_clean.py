@@ -182,6 +182,50 @@ def test_json_output_structure(
     assert "deletable" in data
     assert "skipped" in data
     assert len(data["deletable"]) == 3
+    assert data["dry_run"] is True
+    assert data["applied"] is False
+
+
+def test_clean_json_executes_delete(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_git_repo_with_stale: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Regression for Issue #45: --json without --dry-run must actually delete stale branches."""
+    monkeypatch.chdir(tmp_git_repo_with_stale)
+
+    rc = run_clean(branches=True, refs=False, dry_run=False, yes=True, as_json=True)
+    assert rc == 0
+
+    data = json.loads(capsys.readouterr().out)
+    assert data["dry_run"] is False
+    assert data["applied"] is True
+    assert data["ok"] is True
+    assert "deleted" in data
+    assert len(data["deleted"]) == 3
+
+    r = subprocess.run(
+        ["git", "branch", "--list", "stale-*"],
+        cwd=tmp_git_repo_with_stale,
+        capture_output=True,
+        text=True,
+    )
+    assert r.stdout.strip() == ""
+
+
+def test_clean_json_requires_yes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_git_repo_with_stale: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Q1: clean --json without --yes must return yes_required envelope."""
+    monkeypatch.chdir(tmp_git_repo_with_stale)
+    rc = run_clean(branches=True, refs=False, dry_run=False, yes=False, as_json=True)
+    assert rc == 2
+    data = json.loads(capsys.readouterr().out)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    assert len(stale_branches(tmp_git_repo_with_stale)) == 3
 
 
 def test_active_worktree_protected(

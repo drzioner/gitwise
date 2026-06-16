@@ -3,6 +3,31 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fix
+
+- **optimize/clean/setup**: `--json` now executes the same write paths as the TTY
+  mode (Issue #45). Previously the JSON branch printed a plan and returned
+  `ok:true` without running any side effects, silently breaking agents/CI that
+  drove gitwise in JSON mode.
+- **sync**: `sync --pull` on diverged branches now returns an actionable hint
+  in EN/ES plus a structured `suggested_commands` array in the JSON envelope
+  (Issue #43).
+
+### Breaking Changes
+
+- **optimize/clean/setup**: `--json` on a write command now requires `--yes`
+  to execute side effects. Without `--yes` the command returns rc=2 and emits
+  an `error_envelope` with `code:"yes_required"`. Use `--dry-run` for
+  plan-only inspection.
+- **clean (JSON only)**: domain-specific error array renamed from `errors` to
+  `delete_errors` to avoid collision with the envelope-level `errors[]` field.
+- **optimize/clean/setup (JSON only)**: all three commands now emit through
+  the unified `ok_envelope`/`error_envelope` helpers. Shape:
+  `{v, ok, applied, dry_run, ...payload}` on success and
+  `{v, ok:false, error, errors:[{code, message, hint}], ...payload}` on error.
+
 ## v0.22.0 (2026-05-23)
 
 ### Feat

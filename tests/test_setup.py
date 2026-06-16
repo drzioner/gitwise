@@ -67,6 +67,18 @@ def test_dry_run_no_changes(tmp_git_repo):
     assert before == after
 
 
+def test_setup_json_requires_yes(tmp_git_repo: Path) -> None:
+    """Q1: setup --json without --yes must return yes_required envelope without applying."""
+    r = _run("setup", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 2
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    assert "hint" in data["errors"][0]
+    # Verify no config keys were applied: e.g. merge.conflictstyle should not be set.
+    assert _git_config("merge.conflictstyle", tmp_git_repo) is None
+
+
 def test_setup_json_structure(tmp_git_repo):
     r = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0

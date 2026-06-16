@@ -22,6 +22,7 @@ from .output import (
     print_status_line,
     warn,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
 
 HookMode = Literal["preserve", "native", "legacy", "skip"]
 
@@ -361,7 +362,6 @@ def _json_report(
     hooks_backend: Literal["native", "legacy", "skip"],
 ) -> dict[str, object]:
     return {
-        "v": 2,
         "dry_run": dry_run,
         "root": str(root),
         "changes": changes,
@@ -369,7 +369,6 @@ def _json_report(
         "hook_managers": managers,
         "hooks_mode_requested": hooks_mode,
         "hooks_backend": hooks_backend,
-        "ok": True,
     }
 
 
@@ -401,10 +400,17 @@ def _print_change_plan(changes: list[SetupChange]) -> None:
         print_kv(change["key"], f"{_format_desired(change)}  {current_str}{note}")
 
 
-def _apply_changes(changes: list[SetupChange], cwd: Path) -> None:
+def _apply_changes(
+    changes: list[SetupChange], cwd: Path, *, quiet: bool = False
+) -> list[dict[str, object]]:
+    results: list[dict[str, object]] = []
     for change in changes:
         desired_text = _format_desired(change)
-        if _apply_change(change, cwd):
+        applied = _apply_change(change, cwd)
+        results.append({"key": change["key"], "applied": applied})
+        if quiet:
+            continue
+        if applied:
             print_status_line("✓", change["key"], desired_text)
         else:
             print_status_line(
@@ -413,6 +419,7 @@ def _apply_changes(changes: list[SetupChange], cwd: Path) -> None:
                 t("config_failed", name=change["key"]),
                 ok_flag=False,
             )
+    return results
 
 
 def run_setup(
@@ -435,44 +442,109 @@ def run_setup(
         hooks_mode=hooks_mode,
     )
 
-    if as_json:
+    if dry_run:
+        if as_json:
+            print_json(
+                ok_envelope(
+                    payload=_json_report(
+                        dry_run=True,
+                        root=cwd,
+                        changes=changes,
+                        warnings=gpg_warnings + hook_warnings,
+                        managers=managers,
+                        hooks_mode=hooks_mode,
+                        hooks_backend=hooks_backend,
+                    ),
+                    applied=False,
+                )
+            )
+            return 0
+        _print_setup_context(
+            gpg_warnings=gpg_warnings,
+            hook_warnings=hook_warnings,
+            managers=managers,
+            hooks_backend=hooks_backend,
+            hooks_mode=hooks_mode,
+        )
+        if not changes:
+            ok(t("config_up_to_date"))
+            return 0
+        _print_change_plan(changes)
+        return 0
+
+    if as_json and not yes:
         print_json(
-            _json_report(
-                dry_run=dry_run,
-                root=cwd,
-                changes=changes,
-                warnings=gpg_warnings + hook_warnings,
-                managers=managers,
-                hooks_mode=hooks_mode,
-                hooks_backend=hooks_backend,
+            error_envelope(
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
             )
         )
-        return 0
+        return 2
 
-    _print_setup_context(
-        gpg_warnings=gpg_warnings,
-        hook_warnings=hook_warnings,
-        managers=managers,
-        hooks_backend=hooks_backend,
-        hooks_mode=hooks_mode,
-    )
+    if not as_json:
+        _print_setup_context(
+            gpg_warnings=gpg_warnings,
+            hook_warnings=hook_warnings,
+            managers=managers,
+            hooks_backend=hooks_backend,
+            hooks_mode=hooks_mode,
+        )
+        if not changes:
+            ok(t("config_up_to_date"))
+            return 0
+        _print_change_plan(changes)
+        if not yes:
+            if not confirm(t("confirm_setup_changes")):
+                info(t("cancelled"))
+                return 0
+            print_blank()
 
     if not changes:
-        ok(t("config_up_to_date"))
+        if as_json:
+            print_json(
+                ok_envelope(
+                    payload=_json_report(
+                        dry_run=False,
+                        root=cwd,
+                        changes=[],
+                        warnings=gpg_warnings + hook_warnings,
+                        managers=managers,
+                        hooks_mode=hooks_mode,
+                        hooks_backend=hooks_backend,
+                    ),
+                    applied=True,
+                    results=[],
+                )
+            )
         return 0
 
-    _print_change_plan(changes)
+    results = _apply_changes(changes, cwd, quiet=as_json)
 
-    if dry_run:
-        return 0
-
-    if not yes:
-        if not confirm(t("confirm_setup_changes")):
-            info(t("cancelled"))
+    if as_json:
+        report = _json_report(
+            dry_run=False,
+            root=cwd,
+            changes=changes,
+            warnings=gpg_warnings + hook_warnings,
+            managers=managers,
+            hooks_mode=hooks_mode,
+            hooks_backend=hooks_backend,
+        )
+        report["applied"] = True
+        report["results"] = results
+        all_ok = all(bool(r.get("applied")) for r in results)
+        if all_ok:
+            print_json(ok_envelope(payload=report))
             return 0
-        print_blank()
-
-    _apply_changes(changes, cwd)
+        print_json(
+            error_envelope(
+                error=t("setup_partial_failure"),
+                code="setup_partial_failure",
+                payload=report,
+            )
+        )
+        return 1
 
     ok(t("setup_complete"))
     return 0

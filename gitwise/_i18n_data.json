@@ -1656,8 +1656,32 @@
     "en": "fetch failed: {error}"
   },
   "sync_pull_diverged": {
-    "es": "pull falló: el branch local y el remoto han divergido (usa merge o rebase)",
-    "en": "pull failed: local and remote have diverged (use merge or rebase)"
+    "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
+    "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)"
+  },
+  "sync_pull_diverged_hint": {
+    "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",
+    "en": "Inspect state with: gitwise sync --dry-run --json. Reconcile with: git pull --rebase (recommended) or git pull --no-rebase. Then: gitwise sync --push."
+  },
+  "yes_required_with_json": {
+    "es": "--json en un comando con efectos requiere --yes explícito (no se puede confirmar de forma interactiva)",
+    "en": "--json on a side-effecting command requires explicit --yes (cannot confirm interactively)"
+  },
+  "yes_required_hint": {
+    "es": "Vuelve a ejecutar con --yes o usa --dry-run para inspeccionar el plan sin efectos.",
+    "en": "Re-run with --yes, or use --dry-run to inspect the plan without side effects."
+  },
+  "optimize_partial_failure": {
+    "es": "optimize completó con fallos en uno o más pasos",
+    "en": "optimize completed with one or more failed steps"
+  },
+  "clean_delete_failures": {
+    "es": "clean no pudo borrar {count} branches",
+    "en": "clean could not delete {count} branches"
+  },
+  "setup_partial_failure": {
+    "es": "setup completó con fallos en uno o más keys",
+    "en": "setup completed with one or more failed keys"
   },
   "sync_pull_ff": {
     "es": "pull --ff-only",

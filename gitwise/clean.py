@@ -24,6 +24,7 @@ from .output import (
     print_success,
     warn,
 )
+from .utils.json_envelope import error_envelope, ok_envelope
 
 _DEFAULT_PROTECTED: frozenset[str] = frozenset(
     {"main", "master", "develop", "dev", "trunk", "release"}
@@ -79,58 +80,117 @@ def run_clean(
 
     deletable, skipped = _categorize(cwd)
 
-    if as_json:
-        print_json(
-            {
-                "v": 2,
-                "dry_run": dry_run,
-                "deletable": deletable,
-                "skipped": skipped,
-                "ok": True,
-            }
-        )
-        return 0
-
-    if not deletable and not skipped:
-        ok(t("no_stale_branches"))
-        return 0
-
-    if skipped:
-        print_header(t("protected_stale_branches", count=str(len(skipped))))
-        for s in skipped:
-            print_bracket(s["branch"], s["reason"])
-        print_blank()
-
-    if not deletable:
-        ok(t("no_deletable_branches"))
-        return 0
-
-    print_header(t("branches_to_delete", count=str(len(deletable))))
-    for branch in deletable:
-        print_bracket(branch)
-    print_blank()
-
     if dry_run:
+        if as_json:
+            print_json(
+                ok_envelope(
+                    payload={
+                        "dry_run": True,
+                        "applied": False,
+                        "deletable": deletable,
+                        "skipped": skipped,
+                    }
+                )
+            )
+            return 0
+        if not deletable and not skipped:
+            ok(t("no_stale_branches"))
+            return 0
+        if skipped:
+            print_header(t("protected_stale_branches", count=str(len(skipped))))
+            for s in skipped:
+                print_bracket(s["branch"], s["reason"])
+            print_blank()
+        if not deletable:
+            ok(t("no_deletable_branches"))
+            return 0
+        print_header(t("branches_to_delete", count=str(len(deletable))))
+        for branch in deletable:
+            print_bracket(branch)
+        print_blank()
         print_dim(t("dry_run_no_delete"))
         print_dim(t("clean_to_delete"))
         return 0
 
-    if not yes:
-        if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
-            print_dim(t("cancelled"))
-            return 0
-        print_blank()
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
 
-    errors: list[str] = []
+    if not as_json:
+        if not deletable and not skipped:
+            ok(t("no_stale_branches"))
+            return 0
+        if skipped:
+            print_header(t("protected_stale_branches", count=str(len(skipped))))
+            for s in skipped:
+                print_bracket(s["branch"], s["reason"])
+            print_blank()
+        if not deletable:
+            ok(t("no_deletable_branches"))
+            return 0
+        print_header(t("branches_to_delete", count=str(len(deletable))))
+        for branch in deletable:
+            print_bracket(branch)
+        print_blank()
+        if not yes:
+            if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
+                print_dim(t("cancelled"))
+                return 0
+            print_blank()
+    elif not deletable:
+        print_json(
+            ok_envelope(
+                payload={
+                    "dry_run": False,
+                    "applied": True,
+                    "deleted": [],
+                    "skipped": skipped,
+                    "delete_errors": [],
+                }
+            )
+        )
+        return 0
+
+    deleted: list[str] = []
+    delete_errors: list[dict[str, str]] = []
     for branch in deletable:
         r = git_run(["branch", "-D", branch], cwd=cwd, check=False)
         if r.returncode == 0:
-            print_success(t("branch_deleted", branch=branch))
+            deleted.append(branch)
+            if not as_json:
+                print_success(t("branch_deleted", branch=branch))
         else:
-            errors.append(branch)
-            warn(t("could_not_delete", branch=branch, error=r.stderr.strip()))
+            delete_errors.append({"branch": branch, "error": r.stderr.strip()})
+            if not as_json:
+                warn(t("could_not_delete", branch=branch, error=r.stderr.strip()))
 
-    if errors:
+    if as_json:
+        payload: dict[str, object] = {
+            "dry_run": False,
+            "applied": True,
+            "deleted": deleted,
+            "skipped": skipped,
+            "delete_errors": delete_errors,
+        }
+        if delete_errors:
+            print_json(
+                error_envelope(
+                    error=t("clean_delete_failures", count=str(len(delete_errors))),
+                    code="clean_delete_failures",
+                    payload=payload,
+                )
+            )
+            return 1
+        print_json(ok_envelope(payload=payload))
+        return 0
+
+    if delete_errors:
         return 1
     print_blank()
     ok(t("deleted_count", count=str(len(deletable))))
