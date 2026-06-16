@@ -1,5 +1,5 @@
 [project]
-name = "gitwise"
+name = "gitwise-cli"
 version = "0.24.1"
 description = "Python CLI for optimizing git workflows and Claude Code integration"
 readme = "README.md"

@@ -392,8 +392,8 @@ wheels = [
 ]
 
 [[package]]
-name = "gitwise"
-version = "0.24.0"
+name = "gitwise-cli"
+version = "0.24.1"
 source = { editable = "." }
 dependencies = [
     { name = "rich" },
