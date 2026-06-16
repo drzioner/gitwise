@@ -47,10 +47,11 @@ class AdapterConfig:
     def _read_template(self, template_name: str) -> str:
         from gitwise._paths import share_dir
 
+        template_dir_str = str(self.template_dir)
         relative = (
-            self.template_dir.removeprefix("share/")
-            if self.template_dir.startswith("share/")
-            else self.template_dir
+            template_dir_str.removeprefix("share/")
+            if template_dir_str.startswith("share/")
+            else template_dir_str
         )
         template_path = share_dir() / relative / template_name
         if not template_path.exists():

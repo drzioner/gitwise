@@ -306,14 +306,22 @@ def _run_completions(args: argparse.Namespace) -> int:
             _error(message, hint=hint)
         return 1
     except RuntimeError as e:
-        from .output import error as _error
+        message = str(e)
+        if args.json:
+            print_json(error_envelope(error=message, code="runtime_error"))
+        else:
+            from .output import error as _error
 
-        _error(str(e))
+            _error(message)
         return 1
     except ValueError:
-        from .output import error as _error
+        message = t("completions_unsupported_shell", shell=shell)
+        if args.json:
+            print_json(error_envelope(error=message, code="unsupported_shell"))
+        else:
+            from .output import error as _error
 
-        _error(t("completions_unsupported_shell", shell=shell))
+            _error(message)
         return 1
 
     if args.json:
