@@ -5,6 +5,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v0.23.0 (2026-06-16)
 
+### Notes
+
+- Semver realignment for the breaking changes shipped in `v0.22.1`. The
+  underlying changes are documented in the `v0.22.1` entry below; this
+  release contains no additional functional changes. The minor bump was
+  triggered when a subsequent `docs:` commit included the literal string
+  `BREAKING CHANGE:` in its body (explaining the convention rule itself),
+  which commitizen detected as a breaking-change marker. The CHANGELOG
+  section for this version is intentionally empty of items because
+  commitizen filters `docs:` commits out of the rendered output.
+
 ## v0.22.1 (2026-06-16)
 
 > **Note on versioning:** This release contains breaking changes to the JSON

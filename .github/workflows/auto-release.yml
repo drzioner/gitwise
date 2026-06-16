@@ -75,6 +75,18 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Guard against empty CHANGELOG section
+        if: steps.bump.outputs.no_bump == 'false'
+        run: |
+          TAG="${{ steps.bump.outputs.tag }}"
+          BODY=$(sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md)
+          SIGNIFICANT=$(printf '%s\n' "$BODY" | grep -cE "^(- |### )" || true)
+          if [ "$SIGNIFICANT" -lt 2 ]; then
+            echo "::error::Bumped to ${TAG} but CHANGELOG section has fewer than 2 significant lines (headings + bullets). This usually means a stray 'BREAKING CHANGE:' string in a docs/chore commit body triggered the bump without any release-worthy content. Aborting push so a human can decide."
+            printf '%s\n' "$BODY"
+            exit 1
+          fi
+
       - name: Sync CHANGELOG.es.md
         if: steps.bump.outputs.no_bump == 'false'
         run: uv run python scripts/docs/sync_changelog_es.py
