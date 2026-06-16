@@ -5,6 +5,7 @@ import platform
 from pathlib import Path
 from typing import Literal, TypedDict
 
+from ._paths import share_dir as _share_dir
 from .git import config as git_config
 from .git import config_all as git_config_all
 from .git import git_dir, require_root, supports_config_hooks
@@ -295,7 +296,7 @@ def _plan_hook_changes(
     repo_root: Path,
     hooks_mode: HookMode,
 ) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
-    hooks_dir = Path(__file__).parent.parent / "share" / "hooks"
+    hooks_dir = _share_dir() / "hooks"
     managers = _detect_hook_managers(repo_root)
     existing_events = _detect_existing_hook_events(repo_root, hooks_dir)
     backend, warnings = _choose_hooks_backend(

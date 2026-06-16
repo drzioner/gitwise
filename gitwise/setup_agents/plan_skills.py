@@ -3,12 +3,13 @@
 import os
 from pathlib import Path
 
+from gitwise._paths import share_dir as _share_dir
 from gitwise.i18n import t
 from gitwise.setup_agents.state import _classify_path
 from gitwise.setup_agents.types import StateDict
 
-_SHARE_CLAUDE_DIR = Path(__file__).parent.parent.parent / "share" / "claude"
-_SHARE_AGENTS_DIR = Path(__file__).parent.parent.parent / "share" / "agents"
+_SHARE_CLAUDE_DIR = _share_dir() / "claude"
+_SHARE_AGENTS_DIR = _share_dir() / "agents"
 _SKILLS: tuple[str, ...] = ("git-audit", "git-clean", "git-optimize")
 
 

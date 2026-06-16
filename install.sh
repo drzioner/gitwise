@@ -38,12 +38,6 @@ mkdir -p "$BIN_DIR"
 ln -snf "$SOURCE" "$TARGET"
 chmod +x "$SOURCE"
 
-if command -v pip &>/dev/null; then
-    pip install -e "$SCRIPT_DIR" --quiet || echo "warning: pip install failed (non-fatal)" >&2
-elif command -v uv &>/dev/null; then
-    uv pip install -e "$SCRIPT_DIR" --no-scripts || echo "warning: uv pip install failed (non-fatal)" >&2
-fi
-
 echo "gitwise installed at: $TARGET"
 
 if ! printf '%s\n' "${PATH//:/$'\n'}" | grep -qx "$BIN_DIR"; then

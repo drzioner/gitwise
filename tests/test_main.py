@@ -181,15 +181,15 @@ def test_completions_json_returns_envelope():
 def test_completions_json_handles_missing_shtab(monkeypatch, capsys):
     from argparse import Namespace
 
-    from gitwise import __main__ as main_mod
+    from gitwise import _cli_dispatch as dispatch_mod
 
     def raise_missing_dependency(*, shell: str, prog: str) -> str:
         del shell, prog
         raise ModuleNotFoundError("No module named 'shtab'")
 
-    monkeypatch.setattr(main_mod, "_build_completions_script", raise_missing_dependency)
+    monkeypatch.setattr(dispatch_mod, "build_completions_script", raise_missing_dependency)
 
-    rc = main_mod._run_completions(Namespace(shell="bash", prog="gitwise", json=True))
+    rc = dispatch_mod._run_completions(Namespace(shell="bash", prog="gitwise", json=True))
     assert rc == 1
 
     out = capsys.readouterr().out

@@ -11,8 +11,9 @@ SCHEMA_VERSION_DEFAULT = "v1"
 
 @lru_cache(maxsize=1)
 def _schema_roots() -> tuple[Path, ...]:
-    package_dir = Path(__file__).resolve().parent
-    return (package_dir.parent / "share" / "schemas",)
+    from ._paths import share_dir
+
+    return (share_dir() / "schemas",)
 
 
 def schema_root(version: str = SCHEMA_VERSION_DEFAULT) -> Path:

@@ -147,9 +147,7 @@ def _make_console(*, file: Any = sys.stdout, force: bool = False) -> Console:
         file=file,
     )
     if cfg.debug:
-        import sys as _sys
-
-        _sys.stderr.write(
+        sys.stderr.write(
             f"[gitwise debug] console: force_terminal={force}, "
             f"color_system={console.color_system}, "
             f"is_terminal={console.is_terminal}, "

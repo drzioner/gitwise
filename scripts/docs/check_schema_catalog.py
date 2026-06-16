@@ -7,12 +7,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from gitwise.__main__ import (
-    _build_parser,
-    _command_input_schema,
-    _commands_metadata,
-    _resolve_command_parser,
+from gitwise._cli_introspection import (
+    command_input_schema,
+    commands_metadata,
+    resolve_command_parser,
 )
+from gitwise._cli_parser import build_parser
 from gitwise.schema import (
     command_input_schema_path,
     list_command_input_schema_files,
@@ -59,8 +59,8 @@ def main() -> int:
     if not schema_files:
         errors.append(f"schema-catalog-check: no schema files found for version {version}")
 
-    parser = _build_parser()
-    expected_commands = sorted(command["name"] for command in _commands_metadata(parser))
+    parser = build_parser()
+    expected_commands = sorted(command["name"] for command in commands_metadata(parser))
     schema_commands = sorted(path.stem for path in schema_files)
 
     missing = sorted(set(expected_commands) - set(schema_commands))
@@ -79,11 +79,11 @@ def main() -> int:
         path = command_input_schema_path(command=command, version=version)
         errors.extend(_validate_schema_document(path, payload, command=command, version=version))
 
-        command_parser = _resolve_command_parser(parser=parser, name=command)
+        command_parser = resolve_command_parser(parser=parser, name=command)
         if command_parser is None:
             errors.append(f"schema-catalog-check: parser not found for command: {command}")
             continue
-        expected_schema = _command_input_schema(command_parser)
+        expected_schema = command_input_schema(command_parser)
         if payload != expected_schema:
             errors.append(
                 "schema-catalog-check: schema drift detected for "

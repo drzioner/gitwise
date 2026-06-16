@@ -91,8 +91,6 @@ def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
                 if path.is_symlink():
                     path.unlink()
                 if moved_from and agents_skill_str and Path(agents_skill_str).exists():
-                    import shutil
-
                     shutil.move(str(agents_skill_str), moved_from)
                     debug(
                         t("debug_rollback_restored_skill", file=file_key, skill=agents_skill_str)
@@ -329,8 +327,6 @@ def _exec_claude_skill(action: dict[str, Any], root: Path) -> None:
         _safe_create_symlink(skill_link, action["target_relative"], root)
         ok(t("symlink_created_msg", file=file_key, target=action["target_relative"]))
     elif act == "skill-migrate-to-agents":
-        import shutil
-
         skill_link = root / file_key
         agents_skill = Path(action["agents_skill"])
         agents_skill.parent.mkdir(parents=True, exist_ok=True)

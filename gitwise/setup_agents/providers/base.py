@@ -45,8 +45,15 @@ class AdapterConfig:
         self.template_dir = template_dir
 
     def _read_template(self, template_name: str) -> str:
-        project_root = Path(__file__).resolve().parent.parent.parent.parent
-        template_path = project_root / self.template_dir / template_name
+        from gitwise._paths import share_dir
+
+        template_dir_str = str(self.template_dir)
+        relative = (
+            template_dir_str.removeprefix("share/")
+            if template_dir_str.startswith("share/")
+            else template_dir_str
+        )
+        template_path = share_dir() / relative / template_name
         if not template_path.exists():
             raise FileNotFoundError(t("adapter_no_template", path=str(template_path)))
         return template_path.read_text(encoding="utf-8")
