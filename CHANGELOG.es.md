@@ -14,8 +14,4 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.22.1 (2026-06-16)
-
-### Fix
-
-- --json execute write commands + sync --pull diverged hints (closes #45, #43) (#50)
+## v0.23.0 (2026-06-16)
