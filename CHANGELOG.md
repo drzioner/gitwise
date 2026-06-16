@@ -5,9 +5,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v0.22.1 (2026-06-16)
 
+> **Note on versioning:** This release contains breaking changes to the JSON
+> output of `optimize`, `clean`, and `setup`. Under strict semver with
+> `major_version_zero = true` it should have been `v0.23.0`. The patch
+> increment was the result of a `fix:` commit lacking the `BREAKING CHANGE:`
+> footer that commitizen needs to detect breaking changes. The next minor
+> bump will resync; meanwhile this entry documents the breaks explicitly so
+> consumers can react.
+
 ### Fix
 
-- --json execute write commands + sync --pull diverged hints (closes #45, #43) (#50)
+- **optimize/clean/setup**: `--json` now executes the same write paths as the
+  TTY mode (closes #45). Previously the JSON branch printed a plan and
+  returned `ok:true` without running any side effects, silently breaking
+  agents/CI that drove gitwise in JSON mode. (#50)
+- **sync**: `sync --pull` on diverged branches now returns an actionable hint
+  in EN/ES plus a structured `suggested_commands` array in the JSON envelope
+  (closes #43). (#50)
+
+### Breaking Changes
+
+- **optimize/clean/setup**: `--json` on a write command now requires `--yes`
+  to execute side effects. Without `--yes` the command returns `rc=2` and
+  emits an `error_envelope` with `code:"yes_required"`. Use `--dry-run` for
+  plan-only inspection. (#50)
+- **clean (JSON only)**: domain-specific error array renamed from `errors`
+  to `delete_errors` to avoid collision with the envelope-level `errors[]`
+  field used by `error_envelope`. (#50)
+- **optimize/clean/setup (JSON only)**: all three commands now emit through
+  the unified `ok_envelope`/`error_envelope` helpers. Shape:
+  `{v, ok, applied, dry_run, ...payload}` on success and
+  `{v, ok:false, error, errors:[{code, message, hint}], ...payload}` on
+  failure. (#50)
 
 ## v0.22.0 (2026-05-23)
 
