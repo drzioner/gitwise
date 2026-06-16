@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.0 (2026-06-16)
+## v0.24.1 (2026-06-16)
 
-### Feat
+### Fix
 
-- enable pip and brew distribution with packaging, security, and refactor fixes (#54)
+- **ci**: replace invalid action SHAs in publish-pypi workflow
