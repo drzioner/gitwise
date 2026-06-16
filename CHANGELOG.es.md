@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.1 (2026-06-16)
+## v0.24.2 (2026-06-16)
 
 ### Fix
 
-- **ci**: replace invalid action SHAs in publish-pypi workflow
+- **packaging**: rename distribution to gitwise-cli to avoid PyPI name conflict
