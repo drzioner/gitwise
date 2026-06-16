@@ -1,0 +1,73 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build distributions + SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+
+      - run: uv sync --group dev
+
+      - run: uv build
+
+      - name: Generate SBOM (CycloneDX)
+        run: uvx --from cyclonedx-bom cyclonedx-py environment -o dist/sbom.cyclonedx.json --of json
+
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*.whl
+
+      - name: Attest SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*.whl
+          sbom-path: dist/sbom.cyclonedx.json
+
+      - uses: actions/upload-artifact@4cee1c8a67ec5ea04f6c8a5c4a0e8d9c7a9c5e3f # v4
+        with:
+          name: dist
+          path: |
+            dist/
+            !dist/sbom.cyclonedx.json
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: build
+    environment: pypi
+    steps:
+      - uses: actions/download-artifact@65c8ea437f870e2e6857950e9ad2c61c66dca8c8 # v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+
+      - run: uv publish --trusted-publishing automatic
