@@ -14,4 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.23.0 (2026-06-16)
+## v0.24.0 (2026-06-16)
+
+### Feat
+
+- enable pip and brew distribution with packaging, security, and refactor fixes (#54)
