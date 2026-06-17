@@ -52,6 +52,34 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config commit.gpgsign false
 
+      - name: Revert guard (abort bump when commits cancel out)
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tag found, skipping revert guard"
+            exit 0
+          fi
+
+          RANGE="${LAST_TAG}..HEAD"
+          REVERTS=$(git log "${RANGE}" --pretty=format:'%h %s' \
+            | grep -iE "^[a-f0-9]+ (revert\(|Revert \")" || true)
+          NET_DIFF=$(git diff "${RANGE}" --stat -- \
+            ':(exclude)CHANGELOG.md' \
+            ':(exclude)CHANGELOG.es.md' \
+            ':(exclude).github' \
+            ':(exclude)uv.lock' \
+            | wc -l | awk '{print $1}')
+
+          echo "Reverts found since ${LAST_TAG}:"
+          printf '%s\n' "${REVERTS:-(none)}" | sed 's/^/  /'
+          echo "Net diff lines (excluding CHANGELOG/.github/uv.lock): ${NET_DIFF}"
+
+          if [ -n "$REVERTS" ] && [ "$NET_DIFF" -eq 0 ]; then
+            echo "::error::Aborting bump: ${RANGE} contains revert commit(s) but the net diff (excluding CHANGELOG/.github/uv.lock) is zero. commitizen reads the reverted commit's subject and would bump anyway, producing a release whose CHANGELOG promises changes that the shipped code does not contain."
+            echo "::error::Resolution: either re-apply the reverted change via PR so the net diff is non-zero, or remove the revert and its target from history (see https://commitizen-tools.github.io/commitizen/faq/#how-to-revert-a-bump)."
+            exit 1
+          fi
+
       - name: Bump version
         id: bump
         run: |
