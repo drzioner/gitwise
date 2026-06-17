@@ -64,17 +64,25 @@ def run(
     cmd_name = args[0] if args else None
     actual_timeout = timeout if timeout is not None else _get_timeout(cmd_name)
     debug(f"git {' '.join(args)}")
-    return subprocess.run(
-        ["git"] + args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=cwd,
-        check=check,
-        env=_GIT_ENV,
-        timeout=actual_timeout,
-    )
+    try:
+        return subprocess.run(
+            ["git"] + args,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=cwd,
+            check=check,
+            env=_GIT_ENV,
+            timeout=actual_timeout,
+        )
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(
+            args=["git", *args],
+            returncode=127,
+            stdout="",
+            stderr="git executable not found in PATH",
+        )
 
 
 def config(key: str, cwd: Path | None = None) -> str | None:
