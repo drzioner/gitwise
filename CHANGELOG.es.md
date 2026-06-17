@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.3 (2026-06-17)
+## v0.24.4 (2026-06-17)
 
 ### Fix
 
-- **doctor**: handle missing git executable gracefully
+- **packaging**: add project URLs and SPDX license metadata
