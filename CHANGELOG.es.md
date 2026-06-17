@@ -1,7 +1,7 @@
 # Historial de cambios
 
 Source: CHANGELOG.md
-Last sync: 2026-06-16
+Last sync: 2026-06-17
 
 [English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
 
@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.2 (2026-06-16)
+## v0.24.3 (2026-06-17)
 
 ### Fix
 
-- **packaging**: rename distribution to gitwise-cli to avoid PyPI name conflict
+- **doctor**: handle missing git executable gracefully
