@@ -118,3 +118,23 @@ jobs:
 
           Write-Host "gitwise doctor ran successfully (exit $LASTEXITCODE, treated as installer-OK)."
           exit 0
+
+      - name: Run pytest on Windows (cross-platform coverage)
+        # PyPI classifiers declare Windows support; CI must validate it.
+        # The macos/ubuntu matrix in ci.yml does not cover Windows, so this
+        # step is the canonical Windows-side pytest run. Run from the checked
+        # out source so we exercise the branch code, not the published PyPI
+        # artifact.
+        shell: pwsh
+        run: |
+          Write-Host "----- uv sync --group dev -----"
+          uv sync --group dev 2>&1 | Select-Object -Last 3
+          Write-Host "----- uv run pytest -----"
+          uv run pytest --tb=short 2>&1
+          $pytestExit = $LASTEXITCODE
+          Write-Host "----- pytest exit code: $pytestExit -----"
+          if ($pytestExit -ne 0) {
+            Write-Host "Error: pytest failed on Windows with exit code $pytestExit." -ForegroundColor Red
+            Write-Host "If the failures are Windows-specific path/symlink issues, mark the affected tests with @pytest.mark.skipif(sys.platform == 'win32', reason='...') rather than disabling the whole run." -ForegroundColor Yellow
+            exit 1
+          }

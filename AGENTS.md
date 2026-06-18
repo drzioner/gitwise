@@ -169,6 +169,7 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Run `python -m gitwise` without verifying it uses the venv Python (colors silently break if system Python is used)
 - Use `gh pr merge --admin` to bypass branch protection — if a check fails, rerun the failed job (`gh run rerun --job <id>`) and wait for all checks to pass before merging
 - Merge a PR that has any failing checks — all checks must be green, no exceptions
+- **Iterate superficially** when a CI step fails. Stop, read the actual traceback / failure log, identify the root cause, and apply ONE fix that addresses it. Each "ci(diag): ..." style commit that just adds another workaround is a smell — by the third iteration, pause and re-analyze the whole problem from the logs. The verify-before-implement skill documents the Consult → Analyze → Verify → Decide → Implement loop; skipping Analyze produces the loop of reactive commits.
 
 ## Scoped Rules
 
@@ -182,3 +183,4 @@ Detailed rules for specific subsystems are in `.agents/rules/`:
 | `color-system.md` | `gitwise/output.py`, `design.py`, `_runtime_config.py` |
 | `shell-scripts.md` | `bin/*`, `install.sh` |
 | `github-actions.md` | `.github/workflows/*`, `scripts/audit-template-injection.py` |
+| `python-cli.md` | `gitwise/__main__.py`, `gitwise/output.py`, any CLI entry point or exception handler |

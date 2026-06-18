@@ -128,6 +128,111 @@ SHA-pinning rule, the team missed that `actions/upload-artifact@v4` and
 warning appeared in publish-pypi.yml logs. The fix forward is to check the
 Node runtime of every new `uses:` *before* it lands, not after CI complains.
 
+## TDD with installers that download from PyPI
+
+When a workflow tests an installer (e.g. `install.ps1`, `install.sh`) that
+downloads the published package from PyPI, the test is exercising the
+**published** artifact, not the branch code. If a fix lives on the branch
+but has not been published yet (PR not merged, or merge pending publish),
+the workflow will fail repeatedly even after the source-level fix is in.
+
+**Required pattern** for any CI workflow that tests an installer against
+PyPI on a PR (not on `main`):
+
+```yaml
+- name: Run installer (validates installer flow + published artifact)
+  shell: pwsh
+  run: .\install.ps1
+
+- name: Reinstall from branch source (validates branch code)
+  shell: pwsh
+  run: |
+    # install.ps1 pulled the published version from PyPI. Reinstall from
+    # the checked-out source so the rest of the workflow exercises the
+    # code in this branch, not the previously-published artifact.
+    uv tool install --reinstall --from . gitwise-cli
+```
+
+Without this, the workflow gets stuck in a "test the previous release"
+loop until the PR merges and a new version publishes — at which point the
+test stops catching regressions on the branch.
+
+## `if: always()` for diagnostic steps (and not for production steps)
+
+GitHub Actions' default behavior is to skip subsequent steps when a prior
+step fails. This is desirable for production steps (no point uploading
+coverage if tests failed). It is **not** desirable for diagnostic steps
+added to investigate a failure — those need to run regardless.
+
+**Required pattern** for diagnostic steps:
+
+```yaml
+- name: Diagnose <something>
+  if: always()  # runs even if prior steps failed
+  shell: pwsh
+  run: |
+    # capture full output for diagnosis, then exit 0 so the step itself
+    # does not mask the original failure
+    & some-diagnostic-command 2>&1
+    exit 0
+```
+
+The `if: always()` is also appropriate for required cleanup steps
+(`actions/upload-artifact@v4` of logs, `docker system prune` on
+self-hosted runners, etc.). It is **not** appropriate as a way to silence
+a real failure — the failure still needs to be fixed.
+
+## `workflow_run.head_branch` for tag-triggered workflows
+
+When chaining workflows via `workflow_run`, the upstream workflow's branch
+or tag name is exposed in `github.event.workflow_run.head_branch`. For
+a tag push, this is typically just the tag name (`v0.26.1`), but it can
+include the `refs/tags/` prefix in some events. Always strip both forms:
+
+```bash
+TAG="${{ github.event.workflow_run.head_branch }}"
+TAG="${TAG##*/}"          # strip any refs/.../ prefix
+VERSION="${TAG#v}"        # strip leading v
+```
+
+`Verified: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_run`
+
+## PyPI propagation delay
+
+After `publish-pypi.yml` succeeds, the new version is not immediately
+visible in `https://pypi.org/pypi/<pkg>/json`. Typical propagation lag
+is 30–60 seconds, occasionally longer. Workflows that consume PyPI
+metadata immediately after publish (e.g. `update-homebrew-tap.yml`)
+**must** include retry logic:
+
+```bash
+RESPONSE=""
+for attempt in 1 2 3 4 5 6 7 8; do
+  RESPONSE=$(curl -fsSL "$URL" 2>/dev/null) && [ -n "$RESPONSE" ] && break
+  echo "::notice::PyPI not ready (attempt ${attempt}/8). Retrying in 20s..."
+  sleep 20
+done
+if [ -z "$RESPONSE" ]; then
+  echo "::error::PyPI never returned metadata after 8 attempts."
+  exit 1
+fi
+```
+
+## Commitizen counts reverted commits for bumping
+
+`cz bump` reads `git log <last_tag>..HEAD` and applies the highest-severity
+subject it finds. A `git revert` adds a new commit that inverts the diff
+but does NOT remove the original commit from the log. So if `aaab519 fix:`
+gets reverted by `9155ddb revert:`, `cz bump` still sees `fix:` and bumps
+the version, producing a release whose CHANGELOG promises changes the
+shipped code does not contain.
+
+`auto-release.yml` includes a pre-bump "revert guard" that aborts the
+workflow when the range contains revert commit(s) AND the net diff is
+zero. Do not remove that guard. If you need to revert a commit that
+already bumped a release, the fix is to publish a corrective release
+(e.g. `0.24.5` after a broken `0.24.4`), not to remove the guard.
+
 ## See also
 
 - [verify-before-implement](../../../.agents/skills/verify-before-implement) —
