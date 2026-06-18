@@ -203,8 +203,8 @@ def main() -> int:
                 for expr in expressions:
                     print(f"    {expr}")
                     total_findings += 1
-            for line_no, spec, reason in pinning_findings:
-                print(f"  [{line_no}] unpinned uses: {spec}")
+            for context, spec, reason in pinning_findings:
+                print(f"  [{context}] unpinned uses: {spec}")
                 print(f"    reason: {reason}")
                 total_findings += 1
         else:

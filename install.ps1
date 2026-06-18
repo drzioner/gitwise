@@ -54,7 +54,11 @@ function Refresh-SessionPath {
     # evaluation order. Prepend the uv bin directory to the live session PATH
     # instead; subsequent `Get-Command uv` calls will find it.
     $uvBinDir = Join-Path $env:USERPROFILE ".local\bin"
-    if ($env:Path -notlike "*$uvBinDir*") {
+    # Exact-match PATH entries (split on ';') instead of substring match,
+    # so a different entry like "C:\foo\.local\bin-other" does not suppress
+    # the prepend when "C:\foo\.local\bin" is actually missing.
+    $pathEntries = @($env:Path -split ';' | ForEach-Object { $_.Trim() }) | Where-Object { $_ }
+    if ($pathEntries -notcontains $uvBinDir) {
         $env:Path = "$uvBinDir;$env:Path"
     }
 }
