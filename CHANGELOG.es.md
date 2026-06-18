@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.25.1 (2026-06-18)
+## v0.26.0 (2026-06-18)
 
-### Fix
+### Feat
 
-- **install**: drop duplicate 'gitwise' prefix in success message (#58)
+- **ci**: block tap auto-merge on dep changes + reusable template-injection audit (#61)
