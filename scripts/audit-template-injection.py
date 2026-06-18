@@ -67,6 +67,16 @@ def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
 
 
 def main() -> int:
+    """CLI entry point: audit all workflows and exit non-zero on findings.
+
+    Walks ``--workflows`` directory (default ``.github/workflows``) for
+    ``*.yml`` and ``*.yaml`` files, runs :func:`audit_workflow` on each,
+    prints per-file findings to stdout, and returns 0 if clean, 1 if any
+    ``${{ }}`` was found inside a ``run:`` block, or 2 on internal error.
+
+    Use ``--list`` to run in informational mode (always exit 0 even with
+    findings); useful for local checks that should not block a developer.
+    """
     description = (
         __doc__ or "Audit GitHub Actions workflows for template-injection vectors."
     ).split("\n\n")[0]
