@@ -50,6 +50,21 @@ jobs:
             .\install.ps1
           }
 
+      - name: Reinstall gitwise from branch source
+        # install.ps1 pulls gitwise-cli from PyPI (the published version).
+        # When this workflow runs on a PR, the fix being tested is NOT in
+        # PyPI yet. Reinstall from the checked-out source so the rest of
+        # the steps exercise the code in this branch rather than the
+        # published artifact.
+        shell: pwsh
+        run: |
+          Write-Host "Reinstalling gitwise from source (cwd: $(Get-Location))"
+          uv tool install --reinstall --from . gitwise-cli
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Error: uv tool install --from . failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+
       - name: Verify gitwise on PATH
         shell: pwsh
         run: |
