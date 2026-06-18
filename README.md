@@ -27,7 +27,15 @@ gitwise addresses three daily pain points:
 
 Pick one:
 
-**curl | bash** (recommended, auto-installs `uv` if missing):
+**Homebrew** (macOS/Linux, recommended if you already use [Homebrew](https://brew.sh)):
+
+```bash
+brew install drzioner/tap/gitwise
+```
+
+Update later with `brew upgrade gitwise`. Uninstall with `brew uninstall gitwise`.
+
+**curl | bash** (auto-installs `uv` if missing, no package manager required):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
@@ -51,14 +59,16 @@ uv run python -m gitwise doctor
 Update an existing installation:
 
 ```bash
-uv tool upgrade gitwise-cli          # if installed via uv
+brew upgrade gitwise                   # if installed via Homebrew
+uv tool upgrade gitwise-cli            # if installed via uv
 # or re-run the curl | bash installer, which always pulls latest
 ```
 
 Uninstall:
 
 ```bash
-uv tool uninstall gitwise-cli
+brew uninstall gitwise                 # if installed via Homebrew
+uv tool uninstall gitwise-cli          # if installed via uv
 ```
 
 ## Quick Start
