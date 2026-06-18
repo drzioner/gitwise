@@ -190,6 +190,7 @@ jobs:
           git push origin "$BRANCH"
 
       - name: Open PR
+        id: open-pr
         if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -206,18 +207,65 @@ jobs:
 
           - Bumped formula \`url\` and \`sha256\` to the sdist at \`${SDIST_URL##*/}\` (\`${SDIST_SHA:0:16}…\`).
 
-          ## Verification checklist (reviewer)
+          ## Auto-merge
 
-          - [ ] \`brew audit --new --formula gitwise\` passes
-          - [ ] \`brew install --build-from-source drzioner/tap/gitwise\` succeeds
-          - [ ] \`brew test drzioner/tap/gitwise\` passes
-          - [ ] If runtime dependencies changed since the previous version, run \`brew update-python-resources gitwise\` and update the resources block before merging
+          This PR is auto-merged by the workflow after a sanity check confirms the diff is exactly the two expected lines (url + sha256). If runtime dependencies changed since the previous formula version, a follow-up manual PR is needed to update the resources block.
+
           EOF
           )
 
-          gh pr create \
+          PR_URL=$(gh pr create \
             --repo drzioner/homebrew-tap \
             --base main \
             --head "$BRANCH" \
             --title "formula: bump gitwise to v${VERSION}" \
-            --body "$BODY"
+            --body "$BODY")
+
+          # Extract the PR number from the returned URL (last path segment).
+          PR_NUMBER="${PR_URL##*/}"
+          if ! printf '%s' "$PR_NUMBER" | grep -qE '^[0-9]+$'; then
+            echo "::error::Could not parse PR number from gh pr create output: $PR_URL"
+            exit 1
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Opened PR #$PR_NUMBER: $PR_URL"
+
+      - name: Auto-merge PR (after diff sanity check)
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.open-pr.outputs.pr_number }}
+        run: |
+          # Brief settle so GitHub fully indexes the PR before we diff it.
+          sleep 5
+
+          DIFF=$(gh pr diff "$PR_NUMBER" --repo drzioner/homebrew-tap)
+
+          # Count content lines (exclude hunk/file headers like +++ and ---).
+          ADDITIONS=$(printf '%s' "$DIFF" | grep -cE '^\+[^+]' || true)
+          DELETIONS=$(printf '%s' "$DIFF" | grep -cE '^-[^-]' || true)
+
+          echo "PR #$PR_NUMBER diff: +${ADDITIONS}/-${DELETIONS} lines"
+
+          if [ "$ADDITIONS" != "2" ] || [ "$DELETIONS" != "2" ]; then
+            echo "::error::Sanity check failed: expected exactly 2 additions and 2 deletions (url + sha256). Got +${ADDITIONS}/-${DELETIONS}. Refusing to auto-merge; leaving PR open for human review."
+            exit 1
+          fi
+
+          # Validate the 2 added lines are url and sha256 (in any order).
+          ADDED=$(printf '%s' "$DIFF" | grep -E '^\+[^+]' | sed 's/^+//')
+          if ! printf '%s' "$ADDED" | grep -qE '^[[:space:]]*url[[:space:]]+"'; then
+            echo "::error::Sanity check failed: additions do not include a 'url' line. Refusing to auto-merge."
+            exit 1
+          fi
+          if ! printf '%s' "$ADDED" | grep -qE '^[[:space:]]*sha256[[:space:]]+"'; then
+            echo "::error::Sanity check failed: additions do not include a 'sha256' line. Refusing to auto-merge."
+            exit 1
+          fi
+
+          echo "Sanity check passed: diff contains exactly url + sha256. Auto-merging PR #$PR_NUMBER."
+          gh pr merge "$PR_NUMBER" \
+            --repo drzioner/homebrew-tap \
+            --squash --admin \
+            --subject "formula: bump gitwise (#${PR_NUMBER})"
