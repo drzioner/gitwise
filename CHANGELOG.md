@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.24.5 (2026-06-18)
+
+### Fix
+
+- **packaging**: add project URLs and SPDX license metadata (#55)
+- **ci**: abort auto-release when commits cancel out via revert (#56)
+
 ## v0.24.4 (2026-06-17)
 
 ### Fix
