@@ -95,7 +95,7 @@ share/claude/        # templates copiados/mergeados en repos target
 share/hooks/         # hooks de Git (pre-commit, commit-msg)
 tests/               # pytest — espejo de módulos
 bin/gitwise          # wrapper shell -> python -m gitwise
-install.sh           # instala en ~/.local/bin
+install.sh           # Instalador end-user (curl | bash → uv tool install gitwise-cli)
 ```
 
 ## Proceso de pull request

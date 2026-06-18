@@ -28,15 +28,40 @@ gitwise resuelve tres problemas comunes:
 
 ## Instalación
 
+Elige una:
+
+**curl | bash** (recomendado, auto-instala `uv` si no está):
+
 ```bash
-git clone https://github.com/drzioner/gitwise.git ~/.local/share/gitwise
-bash ~/.local/share/gitwise/install.sh
+curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
+```
+
+**uv** (si ya usas [uv](https://docs.astral.sh/uv/)):
+
+```bash
+uv tool install gitwise-cli
+```
+
+**Desde el source** (solo desarrollo):
+
+```bash
+git clone https://github.com/drzioner/gitwise.git
+cd gitwise
+uv sync
+uv run python -m gitwise doctor
 ```
 
 Actualizar una instalación existente:
 
 ```bash
-gitwise update
+uv tool upgrade gitwise-cli          # si se instaló via uv
+# o vuelve a ejecutar el instalador curl | bash, siempre baja la última
+```
+
+Desinstalar:
+
+```bash
+uv tool uninstall gitwise-cli
 ```
 
 ## Inicio rápido
@@ -104,7 +129,6 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 | `GITWISE_AGENT=1` | Alias para habilitar modo agent |
 | `GITWISE_GIT_TIMEOUT=<segundos>` | Override del timeout de subprocess git |
 | `GITWISE_WIDTH=<columnas>` | Override del ancho de salida |
-| `GITWISE_BIN_DIR` | Directorio de instalación (default: `~/.local/bin`) |
 
 ## Completions de shell
 

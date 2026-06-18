@@ -4,18 +4,22 @@ gitwise is a Python CLI for optimizing git workflows and Claude Code integration
 
 ## Dev Environment
 
-No install step needed. Run directly:
+For development, use `uv` to sync dependencies and run the package in place:
 
 ```bash
-python -m gitwise <command>       # from repo root (uses venv via uv)
-gitwise <command>                 # if installed via install.sh
+uv sync                            # create .venv and install rich + deps
+uv run python -m gitwise <command> # run from repo root using the venv
 ```
 
-Install (one-time):
+For end-user installation (installs `gitwise` as a global CLI tool, isolated from your other Python environments):
 
 ```bash
-bash install.sh                   # symlinks bin/gitwise → ~/.local/bin/gitwise
+bash install.sh                    # local: installs gitwise-cli via `uv tool install`
+# or remote one-liner:
+curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
 ```
+
+The installer auto-installs `uv` if missing, then runs `uv tool install --upgrade gitwise-cli`. The `gitwise` binary lands in `~/.local/bin`. See `bash install.sh --help` for options (`--dry-run`, `--version=X.Y.Z`).
 
 ### Python resolution — CRITICAL
 

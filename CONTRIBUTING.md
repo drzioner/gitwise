@@ -92,7 +92,7 @@ share/claude/        # Templates copied/merged into target repos
 share/hooks/         # Git hooks (pre-commit, commit-msg)
 tests/               # pytest — mirrors gitwise/ modules
 bin/gitwise          # Shell shebang wrapper → python -m gitwise
-install.sh           # Installs to ~/.local/bin
+install.sh           # End-user installer (curl | bash → uv tool install gitwise-cli)
 ```
 
 ## Pull request process
