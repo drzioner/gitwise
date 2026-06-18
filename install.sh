@@ -16,13 +16,22 @@ set -Eeuo pipefail
 
 trap 'exit 130' INT TERM
 
+# Allow override (e.g. pin a specific uv version: UV_INSTALLER_URL="https://astral.sh/uv/0.11.21/install.sh")
+UV_INSTALLER_URL="${UV_INSTALLER_URL:-https://astral.sh/uv/install.sh}"
+
 DRY_RUN=false
 TARGET_VERSION=""
 
 for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=true ;;
-        --version=*) TARGET_VERSION="${arg#*=}" ;;
+        --version=*)
+            TARGET_VERSION="${arg#*=}"
+            if ! printf '%s' "$TARGET_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+                echo "error: --version must be in X.Y.Z format (got '$TARGET_VERSION')" >&2
+                exit 2
+            fi
+            ;;
         --help|-h)
             cat <<'EOF'
 gitwise installer
@@ -35,7 +44,8 @@ Options:
   --help, -h        Show this help and exit.
 
 Environment:
-  None required. uv is auto-installed to ~/.local/bin if missing.
+  UV_INSTALLER_URL  Override the uv installer URL (default: https://astral.sh/uv/install.sh).
+                    Pin a version with: UV_INSTALLER_URL="https://astral.sh/uv/0.11.21/install.sh"
 
 Remote:
   curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
@@ -50,9 +60,10 @@ EOF
 done
 
 OS="$(uname -s)"
+ARCH="$(uname -m)"
 case "$OS" in
-    Darwin) echo "gitwise installer — macOS ($(uname -m))" ;;
-    Linux)  echo "gitwise installer — Linux ($(uname -m))" ;;
+    Darwin) printf 'gitwise installer - macOS (%s)\n' "$ARCH" ;;
+    Linux)  printf 'gitwise installer - Linux (%s)\n' "$ARCH" ;;
     *)
         echo "error: unsupported OS '$OS'. This installer supports macOS and Linux." >&2
         echo "Windows users: see README for alternative install methods." >&2
@@ -86,7 +97,7 @@ if [ "$DRY_RUN" = "true" ]; then
     echo ""
     echo "[dry-run] plan:"
     if [ "$NEED_UV_INSTALL" = "true" ]; then
-        echo "  - curl -LsSf https://astral.sh/uv/install.sh | sh"
+        echo "  - curl -LsSf $UV_INSTALLER_URL | sh"
     fi
     if [ -n "$TARGET_VERSION" ]; then
         echo "  - uv tool install $PACKAGE_SPEC"
@@ -99,8 +110,8 @@ fi
 
 if [ "$NEED_UV_INSTALL" = "true" ]; then
     echo ""
-    echo "Installing uv (https://astral.sh/uv)..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "Installing uv ($UV_INSTALLER_URL)..."
+    curl -LsSf "$UV_INSTALLER_URL" | sh
 
     if [ -x "$HOME/.local/bin/uv" ]; then
         export PATH="$HOME/.local/bin:$PATH"
