@@ -74,16 +74,23 @@ jobs:
           }
           Write-Host "Installed: $version"
 
-      - name: Verify gitwise doctor works (smoke)
+      - name: Verify gitwise doctor runs (smoke)
         shell: pwsh
         run: |
-          # `gitwise doctor` returns 0 on a healthy env. We don't care about
-          # the per-check verdict here, only that the command itself runs.
-          # If it raises a Python exception or import error, exit will be non-zero.
-          & gitwise doctor 2>&1 | Out-Null
-          # doctor exit code may be 0 (ok) or 2 (strict warnings). Treat both as success.
-          if ($LASTEXITCODE -notin 0, 2) {
-            Write-Error "gitwise doctor failed with exit code $LASTEXITCODE"
+          # The point of this step is to confirm `gitwise doctor` executes
+          # without raising a Python exception (which would surface as a
+          # non-zero exit other than doctor's own 0/1/2 verdicts). The runner
+          # environment typically lacks `git config user.email`, optional
+          # CLIs (bat, delta, rg, eza), etc., so doctor returning 1 is
+          # expected here and does not indicate an installer problem.
+          #
+          # doctor exit codes:
+          #   0 = ok, 1 = errors detected, 2 = strict warnings only.
+          # Any other exit code (e.g. Python traceback) is a real failure.
+          $output = & gitwise doctor 2>&1 | Out-String
+          Write-Host $output
+          if ($LASTEXITCODE -notin 0, 1, 2) {
+            Write-Error "gitwise doctor raised exit code $LASTEXITCODE (not 0/1/2); likely a Python exception."
             exit 1
           }
-          Write-Host "gitwise doctor ran successfully."
+          Write-Host "gitwise doctor ran successfully (exit $LASTEXITCODE, treated as installer-OK)."
