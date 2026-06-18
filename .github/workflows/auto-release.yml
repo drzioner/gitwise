@@ -105,8 +105,9 @@ jobs:
 
       - name: Guard against empty CHANGELOG section
         if: steps.bump.outputs.no_bump == 'false'
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
         run: |
-          TAG="${{ steps.bump.outputs.tag }}"
           BODY=$(sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md)
           SIGNIFICANT=$(printf '%s\n' "$BODY" | grep -cE "^(- |### )" || true)
           if [ "$SIGNIFICANT" -lt 2 ]; then
@@ -129,20 +130,24 @@ jobs:
 
       - name: Push bump commit & tag
         if: steps.bump.outputs.no_bump == 'false' && inputs.dry-run == false
-        run: git push --atomic origin main "refs/tags/${{ steps.bump.outputs.tag }}"
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: git push --atomic origin main "refs/tags/${TAG}"
 
       - name: Extract release notes
         if: steps.bump.outputs.no_bump == 'false'
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
         run: |
-          TAG="${{ steps.bump.outputs.tag }}"
           sed -n "/^## ${TAG} (/,/^## v/{ /^## v/!p; }" CHANGELOG.md > /tmp/release-notes.txt
 
       - name: Create GitHub Release
         if: steps.bump.outputs.no_bump == 'false' && inputs.dry-run == false
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ steps.bump.outputs.tag }}
         run: |
-          gh release create "${{ steps.bump.outputs.tag }}" \
-            --title "${{ steps.bump.outputs.tag }}" \
+          gh release create "${TAG}" \
+            --title "${TAG}" \
             --notes-file /tmp/release-notes.txt \
             --verify-tag

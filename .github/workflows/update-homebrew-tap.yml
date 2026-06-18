@@ -74,8 +74,8 @@ jobs:
         if: steps.version.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BRANCH: ${{ steps.version.outputs.branch }}
         run: |
-          BRANCH="${{ steps.version.outputs.branch }}"
           if gh api "repos/drzioner/homebrew-tap/branches/${BRANCH}" >/dev/null 2>&1; then
             echo "::notice::Branch ${BRANCH} already exists in drzioner/homebrew-tap; nothing to do."
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -95,8 +95,9 @@ jobs:
       - name: Fetch sdist metadata from PyPI
         id: sdist
         if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           URL="https://pypi.org/pypi/gitwise-cli/${VERSION}/json"
 
           # PyPI propagation can lag a few seconds behind the publish event.
@@ -189,6 +190,135 @@ jobs:
                      -m "If runtime dependencies changed since the previous formula version, run 'brew update-python-resources gitwise' locally before merging."
           git push origin "$BRANCH"
 
+      - name: Detect deps changes
+        id: deps
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        working-directory: tap
+        env:
+          VERSION_SPEC: "gitwise-cli==${{ steps.version.outputs.version }}"
+          BRANCH: ${{ steps.version.outputs.branch }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set +e
+          DETECT_OUTPUT=$(python3 <<'PYEOF'
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+          import tempfile
+
+          def parse_formula_resources(path):
+              with open(path) as f:
+                  content = f.read()
+              resources = {}
+              for m in re.finditer(
+                  r'resource\s+"([^"]+)"\s+do\s+(?:.*?\n)*?\s*url\s+"([^"]+)"',
+                  content,
+                  re.DOTALL,
+              ):
+                  name, url = m.group(1), m.group(2)
+                  vm = re.search(r"-([0-9][^-/]*)\.tar\.gz(?:[?#]|$)", url)
+                  if vm:
+                      resources[name.lower()] = vm.group(1)
+              return resources
+
+          def resolve_deps(package_spec):
+              with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+                  report_path = tmp.name
+              try:
+                  proc = subprocess.run(
+                      ["python3", "-m", "pip", "install", "--dry-run",
+                       "--ignore-installed", "--report", report_path, package_spec],
+                      capture_output=True, text=True,
+                  )
+                  if proc.returncode != 0:
+                      print(f"pip failed: {proc.stderr}", file=sys.stderr)
+                      sys.exit(1)
+                  with open(report_path) as f:
+                      report = json.load(f)
+              finally:
+                  os.unlink(report_path)
+              resolved = {}
+              for item in report.get("install", []):
+                  metadata = item.get("metadata", {})
+                  name = metadata.get("name", "").lower()
+                  version = metadata.get("version", "")
+                  if name and version and name != package_spec.split("==")[0].lower():
+                      resolved[name] = version
+              return resolved
+
+          formula_resources = parse_formula_resources("Formula/gitwise.rb")
+          resolved = resolve_deps(os.environ["VERSION_SPEC"])
+
+          changes = []
+          for name, formula_version in formula_resources.items():
+              resolved_version = resolved.get(name)
+              if resolved_version is None:
+                  changes.append(f"- {name}: in formula ({formula_version}) but NOT resolved by pip — likely removed upstream")
+              elif resolved_version != formula_version:
+                  changes.append(f"- {name}: {formula_version} -> {resolved_version}")
+          for name, version in resolved.items():
+              if name not in formula_resources:
+                  changes.append(f"- {name}: new dependency resolved at {version} (not in formula)")
+
+          if changes:
+              print("DEPS_CHANGED")
+              for c in changes:
+                  print(c)
+              sys.exit(2)
+          print("DEPS_OK")
+          print(f"All {len(formula_resources)} resources match pip-resolved versions.")
+          PYEOF
+          )
+          DETECT_EXIT=$?
+          set -e
+
+          echo "$DETECT_OUTPUT"
+
+          if [ "$DETECT_EXIT" = "0" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "summary=All runtime deps match versions in current formula. Safe to auto-merge." >> "$GITHUB_OUTPUT"
+          elif [ "$DETECT_EXIT" = "2" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            CHANGES_LIST=$(printf '%s\n' "$DETECT_OUTPUT" | grep '^-')
+            {
+              echo "summary<<EOF"
+              echo "## ⚠️ Runtime dependencies have changed"
+              echo ""
+              echo "$CHANGES_LIST"
+              echo ""
+              echo "Auto-merge is **blocked**. A maintainer must update the resource blocks before merging:"
+              echo ""
+              echo "1. Check out this branch locally:"
+              echo "   \`\`\`bash"
+              echo "   git clone https://github.com/drzioner/homebrew-tap"
+              echo "   cd homebrew-tap && git checkout ${BRANCH}"
+              echo "   \`\`\`"
+              echo "2. Resolve the new dep set:"
+              echo "   \`\`\`bash"
+              echo "   pip install --dry-run --report - gitwise-cli==${VERSION}"
+              echo "   \`\`\`"
+              echo "3. For each changed/new dep, fetch the sdist URL and sha256 from PyPI:"
+              echo "   \`\`\`bash"
+              echo "   curl -s https://pypi.org/pypi/<dep-name>/<version>/json | jq -r '.urls[] | select(.packagetype==\"sdist\") | \"\\(.url) \\(.digests.sha256)\"'"
+              echo "   \`\`\`"
+              echo "4. Update the matching \`resource\` block(s) in \`Formula/gitwise.rb\`, or add new ones."
+              echo "5. Verify locally:"
+              echo "   \`\`\`bash"
+              echo "   brew audit --new --formula gitwise"
+              echo "   brew install --build-from-source drzioner/tap/gitwise"
+              echo "   brew test drzioner/tap/gitwise"
+              echo "   \`\`\`"
+              echo "6. Commit and push. The auto-merge step will pick up the updated branch."
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Deps detection script failed unexpectedly (exit $DETECT_EXIT)."
+            printf '%s\n' "$DETECT_OUTPUT"
+            exit 1
+          fi
+
       - name: Open PR
         id: open-pr
         if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
@@ -198,6 +328,7 @@ jobs:
           SDIST_URL: ${{ steps.sdist.outputs.url }}
           SDIST_SHA: ${{ steps.sdist.outputs.sha256 }}
           BRANCH: ${{ steps.version.outputs.branch }}
+          DEPS_SUMMARY: ${{ steps.deps.outputs.summary }}
         run: |
           # Reusable body — kept inline for portability across runner images.
           BODY=$(cat <<EOF
@@ -207,9 +338,9 @@ jobs:
 
           - Bumped formula \`url\` and \`sha256\` to the sdist at \`${SDIST_URL##*/}\` (\`${SDIST_SHA:0:16}…\`).
 
-          ## Auto-merge
+          ## Deps check
 
-          This PR is auto-merged by the workflow after a sanity check confirms the diff is exactly the two expected lines (url + sha256). If runtime dependencies changed since the previous formula version, a follow-up manual PR is needed to update the resources block.
+          ${DEPS_SUMMARY}
 
           EOF
           )
@@ -232,7 +363,10 @@ jobs:
           echo "Opened PR #$PR_NUMBER: $PR_URL"
 
       - name: Auto-merge PR (after diff sanity check)
-        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        # Only auto-merge if deps check passed (changed != true). When deps
+        # changed, the PR is left open for human review with the resolution
+        # steps documented in the PR body.
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true' && steps.deps.outputs.changed != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ steps.open-pr.outputs.pr_number }}
