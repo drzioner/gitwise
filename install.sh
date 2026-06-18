@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install.sh — install gitwise via uv tool install (works remote: curl | bash)
-# Usage: bash install.sh [--dry-run] [--version X.Y.Z] [--help]
+# Usage: bash install.sh [--dry-run] [--version=X.Y.Z] [--help]
 #
 # Remote one-liner:
 #   curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
