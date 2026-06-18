@@ -1,0 +1,219 @@
+name: Update homebrew-tap
+
+# Triggers when "Publish to PyPI" completes successfully on a vX.Y.Z tag,
+# or manually with --version=X.Y.Z. The workflow bumps url+sha256 in the
+# Formula/gitwise.rb of drzioner/homebrew-tap and opens a PR for review.
+
+on:
+  workflow_run:
+    workflows: ["Publish to PyPI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Target version (X.Y.Z, no 'v' prefix) to bump the formula to"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-homebrew-tap
+  cancel-in-progress: false
+
+jobs:
+  update-formula:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resolve target version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            TAG="${{ github.event.workflow_run.head_branch }}"
+            # head_branch for tag pushes is usually "vX.Y.Z" but can include refs/tags/
+            TAG="${TAG##*/}"
+            VERSION="${TAG#v}"
+          fi
+
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::notice::Skipping: resolved version '$VERSION' is not a valid X.Y.Z (likely a non-tag workflow_run)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch=update-formula-v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Get App token (scoped to homebrew-tap)
+        id: app-token
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: drzioner
+          repositories: homebrew-tap
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Check if PR already exists for this version
+        id: check
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH="${{ steps.version.outputs.branch }}"
+          if gh api "repos/dzioner/homebrew-tap/branches/${BRANCH}" >/dev/null 2>&1; then
+            echo "::notice::Branch ${BRANCH} already exists in drzioner/homebrew-tap; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout tap
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: drzioner/homebrew-tap
+          token: ${{ steps.app-token.outputs.token }}
+          path: tap
+          persist-credentials: false
+
+      - name: Fetch sdist metadata from PyPI
+        id: sdist
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          URL="https://pypi.org/pypi/gitwise-cli/${VERSION}/json"
+
+          # PyPI propagation can lag a few seconds behind the publish event.
+          RESPONSE=""
+          for attempt in 1 2 3 4 5 6 7 8; do
+            RESPONSE=$(curl -fsSL "$URL" 2>/dev/null) && [ -n "$RESPONSE" ] && break
+            echo "::notice::PyPI not ready for v${VERSION} yet (attempt ${attempt}/8). Retrying in 20s..."
+            sleep 20
+          done
+
+          if [ -z "$RESPONSE" ]; then
+            echo "::error::PyPI never returned metadata for v${VERSION} after 8 attempts."
+            exit 1
+          fi
+
+          SDIST_URL=$(printf '%s' "$RESPONSE" | jq -r '.urls[] | select(.packagetype == "sdist") | .url' | head -1)
+          SDIST_SHA=$(printf '%s' "$RESPONSE" | jq -r '.urls[] | select(.packagetype == "sdist") | .digests.sha256' | head -1)
+
+          if [ -z "$SDIST_URL" ] || [ -z "$SDIST_SHA" ]; then
+            echo "::error::sdist not found in PyPI response for v${VERSION}."
+            exit 1
+          fi
+
+          echo "url=${SDIST_URL}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${SDIST_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Resolved sdist: ${SDIST_URL}"
+
+      - name: Bump formula
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        working-directory: tap
+        env:
+          NEW_URL: ${{ steps.sdist.outputs.url }}
+          NEW_SHA: ${{ steps.sdist.outputs.sha256 }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          # Resolve bot committer identity (numeric user ID is required for the noreply email).
+          BOT_USER_ID=$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq '.id')
+
+          python3 <<'PYEOF'
+          import os
+          import re
+
+          path = "Formula/gitwise.rb"
+          with open(path) as f:
+              content = f.read()
+
+          new_url = os.environ["NEW_URL"]
+          new_sha = os.environ["NEW_SHA"]
+
+          # Replace only the first top-level `url "..."` and first `sha256 "..."`.
+          # Resources have their own url/sha256 inside `resource ... do ... end` blocks
+          # which appear later in the file, so count=1 is safe.
+          content, n_url = re.subn(
+              r'^(\s*url\s+)"[^"]+"',
+              r'\1"' + new_url + '"',
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          content, n_sha = re.subn(
+              r'^(\s*sha256\s+)"[^"]+"',
+              r'\1"' + new_sha + '"',
+              content,
+              count=1,
+              flags=re.MULTILINE,
+          )
+
+          if n_url != 1 or n_sha != 1:
+              raise SystemExit(f"Expected 1 url and 1 sha256 replacement, got url={n_url} sha256={n_sha}")
+
+          with open(path, "w") as f:
+              f.write(content)
+
+          print(f"Updated Formula/gitwise.rb:")
+          print(f"  url:    {new_url}")
+          print(f"  sha256: {new_sha}")
+          PYEOF
+
+          git config user.name  "${APP_SLUG}[bot]"
+          git config user.email "${BOT_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git config commit.gpgsign false
+
+          git checkout -b "$BRANCH"
+          git add Formula/gitwise.rb
+          git commit -m "formula: bump gitwise to v${VERSION}" \
+                     -m "Auto-generated by drzioner/gitwise update-homebrew-tap workflow after PyPI publish of v${VERSION}." \
+                     -m "If runtime dependencies changed since the previous formula version, run 'brew update-python-resources gitwise' locally before merging."
+          git push origin "$BRANCH"
+
+      - name: Open PR
+        if: steps.version.outputs.skip != 'true' && steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SDIST_URL: ${{ steps.sdist.outputs.url }}
+          SDIST_SHA: ${{ steps.sdist.outputs.sha256 }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          # Reusable body — kept inline for portability across runner images.
+          BODY=$(cat <<EOF
+          Auto-generated by [\`update-homebrew-tap\`](https://github.com/drzioner/gitwise/blob/main/.github/workflows/update-homebrew-tap.yml) workflow after PyPI publish of \`v${VERSION}\`.
+
+          ## Changes
+
+          - Bumped formula \`url\` and \`sha256\` to the sdist at \`${SDIST_URL##*/}\` (\`${SDIST_SHA:0:16}…\`).
+
+          ## Verification checklist (reviewer)
+
+          - [ ] \`brew audit --new --formula gitwise\` passes
+          - [ ] \`brew install --build-from-source drzioner/tap/gitwise\` succeeds
+          - [ ] \`brew test drzioner/tap/gitwise\` passes
+          - [ ] If runtime dependencies changed since the previous version, run \`brew update-python-resources gitwise\` and update the resources block before merging
+          EOF
+          )
+
+          gh pr create \
+            --repo drzioner/homebrew-tap \
+            --base main \
+            --head "$BRANCH" \
+            --title "formula: bump gitwise to v${VERSION}" \
+            --body "$BODY"
