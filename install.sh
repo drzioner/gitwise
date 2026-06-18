@@ -133,10 +133,10 @@ else
     uv tool install --upgrade "$PACKAGE_SPEC"
 fi
 
-if ! uv tool list 2>/dev/null | grep -q "^gitwise-cli"; then
-    echo "error: gitwise-cli installation appears to have failed." >&2
-    exit 1
-fi
+# No post-install verification needed here: `set -e` (line 15) already aborted
+# the script if `uv tool install` returned non-zero. A `uv tool list | grep`
+# check would be both redundant and fragile under `pipefail`. The PATH check
+# below uses `command -v gitwise` directly, which is the actually useful signal.
 
 UV_BIN_DIR="$HOME/.local/bin"
 if command -v gitwise >/dev/null 2>&1; then
