@@ -34,6 +34,23 @@ jobs:
       - run: uv run python scripts/docs/check_roadmap_baseline.py
       - run: uv run python scripts/docs/check_schema_catalog.py
 
+  workflow-audit:
+    name: Workflow Audit
+    if: >
+      ${{ github.event_name != 'push' ||
+          !startsWith(github.event.head_commit.message || '', 'docs(changelog): sync CHANGELOG.es from CHANGELOG') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: false
+      # PyYAML is a one-off tool dependency; do not add it to the project.
+      - run: uv run --with pyyaml python scripts/audit-template-injection.py
+
   lint:
     name: Lint & Format
     if: >

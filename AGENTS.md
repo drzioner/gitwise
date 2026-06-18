@@ -175,3 +175,4 @@ Detailed rules for specific subsystems are in `.agents/rules/`:
 | `setup-agents.md` | `gitwise/setup_agents/**` |
 | `color-system.md` | `gitwise/output.py`, `design.py`, `_runtime_config.py` |
 | `shell-scripts.md` | `bin/*`, `install.sh` |
+| `github-actions.md` | `.github/workflows/*`, `scripts/audit-template-injection.py` |
