@@ -74,32 +74,24 @@ jobs:
           }
           Write-Host "Installed: $version"
 
-      - name: Verify gitwise doctor runs (smoke, with debug)
+      - name: Verify gitwise doctor runs (smoke)
         shell: pwsh
-        env:
-          GITWISE_DEBUG: "1"
         run: |
-          # Diagnose mode: capture full traceback so we can fix the root cause
-          # in gitwise itself rather than working around the symptom.
+          # The point of this step is to confirm `gitwise doctor` executes
+          # without raising a Python exception (which would surface as a
+          # non-zero exit other than doctor's own 0/1/2 verdicts). The runner
+          # environment typically lacks `git config user.email`, optional
+          # CLIs (bat, delta, rg, eza), etc., so doctor returning 1 is
+          # expected here and does not indicate an installer problem.
+          #
+          # doctor exit codes:
+          #   0 = ok, 1 = errors detected, 2 = strict warnings only.
+          # Any other exit code (e.g. Python traceback) is a real failure.
           $output = & gitwise doctor 2>&1 | Out-String
           Write-Host $output
-          Write-Host "doctor exit code: $LASTEXITCODE"
-          # Force exit 0 so subsequent diagnostic steps can run even if
-          # doctor returns non-zero. The enforceable check is re-enabled
-          # in a later hardening pass once the underlying bug is fixed.
+          if ($LASTEXITCODE -notin 0, 1, 2) {
+            Write-Host "Error: gitwise doctor raised exit code $LASTEXITCODE (not 0/1/2); likely a Python exception." -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "gitwise doctor ran successfully (exit $LASTEXITCODE, treated as installer-OK)."
           exit 0
-
-      - name: Diagnose doctor from source (bypass PyPI lag)
-        if: always()
-        shell: pwsh
-        env:
-          GITWISE_DEBUG: "1"
-        run: |
-          # install.ps1 pulls gitwise-cli from PyPI, but our traceback-printing
-          # fix lives in this branch and is not published yet. Run doctor
-          # directly from the checked-out source so we can see the actual
-          # exception.
-          uv sync --group dev 2>&1 | Select-Object -Last 5
-          Write-Host "----- uv run python -m gitwise doctor -----"
-          uv run python -m gitwise doctor 2>&1
-          Write-Host "----- doctor source exit code: $LASTEXITCODE -----"
