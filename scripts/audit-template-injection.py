@@ -26,7 +26,7 @@ from pathlib import Path
 
 import yaml
 
-EXPRESSION_RE = re.compile(r"\$\{\{[^}]+\}\}")
+EXPRESSION_RE = re.compile(r"\$\{\{.*?\}\}")
 
 
 def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
@@ -38,15 +38,29 @@ def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
             print(f"::error::{path}: YAML parse error: {e}", file=sys.stderr)
             sys.exit(2)
 
+    # yaml.safe_load returns None for empty or comment-only files.
+    if not isinstance(wf, dict):
+        return []
+
+    jobs = wf.get("jobs")
+    if not isinstance(jobs, dict):
+        return []
+
     findings: list[tuple[str, str, list[str]]] = []
-    for job_name, job in (wf.get("jobs") or {}).items():
+    for job_name, job in jobs.items():
         if not isinstance(job, dict):
             continue
-        for i, step in enumerate(job.get("steps") or []):
-            if not isinstance(step, dict) or "run" not in step:
+        steps = job.get("steps")
+        if not isinstance(steps, list):
+            continue
+        for i, step in enumerate(steps):
+            if not isinstance(step, dict):
+                continue
+            run_cmd = step.get("run")
+            if not isinstance(run_cmd, str):
                 continue
             step_name = step.get("name", f"step-{i}")
-            matches = EXPRESSION_RE.findall(step["run"])
+            matches = EXPRESSION_RE.findall(run_cmd)
             if matches:
                 findings.append((job_name, step_name, matches))
     return findings
@@ -76,7 +90,9 @@ def main() -> int:
 
     total_findings = 0
     files_audited = 0
-    for path in sorted(workflows_dir.glob("*.yml")):
+    # GitHub Actions accepts both .yml and .yaml extensions.
+    workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
+    for path in sorted(workflow_files):
         files_audited += 1
         findings = audit_workflow(path)
         if findings:
