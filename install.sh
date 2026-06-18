@@ -140,9 +140,9 @@ fi
 
 UV_BIN_DIR="$HOME/.local/bin"
 if command -v gitwise >/dev/null 2>&1; then
-    INSTALLED_VERSION="$(gitwise --version 2>/dev/null || echo 'unknown')"
+    INSTALLED_VERSION="$(gitwise --version 2>/dev/null || echo 'gitwise (version unknown)')"
     echo ""
-    echo "gitwise $INSTALLED_VERSION is ready."
+    echo "$INSTALLED_VERSION is ready."
     echo ""
     echo "Try:           gitwise doctor"
     echo "Update later:  uv tool upgrade gitwise-cli"
