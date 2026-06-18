@@ -140,9 +140,14 @@ fi
 
 UV_BIN_DIR="$HOME/.local/bin"
 if command -v gitwise >/dev/null 2>&1; then
-    INSTALLED_VERSION="$(gitwise --version 2>/dev/null || echo 'gitwise (version unknown)')"
-    echo ""
-    echo "$INSTALLED_VERSION is ready."
+    if INSTALLED_VERSION="$(gitwise --version 2>/dev/null)" && [ -n "$INSTALLED_VERSION" ]; then
+        echo ""
+        echo "$INSTALLED_VERSION is ready."
+    else
+        echo ""
+        echo "gitwise is installed, but failed to execute (version unknown)."
+        echo "Check that your Python interpreter is working: python3 --version"
+    fi
     echo ""
     echo "Try:           gitwise doctor"
     echo "Update later:  uv tool upgrade gitwise-cli"
