@@ -92,21 +92,29 @@ jobs:
       - name: Verify gitwise doctor runs (smoke)
         shell: pwsh
         run: |
-          # The point of this step is to confirm `gitwise doctor` executes
-          # without raising a Python exception (which would surface as a
-          # non-zero exit other than doctor's own 0/1/2 verdicts). The runner
-          # environment typically lacks `git config user.email`, optional
-          # CLIs (bat, delta, rg, eza), etc., so doctor returning 1 is
-          # expected here and does not indicate an installer problem.
-          #
-          # doctor exit codes:
-          #   0 = ok, 1 = errors detected, 2 = strict warnings only.
-          # Any other exit code (e.g. Python traceback) is a real failure.
+          # Strict smoke check: doctor must run without Python exceptions AND
+          # without the CLI's "unexpected error" handler firing. Exit codes
+          # 0/1/2 are acceptable verdicts (ok / errors detected / strict
+          # warnings) because the runner env lacks git config user.email and
+          # optional tools — those surface as doctor warnings, not as Python
+          # exceptions.
           $output = & gitwise doctor 2>&1 | Out-String
           Write-Host $output
+
+          # Hard-fail patterns: presence of any of these in stdout/stderr
+          # means doctor crashed at the Python level (or hit the CLI's
+          # catch-all "unexpected error" branch). Either is a real bug that
+          # the test must surface, not swallow.
+          if ($output -match 'Traceback \(most recent call last\)|UnicodeEncodeError|UnicodeDecodeError|unexpected error\.') {
+            Write-Host "Error: doctor output contains an error pattern. See full log above." -ForegroundColor Red
+            Write-Host "Matched against: Traceback | UnicodeEncodeError | UnicodeDecodeError | 'unexpected error.'" -ForegroundColor Red
+            exit 1
+          }
+
           if ($LASTEXITCODE -notin 0, 1, 2) {
             Write-Host "Error: gitwise doctor raised exit code $LASTEXITCODE (not 0/1/2); likely a Python exception." -ForegroundColor Red
             exit 1
           }
+
           Write-Host "gitwise doctor ran successfully (exit $LASTEXITCODE, treated as installer-OK)."
           exit 0
