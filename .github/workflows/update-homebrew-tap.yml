@@ -33,11 +33,15 @@ jobs:
     steps:
       - name: Resolve target version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
           else
-            TAG="${{ github.event.workflow_run.head_branch }}"
+            TAG="$HEAD_BRANCH"
             # head_branch for tag pushes is usually "vX.Y.Z" but can include refs/tags/
             TAG="${TAG##*/}"
             VERSION="${TAG#v}"
@@ -72,7 +76,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           BRANCH="${{ steps.version.outputs.branch }}"
-          if gh api "repos/dzioner/homebrew-tap/branches/${BRANCH}" >/dev/null 2>&1; then
+          if gh api "repos/drzioner/homebrew-tap/branches/${BRANCH}" >/dev/null 2>&1; then
             echo "::notice::Branch ${BRANCH} already exists in drzioner/homebrew-tap; nothing to do."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
@@ -86,7 +90,7 @@ jobs:
           repository: drzioner/homebrew-tap
           token: ${{ steps.app-token.outputs.token }}
           path: tap
-          persist-credentials: false
+          # persist-credentials defaults to true so git push in the next step succeeds.
 
       - name: Fetch sdist metadata from PyPI
         id: sdist
