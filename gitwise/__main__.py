@@ -93,6 +93,13 @@ def main() -> int:
         except Exception:
             if _should_show_rich_traceback():
                 raise
+            # No Rich traceback available (CI / non-tty / LOG_JSON mode).
+            # Still emit the raw traceback to stderr so CI logs are
+            # diagnostic. Otherwise the user only sees "unexpected error"
+            # and has no way to identify the root cause.
+            import traceback as _traceback
+
+            _traceback.print_exc()
             from .output import error as _error
 
             _error(t("unexpected_error"))
