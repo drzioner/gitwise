@@ -4,6 +4,8 @@ alwaysApply: true
 
 # GitHub Actions — Security Conventions
 
+> **Loading:** This rule has `alwaysApply: true` frontmatter and no path scope, so it loads **Always** and applies unconditionally across all supported agents (Claude Code, opencode, etc.). Every workflow change must satisfy these conventions regardless of which files it touches.
+
 This project is **public**. Every workflow change must assume untrusted inputs
 can reach `run:` blocks via interpolation.
 
