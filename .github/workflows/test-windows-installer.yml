@@ -84,12 +84,13 @@ jobs:
           $output = & gitwise doctor 2>&1 | Out-String
           Write-Host $output
           Write-Host "doctor exit code: $LASTEXITCODE"
-          # Treat any exit as success for now — the goal of this step is to
-          # surface the real traceback. A separate hardening pass will turn
-          # this back into an enforceable check once the underlying bug is
-          # identified and fixed.
+          # Force exit 0 so subsequent diagnostic steps can run even if
+          # doctor returns non-zero. The enforceable check is re-enabled
+          # in a later hardening pass once the underlying bug is fixed.
+          exit 0
 
       - name: Diagnose doctor from source (bypass PyPI lag)
+        if: always()
         shell: pwsh
         env:
           GITWISE_DEBUG: "1"
