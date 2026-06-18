@@ -41,6 +41,8 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          # Intentionally keep persisted credentials: subsequent steps commit
+          # and push back to this repository using the GitHub App token.
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 

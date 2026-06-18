@@ -82,7 +82,7 @@ block.
   `$VAR` came from an untrusted source can still leak via error messages or
   stack traces. Validate before echoing.
 
-## Required: Node 24 runtime for every `uses:`
+## Required: Node 24 runtime for every JavaScript `uses:`
 
 GitHub deprecates Node 16/20 runtimes on Actions runners. As of 2025-09-19,
 Node 20 is deprecated and emits a warning on every run (`Node.js 20 is
@@ -90,9 +90,13 @@ deprecated. The following actions target Node.js 20 but are being forced to
 run on Node.js 24: ...`). The next runtime removal will break the workflow
 outright.
 
-**Before merging any workflow change that adds or bumps a `uses:` action,
-verify the action's `action.yml` declares `runs.using: node24` (or `node20`
-only if you accept the deprecation warning).**
+**Before merging any workflow change that adds or bumps a JavaScript `uses:`
+action, verify the action's `action.yml` declares `runs.using: node24`.**
+
+If a temporary `node20` exception is unavoidable, the PR must include a
+waiver note with: (a) the reason `node24` is not available, (b) the owner
+responsible for tracking the upstream action's `node24` release, and (c) a
+removal date.
 
 How to verify without leaving the chat:
 
