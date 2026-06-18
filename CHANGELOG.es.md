@@ -1,7 +1,7 @@
 # Historial de cambios
 
 Source: CHANGELOG.md
-Last sync: 2026-06-17
+Last sync: 2026-06-18
 
 [English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
 
@@ -14,8 +14,9 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.4 (2026-06-17)
+## v0.24.5 (2026-06-18)
 
 ### Fix
 
-- **packaging**: add project URLs and SPDX license metadata
+- **packaging**: add project URLs and SPDX license metadata (#55)
+- **ci**: abort auto-release when commits cancel out via revert (#56)
