@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""Audit GitHub Actions workflows for template-injection vectors.
+"""Audit GitHub Actions workflows for two classes of supply-chain risk.
 
-Flags any `${{ ... }}` expression used inside a `run:` block. Expressions in
-`run:` blocks are interpolated by the workflow runner into the shell script,
-which means attacker-controlled values (workflow_dispatch inputs, issue titles,
-PR bodies, head_branch from untrusted workflow_run triggers) can execute
-arbitrary shell code. Expressions assigned to `env:`, `with:`, or `if:` are
-safe — they are treated as string literals by the runner.
+1. Template-injection vectors: any ``${{ ... }}`` expression used inside a
+   ``run:`` block. Expressions in ``run:`` blocks are interpolated by the
+   workflow runner into the shell script, which means attacker-controlled
+   values (workflow_dispatch inputs, issue titles, PR bodies, head_branch
+   from untrusted workflow_run triggers) can execute arbitrary shell code.
+   Expressions assigned to ``env:``, ``with:``, or ``if:`` are safe — they
+   are treated as string literals by the runner.
+
+2. Unpinned ``uses:`` references: any third-party action referenced by tag
+   or branch instead of a commit SHA. Tags and branches are mutable: an
+   attacker who compromises the action's repo can move the tag to a malicious
+   commit, and every workflow consuming it would silently run the new code.
+   SHA-pinned references are immutable. Local actions (``./...``) and
+   Docker actions (``docker://...``) are exempt.
 
 Usage:
     python3 scripts/audit-template-injection.py [--workflows .github/workflows]
@@ -27,10 +35,13 @@ from pathlib import Path
 import yaml
 
 EXPRESSION_RE = re.compile(r"\$\{\{.*?\}\}")
+# Matches `uses: repo@ref` after stripping `# comment` and quotes.
+USES_LINE_RE = re.compile(r"^\s*-?\s*uses:\s+(.+?)\s*(?:#.*)?$")
+SHA_RE = re.compile(r"^[a-f0-9]{40}$|^[a-f0-9]{64}$")
 
 
 def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
-    """Return [(job_name, step_name, [expressions])] for each step with findings."""
+    """Return [(job_name, step_name, [expressions])] for each step with template-injection findings."""
     with path.open() as f:
         try:
             wf = yaml.safe_load(f)
@@ -66,20 +77,63 @@ def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
     return findings
 
 
+def audit_uses_pinning(path: Path) -> list[tuple[int, str, str]]:
+    """Return [(line_number, uses_spec, reason)] for each ``uses:`` without SHA pin.
+
+    Exemptions:
+        - Local actions: ``uses: ./path/to/action``
+        - Docker actions: ``uses: docker://image:tag``
+    """
+    findings: list[tuple[int, str, str]] = []
+    with path.open() as f:
+        for line_no, raw_line in enumerate(f, start=1):
+            # Strip trailing comment (YAML comments start with # preceded by space or BOL).
+            line_no_comment = re.sub(r"\s+#.*$", "", raw_line).rstrip()
+            m = USES_LINE_RE.match(line_no_comment)
+            if not m:
+                continue
+            # Strip surrounding quotes if any.
+            spec = m.group(1).strip().strip("\"'")
+            spec = spec.strip("\"'")
+
+            # Exemption: local actions
+            if spec.startswith("./"):
+                continue
+            # Exemption: docker actions
+            if spec.startswith("docker://"):
+                continue
+
+            if "@" not in spec:
+                findings.append((line_no, spec, "no @ref (uses: without ref is invalid)"))
+                continue
+
+            repo, _, ref = spec.rpartition("@")
+            if SHA_RE.match(ref):
+                continue  # SHA pin OK
+
+            if ref in {"main", "master", "trunk"}:
+                reason = f"ref '{ref}' is a branch (mutable)"
+            else:
+                reason = f"ref '{ref}' is a tag (mutable); pin to SHA and add '# <tag>' comment"
+            findings.append((line_no, spec, reason))
+    return findings
+
+
 def main() -> int:
     """CLI entry point: audit all workflows and exit non-zero on findings.
 
     Walks ``--workflows`` directory (default ``.github/workflows``) for
-    ``*.yml`` and ``*.yaml`` files, runs :func:`audit_workflow` on each,
+    ``*.yml`` and ``*.yaml`` files, runs :func:`audit_workflow` (template
+    injection) and :func:`audit_uses_pinning` (unpinned uses) on each,
     prints per-file findings to stdout, and returns 0 if clean, 1 if any
-    ``${{ }}`` was found inside a ``run:`` block, or 2 on internal error.
+    finding was emitted, or 2 on internal error.
 
     Use ``--list`` to run in informational mode (always exit 0 even with
     findings); useful for local checks that should not block a developer.
     """
-    description = (
-        __doc__ or "Audit GitHub Actions workflows for template-injection vectors."
-    ).split("\n\n")[0]
+    description = (__doc__ or "Audit GitHub Actions workflows for supply-chain risk.").split(
+        "\n\n"
+    )[0]
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--workflows",
@@ -104,14 +158,19 @@ def main() -> int:
     workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
     for path in sorted(workflow_files):
         files_audited += 1
-        findings = audit_workflow(path)
-        if findings:
+        injection_findings = audit_workflow(path)
+        pinning_findings = audit_uses_pinning(path)
+        if injection_findings or pinning_findings:
             print(f"\n{path}:")
-            for job, step, expressions in findings:
-                print(f"  [{job}/{step}]")
+            for job, step, expressions in injection_findings:
+                print(f"  [{job}/{step}] template-injection:")
                 for expr in expressions:
                     print(f"    {expr}")
                     total_findings += 1
+            for line_no, spec, reason in pinning_findings:
+                print(f"  [line {line_no}] unpinned uses: {spec}")
+                print(f"    reason: {reason}")
+                total_findings += 1
         else:
             print(f"{path}: OK")
 

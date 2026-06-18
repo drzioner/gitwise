@@ -59,11 +59,23 @@ uv sync
 uv run python -m gitwise doctor
 ```
 
+**Windows** (PowerShell 5.1+, auto-instala `uv` si no está):
+
+```powershell
+irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex
+```
+
+O con versión específica:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1))) -Version 0.26.1
+```
+
 Actualizar una instalación existente:
 
 ```bash
-brew upgrade gitwise                   # si se instaló via Homebrew
-uv tool upgrade gitwise-cli            # si se instaló via uv
+brew upgrade gitwise                   # si se instaló via Homebrew (macOS/Linux)
+uv tool upgrade gitwise-cli            # si se instaló via uv (cualquier OS)
 # o vuelve a ejecutar el instalador curl | bash, siempre baja la última
 ```
 
@@ -71,7 +83,7 @@ Desinstalar:
 
 ```bash
 brew uninstall gitwise                 # si se instaló via Homebrew
-uv tool uninstall gitwise-cli          # si se instaló via uv
+uv tool uninstall gitwise-cli          # si se instaló via uv (cualquier OS)
 ```
 
 ## Inicio rápido

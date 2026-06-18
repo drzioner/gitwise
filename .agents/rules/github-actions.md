@@ -69,6 +69,10 @@ block.
 - **Pin all `uses:` by SHA**, not by tag. Tags can be moved by maintainers of
   the action; SHAs are immutable. Comment the version next to the SHA so
   Dependabot can bump it (`uses: actions/checkout@9c091bb2... # v7.0.0`).
+  The CI job "Workflow Audit" runs `scripts/audit-template-injection.py`
+  on every PR, which fails the build if any `uses:` is pinned to a tag
+  (`@v4`) or branch (`@main`) instead of a SHA. Local actions (`./...`)
+  and Docker actions (`docker://...`) are exempt.
 - **Use `permissions:` at the workflow level** with the minimum scope. Use
   `contents: read` as the default and elevate only in jobs that need write.
 - **Use GitHub App tokens for cross-repo automation**, not PATs. App tokens

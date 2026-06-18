@@ -15,11 +15,17 @@ For end-user installation (installs `gitwise` as a global CLI tool, isolated fro
 
 ```bash
 bash install.sh                    # local: installs gitwise-cli via `uv tool install`
-# or remote one-liner:
+# or remote one-liner (macOS/Linux):
 curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
 ```
 
-The installer auto-installs `uv` if missing, then runs `uv tool install --upgrade gitwise-cli`. The `gitwise` binary lands in `~/.local/bin`. See `bash install.sh --help` for options (`--dry-run`, `--version=X.Y.Z`).
+Windows users use `install.ps1`:
+
+```powershell
+irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex
+```
+
+The installer auto-installs `uv` if missing, then runs `uv tool install --upgrade gitwise-cli`. The `gitwise` binary lands in `~/.local/bin` (macOS/Linux) or `%USERPROFILE%\.local\bin` (Windows). See `bash install.sh --help` / `Get-Help .\install.ps1` for options (`--dry-run` / `-DryRun`, `--version=X.Y.Z` / `-Version`).
 
 ### Python resolution — CRITICAL
 
