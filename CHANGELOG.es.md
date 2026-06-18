@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.26.0 (2026-06-18)
+## v0.26.1 (2026-06-18)
 
-### Feat
+### Fix
 
-- **ci**: block tap auto-merge on dep changes + reusable template-injection audit (#61)
+- **ci**: bump all actions to Node 24 + document Homebrew install path (#62)
