@@ -236,15 +236,18 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ steps.open-pr.outputs.pr_number }}
+          EXPECTED_URL: ${{ steps.sdist.outputs.url }}
+          EXPECTED_SHA: ${{ steps.sdist.outputs.sha256 }}
         run: |
           # Brief settle so GitHub fully indexes the PR before we diff it.
           sleep 5
 
           DIFF=$(gh pr diff "$PR_NUMBER" --repo drzioner/homebrew-tap)
 
-          # Count content lines (exclude hunk/file headers like +++ and ---).
-          ADDITIONS=$(printf '%s' "$DIFF" | grep -cE '^\+[^+]' || true)
-          DELETIONS=$(printf '%s' "$DIFF" | grep -cE '^-[^-]' || true)
+          # Count content lines INCLUDING blank-line edits (use awk to skip only
+          # diff/file/hunk headers, not bare +/- lines).
+          ADDITIONS=$(printf '%s' "$DIFF" | awk '/^\+\+\+|^---|^@@/{next} /^\+/{c++} END{print c+0}')
+          DELETIONS=$(printf '%s' "$DIFF" | awk '/^\+\+\+|^---|^@@/{next} /^-/{c++} END{print c+0}')
 
           echo "PR #$PR_NUMBER diff: +${ADDITIONS}/-${DELETIONS} lines"
 
@@ -253,18 +256,20 @@ jobs:
             exit 1
           fi
 
-          # Validate the 2 added lines are url and sha256 (in any order).
-          ADDED=$(printf '%s' "$DIFF" | grep -E '^\+[^+]' | sed 's/^+//')
-          if ! printf '%s' "$ADDED" | grep -qE '^[[:space:]]*url[[:space:]]+"'; then
-            echo "::error::Sanity check failed: additions do not include a 'url' line. Refusing to auto-merge."
+          # Validate the 2 added lines are exactly url "<EXPECTED_URL>" and
+          # sha256 "<EXPECTED_SHA>" (in any order). grep -F = literal substring
+          # match; no regex interpretation of the URL.
+          ADDED=$(printf '%s' "$DIFF" | awk '/^\+\+\+|^---|^@@/{next} /^\+/{sub(/^\+/,""); print}')
+          if ! printf '%s' "$ADDED" | grep -qF "url \"${EXPECTED_URL}\""; then
+            echo "::error::Sanity check failed: additions do not include 'url \"${EXPECTED_URL}\"'. Refusing to auto-merge."
             exit 1
           fi
-          if ! printf '%s' "$ADDED" | grep -qE '^[[:space:]]*sha256[[:space:]]+"'; then
-            echo "::error::Sanity check failed: additions do not include a 'sha256' line. Refusing to auto-merge."
+          if ! printf '%s' "$ADDED" | grep -qF "sha256 \"${EXPECTED_SHA}\""; then
+            echo "::error::Sanity check failed: additions do not include 'sha256 \"${EXPECTED_SHA}\"'. Refusing to auto-merge."
             exit 1
           fi
 
-          echo "Sanity check passed: diff contains exactly url + sha256. Auto-merging PR #$PR_NUMBER."
+          echo "Sanity check passed: diff contains exactly url + sha256 with expected values. Auto-merging PR #$PR_NUMBER."
           gh pr merge "$PR_NUMBER" \
             --repo drzioner/homebrew-tap \
             --squash --admin \
