@@ -35,9 +35,9 @@ from pathlib import Path
 import yaml
 
 EXPRESSION_RE = re.compile(r"\$\{\{.*?\}\}")
-# Matches `uses: repo@ref` after stripping `# comment` and quotes.
-USES_LINE_RE = re.compile(r"^\s*-?\s*uses:\s+(.+?)\s*(?:#.*)?$")
-SHA_RE = re.compile(r"^[a-f0-9]{40}$|^[a-f0-9]{64}$")
+# Matches SHA-1 (40 hex) or SHA-256 (64 hex); case-insensitive because Git
+# SHAs are not canonically lowercase in the wild.
+SHA_RE = re.compile(r"^[a-f0-9]{40}$|^[a-f0-9]{64}$", re.IGNORECASE)
 
 
 def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
@@ -77,45 +77,81 @@ def audit_workflow(path: Path) -> list[tuple[str, str, list[str]]]:
     return findings
 
 
-def audit_uses_pinning(path: Path) -> list[tuple[int, str, str]]:
-    """Return [(line_number, uses_spec, reason)] for each ``uses:`` without SHA pin.
+def audit_uses_pinning(path: Path) -> list[tuple[str, str, str]]:
+    """Return [(context, uses_spec, reason)] for each ``uses:`` without SHA pin.
+
+    The context is "job_name" for reusable-workflow ``uses:`` at job level, or
+    "job_name/step_name" for step-level ``uses:``. Uses the parsed YAML AST
+    rather than regex-on-text to avoid false positives from comments or
+    multi-line strings containing the substring ``uses:``.
 
     Exemptions:
         - Local actions: ``uses: ./path/to/action``
         - Docker actions: ``uses: docker://image:tag``
     """
-    findings: list[tuple[int, str, str]] = []
     with path.open() as f:
-        for line_no, raw_line in enumerate(f, start=1):
-            # Strip trailing comment (YAML comments start with # preceded by space or BOL).
-            line_no_comment = re.sub(r"\s+#.*$", "", raw_line).rstrip()
-            m = USES_LINE_RE.match(line_no_comment)
-            if not m:
-                continue
-            # Strip surrounding quotes if any.
-            spec = m.group(1).strip().strip("\"'")
-            spec = spec.strip("\"'")
+        try:
+            wf = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            print(f"::error::{path}: YAML parse error: {e}", file=sys.stderr)
+            sys.exit(2)
 
-            # Exemption: local actions
-            if spec.startswith("./"):
-                continue
-            # Exemption: docker actions
-            if spec.startswith("docker://"):
-                continue
+    if not isinstance(wf, dict):
+        return []
 
-            if "@" not in spec:
-                findings.append((line_no, spec, "no @ref (uses: without ref is invalid)"))
+    jobs = wf.get("jobs")
+    if not isinstance(jobs, dict):
+        return []
+
+    findings: list[tuple[str, str, str]] = []
+
+    def classify(spec: str) -> str | None:
+        """Return a reason string if ``spec`` is unpinned, else None."""
+        spec = spec.strip()
+        # Local composite actions look like `./path` with no @ref. These are
+        # in-tree source files and don't need pinning.
+        # Local *reusable workflows* look like `./path@<ref>` and DO need a
+        # SHA pin — refs are mutable in that case.
+        if spec.startswith("./") and "@" not in spec:
+            return None
+        # Docker actions (container jobs/steps) are immutable by digest.
+        if spec.startswith("docker://"):
+            return None
+        if "@" not in spec:
+            return "no @ref (uses: without ref is invalid)"
+        _, _, ref = spec.rpartition("@")
+        if SHA_RE.match(ref):
+            return None
+        if ref in {"main", "master", "trunk"}:
+            return f"ref '{ref}' is a branch (mutable)"
+        return f"ref '{ref}' is a tag (mutable); pin to SHA and add '# <tag>' comment"
+
+    for job_name, job in jobs.items():
+        if not isinstance(job, dict):
+            continue
+
+        # Job-level uses (reusable workflows).
+        job_uses = job.get("uses")
+        if isinstance(job_uses, str):
+            reason = classify(job_uses)
+            if reason:
+                findings.append((job_name, job_uses.strip(), reason))
+
+        # Step-level uses.
+        steps = job.get("steps")
+        if not isinstance(steps, list):
+            continue
+        for i, step in enumerate(steps):
+            if not isinstance(step, dict):
                 continue
-
-            repo, _, ref = spec.rpartition("@")
-            if SHA_RE.match(ref):
-                continue  # SHA pin OK
-
-            if ref in {"main", "master", "trunk"}:
-                reason = f"ref '{ref}' is a branch (mutable)"
-            else:
-                reason = f"ref '{ref}' is a tag (mutable); pin to SHA and add '# <tag>' comment"
-            findings.append((line_no, spec, reason))
+            step_uses = step.get("uses")
+            if not isinstance(step_uses, str):
+                continue
+            reason = classify(step_uses)
+            if reason:
+                step_name = step.get("name", f"step-{i}")
+                context = f"{job_name}/{step_name}"
+                findings.append((context, step_uses.strip(), reason))
     return findings
 
 
@@ -168,7 +204,7 @@ def main() -> int:
                     print(f"    {expr}")
                     total_findings += 1
             for line_no, spec, reason in pinning_findings:
-                print(f"  [line {line_no}] unpinned uses: {spec}")
+                print(f"  [{line_no}] unpinned uses: {spec}")
                 print(f"    reason: {reason}")
                 total_findings += 1
         else:

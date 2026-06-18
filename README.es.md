@@ -65,11 +65,7 @@ uv run python -m gitwise doctor
 irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex
 ```
 
-O con versión específica:
-
-```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1))) -Version 0.26.1
-```
+Para fijar una versión (p. ej. en setups reproducibles), consulta `Get-Help .\install.ps1 -Detailed` tras la descarga.
 
 Actualizar una instalación existente:
 

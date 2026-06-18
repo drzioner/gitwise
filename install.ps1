@@ -48,11 +48,15 @@ function Invoke-UvInstaller {
 }
 
 function Refresh-SessionPath {
-    # The uv installer writes to the User PATH env var. Refresh the current
-    # session so `Get-Command uv` can find the newly installed binary.
-    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
-    $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-    $env:Path = "$userPath;$machinePath"
+    # The uv installer writes to the User PATH env var, but we cannot rebuild
+    # $env:Path from the registry here — that would discard session-specific
+    # PATH additions (e.g. tool caches) and reverse the standard Windows PATH
+    # evaluation order. Prepend the uv bin directory to the live session PATH
+    # instead; subsequent `Get-Command uv` calls will find it.
+    $uvBinDir = Join-Path $env:USERPROFILE ".local\bin"
+    if ($env:Path -notlike "*$uvBinDir*") {
+        $env:Path = "$uvBinDir;$env:Path"
+    }
 }
 
 # --- Step 1: ensure uv is available ---
@@ -69,7 +73,9 @@ if ($uvCmd) {
 # --- Step 2: determine install spec ---
 if ($Version) {
     if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-        Write-Error "Invalid -Version '$Version'. Expected X.Y.Z."
+        # Write-Error would terminate immediately under $ErrorActionPreference=Stop,
+        # making the exit 2 unreachable. Use Write-Host -ForegroundColor Red first.
+        Write-Host "Error: Invalid -Version '$Version'. Expected X.Y.Z." -ForegroundColor Red
         exit 2
     }
     $packageSpec = "gitwise-cli==$Version"
@@ -103,11 +109,9 @@ if ($needUvInstall) {
 
     $uvCmd = Get-Command uv -ErrorAction SilentlyContinue
     if (-not $uvCmd) {
-        Write-Error @"
-uv installer finished but 'uv' is not on PATH.
-Open a new PowerShell window and re-run, or add manually:
-  [Environment]::SetEnvironmentVariable('Path', "`$env:USERPROFILE\.local\bin;" + [Environment]::GetEnvironmentVariable('Path', 'User'), 'User')
-"@
+        Write-Host "Error: uv installer finished but 'uv' is not on PATH." -ForegroundColor Red
+        Write-Host "Open a new PowerShell window and re-run, or add manually:" -ForegroundColor Red
+        Write-Host "  [Environment]::SetEnvironmentVariable('Path', `"$env:USERPROFILE\.local\bin;`$([Environment]::GetEnvironmentVariable('Path', 'User'))`", 'User')" -ForegroundColor Red
         exit 1
     }
     Write-Host "uv installed: $($uvCmd.Source)"
@@ -124,7 +128,7 @@ if ($Version) {
 }
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "uv tool install failed with exit code $LASTEXITCODE."
+    Write-Host "Error: uv tool install failed with exit code $LASTEXITCODE." -ForegroundColor Red
     exit 1
 }
 
@@ -133,7 +137,11 @@ $uvBinDir = Join-Path $env:USERPROFILE ".local\bin"
 $gitwiseCmd = Get-Command gitwise -ErrorAction SilentlyContinue
 if ($gitwiseCmd) {
     $installedVersion = & gitwise --version 2>$null
-    if (-not $installedVersion) { $installedVersion = "unknown" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: gitwise command was found, but '--version' failed with exit code $LASTEXITCODE." -ForegroundColor Red
+        exit 1
+    }
+    if (-not $installedVersion) { $installedVersion = "gitwise (version unknown)" }
     Write-Host ""
     Write-Host "$installedVersion is ready."
     Write-Host ""
