@@ -14,9 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.24.5 (2026-06-18)
+## v0.25.0 (2026-06-18)
 
-### Fix
+### Feat
 
-- **packaging**: add project URLs and SPDX license metadata (#55)
-- **ci**: abort auto-release when commits cancel out via revert (#56)
+- **install**: rewrite install.sh for remote curl|bash via uv tool install (#57)
