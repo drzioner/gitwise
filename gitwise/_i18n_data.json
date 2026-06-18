@@ -519,6 +519,18 @@
     "es": "fsmonitor integrado no está soportado en Linux (solo macOS y Windows)",
     "en": "built-in fsmonitor not supported on Linux (macOS and Windows only)"
   },
+  "setup_agents_windows_global_unsupported": {
+    "es": "setup-agents en modo global no está soportado en Windows (requiere symlinks POSIX en ~/.claude/).",
+    "en": "setup-agents global mode is not supported on Windows (requires POSIX symlinks in ~/.claude/)."
+  },
+  "setup_agents_windows_workaround_local": {
+    "es": "Workaround: usá 'gitwise setup-agents --local --no-symlinks' dentro del repo donde quieras configurar los agentes.",
+    "en": "Workaround: use 'gitwise setup-agents --local --no-symlinks' inside the repo where you want to set up agents."
+  },
+  "setup_agents_windows_auto_no_symlinks": {
+    "es": "Windows detectado: activando --no-symlinks automáticamente (los symlinks POSIX no son confiables en Windows).",
+    "en": "Windows detected: auto-enabling --no-symlinks (POSIX symlinks are not reliable on Windows)."
+  },
   "gc_already_running": {
     "es": "git gc/maintenance ya está en ejecución — esperá a que termine",
     "en": "git gc/maintenance already running — wait for it to finish"

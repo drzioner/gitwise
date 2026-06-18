@@ -385,6 +385,37 @@ def run_setup_agents(
     adapters_legacy_used: bool = False,
 ) -> int:
     """Dispatcher: global mode (default) or per-repo mode (--local)."""
+    import platform
+
+    if platform.system() == "Windows":
+        if not local:
+            # Global mode creates symlinks in ~/.claude/ (skills, CLAUDE.md
+            # pointer, etc.). Windows does not support POSIX-style symlinks
+            # without Developer Mode, and even with it the semantics around
+            # relative targets differ enough that the existing setup_agents
+            # code produces broken links. Fail fast with a clear workaround
+            # instead of letting the user hit a confusing traceback.
+            if as_json:
+                print_json(
+                    {
+                        "ok": False,
+                        "error": "windows_global_unsupported",
+                        "message": t("setup_agents_windows_global_unsupported"),
+                        "workaround": "gitwise setup-agents --local --no-symlinks",
+                    }
+                )
+            else:
+                error(t("setup_agents_windows_global_unsupported"))
+                info(t("setup_agents_windows_workaround_local"))
+            return 1
+        if not no_symlinks:
+            # Local mode auto-enables --no-symlinks on Windows. Same root
+            # cause: os.symlink() either errors out (no Developer Mode) or
+            # produces links that do not behave like POSIX symlinks for our
+            # sandbox check (os.path.realpath over a not-yet-existing target).
+            warn(t("setup_agents_windows_auto_no_symlinks"))
+            no_symlinks = True
+
     if local:
         return _run_setup_local(
             target,
