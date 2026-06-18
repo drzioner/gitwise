@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.25.0 (2026-06-18)
+## v0.25.1 (2026-06-18)
 
-### Feat
+### Fix
 
-- **install**: rewrite install.sh for remote curl|bash via uv tool install (#57)
+- **install**: drop duplicate 'gitwise' prefix in success message (#58)
