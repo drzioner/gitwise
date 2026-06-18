@@ -88,3 +88,17 @@ jobs:
           # surface the real traceback. A separate hardening pass will turn
           # this back into an enforceable check once the underlying bug is
           # identified and fixed.
+
+      - name: Diagnose doctor from source (bypass PyPI lag)
+        shell: pwsh
+        env:
+          GITWISE_DEBUG: "1"
+        run: |
+          # install.ps1 pulls gitwise-cli from PyPI, but our traceback-printing
+          # fix lives in this branch and is not published yet. Run doctor
+          # directly from the checked-out source so we can see the actual
+          # exception.
+          uv sync --group dev 2>&1 | Select-Object -Last 5
+          Write-Host "----- uv run python -m gitwise doctor -----"
+          uv run python -m gitwise doctor 2>&1
+          Write-Host "----- doctor source exit code: $LASTEXITCODE -----"
