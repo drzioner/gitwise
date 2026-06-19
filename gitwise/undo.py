@@ -10,6 +10,7 @@ from .utils.json_envelope import ok_envelope
 def _resolve_undo_target(
     *, ref: str | None, entries: list[dict[str, str]], steps: int
 ) -> str | None:
+    """Resolve the target commit hash from an explicit ref or N steps back in reflog."""
     if ref:
         if not validate_ref(ref):
             error(t("invalid_ref", ref=ref))
@@ -22,12 +23,14 @@ def _resolve_undo_target(
 
 
 def _print_undo_dry_run(*, target: str, soft: bool) -> None:
+    """Print the dry-run reset plan."""
     print_header(t("undo_dry_run_title"))
     mode = "--soft" if soft else "--hard"
     print_bracket(f"git reset {mode}", target[:12])
 
 
 def _reset_to_target(*, root, target: str, soft: bool) -> int:
+    """Run ``git reset --soft/--hard`` to *target*."""
     args = ["reset", "--soft" if soft else "--hard", target]
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
@@ -37,6 +40,7 @@ def _reset_to_target(*, root, target: str, soft: bool) -> int:
 
 
 def _load_reflog_entries(*, root, steps: int) -> list[dict[str, str]] | None:
+    """Load reflog entries; returns None on error or empty reflog."""
     result = git_run(
         ["reflog", "--format=%H|gd-ref:%gd|gs:%gs|msg:%s", f"--max-count={steps + 10}"],
         cwd=root,
@@ -55,6 +59,7 @@ def _load_reflog_entries(*, root, steps: int) -> list[dict[str, str]] | None:
 def _run_undo_dry_run(
     *, as_json: bool, target: str, soft: bool, entries: list[dict[str, str]], steps: int
 ) -> int:
+    """Print or envelope the dry-run undo plan."""
     if as_json:
         print_json(
             ok_envelope(
@@ -70,6 +75,7 @@ def _run_undo_dry_run(
 
 
 def _confirm_hard_reset(*, soft: bool, yes: bool, target: str) -> bool:
+    """Return True if the hard reset should proceed (auto-approved when soft or --yes)."""
     if soft or yes:
         return True
     if confirm(t("undo_confirm_hard", ref=target[:12])):
@@ -79,6 +85,7 @@ def _confirm_hard_reset(*, soft: bool, yes: bool, target: str) -> bool:
 
 
 def _report_undo_complete(*, as_json: bool, target: str, soft: bool) -> int:
+    """Print or envelope the undo-complete message."""
     if as_json:
         print_json(ok_envelope(target=target, soft=soft))
         return 0
@@ -88,6 +95,7 @@ def _report_undo_complete(*, as_json: bool, target: str, soft: bool) -> int:
 
 
 def _parse_reflog(raw: str) -> list[dict[str, str]]:
+    """Parse custom-format reflog lines into ``[{hash, ref, action, message}]``."""
     entries: list[dict[str, str]] = []
     for line in raw.splitlines():
         parts = line.split("|", 3)
@@ -112,6 +120,7 @@ def run_undo(
     yes: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise undo`` command."""
     root, err = require_root()
     if err:
         return err

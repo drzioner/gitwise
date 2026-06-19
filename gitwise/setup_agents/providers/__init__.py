@@ -26,16 +26,19 @@ ADAPTERS: dict[str, AdapterConfig] = {
 
 
 def list_adapters() -> list[str]:
+    """Return sorted adapter names."""
     return sorted(ADAPTERS.keys())
 
 
 def list_providers() -> list[str]:
+    """Alias for list_adapters."""
     return list_adapters()
 
 
 def resolve_adapter_selection(
     names: list[str] | None,
 ) -> tuple[list[AdapterConfig], list[str]]:
+    """Resolve adapter names to configs, normalizing 'claude-only' to 'claude' and handling 'none'."""
     if not names:
         return [], []
     normalized = ["claude" if name == "claude-only" else name for name in names]
@@ -59,6 +62,7 @@ def resolve_adapter_selection(
 
 
 def detect_global_skills(home: Path | None = None) -> frozenset[str]:
+    """Return the set of built-in skills already installed in the global (home) .claude/skills/."""
     home_dir = home or Path.home()
     return frozenset(
         skill_name
@@ -72,6 +76,11 @@ def plan_adapter_actions(
     root: Path,
     context: AdapterContext | None = None,
 ) -> tuple[list[dict], list[str], list[str]]:
+    """Plan actions for the requested adapters.
+
+    Returns (actions, errors, warnings). Builds a default context from repo
+    state when none is provided.
+    """
     if not adapter_names:
         return [], [], []
     selected, errors = resolve_adapter_selection(adapter_names)

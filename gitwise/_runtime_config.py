@@ -16,6 +16,7 @@ _OSC_TIMEOUT = 0.5
 
 
 def _drain_fd(fd: int, timeout: float = 0.1) -> None:
+    """Read and discard pending data from a file descriptor."""
     while True:
         ready, _, _ = select.select([fd], [], [], timeout)
         if not ready:
@@ -27,6 +28,7 @@ def _drain_fd(fd: int, timeout: float = 0.1) -> None:
 
 
 def _query_bg_color() -> str | None:
+    """Query the terminal background color via OSC 11; returns a hex string or None."""
     if os.environ.get("NO_COLOR", "") != "":
         return None
     if os.environ.get("GITWISE_NO_COLOR", "").lower() in ("1", "true"):
@@ -67,6 +69,7 @@ def _query_bg_color() -> str | None:
 
 
 def _read_osc_response(fd: int) -> str | None:
+    """Read an OSC response from a tty fd, with a timeout."""
     buf = bytearray()
     osc_received = False
     while len(buf) < 50:
@@ -92,6 +95,7 @@ def _read_osc_response(fd: int) -> str | None:
 
 
 def _parse_osc_color(resp: str) -> str | None:
+    """Extract a hex color from an OSC 11 response string."""
     idx = resp.find("\x1b]")
     if idx == -1:
         return None
@@ -125,6 +129,7 @@ def _parse_osc_color(resp: str) -> str | None:
 
 
 def _parse_rgb_component(s: str) -> int:
+    """Parse a single hex RGB component, normalizing values wider than 8 bits."""
     val = int(s, 16)
     if len(s) > 2:
         val = val >> (4 * (len(s) - 2))
@@ -132,20 +137,25 @@ def _parse_rgb_component(s: str) -> int:
 
 
 def _relative_luminance(hex_color: str) -> float:
+    """Compute the sRGB relative luminance of a hex color (WCG 2.4)."""
     h = hex_color.lstrip("#")
     r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
 
     def linearize(c: float) -> float:
+        """Apply the sRGB gamma curve."""
         return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
     return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
 
 
 def _is_dark_background(bg_hex: str) -> bool:
+    """Return True if the background luminance is below the dark threshold."""
     return _relative_luminance(bg_hex) < _BRIGHTNESS_THRESHOLD
 
 
 class RuntimeConfig:
+    """Immutable runtime settings detected from the environment."""
+
     __slots__ = (
         "_theme_tokens",
         "color_depth",
@@ -167,6 +177,7 @@ class RuntimeConfig:
     theme: str
 
     def __init__(self) -> None:
+        """Detect theme, TTY, tools, and color settings from the current environment."""
         self.has_bat = bool(shutil.which("bat"))
         self.has_delta = bool(shutil.which("delta"))
         self.theme = self._detect_theme()
@@ -178,10 +189,12 @@ class RuntimeConfig:
 
     @property
     def theme_tokens(self) -> ThemeTokens:
+        """Return the resolved ThemeTokens for the current theme."""
         return self._theme_tokens
 
     @staticmethod
     def _detect_theme() -> str:
+        """Detect theme preference from env vars, OSC 11 query, or COLORFGBG."""
         explicit = os.environ.get("GITWISE_THEME", "").lower()
         if explicit in ("dark", "light"):
             return explicit
@@ -216,6 +229,7 @@ class RuntimeConfig:
 
     @staticmethod
     def _detect_terminal_width() -> int:
+        """Return terminal width from GITWISE_WIDTH or shutil detection."""
         from .design import MAX_WIDTH, MIN_WIDTH, detect_terminal_width
 
         env_width = os.environ.get("GITWISE_WIDTH", "")
@@ -226,6 +240,7 @@ class RuntimeConfig:
 
     @staticmethod
     def _detect_color_depth() -> ColorDepth:
+        """Delegate color-depth detection to design.detect_color_depth."""
         from .design import detect_color_depth
 
         return detect_color_depth()
@@ -235,6 +250,7 @@ _runtime_config: RuntimeConfig | None = None
 
 
 def get_runtime_config() -> RuntimeConfig:
+    """Return the module-level RuntimeConfig singleton, creating it on first call."""
     global _runtime_config
     if _runtime_config is None:
         _runtime_config = RuntimeConfig()
@@ -242,5 +258,6 @@ def get_runtime_config() -> RuntimeConfig:
 
 
 def reset_runtime_config() -> None:
+    """Clear the cached RuntimeConfig so it is re-detected on next access."""
     global _runtime_config
     _runtime_config = None

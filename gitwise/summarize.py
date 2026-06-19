@@ -24,6 +24,7 @@ _MAX_STATUS_LINES = 12
 
 
 def _status_code(index: str, worktree: str) -> str:
+    """Derive a two-char status code from index and worktree columns."""
     if index == "?" and worktree == "?":
         return "??"
     if worktree not in {" ", "?"}:
@@ -34,6 +35,7 @@ def _status_code(index: str, worktree: str) -> str:
 
 
 def _parse_status_entries(status_lines: list[str]) -> list[dict[str, str]]:
+    """Parse ``git status --short`` lines into structured dicts."""
     entries: list[dict[str, str]] = []
     for line in status_lines:
         if len(line) < 4:
@@ -59,6 +61,7 @@ def _parse_status_entries(status_lines: list[str]) -> list[dict[str, str]]:
 
 
 def _parse_log_entries(log_lines: list[str]) -> list[dict[str, str]]:
+    """Parse ``git log --oneline`` lines into ``{short_hash, subject}`` dicts."""
     entries: list[dict[str, str]] = []
     for line in log_lines:
         parts = line.split(" ", 1)
@@ -69,6 +72,7 @@ def _parse_log_entries(log_lines: list[str]) -> list[dict[str, str]]:
 
 
 def _parse_changed_entries(changed_files: list[str]) -> list[dict[str, str]]:
+    """Parse ``git diff --name-status`` lines into structured dicts."""
     entries: list[dict[str, str]] = []
     for line in changed_files:
         parts = line.split("\t")
@@ -92,6 +96,7 @@ def _parse_changed_entries(changed_files: list[str]) -> list[dict[str, str]]:
 
 
 def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int = 10) -> int:
+    """Entry point for the ``gitwise summarize`` command."""
     root, err = require_root()
     if err:
         return err

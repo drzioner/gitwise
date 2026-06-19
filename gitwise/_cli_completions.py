@@ -7,6 +7,7 @@ from ._cli_parser import build_parser
 
 
 def build_completions_script(*, shell: str, prog: str) -> str:
+    """Return a shell completion script for the given shell and program name."""
     parser = build_parser()
     parser.prog = prog
 
@@ -23,10 +24,12 @@ def build_completions_script(*, shell: str, prog: str) -> str:
 
 
 def _fish_escape(text: str) -> str:
+    """Escape single quotes for use inside a fish completion string literal."""
     return text.replace("'", "\\'")
 
 
 def _build_fish_option_line(*, prog: str, condition: str, flag: str, help_text: str) -> str:
+    """Return a single fish ``complete`` line for an option, or an empty string for unrecognized flags."""
     escaped_help = _fish_escape(help_text)
     escaped_prog = _fish_escape(prog)
     escaped_condition = _fish_escape(condition)
@@ -44,6 +47,7 @@ def _build_fish_option_line(*, prog: str, condition: str, flag: str, help_text: 
 
 
 def _build_fish_completions_script(*, parser: argparse.ArgumentParser, prog: str) -> str:
+    """Generate a fish completion script from the full argparse parser tree."""
     escaped_prog = _fish_escape(prog)
     lines: list[str] = [f"# fish completion for {escaped_prog}"]
 

@@ -44,6 +44,7 @@ _JSON_MODE = False
 
 
 def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
+    """Write a JSON log entry to stderr."""
     entry: dict[str, Any] = {
         "ts": time.time(),
         "level": level,
@@ -55,25 +56,32 @@ def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
 
 
 def set_json_pretty(pretty: bool) -> None:
+    """Toggle pretty-printed JSON output."""
     global _JSON_PRETTY
     _JSON_PRETTY = pretty
 
 
 def set_json_mode(enabled: bool) -> None:
+    """Toggle JSON-only output mode (suppresses Rich rendering)."""
     global _JSON_MODE
     _JSON_MODE = enabled
 
 
 class _ModuleAttr:
+    """Lazy boolean accessor for a RuntimeConfig attribute."""
+
     __slots__ = ("_name",)
 
     def __init__(self, name: str) -> None:
+        """Store the attribute name to look up at access time."""
         self._name = name
 
     def __bool__(self) -> bool:
+        """Resolve the RuntimeConfig attribute and return its truth value."""
         return bool(getattr(get_runtime_config(), self._name))
 
     def __repr__(self) -> str:
+        """Return ``repr(True)`` or ``repr(False)`` for the attribute."""
         return repr(bool(self))
 
 
@@ -83,6 +91,7 @@ IS_TTY = _ModuleAttr("is_tty")
 
 
 def _build_rich_theme() -> dict[str, str]:
+    """Map ThemeTokens to a Rich theme dict (style-name -> color)."""
     tokens = get_runtime_config().theme_tokens
     return {
         "fg": tokens.fg,
@@ -101,12 +110,14 @@ def _build_rich_theme() -> dict[str, str]:
 
 
 def _color_disabled() -> bool:
+    """Return True when NO_COLOR or GITWISE_NO_COLOR is set."""
     return os.environ.get("NO_COLOR", "") != "" or os.environ.get(
         "GITWISE_NO_COLOR", ""
     ).lower() in ("1", "true")
 
 
 def _color_forced() -> bool:
+    """Return True when CLICOLOR_FORCE or FORCE_COLOR is set."""
     return (
         os.environ.get("CLICOLOR_FORCE", "").lower()
         in (
@@ -118,6 +129,7 @@ def _color_forced() -> bool:
 
 
 def _use_rich() -> bool:
+    """Decide whether Rich rendering should be used for the current output."""
     if not _HAS_RICH:
         return False
     if _color_disabled():
@@ -131,6 +143,7 @@ _use_rich_cached: bool | None = None
 
 
 def _should_use_rich() -> bool:
+    """Return the cached Rich-usage decision."""
     global _use_rich_cached
     if _use_rich_cached is None:
         _use_rich_cached = _use_rich()
@@ -138,6 +151,7 @@ def _should_use_rich() -> bool:
 
 
 def _make_console(*, file: Any = sys.stdout, force: bool = False) -> Console:
+    """Create and return a Rich Console configured with the current theme."""
     cfg = get_runtime_config()
     depth = cfg.color_depth
     console = Console(
@@ -169,6 +183,7 @@ _stderr_console: Console | None = None
 
 
 def _get_console() -> Console:
+    """Return the lazily-created stdout Console singleton."""
     global _console
     if _console is None:
         _console = _make_console(force=True)
@@ -176,6 +191,7 @@ def _get_console() -> Console:
 
 
 def _get_stderr_console() -> Console:
+    """Return the lazily-created stderr Console singleton."""
     global _stderr_console
     if _stderr_console is None:
         _stderr_console = _make_console(file=sys.stderr, force=True)
@@ -183,6 +199,7 @@ def _get_stderr_console() -> Console:
 
 
 def info(msg: str) -> None:
+    """Print a dim informational message to stdout."""
     if _should_use_rich():
         _get_console().print(Text(msg, style="dim"))
     else:
@@ -190,6 +207,7 @@ def info(msg: str) -> None:
 
 
 def warn(msg: str) -> None:
+    """Print a warning to stderr (JSON-logged when GITWISE_LOG_JSON is set)."""
     if _LOG_JSON:
         _structured_log("warn", msg)
         return
@@ -204,6 +222,7 @@ def warn(msg: str) -> None:
 
 
 def error(msg: str, *, hint: str | None = None) -> None:
+    """Print an error to stderr with an optional hint line."""
     if _LOG_JSON:
         if hint:
             _structured_log("error", msg, hint=hint)
@@ -228,6 +247,7 @@ def error(msg: str, *, hint: str | None = None) -> None:
 
 
 def ok(msg: str) -> None:
+    """Print a success-prefixed message to stdout."""
     prefix = t("ok_prefix")
     if _should_use_rich():
         text = Text()
@@ -239,6 +259,7 @@ def ok(msg: str) -> None:
 
 
 def debug(msg: str) -> None:
+    """Print a debug message to stderr when GITWISE_DEBUG is enabled."""
     if not get_runtime_config().debug:
         return
     if _should_use_rich():
@@ -251,6 +272,7 @@ def debug(msg: str) -> None:
 
 
 def print_json(data: Any) -> None:
+    """Print data as JSON, compact or pretty depending on the current setting."""
     if _JSON_PRETTY:
         print(json.dumps(data, ensure_ascii=False, indent=2))
         return
@@ -258,6 +280,7 @@ def print_json(data: Any) -> None:
 
 
 def print_blank() -> None:
+    """Print an empty line to stdout."""
     if _should_use_rich():
         _get_console().print()
     else:
@@ -265,6 +288,7 @@ def print_blank() -> None:
 
 
 def confirm(prompt: str) -> bool:
+    """Ask the user a yes/no prompt; returns False when stdin is not a TTY."""
     if not sys.stdin.isatty():
         return False
 
@@ -293,6 +317,7 @@ def confirm(prompt: str) -> bool:
 
 @contextmanager
 def status(message: str) -> Iterator[None]:
+    """Show a Rich spinner (or plain text in debug/fallback mode)."""
     if _JSON_MODE:
         yield
         return
@@ -308,6 +333,7 @@ def status(message: str) -> Iterator[None]:
 
 
 def bat_pipe(text: str, language: str = "plain") -> None:
+    """Pipe text through bat for syntax highlighting; falls back to plain print."""
     if not text:
         return
     if not text.endswith("\n"):
@@ -340,6 +366,7 @@ def bat_pipe(text: str, language: str = "plain") -> None:
 
 
 def print_header(text: str) -> None:
+    """Print text in bold (or plain when Rich is disabled)."""
     if _should_use_rich():
         _get_console().print(text, style="bold")
     else:
@@ -347,6 +374,7 @@ def print_header(text: str) -> None:
 
 
 def print_section(title: str) -> None:
+    """Print a horizontal-rule section header."""
     if _should_use_rich():
         print_blank()
         _get_console().rule(f" {title} ", style="accent")
@@ -356,6 +384,7 @@ def print_section(title: str) -> None:
 
 
 def print_bullet(text: str, *, icon: str = "•", accent: bool = False, indent: int = 2) -> None:
+    """Print an indented bullet-point item."""
     prefix = " " * max(0, indent)
     if _should_use_rich():
         row = Text()
@@ -369,6 +398,7 @@ def print_bullet(text: str, *, icon: str = "•", accent: bool = False, indent: 
 
 
 def _commit_type_style(message: str) -> str:
+    """Return the Rich style name for a commit message based on its conventional type."""
     msg = message.strip().lower()
     match = re.match(r"^([a-z]+)(\([^)]*\))?(!)?:", msg)
     if not match:
@@ -390,6 +420,7 @@ def _commit_type_style(message: str) -> str:
 
 
 def print_commit_line(line: str, *, indent: int = 2) -> None:
+    """Print a single log line with hash and color-coded commit type."""
     prefix = " " * max(0, indent)
     parts = line.strip().split(" ", 1)
     if len(parts) != 2:
@@ -413,6 +444,7 @@ def print_commit_line(line: str, *, indent: int = 2) -> None:
 
 
 def _status_style(code: str) -> str:
+    """Return the Rich style for a git status code character."""
     normalized = code.strip().upper()
     if normalized in {"??", "A", "M", "R", "C", "T", "U", "D"}:
         if normalized in {"D", "U"}:
@@ -424,6 +456,7 @@ def _status_style(code: str) -> str:
 
 
 def _path_style_for_status(code: str) -> str:
+    """Return the Rich style for the file path next to a git status code."""
     normalized = code.strip().upper()
     if normalized in {"??", "A"}:
         return "success"
@@ -435,6 +468,7 @@ def _path_style_for_status(code: str) -> str:
 
 
 def print_file_status(code: str, path: str, *, indent: int = 2) -> None:
+    """Print a color-coded git status code and file path."""
     status = code.strip() or "--"
     prefix = " " * max(0, indent)
     if _should_use_rich():
@@ -449,6 +483,7 @@ def print_file_status(code: str, path: str, *, indent: int = 2) -> None:
 
 
 def _append_diffstat_changes(text: Text, changes: str) -> None:
+    """Append + and - characters with color to a Rich Text object."""
     for char in changes:
         if char == "+":
             text.append(char, style="success")
@@ -459,6 +494,7 @@ def _append_diffstat_changes(text: Text, changes: str) -> None:
 
 
 def print_diffstat(title: str, entries: list[dict[str, str]]) -> None:
+    """Print a diffstat-style summary of changed files."""
     if not entries:
         return
     if _should_use_rich():
@@ -484,6 +520,7 @@ def print_diffstat(title: str, entries: list[dict[str, str]]) -> None:
 
 
 def print_summary_box(title: str, lines: list[str]) -> None:
+    """Print a titled summary box with indented lines."""
     if not lines:
         return
     if _should_use_rich():
@@ -500,6 +537,7 @@ def print_summary_box(title: str, lines: list[str]) -> None:
 
 
 def print_bracket(label: str, value: str = "") -> None:
+    """Print a [label] bracketed item with an optional value."""
     if _should_use_rich():
         text = Text()
         text.append("  [", style="secondary")
@@ -516,6 +554,7 @@ def print_bracket(label: str, value: str = "") -> None:
 
 
 def print_accent(text: str) -> None:
+    """Print text in the accent color."""
     if _should_use_rich():
         _get_console().print(text, style="accent")
     else:
@@ -523,6 +562,7 @@ def print_accent(text: str) -> None:
 
 
 def print_dim(text: str) -> None:
+    """Print text in the dim color."""
     if _should_use_rich():
         _get_console().print(text, style="dim")
     else:
@@ -530,6 +570,7 @@ def print_dim(text: str) -> None:
 
 
 def print_success(text: str) -> None:
+    """Print text in the success color."""
     if _should_use_rich():
         _get_console().print(text, style="success")
     else:
@@ -537,6 +578,7 @@ def print_success(text: str) -> None:
 
 
 def print_error_styled(text: str) -> None:
+    """Print text in the error color."""
     if _should_use_rich():
         _get_console().print(text, style="error")
     else:
@@ -544,6 +586,7 @@ def print_error_styled(text: str) -> None:
 
 
 def print_kv(key: str, value: str) -> None:
+    """Print a key-value pair with aligned columns."""
     width = get_runtime_config().terminal_width
     key_col = min(24, width // 3)
     padded_key = pad_right(f"  {key}", key_col)
@@ -557,6 +600,7 @@ def print_kv(key: str, value: str) -> None:
 
 
 def print_status_line(icon: str, label: str, status: str, ok_flag: bool = True) -> None:
+    """Print a status row with icon, label, dotted filler, and status value."""
     if _should_use_rich():
         console = _get_console()
         width = get_runtime_config().terminal_width
@@ -593,6 +637,7 @@ def print_table(
     overflow_columns: dict[int, Literal["fold", "crop", "ellipsis"]] | None = None,
     column_ratios: dict[int, int] | None = None,
 ) -> None:
+    """Print a styled table with optional column widths, overflow, and row highlights."""
     if not _should_use_rich() or not rows:
         if title:
             print(title)

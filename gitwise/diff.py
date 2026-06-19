@@ -25,6 +25,7 @@ DiffFileEntry = dict[str, DiffValue]
 
 
 def _parse_diffstat_entries(lines: list[str]) -> list[DiffFileEntry]:
+    """Parse ``git diff --stat`` lines into structured dicts with path, changes, and graph."""
     entries: list[DiffFileEntry] = []
     for line in lines:
         if "|" not in line:
@@ -54,6 +55,7 @@ def _parse_diffstat_entries(lines: list[str]) -> list[DiffFileEntry]:
 
 
 def _parse_name_status_lines(lines: list[str]) -> dict[str, DiffFileEntry]:
+    """Parse ``git diff --name-status`` output into a path-keyed dict."""
     entries: dict[str, DiffFileEntry] = {}
     parsed = parse_name_status_entries("\n".join(lines))
     for entry in parsed:
@@ -66,6 +68,7 @@ def _parse_name_status_lines(lines: list[str]) -> dict[str, DiffFileEntry]:
 
 
 def _diff_totals(files: list[DiffFileEntry]) -> DiffFileEntry:
+    """Sum insertions, deletions, lines_changed, and binary_files across entries."""
     insertions = 0
     deletions = 0
     lines_changed = 0
@@ -92,6 +95,7 @@ def _diff_totals(files: list[DiffFileEntry]) -> DiffFileEntry:
 
 
 def _name_status_details(cwd: Path, *, staged: bool) -> dict[str, DiffFileEntry]:
+    """Return per-file name-status details for staged or working-tree changes."""
     args = ["--no-pager", "diff", "--name-status"]
     if staged:
         args.append("--staged")
@@ -104,6 +108,7 @@ def _name_status_details(cwd: Path, *, staged: bool) -> dict[str, DiffFileEntry]
 
 
 def _numstat_details(cwd: Path, *, staged: bool) -> dict[str, DiffFileEntry]:
+    """Return per-file numstat details with insertion/deletion counts and binary flag."""
     args = ["--no-pager", "diff", "--numstat"]
     if staged:
         args.append("--staged")
@@ -141,10 +146,12 @@ def _numstat_details(cwd: Path, *, staged: bool) -> dict[str, DiffFileEntry]:
 
 
 def _has_commits(cwd: Path) -> bool:
+    """Return True if the repository has at least one commit."""
     return git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode == 0
 
 
 def _diff_cmd(*, use_stat: bool, staged: bool, name_only: bool, full: bool) -> list[str]:
+    """Build the ``git diff`` argv based on the selected output mode."""
     if full:
         return ["--no-pager", "diff", "HEAD"]
     if use_stat:
@@ -157,6 +164,7 @@ def _diff_cmd(*, use_stat: bool, staged: bool, name_only: bool, full: bool) -> l
 
 
 def _print_diff_human_full(*, diff_text: str) -> None:
+    """Pipe the full diff through bat (or delta when available)."""
     if HAS_DELTA:
         print_dim(t("using_delta"))
     bat_pipe(diff_text, language="diff")
@@ -168,6 +176,7 @@ def _merge_stat_files(
     status_details: dict[str, DiffFileEntry],
     numstat_details: dict[str, DiffFileEntry],
 ) -> list[DiffFileEntry]:
+    """Enrich diffstat entries with name-status and numstat details."""
     merged_files: list[DiffFileEntry] = []
     for item in files:
         path_value = item.get("path")
@@ -191,6 +200,7 @@ def _render_stat_output(
     staged: bool,
     as_json: bool,
 ) -> int:
+    """Render the stat-mode diff output (JSON or human diffstat table)."""
     if not files:
         if as_json:
             print_json(ok_envelope(files=[], count=0))
@@ -238,6 +248,7 @@ def _render_non_stat_output(
     name_only: bool,
     as_json: bool,
 ) -> int:
+    """Render name-status or name-only diff output (JSON or human file list)."""
     if not lines:
         if as_json:
             print_json(ok_envelope(files=[], count=0))
@@ -282,6 +293,11 @@ def run_diff(
     full: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Show changed files relative to HEAD with optional stat, name-only, or full diff.
+
+    Defaults to stat mode for unstaged changes when no explicit mode is set.
+    Returns 0 with an empty-files envelope for repositories that have no commits.
+    """
     root, err = require_root()
     if err:
         return err

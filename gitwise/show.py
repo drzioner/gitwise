@@ -9,6 +9,7 @@ from .utils.json_envelope import ok_envelope
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
+    """Build the ``git show`` argv for human output (patch or stat mode)."""
     args = ["show"]
     if stat:
         args.append("--stat")
@@ -22,10 +23,12 @@ def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
+    """Delegate to ``git_output.parse_diffstat_entries``."""
     return parse_diffstat_entries(raw)
 
 
 def _show_status_map(root, ref: str) -> dict[str, str]:
+    """Return a path-to-status-letter map from the commit's name-status diff."""
     r = git_run(["show", "--name-status", "--format=", ref], cwd=root, check=False)
     if r.returncode != 0:
         return {}
@@ -39,6 +42,7 @@ def _show_status_map(root, ref: str) -> dict[str, str]:
 
 
 def _build_show_json_args(ref: str = "HEAD") -> list[str]:
+    """Build the ``git show`` argv for structured JSON output (no patch)."""
     return [
         "show",
         "--format=%H%n%h%n%an%n%ae%n%ad%n%s",
@@ -48,6 +52,10 @@ def _build_show_json_args(ref: str = "HEAD") -> list[str]:
 
 
 def _parse_show_json(raw: str) -> dict[str, str | list[str] | int | bool]:
+    """Parse the structured show output into a commit metadata dict.
+
+    Returns ``{"raw": raw}`` when the output has fewer than six lines.
+    """
     lines = [ln for ln in raw.strip().splitlines() if ln.strip()]
     if len(lines) >= 6:
         return {
@@ -67,6 +75,7 @@ def run_show(
     stat: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Inspect a commit with patch, stat, or structured JSON output."""
     root, err = require_root()
     if err:
         return err

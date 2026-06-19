@@ -19,6 +19,7 @@ from .utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
 def _ahead_behind(cwd: Path) -> dict[str, int]:
+    """Return ``{ahead, behind}`` commit counts against the upstream branch."""
     branch = current_branch(cwd=cwd)
     if not branch:
         return {"ahead": 0, "behind": 0}
@@ -37,6 +38,7 @@ def _ahead_behind(cwd: Path) -> dict[str, int]:
 
 
 def _unpushed_commits(cwd) -> list[str]:
+    """Return oneline subjects of commits present locally but not on the upstream."""
     branch = current_branch(cwd=cwd)
     if not branch:
         return []
@@ -55,6 +57,7 @@ def _sync_dry_run_payload(
     remote: str | None,
     root: Path,
 ) -> dict[str, object]:
+    """Build the JSON payload for a dry-run sync."""
     ab = _ahead_behind(root)
     unpushed = _unpushed_commits(root)
     return {
@@ -68,6 +71,7 @@ def _sync_dry_run_payload(
 
 
 def _print_sync_dry_run_human(*, pull: bool, push: bool, root: Path, remote: str | None) -> None:
+    """Print the human-readable dry-run plan."""
     ab = _ahead_behind(root)
     unpushed = _unpushed_commits(root)
     print_header(t("sync_dry_run_title"))
@@ -77,6 +81,7 @@ def _print_sync_dry_run_human(*, pull: bool, push: bool, root: Path, remote: str
 
 
 def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
+    """Fetch from remotes (with prune). Returns 0 on success."""
     with status(t("status_sync_fetch")):
         result = git_run(
             ["fetch", "--prune"] + ([remote] if remote else ["--all"]), cwd=root, check=False
@@ -105,6 +110,7 @@ _SYNC_PULL_DIVERGED_COMMANDS = (
 
 
 def _sync_pull(*, root: Path, as_json: bool) -> int:
+    """Pull with ``--ff-only``; reports divergence on failure."""
     with status(t("status_sync_pull")):
         result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
@@ -125,6 +131,7 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
 
 
 def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
+    """Push current branch; refuses to push to protected branches."""
     if branch in PROTECTED_BRANCHES:
         if as_json:
             print_json(
@@ -155,11 +162,13 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
 
 
 def _print_sync_complete_human(*, branch: str, ahead: int, behind: int) -> None:
+    """Print the human-readable sync-complete summary."""
     print_header(t("sync_complete_title"))
     print_bracket(branch, t("sync_status", ahead=str(ahead), behind=str(behind)))
 
 
 def _sync_final_payload(*, branch: str, root: Path) -> dict[str, object]:
+    """Build the final sync JSON payload with ahead/behind counts."""
     ab = _ahead_behind(root)
     return {
         "branch": branch,
@@ -170,6 +179,7 @@ def _sync_final_payload(*, branch: str, root: Path) -> dict[str, object]:
 
 
 def _report_sync_final(*, as_json: bool, branch: str, root: Path) -> int:
+    """Print the final sync result after fetch/pull/push."""
     payload = _sync_final_payload(branch=branch, root=root)
     if as_json:
         print_json(ok_envelope(payload=payload))
@@ -187,6 +197,7 @@ def _report_sync_final(*, as_json: bool, branch: str, root: Path) -> int:
 def _run_sync_dry_run(
     *, as_json: bool, branch: str, pull: bool, push: bool, remote: str | None, root: Path
 ) -> int:
+    """Handle dry-run mode for sync."""
     if as_json:
         print_json(
             ok_envelope(
@@ -208,6 +219,7 @@ def run_sync(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise sync`` command."""
     root, err = require_root()
     if err:
         return err
@@ -246,6 +258,7 @@ def run_sync(
 def _planned_actions(
     pull: bool, push: bool, ab: dict, unpushed: list, remote: str | None = None
 ) -> list[str]:
+    """Return a list of localised action descriptions for the dry-run plan."""
     fetch_cmd = (
         t("sync_action_fetch_remote", remote=remote) if remote else t("sync_action_fetch_all")
     )

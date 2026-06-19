@@ -22,10 +22,12 @@ from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
+    """Parse diffstat output, defaulting file status to 'M'."""
     return parse_diffstat_entries(raw, default_status="M")
 
 
 def _stash_list(root: Path) -> list[dict[str, str]]:
+    """Return stash entries as ``[{ref, branch?, message?}]``."""
     with status(t("status_reading_stashes")):
         r = git_run(["stash", "list"], cwd=root, check=False)
     if r.returncode != 0 or not r.stdout.strip():
@@ -43,6 +45,7 @@ def _stash_list(root: Path) -> list[dict[str, str]]:
 
 
 def _cmd_list(root: Path, *, as_json: bool) -> int:
+    """Execute ``stash list`` sub-action."""
     stashes = _stash_list(root)
     if as_json:
         print_json(ok_envelope(stashes=stashes, count=len(stashes)))
@@ -76,6 +79,7 @@ def _cmd_list(root: Path, *, as_json: bool) -> int:
 
 
 def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> int:
+    """Execute ``stash show`` sub-action; pass *patch=True* for full diff."""
     ref = f"stash@{{{index}}}"
     stat_args = ["stash", "show", "--stat", ref]
     if patch:
@@ -109,6 +113,7 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
 
 
 def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
+    """Execute ``stash pop`` sub-action."""
     ref = f"stash@{{{index}}}"
     r = git_run(["stash", "pop", ref], cwd=root, check=False)
     if r.returncode != 0:
@@ -122,6 +127,7 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
 
 
 def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> int:
+    """Execute ``stash drop`` sub-action with optional confirmation."""
     ref = f"stash@{{{index}}}"
     if not yes and not confirm(t("confirm_stash_drop", ref=ref)):
         warn(t("aborted"))
@@ -138,6 +144,7 @@ def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> in
 
 
 def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = False) -> int:
+    """Execute ``stash clear`` sub-action with optional dry-run and confirmation."""
     stashes = _stash_list(root)
     if not stashes:
         ok(t("stash_empty"))
@@ -171,6 +178,7 @@ def run_stash(
     dry_run: bool = False,
     patch: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise stash`` command."""
     root, err = require_root()
     if err:
         return err

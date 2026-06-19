@@ -34,11 +34,13 @@ _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
 
 
 def _check_fsmonitor(cwd: Path) -> bool:
+    """Return True if core.fsmonitor is enabled (``true`` or ``1``)."""
     r = git_run(["config", "--get", "core.fsmonitor"], cwd=cwd, check=False)
     return r.returncode == 0 and r.stdout.strip().lower() in ("true", "1")
 
 
 def _find_old_stashes(cwd: Path) -> list[dict]:
+    """Return stash entries older than ``_STALE_DAYS`` days."""
     r = git_run(
         ["reflog", "show", "--format=%gd|%ci|%gs", "stash"],
         cwd=cwd,
@@ -67,6 +69,7 @@ def _find_old_stashes(cwd: Path) -> list[dict]:
 
 
 def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
+    """Return the *top_n* largest blobs in HEAD, each >= 1 MB."""
     if git_run(["rev-parse", "HEAD"], cwd=cwd, check=False).returncode != 0:
         return []
     r = git_run(["ls-tree", "-r", "--long", "HEAD"], cwd=cwd, check=False)
@@ -90,6 +93,7 @@ def _find_large_blobs(cwd: Path, top_n: int = 3) -> list[dict]:
 
 
 def _check_mixed_staging(cwd: Path) -> bool:
+    """Return True when the index has both staged and unstaged changes."""
     r = git_run(["status", "--porcelain"], cwd=cwd, check=False)
     if r.returncode != 0:
         return False
@@ -104,6 +108,7 @@ def _check_mixed_staging(cwd: Path) -> bool:
 
 
 def _run_git_sizer(cwd: Path) -> dict | None:
+    """Run ``git-sizer`` if available and return its JSON output, or None."""
     if not shutil.which("git-sizer"):
         return None
     r = subprocess.run(
@@ -124,6 +129,7 @@ def _run_git_sizer(cwd: Path) -> dict | None:
 
 
 def _check_gpg_findings(gpg: dict) -> list[dict]:
+    """Translate GPG readiness flags into audit findings."""
     if gpg["gpgsign_enabled"] and not gpg["gpg_binary"]:
         return [
             {
@@ -164,6 +170,11 @@ _SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "
 
 
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
+    """Run all diagnostic checks and report findings.
+
+    Returns 0 when no critical/high/medium findings exist, 1 otherwise.
+    ``--quick`` skips large-blob scanning and git-sizer.
+    """
     root, err = require_root()
     if err:
         return err

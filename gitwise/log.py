@@ -21,6 +21,10 @@ def _build_log_args(
     graph: bool = False,
     max_count: int = 20,
 ) -> list[str]:
+    """Build the ``git log`` argv for human output (table, oneline, or graph).
+
+    Raises ValueError if author or grep patterns fail validation.
+    """
     args = ["log", f"--max-count={max_count}"]
     if graph:
         args.append("--graph")
@@ -58,6 +62,11 @@ def _build_log_json_args(
     file: str | None = None,
     max_count: int = 20,
 ) -> list[str]:
+    """Build the ``git log`` argv for structured JSON output.
+
+    Uses a multi-line format with ``---END---`` record separators.
+    Raises ValueError if author or grep patterns fail validation.
+    """
     args = [
         "log",
         f"--max-count={max_count}",
@@ -85,6 +94,7 @@ def _build_log_json_args(
 
 
 def _parse_log_json(raw: str) -> list[dict[str, str]]:
+    """Parse ``---END---``-separated log entries into commit dicts."""
     commits: list[dict[str, str]] = []
     entries = raw.split("---END---")
     for entry in entries:
@@ -117,6 +127,7 @@ def _parse_log_json(raw: str) -> list[dict[str, str]]:
 
 
 def _enrich_with_stats(commits: list[dict[str, str]], cwd: Path) -> None:
+    """Attach per-commit diff-tree stat output to each commit dict in place."""
     if not commits:
         return
     hashes = "\n".join(c["hash"] for c in commits)
@@ -155,6 +166,7 @@ def _enrich_with_stats(commits: list[dict[str, str]], cwd: Path) -> None:
 
 
 def _parse_log_table(raw: str) -> list[list[str]]:
+    """Parse tab-separated log lines into rows of [hash, author, date, subject]."""
     rows: list[list[str]] = []
     for line in raw.splitlines():
         if not line.strip():
@@ -191,6 +203,7 @@ def _run_log_json(
     file: str | None,
     max_count: int,
 ) -> int:
+    """Execute git log and emit structured JSON with enriched per-commit stats."""
     try:
         args = _build_log_json_args(
             author=author,
@@ -227,6 +240,7 @@ def _run_log_human(
     file: str | None,
     max_count: int,
 ) -> int:
+    """Execute git log and render as a table, oneline, or graph via bat."""
     try:
         args = _build_log_args(
             oneline=oneline,
@@ -258,6 +272,7 @@ def _run_log_human(
 
 
 def _print_log_table(raw: str) -> int:
+    """Render the log as a formatted table with SHA, author, date, and subject columns."""
     rows = _parse_log_table(raw)
     if not rows:
         info(t("no_commits_yet"))
@@ -282,6 +297,10 @@ def _print_log_table(raw: str) -> int:
 
 
 def _run_log_human_plain_or_graph(*, raw: str, graph: bool, oneline: bool) -> bool:
+    """Pipe raw output through bat when graph or oneline mode is active.
+
+    Returns True if output was handled, False to fall through to table rendering.
+    """
     if graph or oneline:
         bat_pipe(raw, language="gitlog")
         return True
@@ -300,6 +319,7 @@ def run_log(
     file: str | None = None,
     max_count: int = 20,
 ) -> int:
+    """Display commit history with optional filters, graph, oneline, or JSON output."""
     root, err = require_root()
     if err:
         return err

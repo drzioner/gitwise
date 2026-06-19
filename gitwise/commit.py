@@ -16,6 +16,7 @@ _CONVENTIONAL_RE = re.compile(
 
 
 def _is_pushed(branch: str, cwd: Path) -> bool:
+    """Return True if the branch has an upstream tracking reference."""
     r = git_run(["rev-parse", "--verify", branch + "@{u}"], cwd=cwd, check=False)
     return r.returncode == 0
 
@@ -27,6 +28,11 @@ def _compose_message(
     scope: str | None,
     breaking: bool,
 ) -> str:
+    """Build a conventional-commit prefix or return the message unchanged.
+
+    If the first line already matches the conventional pattern and no explicit
+    type is given, the message is returned as-is.
+    """
     if _CONVENTIONAL_RE.match(message.split("\n")[0]) and not type:
         return message
     if not type:
@@ -40,6 +46,10 @@ def _compose_message(
 
 
 def _validate_amend_policy(*, amend: bool, root: Path) -> int:
+    """Refuse amending on protected branches or branches with a pushed upstream.
+
+    Returns 0 when amend is allowed, 1 when blocked.
+    """
     if not amend:
         return 0
     branch = current_branch(cwd=root) or ""
@@ -53,6 +63,7 @@ def _validate_amend_policy(*, amend: bool, root: Path) -> int:
 
 
 def _print_dry_run(*, message: str, amend: bool, root: Path) -> None:
+    """Print what would be committed without touching the working tree."""
     print_header(t("dry_run_no_exec"))
     print_bracket(t("commit_msg_label"), message)
     if amend:
@@ -63,6 +74,7 @@ def _print_dry_run(*, message: str, amend: bool, root: Path) -> None:
 
 
 def _validate_commit_message(message: str) -> bool:
+    """Return True if the first line matches the conventional-commit pattern."""
     if _CONVENTIONAL_RE.match(message.split("\n")[0]):
         return True
     error(t("commit_invalid_format"))
@@ -70,6 +82,7 @@ def _validate_commit_message(message: str) -> bool:
 
 
 def _execute_commit(*, root: Path, message: str, amend: bool) -> tuple[bool, str]:
+    """Run ``git commit`` and return (success, error_message)."""
     args = ["commit", "-m", message]
     if amend:
         args.append("--amend")
@@ -80,6 +93,7 @@ def _execute_commit(*, root: Path, message: str, amend: bool) -> tuple[bool, str
 
 
 def _validate_gpg_ready(root: Path) -> bool:
+    """Return False and print an error if GPG signing is enabled but no key is available."""
     gpg = gpg_status(cwd=root)
     if gpg["gpgsign_enabled"] and not gpg["ready"]:
         error(t("gpg_signing_active_no_key"))
@@ -88,6 +102,7 @@ def _validate_gpg_ready(root: Path) -> bool:
 
 
 def _report_commit_error(*, as_json: bool, err: str) -> int:
+    """Emit a commit error in JSON or human form and return 1."""
     if as_json:
         print_json(error_envelope(error=err))
     else:

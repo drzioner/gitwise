@@ -8,6 +8,7 @@ from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _pick_mode_args(*, revert: bool, continue_: bool, abort: bool) -> list[str] | None:
+    """Build git args for continue/abort mode, or None if neither applies."""
     base = "revert" if revert else "cherry-pick"
     if continue_:
         return [base, "--continue"]
@@ -17,6 +18,7 @@ def _pick_mode_args(*, revert: bool, continue_: bool, abort: bool) -> list[str] 
 
 
 def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
+    """Execute a cherry-pick/revert continue or abort."""
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         error(result.stderr.strip())
@@ -35,6 +37,7 @@ def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
 
 
 def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
+    """Validate that refs are non-empty and all pass ``validate_ref``."""
     if not refs:
         if as_json:
             print_json(error_envelope(error=t("pick_no_refs")))
@@ -49,6 +52,7 @@ def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
 
 
 def _run_pick_dry_run(*, action: str, refs: list[str], as_json: bool) -> int:
+    """Print or envelope the dry-run pick plan."""
     if as_json:
         print_json(ok_envelope(dry_run=True, action=action, refs=refs))
         return 0
@@ -57,6 +61,7 @@ def _run_pick_dry_run(*, action: str, refs: list[str], as_json: bool) -> int:
 
 
 def _run_pick_execute(*, root, action: str, refs: list[str], as_json: bool) -> int:
+    """Execute cherry-pick or revert and report conflicts if detected."""
     result = git_run([action, "--"] + refs, cwd=root, check=False)
     if result.returncode != 0:
         if "CONFLICT" in result.stdout or "CONFLICT" in result.stderr:
@@ -80,6 +85,7 @@ def run_pick(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise pick`` (cherry-pick/revert) command."""
     root, err = require_root()
     if err:
         return err

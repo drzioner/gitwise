@@ -21,6 +21,7 @@ from .utils.parsing import parse_two_ints
 
 
 def _range_commits(root: Path, rev_range: str) -> list[dict[str, str]]:
+    """Return commit dicts (hash, short_hash, subject) for the given rev-range."""
     r = git_run(["log", "--format=%H%x09%h%x09%s", rev_range], cwd=root, check=False)
     if r.returncode != 0:
         return []

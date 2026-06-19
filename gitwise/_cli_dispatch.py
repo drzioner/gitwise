@@ -17,18 +17,21 @@ from .utils.json_envelope import error_envelope
 
 
 def _run_update(args: argparse.Namespace) -> int:
+    """Dispatch to ``update`` subcommand."""
     from .update import run_update
 
     return run_update(dry_run=args.dry_run, as_json=args.json)
 
 
 def _run_doctor(args: argparse.Namespace) -> int:
+    """Dispatch to ``doctor`` subcommand."""
     from .doctor import run_doctor
 
     return run_doctor(as_json=args.json)
 
 
 def _run_setup_agents(args: argparse.Namespace) -> int:
+    """Dispatch to ``setup-agents`` subcommand, handling provider listing."""
     if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
         from .i18n import t as _t
         from .setup_agents.providers import list_providers
@@ -68,6 +71,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
 
 
 def _run_setup(args: argparse.Namespace) -> int:
+    """Dispatch to ``setup`` subcommand."""
     from .setup import run_setup
 
     return run_setup(
@@ -79,24 +83,28 @@ def _run_setup(args: argparse.Namespace) -> int:
 
 
 def _run_audit(args: argparse.Namespace) -> int:
+    """Dispatch to ``audit`` subcommand."""
     from .audit import run_audit
 
     return run_audit(quick=args.quick, as_json=args.json)
 
 
 def _run_summarize(args: argparse.Namespace) -> int:
+    """Dispatch to ``summarize`` subcommand."""
     from .summarize import run_summarize
 
     return run_summarize(as_json=args.json, diff=args.diff, max_commits=args.max_commits)
 
 
 def _run_snapshot(args: argparse.Namespace) -> int:
+    """Dispatch to ``snapshot`` subcommand."""
     from .snapshot import run_snapshot
 
     return run_snapshot(as_json=args.json)
 
 
 def _run_clean(args: argparse.Namespace) -> int:
+    """Dispatch to ``clean`` subcommand."""
     from .clean import run_clean
 
     return run_clean(
@@ -109,12 +117,14 @@ def _run_clean(args: argparse.Namespace) -> int:
 
 
 def _run_optimize(args: argparse.Namespace) -> int:
+    """Dispatch to ``optimize`` subcommand."""
     from .optimize import run_optimize
 
     return run_optimize(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
 
 
 def _run_worktree(args: argparse.Namespace) -> int:
+    """Dispatch to ``worktree`` subcommand."""
     from .worktree import run_worktree
 
     return run_worktree(
@@ -123,6 +133,7 @@ def _run_worktree(args: argparse.Namespace) -> int:
 
 
 def _run_diff(args: argparse.Namespace) -> int:
+    """Dispatch to ``diff`` subcommand."""
     from .diff import run_diff
 
     return run_diff(
@@ -135,6 +146,7 @@ def _run_diff(args: argparse.Namespace) -> int:
 
 
 def _run_log(args: argparse.Namespace) -> int:
+    """Dispatch to ``log`` subcommand."""
     from .log import run_log
 
     return run_log(
@@ -151,12 +163,14 @@ def _run_log(args: argparse.Namespace) -> int:
 
 
 def _run_show(args: argparse.Namespace) -> int:
+    """Dispatch to ``show`` subcommand."""
     from .show import run_show
 
     return run_show(ref=args.ref, stat=args.stat, as_json=args.json)
 
 
 def _run_commit(args: argparse.Namespace) -> int:
+    """Dispatch to ``commit`` subcommand."""
     from .commit import run_commit
 
     return run_commit(
@@ -171,12 +185,14 @@ def _run_commit(args: argparse.Namespace) -> int:
 
 
 def _run_branches(args: argparse.Namespace) -> int:
+    """Dispatch to ``branches`` subcommand."""
     from .branches import run_branches
 
     return run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
 
 
 def _run_sync(args: argparse.Namespace) -> int:
+    """Dispatch to ``sync`` subcommand."""
     from .sync import run_sync
 
     return run_sync(
@@ -189,12 +205,14 @@ def _run_sync(args: argparse.Namespace) -> int:
 
 
 def _run_pr(args: argparse.Namespace) -> int:
+    """Dispatch to ``pr`` subcommand."""
     from .pr import run_pr
 
     return run_pr(action=args.action, selector=args.selector, as_json=args.json)
 
 
 def _run_undo(args: argparse.Namespace) -> int:
+    """Dispatch to ``undo`` subcommand."""
     from .undo import run_undo
 
     return run_undo(
@@ -208,18 +226,21 @@ def _run_undo(args: argparse.Namespace) -> int:
 
 
 def _run_context(args: argparse.Namespace) -> int:
+    """Dispatch to ``context`` subcommand."""
     from .context import run_context
 
     return run_context(as_json=args.json)
 
 
 def _run_health(args: argparse.Namespace) -> int:
+    """Dispatch to ``health`` subcommand."""
     from .health import run_health
 
     return run_health(as_json=args.json)
 
 
 def _run_stash(args: argparse.Namespace) -> int:
+    """Dispatch to ``stash`` subcommand."""
     from .stash import run_stash
 
     return run_stash(
@@ -233,6 +254,7 @@ def _run_stash(args: argparse.Namespace) -> int:
 
 
 def _run_tag(args: argparse.Namespace) -> int:
+    """Dispatch to ``tag`` subcommand."""
     from .tag import run_tag
 
     return run_tag(
@@ -247,6 +269,7 @@ def _run_tag(args: argparse.Namespace) -> int:
 
 
 def _run_merge(args: argparse.Namespace) -> int:
+    """Dispatch to ``merge`` subcommand."""
     from .merge import run_merge
 
     return run_merge(
@@ -262,18 +285,21 @@ def _run_merge(args: argparse.Namespace) -> int:
 
 
 def _run_conflicts(args: argparse.Namespace) -> int:
+    """Dispatch to ``conflicts`` subcommand."""
     from .conflicts import run_conflicts
 
     return run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
 
 
 def _run_suggest(args: argparse.Namespace) -> int:
+    """Dispatch to ``suggest`` subcommand."""
     from .suggest import run_suggest
 
     return run_suggest(as_json=args.json)
 
 
 def _run_pick(args: argparse.Namespace) -> int:
+    """Dispatch to ``pick`` / ``cherry-pick`` subcommand."""
     from .pick import run_pick
 
     return run_pick(
@@ -287,12 +313,18 @@ def _run_pick(args: argparse.Namespace) -> int:
 
 
 def _run_status(args: argparse.Namespace) -> int:
+    """Dispatch to ``status`` subcommand."""
     from .status import run_status
 
     return run_status(as_json=args.json)
 
 
 def _run_completions(args: argparse.Namespace) -> int:
+    """Generate and output a shell completions script.
+
+    Returns 1 on missing dependency (shtab), unsupported shell, or
+    runtime error.
+    """
     shell = args.shell
     prog = args.prog
     try:
@@ -346,6 +378,7 @@ def _run_completions(args: argparse.Namespace) -> int:
 
 
 def _run_commands(args: argparse.Namespace) -> int:
+    """List all registered subcommands with aliases."""
     parser = build_parser()
     commands = commands_metadata(parser)
     payload = {
@@ -374,6 +407,10 @@ def _run_commands(args: argparse.Namespace) -> int:
 
 
 def _run_schema(args: argparse.Namespace) -> int:
+    """Print the JSON Schema for a subcommand's CLI input.
+
+    Returns 1 when the command is unknown or its schema file is missing.
+    """
     from .schema import load_command_input_schema
 
     parser = build_parser()

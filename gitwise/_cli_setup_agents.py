@@ -194,6 +194,11 @@ def _run_setup_local(
     providers: list[str] | None = None,
     adapters_legacy_used: bool = False,
 ) -> int:
+    """Install per-repo setup-agents artifacts (CLAUDE.md, settings, skills).
+
+    Returns 0 on success, 1 on plan/execution errors, 2 when ``--strict``
+    mode encounters warnings.
+    """
     cwd = target or Path.cwd()
 
     if not is_repo(cwd):

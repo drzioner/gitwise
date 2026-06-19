@@ -45,6 +45,11 @@ _CMD_TIMEOUTS: dict[str, int] = {
 
 
 def _get_timeout(cmd: str | None = None) -> int:
+    """Resolve the timeout for a git subcommand.
+
+    Checks ``GITWISE_GIT_TIMEOUT`` env-var first, then the per-command
+    table, then falls back to the default (120 s).
+    """
     val = os.environ.get("GITWISE_GIT_TIMEOUT", "")
     if val.isdigit():
         return int(val)
@@ -59,6 +64,13 @@ def run(
     check: bool = False,
     timeout: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    """Run a git subcommand and return the completed process.
+
+    Sets ``LC_ALL=C`` and ``GIT_TERMINAL_PROMPT=0`` so output is
+    locale-stable and git never prompts for credentials.  Returns
+    returncode 127 with a descriptive stderr when the ``git`` binary
+    is not found in ``PATH``.
+    """
     from .output import debug
 
     cmd_name = next((arg for arg in args if not arg.startswith("-")), None)
@@ -86,11 +98,13 @@ def run(
 
 
 def config(key: str, cwd: Path | None = None) -> str | None:
+    """Return the single git config value for *key*, or None if unset."""
     result = run(["config", "--get", key], cwd=cwd, check=False)
     return result.stdout.strip() if result.returncode == 0 else None
 
 
 def config_all(key: str, cwd: Path | None = None) -> list[str]:
+    """Return all git config values for *key* (multi-valued keys)."""
     result = run(["config", "--get-all", key], cwd=cwd, check=False)
     if result.returncode != 0:
         return []
@@ -98,21 +112,25 @@ def config_all(key: str, cwd: Path | None = None) -> list[str]:
 
 
 def is_repo(path: Path | None = None) -> bool:
+    """Return True if *path* (or cwd) is inside a git repository."""
     result = run(["rev-parse", "--git-dir"], cwd=path, check=False)
     return result.returncode == 0
 
 
 def repo_root(path: Path | None = None) -> Path | None:
+    """Return the repository root, or None if not inside a git repo."""
     result = run(["rev-parse", "--show-toplevel"], cwd=path, check=False)
     return Path(result.stdout.strip()) if result.returncode == 0 else None
 
 
 def git_dir(cwd: Path | None = None) -> Path | None:
+    """Return the absolute ``.git`` directory, or None."""
     r = run(["rev-parse", "--absolute-git-dir"], cwd=cwd, check=False)
     return Path(r.stdout.strip()) if r.returncode == 0 else None
 
 
 def current_branch(cwd: Path | None = None) -> str | None:
+    """Return the current branch name, or None when detached HEAD."""
     r = run(["branch", "--show-current"], cwd=cwd, check=False)
     val = r.stdout.strip()
     return val if (r.returncode == 0 and val) else None
@@ -164,6 +182,11 @@ def gpg_status(cwd: Path | None = None) -> dict[str, bool]:
 
 @functools.lru_cache(maxsize=1)
 def version() -> tuple[int, int, int]:
+    """Return the git version as a ``(major, minor, patch)`` tuple.
+
+    Cached after the first call.  Returns ``(0, 0, 0)`` when parsing
+    fails.
+    """
     result = run(["--version"], check=False)
     # "git version 2.45.0" -> (2, 45, 0)
     parts = result.stdout.strip().split()
@@ -183,6 +206,7 @@ def version() -> tuple[int, int, int]:
 
 
 def supports_config_hooks(cwd: Path | None = None) -> bool:
+    """Return True if ``git hook run`` is available (git >= 2.36)."""
     if version() < (2, 36, 0):
         return False
     result = run(["hook", "run", "--ignore-missing", "pre-commit"], cwd=cwd, check=False)
@@ -190,10 +214,12 @@ def supports_config_hooks(cwd: Path | None = None) -> bool:
 
 
 def validate_ref(ref: str) -> bool:
+    """Return False for empty strings or refs that look like flags."""
     return bool(ref) and not ref.startswith("-")
 
 
 def validate_branch_name(name: str) -> bool:
+    """Return True if *name* passes ``git check-ref-format``."""
     if not name or name.startswith("-"):
         return False
     result = run(["check-ref-format", f"refs/heads/{name}"], check=False)
@@ -201,6 +227,12 @@ def validate_branch_name(name: str) -> bool:
 
 
 def validate_grep_pattern(pattern: str) -> bool:
+    """Return True if *pattern* is safe for ``git log --grep``.
+
+    Rejects patterns longer than 200 chars, nested quantifiers that
+    trigger git's PCRE engine bugs, and patterns that are not valid
+    Python regex.
+    """
     if len(pattern) > _GREP_MAX_LEN:
         return False
     if _NESTED_QUANTIFIER_RE.search(pattern):
@@ -213,6 +245,11 @@ def validate_grep_pattern(pattern: str) -> bool:
 
 
 def validate_author_pattern(pattern: str) -> bool:
+    """Return True if *pattern* is safe for ``git log --author``.
+
+    Same length and nested-quantifier guards as ``validate_grep_pattern``,
+    plus rejects newlines and null bytes.
+    """
     if len(pattern) > _GREP_MAX_LEN:
         return False
     if "\n" in pattern or "\r" in pattern or "\x00" in pattern:
@@ -244,16 +281,19 @@ def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, in
 
 
 def has_remote(cwd: Path | None = None) -> bool:
+    """Return True if at least one remote is configured."""
     r = run(["remote"], cwd=cwd, check=False)
     return r.returncode == 0 and bool(r.stdout.strip())
 
 
 def has_upstream(cwd: Path | None = None) -> bool:
+    """Return True if the current branch has an upstream tracking ref."""
     r = run(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd, check=False)
     return r.returncode == 0 and bool(r.stdout.strip())
 
 
 def has_commit_graph(cwd: Path | None = None) -> bool:
+    """Return True if a commit-graph file or chain exists in the repo."""
     gd = git_dir(cwd)
     if gd is None:
         return False

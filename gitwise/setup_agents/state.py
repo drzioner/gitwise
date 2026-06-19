@@ -20,6 +20,7 @@ _supports_symlinks_cache: dict[Path, bool] = {}
 
 
 def _gpg_ready(root: Path) -> bool:
+    """Return True when gpg is available, commit.gpgsign is on, and a signing key is configured."""
     import shutil
 
     if not (shutil.which("gpg") or shutil.which("gpg2")):
@@ -30,6 +31,7 @@ def _gpg_ready(root: Path) -> bool:
 
 
 def _classify_path(p: Path) -> PathState:
+    """Classify a path as absent, regular, symlink_valid, or symlink_broken."""
     if p.is_symlink():
         return "symlink_valid" if p.exists() else "symlink_broken"
     if p.exists():
@@ -38,6 +40,7 @@ def _classify_path(p: Path) -> PathState:
 
 
 def _supports_symlinks(root: Path) -> bool:
+    """Probe whether the filesystem supports symlinks under root (cached per root)."""
     if platform.system() == "Windows":
         return False
     if root in _supports_symlinks_cache:
@@ -56,6 +59,7 @@ def _supports_symlinks(root: Path) -> bool:
 
 
 def _has_marker(p: Path) -> bool:
+    """Return True if file contains the git-conventions heading marker."""
     try:
         text = p.read_text(encoding="utf-8")
         return bool(_MARKER_RE.search(text))
@@ -64,6 +68,7 @@ def _has_marker(p: Path) -> bool:
 
 
 def _files_equal(a: Path, b: Path) -> bool:
+    """Return True if two files have identical text content."""
     try:
         return a.read_text(encoding="utf-8") == b.read_text(encoding="utf-8")
     except OSError:
@@ -101,10 +106,12 @@ def _detect_rules(root: Path) -> list[str]:
 
 
 def reset_caches() -> None:
+    """Clear the symlink-support cache so the next call re-probes the filesystem."""
     _supports_symlinks_cache.clear()
 
 
 def _detect_state(root: Path) -> StateDict:
+    """Detect the current state of convention docs, skills dir, symlink support, and rule files in the repo."""
     agents_md = root / _AGENTS_MD
     claude_md = root / _CLAUDE_MD
     agents_dir = root / ".agents"

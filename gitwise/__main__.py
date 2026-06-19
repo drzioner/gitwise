@@ -11,16 +11,19 @@ from .output import print_dim, print_json, set_json_mode, set_json_pretty
 
 
 def _is_log_json_enabled() -> bool:
+    """Return True when GITWISE_LOG_JSON is set to a truthy value."""
     import os
 
     return os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
 
 
 def _should_show_rich_traceback() -> bool:
+    """Return True when rich tracebacks should be used (tty and not in JSON log mode)."""
     return (not _is_log_json_enabled()) and sys.stderr.isatty()
 
 
 def _install_rich_traceback() -> None:
+    """Install the rich traceback handler if conditions allow; no-op otherwise."""
     if not _should_show_rich_traceback():
         return
     try:
@@ -56,6 +59,7 @@ def _ensure_utf8_stdio() -> None:
 
 
 def main() -> int:
+    """Parse args, dispatch to the matching subcommand handler, and return an exit code."""
     import os
 
     from ._runtime_config import reset_runtime_config

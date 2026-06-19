@@ -11,6 +11,8 @@ from .utils.json_envelope import ok_envelope
 
 
 class BranchEntry(TypedDict):
+    """Typed dict for a single branch row in the branches dashboard."""
+
     name: str
     current: bool
     sha: str
@@ -24,6 +26,7 @@ class BranchEntry(TypedDict):
 
 
 def _parse_track_count(tracking: str, marker: str) -> int | None:
+    """Extract the integer count for *marker* (``ahead``/``behind``) from a tracking string."""
     if marker not in tracking:
         return None
     raw = tracking.split(marker)[1].split(",")[0].strip().rstrip("]")
@@ -31,6 +34,7 @@ def _parse_track_count(tracking: str, marker: str) -> int | None:
 
 
 def _parse_branches(raw: str, wt_branches: set[str]) -> list[BranchEntry]:
+    """Parse tab-delimited ``for-each-ref`` output into BranchEntry dicts."""
     branches: list[BranchEntry] = []
     for line in raw.splitlines():
         if not line.strip():
@@ -78,6 +82,7 @@ _VALID_SORT_FIELDS = frozenset(
 
 
 def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
+    """Print or envelope the list of stale branch names."""
     if not names:
         info(t("no_stale_branches"))
         return 0
@@ -90,6 +95,7 @@ def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
 
 
 def _fetch_branch_rows(*, root: Path, remote: bool, sort: str) -> list[BranchEntry] | None:
+    """Run ``for-each-ref`` and return parsed branches, or None on git error."""
     wt_branches = worktree_branches(cwd=root)
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
     fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
@@ -113,6 +119,7 @@ def _fetch_branch_rows(*, root: Path, remote: bool, sort: str) -> list[BranchEnt
 def _build_branch_rows(
     branches: list[BranchEntry],
 ) -> tuple[list[list[str]], set[int], int | None]:
+    """Convert BranchEntry list into display rows, highlight set, and current-row index."""
     rows: list[list[str]] = []
     highlight_rows: set[int] = set()
     current_idx: int | None = None
@@ -141,6 +148,7 @@ def _build_branch_rows(
 
 
 def _print_branch_table(branches: list[BranchEntry]) -> None:
+    """Render the branch dashboard table."""
     columns = [
         (t("col_branch"), "name"),
         (t("col_sha"), "sha"),
@@ -160,6 +168,7 @@ def _print_branch_table(branches: list[BranchEntry]) -> None:
 
 
 def _validate_sort_field(sort: str) -> bool:
+    """Return False and print an error if *sort* is not in the allowed set."""
     if sort in _VALID_SORT_FIELDS:
         return True
     error(t("invalid_sort_field", field=sort))
@@ -173,6 +182,7 @@ def run_branches(
     sort: str = "refname",
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise branches`` command."""
     root, err = require_root()
     if err:
         return err
