@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Feat
 
 - **diff**: support refs, path scope, and summary (Sprint 2 PR-A) (#66)
+- **secret-scan**: commit-time guard and diff --scan-secrets (Sprint 2 D3) (#68)
 
 ## v0.29.0 (2026-06-19)
 

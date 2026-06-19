@@ -19,3 +19,4 @@ Consulta la version canonica aqui:
 ### Feat
 
 - **diff**: support refs, path scope, and summary (Sprint 2 PR-A) (#66)
+- **secret-scan**: commit-time guard and diff --scan-secrets (Sprint 2 D3) (#68)
