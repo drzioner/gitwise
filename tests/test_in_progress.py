@@ -173,3 +173,35 @@ def test_merge_abort_continue_mutually_exclusive(tmp_git_repo: Path) -> None:
 
     data = json.loads(r.stdout)
     assert data["errors"][0]["code"] == "merge_invalid_args"
+
+
+def test_abort_or_continue_args_picks_rebase_subcommand_for_rebase_state() -> None:
+    """Regression guard for gemini-code-assist finding on PR #65.
+
+    `git merge --abort` errors with "There is no merge to abort" when a rebase
+    is paused. The argv builder must pick `rebase` when state="rebase".
+    """
+    from gitwise.merge import _abort_or_continue_args
+
+    assert _abort_or_continue_args(state="rebase", abort=True) == ["rebase", "--abort"]
+    assert _abort_or_continue_args(state="rebase", abort=False) == ["rebase", "--continue"]
+
+
+def test_abort_or_continue_args_picks_merge_subcommand_for_merge_state() -> None:
+    """For a paused merge, the argv builder picks `merge`."""
+    from gitwise.merge import _abort_or_continue_args
+
+    assert _abort_or_continue_args(state="merge", abort=True) == ["merge", "--abort"]
+    assert _abort_or_continue_args(state="merge", abort=False) == ["merge", "--continue"]
+
+
+def test_abort_or_continue_args_picks_merge_for_other_paused_states() -> None:
+    """cherry-pick/revert/bisect are out of scope for `gitwise merge`; default to `merge` argv.
+
+    The caller (_handle_abort_or_continue) rejects those states earlier with
+    merge_no_in_progress, so this default never runs in production. We assert
+    it anyway to lock the fallback behavior.
+    """
+    from gitwise.merge import _abort_or_continue_args
+
+    assert _abort_or_continue_args(state="cherry-pick", abort=True) == ["merge", "--abort"]

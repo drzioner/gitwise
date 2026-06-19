@@ -144,27 +144,43 @@ def _report_merge_error(*, as_json: bool, err: str) -> int:
     return 1
 
 
-def _execute_abort_or_continue(*, root: Path, abort: bool) -> tuple[bool, str]:
-    """Run `git merge --abort` or `git merge --continue`. Returns (success, error_msg)."""
-    args = ["merge", "--abort" if abort else "--continue"]
-    result = git_run(args, cwd=root, check=False)
+def _abort_or_continue_args(state: str, abort: bool) -> list[str]:
+    """Build the git argv for resolving a paused merge or rebase.
+
+    The subcommand must match the paused operation: `git merge --abort` errors
+    with "There is no merge to abort" when a rebase is paused, and vice versa.
+    Extracted as a pure function so the selection logic is testable without
+    driving a real paused rebase.
+    """
+    cmd = "rebase" if state == "rebase" else "merge"
+    flag = "--abort" if abort else "--continue"
+    return [cmd, flag]
+
+
+def _execute_abort_or_continue(*, root: Path, state: str, abort: bool) -> tuple[bool, str]:
+    """Run `git merge/rebase --abort` or `--continue`. Returns (success, error_msg)."""
+    result = git_run(_abort_or_continue_args(state=state, abort=abort), cwd=root, check=False)
     if result.returncode == 0:
         return True, ""
     return False, result.stderr.strip() or result.stdout.strip()
 
 
 def _handle_abort_or_continue(*, root: Path, abort: bool, as_json: bool) -> int:
-    """Resolve a paused merge or rebase via `git merge --abort` / `--continue`."""
+    """Resolve a paused merge or rebase via `git merge/rebase --abort` / `--continue`."""
     in_progress = detect_in_progress(root)
     if in_progress["state"] not in ("merge", "rebase"):
-        available = "git merge --abort / --continue" if abort else "git merge --continue"
+        available = (
+            "git merge/rebase --abort / --continue" if abort else "git merge/rebase --continue"
+        )
         msg = t("merge_no_in_progress", action=available, state=in_progress["state"])
         if as_json:
             print_json(error_envelope(error=msg, code="merge_no_in_progress"))
         else:
             error(msg)
         return 1
-    success, err_msg = _execute_abort_or_continue(root=root, abort=abort)
+    success, err_msg = _execute_abort_or_continue(
+        root=root, state=in_progress["state"], abort=abort
+    )
     if not success:
         return _report_merge_error(as_json=as_json, err=err_msg)
     label_key = "merge_aborted" if abort else "merge_continued"
