@@ -55,6 +55,7 @@ ANSI_BOLD = "\033[1m"
 
 
 def hex_to_ansi_fg(hex_color: str) -> str:
+    """Convert a hex color string to a 24-bit ANSI foreground escape code."""
     h = hex_color.lstrip("#")
     if len(h) < 6:
         return ""
@@ -63,6 +64,8 @@ def hex_to_ansi_fg(hex_color: str) -> str:
 
 
 class ThemeTokens:
+    """Named collection of hex color tokens for a single theme."""
+
     __slots__ = (
         "accent",
         "bg",
@@ -87,6 +90,7 @@ class ThemeTokens:
         brand: str = "",
         dim: str = "",
     ) -> None:
+        """Initialize all theme token slots."""
         self.fg = fg
         self.bg = bg
         self.secondary = secondary
@@ -126,6 +130,7 @@ _THEMES: dict[str, ThemeTokens] = {"dark": _DARK_THEME, "light": _LIGHT_THEME}
 
 
 def detect_color_depth() -> ColorDepth:
+    """Detect terminal color depth from COLORTERM, TERM, and NO_COLOR env vars."""
     if os.environ.get("NO_COLOR", "") != "" or os.environ.get("GITWISE_NO_COLOR", "").lower() in (
         "1",
         "true",
@@ -149,15 +154,18 @@ def detect_color_depth() -> ColorDepth:
 
 
 def detect_terminal_width() -> int:
+    """Return the terminal width clamped between MIN_WIDTH and MAX_WIDTH."""
     width = shutil.get_terminal_size(fallback=(DEFAULT_WIDTH, 24)).columns
     return max(MIN_WIDTH, min(width, MAX_WIDTH))
 
 
 def build_theme(theme: str) -> ThemeTokens:
+    """Return ThemeTokens for the given theme name, defaulting to dark."""
     return _THEMES.get(theme, _DARK_THEME)
 
 
 def truncate(text: str, width: int, ellipsis: str = "...") -> str:
+    """Truncate text to fit within width using visible-length-aware counting."""
     vl = visible_length(text)
     if vl <= width:
         return text
@@ -177,6 +185,7 @@ def truncate(text: str, width: int, ellipsis: str = "...") -> str:
 
 
 def pad_right(text: str, width: int) -> str:
+    """Right-pad text with spaces up to the given visible width."""
     vl = visible_length(text)
     if vl >= width:
         return text
@@ -184,6 +193,7 @@ def pad_right(text: str, width: int) -> str:
 
 
 def pad_left(text: str, width: int) -> str:
+    """Left-pad text with spaces up to the given visible width."""
     vl = visible_length(text)
     if vl >= width:
         return text
@@ -194,6 +204,7 @@ _CSI_FINAL_BYTES = frozenset(chr(c) for c in range(0x40, 0x7F))
 
 
 def strip_ansi(text: str) -> str:
+    """Remove CSI escape sequences from text."""
     result: list[str] = []
     i = 0
     while i < len(text):
@@ -209,10 +220,13 @@ def strip_ansi(text: str) -> str:
 
 
 def visible_length(text: str) -> int:
+    """Return the display width of text, accounting for ANSI escapes and wide chars."""
     return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in strip_ansi(text))
 
 
 class GitwiseHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Argparse help formatter with raw ANSI color injection."""
+
     def __init__(
         self,
         prog: str,
@@ -220,6 +234,7 @@ class GitwiseHelpFormatter(argparse.RawDescriptionHelpFormatter):
         max_help_position: int = 24,
         width: int | None = None,
     ) -> None:
+        """Initialize with gitwise default indent and help-position settings."""
         super().__init__(
             prog,
             indent_increment=indent_increment,
@@ -228,6 +243,7 @@ class GitwiseHelpFormatter(argparse.RawDescriptionHelpFormatter):
         )
 
     def _format_action(self, action: argparse.Action) -> str:
+        """Format a single action with colorized option flags."""
         parts = super()._format_action(action)
         tokens = _get_tokens_for_help()
         if tokens is None:
@@ -235,6 +251,7 @@ class GitwiseHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return _colorize_help_line(parts, tokens)
 
     def start_section(self, heading: str | None) -> None:
+        """Begin a help section with an optional bold colored heading."""
         if heading:
             tokens = _get_tokens_for_help()
             if tokens:
@@ -243,6 +260,7 @@ class GitwiseHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 
 def _get_tokens_for_help() -> ThemeTokens | None:
+    """Return theme tokens if color is allowed for help output, else None."""
     try:
         if os.environ.get("NO_COLOR", "") != "":
             return None
@@ -264,6 +282,7 @@ _OPT_RE = re.compile(r"^(\s*)(-{1,2}[\w.\-]+(?:,\s*-{1,2}[\w.\-]+)*)")
 
 
 def _colorize_help_line(line: str, tokens: ThemeTokens) -> str:
+    """Colorize option flags in a help line using the accent color."""
     m = _OPT_RE.match(line)
     if not m:
         return line
@@ -289,6 +308,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
         max_help_position: int = 24,
         width: int | None = None,
     ) -> argparse.RawDescriptionHelpFormatter:
+        """Factory that returns a plain or Rich formatter depending on color support."""
         if cls._no_color_enabled():
             return GitwiseHelpFormatter(
                 prog,
@@ -309,6 +329,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
     @classmethod
     def _formatter_cls(cls) -> type[argparse.RawDescriptionHelpFormatter]:
+        """Lazily resolve the rich_argparse formatter class."""
         formatter = cls._FORMATTER
         if formatter is not None:
             return formatter
@@ -325,6 +346,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
     @classmethod
     def _no_color_enabled(cls) -> bool:
+        """Check if NO_COLOR or GITWISE_NO_COLOR is set, with caching."""
         env_key = (os.environ.get("NO_COLOR", ""), os.environ.get("GITWISE_NO_COLOR", "").lower())
         if env_key != cls._NO_COLOR_ENV_KEY:
             cls._NO_COLOR_ENV_KEY = env_key
@@ -333,6 +355,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
     @classmethod
     def _theme_name(cls) -> str:
+        """Return the resolved theme name from GITWISE_THEME, defaulting to dark."""
         env_theme = os.environ.get("GITWISE_THEME", "").lower()
         if env_theme != cls._THEME_ENV_VALUE:
             cls._THEME_ENV_VALUE = env_theme
@@ -343,6 +366,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
     def _install_group_name_localization(
         cls, formatter_cls: type[argparse.RawDescriptionHelpFormatter]
     ) -> None:
+        """Patch the formatter's group_name_formatter to use i18n for standard groups."""
         if cls._DEFAULT_GROUP_NAME_FORMATTER is not None:
             return
 
@@ -354,6 +378,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
         cls._DEFAULT_GROUP_NAME_FORMATTER = default_group_formatter
 
         def localized_group_formatter(name: object) -> str:
+            """Return a localized group name for known standard groups."""
             normalized = str(name).lower().replace(" ", "_")
             if normalized in {"options", "positional_arguments"}:
                 return t(f"help_group_{normalized}")
@@ -363,6 +388,7 @@ class GitwiseRichHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
     @classmethod
     def _apply_theme(cls, help_formatter: argparse.RawDescriptionHelpFormatter) -> None:
+        """Apply gitwise theme styles and group-name localization to a formatter."""
         theme_tokens = build_theme(cls._theme_name())
 
         styles = getattr(help_formatter, "styles", None)

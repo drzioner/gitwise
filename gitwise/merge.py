@@ -20,16 +20,19 @@ from .utils.parsing import to_int
 
 
 def _has_uncommitted(root: Path) -> bool:
+    """Return True if the working tree has tracked changes (staged or unstaged)."""
     r = git_run(["status", "--porcelain"], cwd=root, check=False)
     return r.returncode == 0 and bool(r.stdout.strip())
 
 
 def _branch_exists(root: Path, name: str) -> bool:
+    """Return True if a local branch with the given name exists."""
     r = git_run(["rev-parse", "--verify", "refs/heads/" + name], cwd=root, check=False)
     return r.returncode == 0
 
 
 def _validate_merge_target(*, root: Path, branch: str, cur: str | None) -> str | None:
+    """Return an error message if the merge target is invalid, or None."""
     if cur is None:
         return t("merge_detached_head")
     if not validate_ref(branch):
@@ -42,6 +45,7 @@ def _validate_merge_target(*, root: Path, branch: str, cur: str | None) -> str |
 
 
 def _ahead_behind_counts(*, root: Path, branch: str) -> tuple[int, int]:
+    """Return (ahead, behind) commit counts relative to the given branch."""
     ahead = git_run(["rev-list", "--count", f"{branch}..HEAD"], cwd=root, check=False)
     behind = git_run(["rev-list", "--count", f"HEAD..{branch}"], cwd=root, check=False)
     ahead_count = to_int(ahead.stdout, default=0) if ahead.returncode == 0 else 0
@@ -50,6 +54,7 @@ def _ahead_behind_counts(*, root: Path, branch: str) -> tuple[int, int]:
 
 
 def _merge_warnings(*, root: Path, branch: str, ahead_count: int, behind_count: int) -> list[str]:
+    """Collect human-readable warnings (uncommitted changes, diverged branches)."""
     warnings: list[str] = []
     if _has_uncommitted(root):
         warnings.append(t("merge_uncommitted"))
@@ -68,6 +73,7 @@ def _handle_merge_dry_run(
     behind_count: int,
     warnings: list[str],
 ) -> int:
+    """Print what would happen without executing the merge or rebase."""
     if as_json:
         print_json(
             ok_envelope(
@@ -92,6 +98,7 @@ def _handle_merge_dry_run(
 
 
 def _execute_merge(*, root: Path, branch: str, rebase: bool, no_ff: bool) -> tuple[bool, str]:
+    """Run ``git merge`` or ``git rebase`` and return (success, error_message)."""
     if rebase:
         args = ["rebase", branch]
     else:
@@ -111,6 +118,7 @@ def _execute_merge(*, root: Path, branch: str, rebase: bool, no_ff: bool) -> tup
 
 
 def _confirm_merge_warnings(*, warnings: list[str], yes: bool) -> bool:
+    """Show warnings and ask for confirmation; auto-accept when ``yes`` is True."""
     if not warnings:
         return True
     for warning_msg in warnings:
@@ -124,6 +132,7 @@ def _confirm_merge_warnings(*, warnings: list[str], yes: bool) -> bool:
 
 
 def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool) -> int:
+    """Print a merge/rebase success message and return 0."""
     if as_json:
         print_json(ok_envelope(merged=branch, into=cur))
         return 0
@@ -137,6 +146,7 @@ def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool)
 
 
 def _report_merge_error(*, as_json: bool, err: str) -> int:
+    """Print a merge error in JSON or human form and return 1."""
     if as_json:
         print_json(error_envelope(error=err, code="merge_error", hint=t("merge_hint")))
     else:

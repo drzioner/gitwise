@@ -11,6 +11,8 @@ from gitwise.setup_agents.types import ActionDict, StateDict
 
 
 class AdapterFlags(TypedDict, total=False):
+    """Optional flags that modify provider planning behavior."""
+
     no_symlinks: bool
     replace_claude_with_symlink: bool
     migrate_legacy_claude: bool
@@ -20,6 +22,8 @@ class AdapterFlags(TypedDict, total=False):
 
 
 class AdapterContext(TypedDict):
+    """Shared context passed to all adapters during planning."""
+
     state: StateDict
     canonical_doc_path: str
     global_skills: frozenset[str]
@@ -29,6 +33,8 @@ class AdapterContext(TypedDict):
 
 
 class AdapterConfig:
+    """Base configuration for a multi-agent adapter (name, paths, template directory)."""
+
     def __init__(
         self,
         *,
@@ -38,6 +44,7 @@ class AdapterConfig:
         template_paths: tuple[str, ...],
         template_dir: str,
     ) -> None:
+        """Initialize adapter metadata. Does not read filesystem."""
         self.name = name
         self.display_name = display_name
         self.config_paths = config_paths
@@ -45,6 +52,7 @@ class AdapterConfig:
         self.template_dir = template_dir
 
     def _read_template(self, template_name: str) -> str:
+        """Read a template file from the adapter's share directory."""
         from gitwise._paths import share_dir
 
         template_dir_str = str(self.template_dir)
@@ -59,6 +67,7 @@ class AdapterConfig:
         return template_path.read_text(encoding="utf-8")
 
     def plan(self, root: Path, _context: AdapterContext) -> tuple[list[ActionDict], list[str]]:
+        """Plan adapter config creation: create each config file that is absent, warn if it exists."""
         actions: list[ActionDict] = []
         warnings: list[str] = []
         for config_path, template_path in zip(self.config_paths, self.template_paths, strict=True):

@@ -9,12 +9,14 @@ _MANAGED_MARKER_END = "# <<< gitwise managed <<<"
 
 
 def _snapshot_path_for_block(*, has_agents_dir: bool) -> str:
+    """Return the snapshot file path used inside managed blocks."""
     if has_agents_dir:
         return ".agents/git-snapshot.md"
     return ".claude/git-snapshot.md"
 
 
 def gitignore_block_basic() -> str:
+    """Return the .gitignore managed block for claude-only repos."""
     lines = [
         _MANAGED_MARKER_START,
         "# Claude Code local/personal files (do not commit)",
@@ -31,6 +33,7 @@ def gitignore_block_basic() -> str:
 
 
 def gitignore_block_extended(has_agents_md: bool, has_agents_dir: bool = False) -> str:
+    """Return the .gitignore managed block for repos with AGENTS.md and/or .agents/."""
     lines = [
         _MANAGED_MARKER_START,
         "# Claude Code local/personal files (do not commit)",
@@ -49,6 +52,7 @@ def gitignore_block_extended(has_agents_md: bool, has_agents_dir: bool = False) 
 
 
 def gitattributes_block_basic() -> str:
+    """Return the .gitattributes managed block for claude-only repos."""
     lines = [
         _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
@@ -62,6 +66,7 @@ def gitattributes_block_basic() -> str:
 
 
 def gitattributes_block_extended(has_agents_md: bool, has_agents_dir: bool) -> str:
+    """Return the .gitattributes managed block for repos with AGENTS.md and/or .agents/."""
     lines = [
         _MANAGED_MARKER_START,
         "# Generated snapshot: use local version on merge",
@@ -79,10 +84,12 @@ def gitattributes_block_extended(has_agents_md: bool, has_agents_dir: bool) -> s
 
 
 def _gitattributes_conflicts(existing_text: str, desired_block: str) -> list[str]:
+    """Detect patterns in the existing .gitattributes outside the managed block that conflict with the desired block."""
     block_start = existing_text.find(_MANAGED_MARKER_START)
     outside_text = existing_text[:block_start] if block_start != -1 else existing_text
 
     def _parse(text: str) -> dict[str, str]:
+        """Parse non-comment, non-blank lines into a pattern-to-full-line mapping."""
         result: dict[str, str] = {}
         for line in text.splitlines():
             s = line.strip()
@@ -112,6 +119,10 @@ def _gitattributes_conflicts(existing_text: str, desired_block: str) -> list[str
 def plan_managed_block(
     path: Path, desired_block: str, file_key: str
 ) -> tuple[list[dict], list[str]]:
+    """Plan actions for a managed block: create, append, replace, or skip.
+
+    Returns (actions, conflict_warnings).
+    """
     if not path.exists():
         return [
             {

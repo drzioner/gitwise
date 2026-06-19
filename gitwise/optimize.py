@@ -27,6 +27,7 @@ from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _gc_is_running(cwd: Path) -> bool:
+    """Return True if a git gc process is actively running in the repo."""
     gd = get_git_dir(cwd)
     if gd is None:
         return False
@@ -44,6 +45,7 @@ def _gc_is_running(cwd: Path) -> bool:
 
 
 def _repo_size_kb(cwd: Path) -> int:
+    """Return the ``.git`` directory size in KiB via ``du -sk``."""
     gd = get_git_dir(cwd)
     if gd is None:
         return 0
@@ -57,6 +59,7 @@ def _repo_size_kb(cwd: Path) -> int:
 
 
 def _write_commit_graph(cwd: Path) -> bool:
+    """Write a commit-graph for all reachable objects.  Returns True on success."""
     args = ["commit-graph", "write", "--reachable"]
     if git_version() >= (2, 31, 0):
         args.append("--changed-paths")
@@ -65,6 +68,7 @@ def _write_commit_graph(cwd: Path) -> bool:
 
 
 def _repack(cwd: Path) -> bool:
+    """Repack with ``-A -d``; retries without bitmap-index on failure."""
     r = git_run(["repack", "-A", "-d", "--write-bitmap-index"], cwd=cwd, check=False)
     if r.returncode != 0:
         debug(t("repack_fallo_bitmap"))
@@ -73,10 +77,12 @@ def _repack(cwd: Path) -> bool:
 
 
 def _prune(cwd: Path) -> bool:
+    """Run ``git prune`` to remove unreachable loose objects."""
     return git_run(["prune"], cwd=cwd, check=False).returncode == 0
 
 
 def _get_steps() -> list[tuple[str, str]]:
+    """Return the ordered list of optimization steps (name, description)."""
     return [
         ("commit-graph", t("step_commit_graph")),
         ("repack", t("step_repack")),
@@ -85,6 +91,12 @@ def _get_steps() -> list[tuple[str, str]]:
 
 
 def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = False) -> int:
+    """Run commit-graph write, repack, and prune on the repo.
+
+    Returns 0 when all steps succeed, 1 when commit-graph or repack fails,
+    2 when only prune fails.  Returns 2 when ``--json`` is used without
+    ``--yes``.
+    """
     root, err = require_root()
     if err:
         return err

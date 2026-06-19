@@ -14,6 +14,7 @@ _SKILLS: tuple[str, ...] = ("git-audit", "git-clean", "git-optimize")
 
 
 def _read_template(name: str) -> str:
+    """Read a template from the Claude share directory."""
     path = _SHARE_CLAUDE_DIR / name
     if not path.is_file():
         raise FileNotFoundError(t("template_not_found", path=str(path)))
@@ -21,6 +22,7 @@ def _read_template(name: str) -> str:
 
 
 def _read_skill_template(skill: str) -> str:
+    """Read a skill SKILL.md template, preferring .agents/ over .claude/ share dirs."""
     candidates = (
         _SHARE_AGENTS_DIR / "skills" / skill / "SKILL.md",
         _SHARE_CLAUDE_DIR / "skills" / skill / "SKILL.md",
@@ -45,6 +47,12 @@ def _plan_single_skill(
     symlink_broken_key: str,
     dir_regular_with_agents_key: str,
 ) -> tuple[list[dict], list[str]]:
+    """Plan actions for a single skill: create, symlink, migrate, or skip depending on current state.
+
+    When has_agents_layout is active, the canonical SKILL.md lives under
+    .agents/skills/<name>/ and .claude/skills/<name> becomes a relative
+    symlink pointing to it.
+    """
     actions: list[dict] = []
     warnings: list[str] = []
 
@@ -163,6 +171,7 @@ def plan_skills(
     global_skills: frozenset[str] = frozenset(),
     force_agents_layout: bool = False,
 ) -> tuple[list[dict], list[str]]:
+    """Plan all built-in skill actions for a local repo based on current state."""
     actions: list[dict] = []
     warnings: list[str] = []
 
@@ -214,6 +223,7 @@ def plan_skills(
 
 
 def plan_global_skills(home: Path) -> tuple[list[dict], list[str]]:
+    """Plan skill actions for global (home-dir) setup."""
     actions: list[dict] = []
     warnings: list[str] = []
 

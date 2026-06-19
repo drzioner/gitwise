@@ -44,6 +44,7 @@ _PR_COMMENTS_FIELDS = "number,title,url,comments"
 
 
 def _pr_status_code(state: str) -> str:
+    """Map a PR state string to a single-char file-status code (M/A/D)."""
     normalized = state.strip().upper()
     if normalized in {"OPEN", "DRAFT"}:
         return "M"
@@ -55,10 +56,12 @@ def _pr_status_code(state: str) -> str:
 
 
 def _gh_available() -> bool:
+    """Return True when the ``gh`` CLI binary is on PATH."""
     return bool(shutil.which("gh"))
 
 
 def _gh(args: list[str], cwd) -> tuple[int, str, str]:
+    """Run a ``gh`` subprocess wrapped in a status spinner."""
     import subprocess
 
     with status(t("status_querying_github")):
@@ -74,6 +77,7 @@ def _gh(args: list[str], cwd) -> tuple[int, str, str]:
 
 
 def _actor_name(actor: object) -> str:
+    """Extract login or name from a GitHub actor object, or return '-'."""
     if isinstance(actor, dict):
         login = actor.get("login")
         if isinstance(login, str) and login.strip():
@@ -85,6 +89,7 @@ def _actor_name(actor: object) -> str:
 
 
 def _clean_lines(text: str, *, max_lines: int) -> list[str]:
+    """Return non-empty lines from *text*, truncated to *max_lines*."""
     normalized = _normalize_body_text(text)
     lines = [line.rstrip() for line in normalized.splitlines()]
     compact = [line for line in lines if line.strip()]
@@ -94,10 +99,12 @@ def _clean_lines(text: str, *, max_lines: int) -> list[str]:
 
 
 def _normalize_body_text(text: str) -> str:
+    """Identity transform; reserved for future whitespace normalisation."""
     return text
 
 
 def _json_or_error(out: str) -> tuple[bool, object | None]:
+    """Parse JSON from *out*. Returns (ok, parsed); ok=False on parse failure."""
     if not out:
         return True, None
     try:
@@ -108,6 +115,7 @@ def _json_or_error(out: str) -> tuple[bool, object | None]:
 
 
 def _selector_args(selector: str | None) -> list[str]:
+    """Validate and return CLI selector args, raising ValueError on '-' prefix."""
     if selector is None:
         return []
     cleaned = selector.strip()
@@ -119,6 +127,7 @@ def _selector_args(selector: str | None) -> list[str]:
 
 
 def _parse_iso_datetime(value: str) -> datetime | None:
+    """Parse an ISO 8601 datetime string, handling trailing 'Z'."""
     if not value:
         return None
     iso = value.strip()
@@ -133,6 +142,7 @@ def _parse_iso_datetime(value: str) -> datetime | None:
 
 
 def _format_datetime(value: str) -> str:
+    """Format an ISO datetime as ``YYYY-MM-DD HH:MM``."""
     parsed = _parse_iso_datetime(value)
     if parsed is None:
         return value or "-"
@@ -140,10 +150,12 @@ def _format_datetime(value: str) -> str:
 
 
 def _non_empty_line_count(text: str) -> int:
+    """Count non-blank lines in *text*."""
     return len([line for line in text.splitlines() if line.strip()])
 
 
 def _format_duration(seconds: int) -> str:
+    """Format a non-negative integer number of seconds as ``XhYmZs``."""
     if seconds <= 0:
         return "0s"
     minutes, rem = divmod(seconds, 60)
@@ -156,6 +168,7 @@ def _format_duration(seconds: int) -> str:
 
 
 def _state_label(state: str) -> str:
+    """Normalise a GitHub check state to a canonical short label."""
     normalized = state.strip().upper()
     mapping = {
         "SUCCESS": "pass",
@@ -172,10 +185,12 @@ def _state_label(state: str) -> str:
 
 
 def _state_label_human(state: str) -> str:
+    """Return the localised human-readable label for a canonical state."""
     return t(_STATE_LABEL_KEYS[state]) if state in _STATE_LABEL_KEYS else state
 
 
 def _duration_from_check(check: dict[str, object]) -> str:
+    """Compute elapsed duration between startedAt and completedAt of a check."""
     started = str(check.get("startedAt") or "")
     completed = str(check.get("completedAt") or "")
     started_dt = _parse_iso_datetime(started)
@@ -189,6 +204,7 @@ def _duration_from_check(check: dict[str, object]) -> str:
 
 
 def _normalize_checks(payload: object) -> list[dict[str, str]]:
+    """Convert raw gh check output into normalised dicts with name/state/duration/workflow/link."""
     if not isinstance(payload, list):
         return []
     checks: list[dict[str, str]] = []
@@ -222,6 +238,7 @@ def _normalize_checks(payload: object) -> list[dict[str, str]]:
 
 
 def _checks_summary(checks: list[dict[str, str]]) -> dict[str, int]:
+    """Count checks by category: pass, fail, running, other."""
     summary = {"pass": 0, "fail": 0, "running": 0, "other": 0}
     for check in checks:
         state = check.get("state", "")
@@ -237,12 +254,14 @@ def _checks_summary(checks: list[dict[str, str]]) -> dict[str, int]:
 
 
 def _pr_label_for_selector(selected: list[str]) -> str:
+    """Return a human label for the current PR selector."""
     if not selected:
         return t("pr_current_label")
     return selected[0]
 
 
 def _render_pr_checks(checks: list[dict[str, str]], *, selector_label: str) -> int:
+    """Print a summary table of CI checks to the terminal."""
     print_header(t("pr_checks_title", selector=selector_label))
     if not checks:
         info(t("pr_checks_none"))
@@ -294,6 +313,7 @@ def _render_pr_checks(checks: list[dict[str, str]], *, selector_label: str) -> i
 
 
 def _render_pr_view(payload: dict[str, object]) -> None:
+    """Print a detailed PR view (state, branch, labels, body) to the terminal."""
     number = str(payload.get("number", "-"))
     title = str(payload.get("title") or "")
     state = str(payload.get("state") or "-")
@@ -356,6 +376,7 @@ def _render_pr_view(payload: dict[str, object]) -> None:
 
 
 def _render_pr_comments(payload: dict[str, object]) -> int:
+    """Print PR comments with author and timestamp to the terminal."""
     number = str(payload.get("number", "-"))
     title = str(payload.get("title") or "")
     url = str(payload.get("url") or "")
@@ -395,6 +416,7 @@ def _render_pr_comments(payload: dict[str, object]) -> int:
 
 
 def _invalid_json_response(*, as_json: bool, raw: str) -> int:
+    """Emit an error envelope or human message for unparseable gh JSON output."""
     if as_json:
         print_json(error_envelope(error="invalid_gh_json", raw=raw))
     else:
@@ -403,6 +425,7 @@ def _invalid_json_response(*, as_json: bool, raw: str) -> int:
 
 
 def _run_action_list(*, root: Path, as_json: bool) -> int:
+    """Execute the ``pr list`` sub-action."""
     rc, out, err = _gh(["pr", "list", "--json", _PR_LIST_FIELDS], cwd=root)
     if rc != 0:
         error(err)
@@ -437,6 +460,7 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
 
 
 def _run_action_checks(*, root: Path, selected: list[str], as_json: bool) -> int:
+    """Execute the ``pr checks`` sub-action."""
     rc, out, err = _gh(["pr", "checks", *selected, "--json", _PR_CHECKS_FIELDS], cwd=root)
     if rc != 0:
         error(err)
@@ -463,6 +487,7 @@ def _run_action_checks(*, root: Path, selected: list[str], as_json: bool) -> int
 
 
 def _run_action_view(*, root: Path, selected: list[str], as_json: bool) -> int:
+    """Execute the ``pr view`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_VIEW_FIELDS], cwd=root)
     if rc != 0:
         error(err)
@@ -481,6 +506,7 @@ def _run_action_view(*, root: Path, selected: list[str], as_json: bool) -> int:
 
 
 def _run_action_comments(*, root: Path, selected: list[str], as_json: bool) -> int:
+    """Execute the ``pr comments`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_COMMENTS_FIELDS], cwd=root)
     if rc != 0:
         error(err)
@@ -514,6 +540,11 @@ def run_pr(
     selector: str | None = None,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise pr`` command.
+
+    Dispatches to list/checks/view/comments sub-actions after checking
+    that ``gh`` is available and that the cwd is inside a git repo.
+    """
     if not _gh_available():
         error(t("pr_gh_required"))
         return 1

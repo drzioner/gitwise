@@ -19,7 +19,10 @@ from gitwise.setup_agents.types import ActionDict, StateDict
 
 
 class ClaudeAdapter(AdapterConfig):
+    """Claude-specific planning: settings, rules, 5-bucket doc resolution, skills, snapshot."""
+
     def __init__(self) -> None:
+        """Initialize with empty config paths; Claude uses custom planning methods instead of the base plan()."""
         super().__init__(
             name="claude",
             display_name="Claude",
@@ -29,6 +32,7 @@ class ClaudeAdapter(AdapterConfig):
         )
 
     def plan_settings(self, root: Path) -> tuple[list[ActionDict], list[str]]:
+        """Plan settings.json: merge deny rules into existing file or create from template."""
         settings_path = root / ".claude" / "settings.json"
         settings_template: dict = json.loads(_read_template("settings.json.template"))
         if settings_path.exists():
@@ -68,9 +72,11 @@ class ClaudeAdapter(AdapterConfig):
         ], []
 
     def pointer_template(self) -> str:
+        """Return the minimal CLAUDE.md pointer content that references AGENTS.md."""
         return t("conventions_heading") + t("conventions_pointer")
 
     def compute_backup_path(self, path: Path) -> Path:
+        """Compute a timestamped backup path, avoiding collisions with existing .bak files."""
         backup = path.with_suffix(".md.bak")
         if backup.exists():
             suffix = int(time.time())
@@ -78,6 +84,7 @@ class ClaudeAdapter(AdapterConfig):
         return backup
 
     def build_template(self, root: Path) -> str:
+        """Load the CLAUDE.md template, stripping GPG lines when signing is not configured."""
         raw = _read_template("CLAUDE.md.template")
         if _gpg_ready(root):
             return raw
@@ -96,6 +103,7 @@ class ClaudeAdapter(AdapterConfig):
         root: Path,
         template: str,
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Bucket 1: no AGENTS.md; create or append CLAUDE.md."""
         c_state = state["c_state"]
         claude_md = root / _CLAUDE_MD
         if c_state == "absent":
@@ -122,6 +130,7 @@ class ClaudeAdapter(AdapterConfig):
         supports_symlinks: bool,
         template: str,
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Bucket 2: AGENTS.md exists but no CLAUDE.md; append to AGENTS.md and create symlink or pointer."""
         agents_actions: list[ActionDict] = []
         agents_md = root / _AGENTS_MD
         if not _has_marker(agents_md):
@@ -144,6 +153,7 @@ class ClaudeAdapter(AdapterConfig):
         template: str,
         supports_symlinks: bool,
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Migrate a claude-only repo to agents layout: promote CLAUDE.md content to AGENTS.md."""
         claude_md = root / _CLAUDE_MD
         c_state = state["c_state"]
 
@@ -207,6 +217,7 @@ class ClaudeAdapter(AdapterConfig):
         claude_md: Path,
         agents_actions: list[ActionDict],
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Bucket 4 default path: warn when CLAUDE.md diverges from AGENTS.md."""
         c_state = state["c_state"]
         if c_state == "symlink_valid":
             try:
@@ -234,6 +245,7 @@ class ClaudeAdapter(AdapterConfig):
         agents_actions: list[ActionDict],
         claude_md: Path,
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Bucket 4 replace path: back up CLAUDE.md and replace with symlink to AGENTS.md."""
         backup_path = self.compute_backup_path(claude_md)
         return (
             4,
@@ -263,6 +275,7 @@ class ClaudeAdapter(AdapterConfig):
         agents_md: Path,
         agents_actions: list[ActionDict],
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Bucket 3: both docs exist; verify consistency and skip or fall through to bucket 4."""
         c_state = state["c_state"]
         if c_state == "symlink_valid":
             try:
@@ -309,6 +322,7 @@ class ClaudeAdapter(AdapterConfig):
         replace_claude_with_symlink: bool = False,
         migrate_legacy_claude: bool = False,
     ) -> tuple[int, list[ActionDict], list[str]]:
+        """Route doc planning through the 5-bucket model based on AGENTS.md/CLAUDE.md states."""
         a_state = state["a_state"]
         c_state = state["c_state"]
         claude_md = root / _CLAUDE_MD
@@ -341,6 +355,7 @@ class ClaudeAdapter(AdapterConfig):
         return 5, [], []
 
     def plan_rules(self, root: Path) -> tuple[list[ActionDict], list[str]]:
+        """Plan the .claude/rules/gitwise.md rule file."""
         rule_path = root / ".claude" / "rules" / "gitwise.md"
         if rule_path.exists():
             return [
@@ -359,6 +374,7 @@ class ClaudeAdapter(AdapterConfig):
         ], []
 
     def plan_snapshot(self, *, frozen_time: bool = False) -> list[ActionDict]:
+        """Return a snapshot generation action for .claude/git-snapshot.md."""
         return [
             {"file": ".claude/git-snapshot.md", "action": "generate", "frozen_time": frozen_time}
         ]
@@ -369,6 +385,7 @@ class ClaudeAdapter(AdapterConfig):
         *,
         no_skills: bool = False,
     ) -> tuple[list[ActionDict], list[str], list[ActionDict]]:
+        """Plan all global setup actions (settings, rules, skills)."""
         actions: list[ActionDict] = []
         warnings: list[str] = []
 
@@ -388,6 +405,7 @@ class ClaudeAdapter(AdapterConfig):
         return actions, warnings, []
 
     def plan(self, root: Path, context: AdapterContext) -> tuple[list[ActionDict], list[str]]:
+        """Plan Claude adapter actions (settings, rules, snapshot) when invoked as an adapter."""
         if context["flags"].get("core_claude_planned", False):
             return [], []
         actions: list[ActionDict] = []

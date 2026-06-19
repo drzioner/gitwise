@@ -13,11 +13,11 @@ from gitwise.setup_agents.state import _AGENTS_MD, _CLAUDE_MD
 
 
 class SymlinkConflict(Exception):
-    pass
+    """Raised when a symlink cannot be created because the path is already occupied or points outside the repo root."""
 
 
 class PlanExecutionError(Exception):
-    pass
+    """Raised after rolling back a partially executed plan due to a symlink or I/O failure."""
 
 
 def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
@@ -54,7 +54,11 @@ def _safe_create_symlink(link: Path, target_relative: str, root: Path) -> None:
 
 
 def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
-    """Transactional rollback: restore pre-action snapshots for all touched paths."""
+    """Transactional rollback: restore pre-action snapshots for all touched paths.
+
+    Prefers the modern snapshot-based path (_pre_state keys). Falls back to
+    legacy per-action-type heuristics for test fixtures that lack snapshots.
+    """
     snapshots_by_path: dict[str, dict[str, str | bytes | None]] = {}
     for action in actions_done:
         pre_state = action.get("_pre_state")
@@ -103,6 +107,7 @@ def _undo_partial(actions_done: list[dict[str, Any]], root: Path) -> None:
 
 
 def _capture_snapshot(path: Path) -> dict[str, str | bytes | None]:
+    """Record the current state of a path (absent, dir, file, or symlink) for rollback."""
     if path.is_symlink():
         try:
             target = os.readlink(path)
@@ -141,6 +146,7 @@ def _capture_snapshot(path: Path) -> dict[str, str | bytes | None]:
 
 
 def _remove_path(path: Path) -> None:
+    """Remove a path regardless of whether it is a file, symlink, or directory."""
     if path.is_symlink() or path.is_file():
         path.unlink(missing_ok=True)
         return
@@ -149,6 +155,7 @@ def _remove_path(path: Path) -> None:
 
 
 def _restore_snapshot(snapshot: dict[str, str | bytes | None]) -> None:
+    """Restore a single path to its captured snapshot state (absent, dir, symlink, or file with content)."""
     path = Path(str(snapshot["path"]))
     kind = snapshot["kind"]
 
@@ -181,6 +188,7 @@ def _restore_snapshot(snapshot: dict[str, str | bytes | None]) -> None:
 
 
 def _restore_snapshots(snapshots: list[dict[str, str | bytes | None]]) -> None:
+    """Restore a batch of snapshots in leaf-first order to avoid removing parent dirs before children."""
     seen: set[str] = set()
     ordered = sorted(
         snapshots,
@@ -200,6 +208,7 @@ def _restore_snapshots(snapshots: list[dict[str, str | bytes | None]]) -> None:
 
 
 def _touched_paths(action: dict[str, Any], root: Path) -> list[Path]:
+    """Collect all filesystem paths that an action may create, modify, or remove (deduplicated)."""
     paths: list[Path] = []
     act = action.get("action", "")
     file_key = action.get("file", "")
@@ -231,6 +240,7 @@ def _touched_paths(action: dict[str, Any], root: Path) -> list[Path]:
 
 
 def _apply_managed_block(action: dict[str, Any]) -> None:
+    """Write or splice a managed block into its target file (create or replace)."""
     path = Path(action["_path"])
     desired = action["content"]
     act = action["action"]
@@ -251,6 +261,7 @@ def _apply_managed_block(action: dict[str, Any]) -> None:
 
 
 def _exec_claude_md(action: dict[str, Any], root: Path) -> None:
+    """Execute a CLAUDE.md action: create, append, symlink, or replace-with-symlink."""
     path = root / _CLAUDE_MD
     act = action["action"]
     if act == "create":
@@ -273,6 +284,7 @@ def _exec_claude_md(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_agents_md(action: dict[str, Any], root: Path) -> None:
+    """Execute an AGENTS.md action: create or append."""
     path = root / _AGENTS_MD
     act = action.get("action", "append")
     if act == "create":
@@ -288,6 +300,7 @@ def _exec_agents_md(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_settings_json(action: dict[str, Any], root: Path) -> None:
+    """Write .claude/settings.json from action data (create or merge)."""
     path = root / ".claude" / "settings.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -301,6 +314,7 @@ def _exec_settings_json(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_skills_dir(action: dict[str, Any], root: Path) -> None:
+    """Ensure the canonical skills directory exists and symlink .claude/skills to it."""
     target_dir = Path(os.path.normpath(root / ".claude" / action["target_relative"]))
     target_dir.mkdir(parents=True, exist_ok=True)
     _safe_create_symlink(root / ".claude" / "skills", action["target_relative"], root)
@@ -314,11 +328,13 @@ def _exec_skills_dir(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_agents_skills_dir(action: dict[str, Any], root: Path) -> None:
+    """Create an .agents/skills/<name>/ directory (canonical skill home)."""
     (root / action["file"]).mkdir(parents=True, exist_ok=True)
     debug(t("debug_mkdir", file=action["file"]))
 
 
 def _exec_claude_skill(action: dict[str, Any], root: Path) -> None:
+    """Execute a .claude/skills/<name> action: symlink-create or skill-migrate-to-agents."""
     file_key = action["file"]
     act = action["action"]
     if act == "symlink-create":
@@ -337,6 +353,7 @@ def _exec_claude_skill(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_skill_md(action: dict[str, Any], root: Path) -> None:
+    """Write a SKILL.md file under .claude/skills/."""
     file_key = action["file"]
     rel = Path(file_key).relative_to(".claude")
     target = root / ".claude" / rel
@@ -346,6 +363,7 @@ def _exec_skill_md(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_agents_skill_md(action: dict[str, Any], root: Path) -> None:
+    """Write a SKILL.md file under .agents/skills/."""
     file_key = action["file"]
     target = root / file_key
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -355,6 +373,7 @@ def _exec_agents_skill_md(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_rule(action: dict[str, Any], root: Path) -> None:
+    """Write a rule file under .claude/rules/."""
     file_key = action["file"]
     path = root / file_key
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -364,6 +383,7 @@ def _exec_rule(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_adapter_create(action: dict[str, Any], root: Path) -> None:
+    """Write an adapter config file from the planned template content."""
     file_key = action["file"]
     path = root / file_key
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -373,6 +393,7 @@ def _exec_adapter_create(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_snapshot(action: dict[str, Any], root: Path) -> None:
+    """Generate a git-snapshot.md at the planned path."""
     from gitwise.snapshot import generate_snapshot as _gen_snapshot
 
     snapshot_file = action.get("file", ".claude/git-snapshot.md")
@@ -385,6 +406,7 @@ def _exec_snapshot(action: dict[str, Any], root: Path) -> None:
 
 
 def _exec_managed_block(action: dict[str, Any], root: Path) -> None:
+    """Execute a managed-block action and report the result."""
     _apply_managed_block(action)
     act = action["action"]
     msg_key = "managed_block_created" if act == "managed-block-create" else "managed_block_updated"
@@ -392,6 +414,7 @@ def _exec_managed_block(action: dict[str, Any], root: Path) -> None:
 
 
 def _match_file_key(file_key: str, act: str) -> Callable[[dict[str, Any], Path], None] | None:
+    """Return the executor function for a given file key and action type, or None for unknown actions."""
     if file_key == _CLAUDE_MD:
         return _exec_claude_md
     if file_key == _AGENTS_MD:
@@ -420,6 +443,11 @@ def _match_file_key(file_key: str, act: str) -> Callable[[dict[str, Any], Path],
 
 
 def _execute_actions(root: Path, actions: list[dict[str, Any]]) -> None:
+    """Execute a list of planned actions with snapshot-backed rollback on failure.
+
+    Creates .claude/ upfront. On SymlinkConflict or OSError, rolls back all
+    actions already performed and raises PlanExecutionError.
+    """
     (root / ".claude").mkdir(parents=True, exist_ok=True)
 
     actions_done: list[dict[str, Any]] = []

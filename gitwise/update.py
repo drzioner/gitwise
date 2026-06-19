@@ -10,6 +10,7 @@ from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
+    """Entry point for the ``gitwise update`` command. Pulls the gitwise repo via git."""
     install_dir = Path(__file__).parent.parent
     if not (install_dir / ".git").is_dir():
         if as_json:

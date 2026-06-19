@@ -24,6 +24,7 @@ from gitwise.setup_agents.types import StateDict
 
 
 def _snapshot_file_for_state(*, has_agents_layout: bool) -> str:
+    """Return the snapshot file path based on whether agents layout is active."""
     if has_agents_layout:
         return ".agents/git-snapshot.md"
     return ".claude/git-snapshot.md"
@@ -35,12 +36,14 @@ def _is_clean_repo_for_canonical_default(
     migrate_legacy_claude: bool,
     force_claude_core: bool,
 ) -> bool:
+    """Return True when the repo has no existing convention docs and no migration override."""
     if migrate_legacy_claude or force_claude_core:
         return False
     return state["a_state"] == "absent" and state["c_state"] == "absent"
 
 
 def _plan_canonical_skills(root: Path) -> list[dict]:
+    """Plan creation of canonical .agents/skills/ entries for the three built-in gitwise skills."""
     actions: list[dict] = []
     for skill in _SKILLS:
         skill_dir = root / ".agents" / "skills" / skill
@@ -67,6 +70,7 @@ def _plan_canonical_skills(root: Path) -> list[dict]:
 
 
 def _legacy_skill_warnings(root: Path) -> list[str]:
+    """Warn about legacy .claude/commands/*.md files that shadow built-in skills."""
     warnings: list[str] = []
     legacy_dir = root / ".claude" / "commands"
     for skill in _SKILLS:
@@ -76,10 +80,12 @@ def _legacy_skill_warnings(root: Path) -> list[str]:
 
 
 def _plan_settings_json(root: Path) -> tuple[list[dict], list[str]]:
+    """Delegate settings.json planning to the Claude provider."""
     return CLAUDE_PROVIDER.plan_settings(root)
 
 
 def _plan_rules(root: Path) -> tuple[list[dict], list[str]]:
+    """Delegate rules planning to the Claude provider."""
     return CLAUDE_PROVIDER.plan_rules(root)
 
 
@@ -87,6 +93,7 @@ def _plan_actions_global(
     home: Path,
     no_skills: bool = False,
 ) -> tuple[list[dict], list[str], list[dict]]:
+    """Delegate global planning (settings, rules, skills) to the Claude provider."""
     return CLAUDE_PROVIDER.plan_global(home, no_skills=no_skills)
 
 
@@ -95,6 +102,7 @@ def _bucket1_no_agents(
     root: Path,
     template: str,
 ) -> tuple[int, list[dict], list[str]]:
+    """Bucket 1: no AGENTS.md exists; create or append CLAUDE.md."""
     return CLAUDE_PROVIDER.bucket1_no_agents(state, root, template)
 
 
@@ -104,6 +112,7 @@ def _bucket2_agents_no_claude(
     supports_symlinks: bool,
     template: str,
 ) -> tuple[int, list[dict], list[str]]:
+    """Bucket 2: AGENTS.md exists but no CLAUDE.md; append + symlink or pointer."""
     return CLAUDE_PROVIDER.bucket2_agents_no_claude(root, supports_symlinks, template)
 
 
@@ -113,6 +122,7 @@ def _bucket3(
     agents_md: Path,
     agents_actions: list[dict],
 ) -> tuple[int, list[dict], list[str]]:
+    """Bucket 3: both docs exist; verify CLAUDE.md is symlink or identical to AGENTS.md."""
     return CLAUDE_PROVIDER.bucket3(state, claude_md, agents_md, agents_actions)
 
 
@@ -121,6 +131,7 @@ def _bucket4_default(
     claude_md: Path,
     agents_actions: list[dict],
 ) -> tuple[int, list[dict], list[str]]:
+    """Bucket 4 default: CLAUDE.md diverges from AGENTS.md; keep both with a warning."""
     return CLAUDE_PROVIDER.bucket4_default(state, claude_md, agents_actions)
 
 
@@ -128,6 +139,7 @@ def _bucket4_replace(
     agents_actions: list[dict],
     claude_md: Path,
 ) -> tuple[int, list[dict], list[str]]:
+    """Bucket 4 replace: back up CLAUDE.md and replace it with a symlink to AGENTS.md."""
     return CLAUDE_PROVIDER.bucket4_replace(agents_actions, claude_md)
 
 
@@ -138,6 +150,7 @@ def _resolve_canonical_doc(
     replace_claude_with_symlink: bool = False,
     migrate_legacy_claude: bool = False,
 ) -> tuple[int, list[dict], list[str]]:
+    """Route to the correct bucket based on the 5-bucket model (AGENTS.md + CLAUDE.md states)."""
     return CLAUDE_PROVIDER.resolve_canonical_doc(
         root,
         state,
@@ -156,6 +169,10 @@ def _plan_actions(
     no_git_files: bool = False,
     frozen_time: bool = False,
 ) -> tuple[list[dict], list[str], list[dict], int, StateDict]:
+    """Build the full plan for a local setup-agents run (docs, settings, skills, rules, gitfiles, snapshot).
+
+    Returns (actions, warnings, errors, bucket, state).
+    """
     state = _detect_state(root)
     if state["errors"]:
         err_actions: list[dict] = [

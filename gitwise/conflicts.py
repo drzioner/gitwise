@@ -20,6 +20,7 @@ from .utils.parsing import stripped_non_empty_lines, to_int
 
 
 def _find_conflict_files(root: Path) -> list[str]:
+    """Return file paths with unmerged (U) status."""
     r = git_run(["diff", "--name-only", "--diff-filter=U"], cwd=root, check=False)
     if r.returncode != 0 or not r.stdout.strip():
         return []
@@ -27,6 +28,7 @@ def _find_conflict_files(root: Path) -> list[str]:
 
 
 def _conflict_markers(root: Path, filepath: str) -> int:
+    """Count ``<<<<<<<`` conflict markers in *filepath*."""
     r = git_run(["grep", "-c", "<<<<<<< ", "--", filepath], cwd=root, check=False)
     if r.returncode != 0:
         return 0
@@ -38,6 +40,7 @@ def _conflict_markers(root: Path, filepath: str) -> int:
 
 
 def _resolve_all_conflicts(*, root: Path, conflicts: list[str], strategy: str) -> int:
+    """Resolve conflicts in all files using ``--ours`` or ``--theirs``, then stage."""
     checkout_flag = "--ours" if strategy == "ours" else "--theirs"
     result = git_run(["checkout", checkout_flag, "--"] + conflicts, cwd=root, check=False)
     if result.returncode != 0:
@@ -48,6 +51,7 @@ def _resolve_all_conflicts(*, root: Path, conflicts: list[str], strategy: str) -
 
 
 def _conflict_details(root: Path, conflicts: list[str]) -> list[dict[str, str | int]]:
+    """Return ``[{file, markers}]`` with conflict marker counts per file."""
     details: list[dict[str, str | int]] = []
     for file_path in conflicts:
         markers = _conflict_markers(root, file_path)
@@ -56,6 +60,7 @@ def _conflict_details(root: Path, conflicts: list[str]) -> list[dict[str, str | 
 
 
 def _report_no_conflicts(*, as_json: bool) -> int:
+    """Print or envelope a clean conflicts report."""
     if as_json:
         print_json(ok_envelope(conflicts=[], count=0))
         return 0
@@ -64,6 +69,7 @@ def _report_no_conflicts(*, as_json: bool) -> int:
 
 
 def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_json: bool) -> int:
+    """Resolve all conflicts with the given strategy and report."""
     rc = _resolve_all_conflicts(root=root, conflicts=conflicts, strategy=strategy)
     if rc != 0:
         return rc
@@ -76,6 +82,7 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
 
 
 def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_json: bool) -> int:
+    """Print or envelope the conflict report."""
     if as_json:
         print_json(error_envelope(error=t("merge_conflicts"), conflicts=details, count=count))
         return 0
@@ -93,6 +100,7 @@ def run_conflicts(
     theirs: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise conflicts`` command."""
     root, err = require_root()
     if err:
         return err

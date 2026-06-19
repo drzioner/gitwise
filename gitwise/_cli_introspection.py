@@ -7,6 +7,7 @@ from . import __version__
 
 
 def _json_safe(value: object) -> object:
+    """Recursively convert an argparse value to a JSON-serializable form."""
     if value is argparse.SUPPRESS:
         return None
     if value is None or isinstance(value, str | int | float | bool):
@@ -19,6 +20,7 @@ def _json_safe(value: object) -> object:
 
 
 def _subparsers_action(parser: argparse.ArgumentParser) -> argparse._SubParsersAction | None:
+    """Return the first _SubParsersAction from a parser, or None."""
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
             return action
@@ -26,6 +28,7 @@ def _subparsers_action(parser: argparse.ArgumentParser) -> argparse._SubParsersA
 
 
 def _serialize_actions(parser: argparse.ArgumentParser) -> list[dict[str, object]]:
+    """Serialize a parser's non-help, non-subparser actions into JSON-friendly dicts."""
     items: list[dict[str, object]] = []
     for action in parser._actions:
         if action.dest in {"help"}:
@@ -49,6 +52,7 @@ def _serialize_actions(parser: argparse.ArgumentParser) -> list[dict[str, object
 
 
 def extract_command_token(argv: list[str]) -> str | None:
+    """Extract the subcommand name from a raw argv, skipping global flags and their values."""
     skip_next = False
     for token in argv:
         if skip_next:
@@ -64,6 +68,7 @@ def extract_command_token(argv: list[str]) -> str | None:
 
 
 def help_payload(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
+    """Build a structured help payload for the root parser or a specific subcommand."""
     payload: dict[str, object] = {
         "v": 2,
         "ok": True,
@@ -130,6 +135,8 @@ def help_payload(parser: argparse.ArgumentParser, command: str | None = None) ->
 
 
 class CommandMetadata(TypedDict):
+    """Minimal metadata for a single subcommand."""
+
     name: str
     help: str
     aliases: list[str]
@@ -137,6 +144,7 @@ class CommandMetadata(TypedDict):
 
 
 def canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
+    """Return the canonical name (last prog token) of a subcommand parser."""
     prog = command_parser.prog.strip()
     if not prog:
         return ""
@@ -145,6 +153,7 @@ def canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
 
 
 def commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
+    """Return metadata for every unique subcommand, deduplicating by parser identity."""
     sub_action = _subparsers_action(parser)
     if sub_action is None:
         return []
@@ -189,6 +198,7 @@ def commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
 
 
 def _json_type_for_action(action: argparse.Action) -> str:
+    """Map an argparse action to a JSON Schema type string."""
     if isinstance(action, argparse._StoreTrueAction | argparse._StoreFalseAction):
         return "boolean"
 
@@ -201,6 +211,7 @@ def _json_type_for_action(action: argparse.Action) -> str:
 
 
 def _action_property_schema(action: argparse.Action) -> dict[str, object]:
+    """Build a JSON Schema property dict for a single argparse action."""
     value_schema: dict[str, object] = {"type": _json_type_for_action(action)}
 
     if action.choices:
@@ -230,6 +241,7 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
 
 
 def _action_required(action: argparse.Action) -> bool:
+    """Determine whether an argparse action produces a required JSON field."""
     if action.option_strings:
         return bool(getattr(action, "required", False))
 
@@ -242,6 +254,7 @@ def _action_required(action: argparse.Action) -> bool:
 
 
 def command_input_schema(command_parser: argparse.ArgumentParser) -> dict[str, object]:
+    """Generate a JSON Schema (draft 2020-12) describing the CLI input of a subcommand."""
     properties: dict[str, object] = {}
     required: list[str] = []
 
@@ -269,6 +282,7 @@ def command_input_schema(command_parser: argparse.ArgumentParser) -> dict[str, o
 def resolve_command_parser(
     *, parser: argparse.ArgumentParser, name: str
 ) -> argparse.ArgumentParser | None:
+    """Look up the sub-parser registered under *name*, or return None."""
     sub_action = _subparsers_action(parser)
     if sub_action is None:
         return None

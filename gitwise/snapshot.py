@@ -11,6 +11,7 @@ from .utils.json_envelope import ok_envelope
 
 
 def _append_branch_section(lines: list[str], *, root: Path) -> None:
+    """Append the current branch section to *lines*."""
     branch = git_run(["branch", "--show-current"], cwd=root, check=False)
     if branch.returncode != 0:
         return
@@ -24,6 +25,7 @@ def _append_branch_section(lines: list[str], *, root: Path) -> None:
 
 
 def _append_status_section(lines: list[str], *, root: Path) -> None:
+    """Append the working-tree status section to *lines*."""
     status = git_run(["status", "--short"], cwd=root, check=False)
     if status.returncode != 0:
         return
@@ -37,12 +39,14 @@ def _append_status_section(lines: list[str], *, root: Path) -> None:
 
 
 def _append_log_section(lines: list[str], *, root: Path) -> None:
+    """Append the last 10 commits section to *lines*."""
     log = git_run(["--no-pager", "log", "--oneline", "-n", "10"], cwd=root, check=False)
     if log.returncode == 0 and log.stdout.strip():
         lines += [t("section_last_commits"), "```", log.stdout.strip(), "```", ""]
 
 
 def _append_stash_section(lines: list[str], *, root: Path) -> None:
+    """Append a stash count line to *lines* if stashes exist."""
     stash = git_run(["stash", "list"], cwd=root, check=False)
     if stash.returncode != 0 or not stash.stdout.strip():
         return
@@ -51,6 +55,7 @@ def _append_stash_section(lines: list[str], *, root: Path) -> None:
 
 
 def _append_worktrees_section(lines: list[str], *, root: Path) -> None:
+    """Append a worktree count line to *lines* if more than one worktree exists."""
     worktrees = git_run(["worktree", "list", "--porcelain"], cwd=root, check=False)
     if worktrees.returncode != 0:
         return
@@ -94,6 +99,7 @@ def generate_snapshot(
 
 
 def run_snapshot(*, as_json: bool = False) -> int:
+    """Entry point for the ``gitwise snapshot`` command."""
     root, err = require_root()
     if err:
         return err

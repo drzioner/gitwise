@@ -34,6 +34,11 @@ _TOOL_INFO: dict[str, tuple[str, str]] = {
 
 
 def run_doctor(*, as_json: bool = False) -> int:
+    """Entry point for the ``gitwise doctor`` command.
+
+    Checks git version, Python version, platform, optional tools, and GPG status.
+    Returns 0 when critical checks pass (git + Python), 1 otherwise.
+    """
     with status(t("status_checking_env")):
         git_ver = git_version()
         git_ok = git_ver >= MIN_GIT

@@ -9,6 +9,8 @@ PathState = Literal["absent", "regular", "symlink_valid", "symlink_broken"]
 
 
 class StateDict(TypedDict):
+    """Snapshot of repo state relevant to the 5-bucket model."""
+
     a_state: PathState
     c_state: PathState
     agents_dir: bool
@@ -20,6 +22,8 @@ class StateDict(TypedDict):
 
 
 class ActionSummary(TypedDict):
+    """Count of actions by category (created, appended, symlinked, skipped, errored)."""
+
     created: int
     appended: int
     symlinked: int
@@ -28,6 +32,7 @@ class ActionSummary(TypedDict):
 
 
 def build_action_summary(actions: list[ActionDict]) -> ActionSummary:
+    """Tally actions into summary counts by their action type."""
     summary: ActionSummary = {
         "created": 0,
         "appended": 0,

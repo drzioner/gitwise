@@ -23,6 +23,7 @@ _SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]
 
 
 def _list_tags(root: Path) -> list[dict[str, str]]:
+    """Return all tags as ``[{name, sha, date}]``."""
     with status(t("status_reading_tags")):
         r = git_run(
             [
@@ -45,12 +46,14 @@ def _list_tags(root: Path) -> list[dict[str, str]]:
 
 
 def _latest_semver(root: Path) -> dict[str, str] | None:
+    """Return the highest semver tag dict, or None if no semver tags exist."""
     tags = _list_tags(root)
     semver_tags = [tg for tg in tags if _SEMVER_RE.match(tg["name"])]
     if not semver_tags:
         return None
 
     def _sort_key(tg: dict[str, str]) -> tuple[int, ...]:
+        """Extract numeric semver tuple for sorting."""
         m = _SEMVER_RE.match(tg["name"])
         if not m:
             return (0, 0, 0)
@@ -61,6 +64,7 @@ def _latest_semver(root: Path) -> dict[str, str] | None:
 
 
 def _bump_version(version: str, part: str) -> str:
+    """Increment *part* (major/minor/patch) of a semver *version* string."""
     m = _SEMVER_RE.match(version)
     if not m:
         return version
@@ -80,6 +84,7 @@ def _bump_version(version: str, part: str) -> str:
 
 
 def _print_tag_list(tags: list[dict[str, str]]) -> None:
+    """Render a table of tags, highlighting semver rows."""
     if not tags:
         ok(t("tag_empty"))
         return
@@ -108,6 +113,7 @@ def _resolve_tag_name(
     bump: str | None,
     name: str | None,
 ) -> str | None:
+    """Resolve the tag name from explicit *name* or by bumping the latest semver."""
     if bump:
         latest = _latest_semver(root)
         base = latest["name"] if latest else "0.0.0"
@@ -116,6 +122,7 @@ def _resolve_tag_name(
 
 
 def _run_tag_list(*, root: Path, as_json: bool) -> int:
+    """Execute ``tag list`` sub-action."""
     tags = _list_tags(root)
     if as_json:
         print_json(ok_envelope(tags=tags, count=len(tags)))
@@ -125,6 +132,7 @@ def _run_tag_list(*, root: Path, as_json: bool) -> int:
 
 
 def _run_tag_latest(*, root: Path, as_json: bool) -> int:
+    """Execute ``tag latest`` sub-action."""
     latest = _latest_semver(root)
     if as_json:
         print_json(ok_envelope(latest=latest))
@@ -146,6 +154,7 @@ def _run_tag_create(
     dry_run: bool,
     as_json: bool,
 ) -> int:
+    """Execute ``tag create`` sub-action."""
     tag_name = _resolve_tag_name(root=root, bump=bump, name=name)
     if not tag_name:
         error(t("tag_name_required"))
@@ -186,6 +195,7 @@ def _run_tag_delete(
     dry_run: bool,
     as_json: bool,
 ) -> int:
+    """Execute ``tag delete`` sub-action with optional confirmation."""
     if not name:
         error(t("tag_name_required"))
         return 1
@@ -225,6 +235,7 @@ def run_tag(
     yes: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise tag`` command."""
     root, err = require_root()
     if err:
         return err

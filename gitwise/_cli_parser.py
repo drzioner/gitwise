@@ -8,10 +8,12 @@ from .i18n import t
 
 
 def _root_help_epilog() -> str:
+    """Return the localized environment-variable epilog for root help."""
     return t("help_root_environment_epilog")
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build and return the top-level argparse parser with all subcommands registered."""
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument(
         "--lang",

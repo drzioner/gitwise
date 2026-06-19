@@ -29,6 +29,7 @@ _TYPE_MAP: list[tuple[str, str]] = [
 
 
 def _infer_type(files: list[str]) -> str:
+    """Pick a conventional-commit type from the first matching filename pattern."""
     for pattern, commit_type in _TYPE_MAP:
         for f in files:
             if re.search(pattern, f):
@@ -37,6 +38,7 @@ def _infer_type(files: list[str]) -> str:
 
 
 def _infer_scope(files: list[str]) -> str | None:
+    """Return the common top-level directory when all files share one."""
     dirs: set[str] = set()
     for f in files:
         parts = f.split("/")
@@ -48,6 +50,7 @@ def _infer_scope(files: list[str]) -> str | None:
 
 
 def _build_message(staged_files: list[str], additions: int, deletions: int) -> str:
+    """Compose a conventional-commit message from the staged file list."""
     commit_type = _infer_type(staged_files)
     scope = _infer_scope(staged_files)
     scope_str = f"({scope})" if scope else ""
@@ -58,6 +61,7 @@ def _build_message(staged_files: list[str], additions: int, deletions: int) -> s
 
 
 def _staged_with_status(root) -> list[tuple[str, str]]:
+    """Return (status_letter, path) pairs from the staged diff."""
     r = git_run(["diff", "--cached", "--name-status"], cwd=root, check=False)
     if r.returncode != 0:
         return []
@@ -74,6 +78,10 @@ def _staged_with_status(root) -> list[tuple[str, str]]:
 
 
 def _collect_staged_files(root) -> tuple[list[str], dict[str, str]]:
+    """Return (file_paths, path_to_status_map) for all staged files.
+
+    Raises RuntimeError if the staged diff cannot be read.
+    """
     r = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
     if r.returncode != 0:
         raise RuntimeError("staged_diff_failed")
@@ -84,6 +92,7 @@ def _collect_staged_files(root) -> tuple[list[str], dict[str, str]]:
 
 
 def _numstat_totals(root) -> tuple[int, int]:
+    """Return (total_additions, total_deletions) across all staged files."""
     stat = git_run(["diff", "--cached", "--numstat"], cwd=root, check=False)
     additions = deletions = 0
     if stat.returncode != 0:
@@ -104,6 +113,7 @@ def _numstat_totals(root) -> tuple[int, int]:
 def _print_suggest_human(
     message: str, staged_files: list[str], staged_map: dict[str, str]
 ) -> None:
+    """Render the suggestion, inferred type, and staged file list to the terminal."""
     print_header(t("suggest_message", message=message))
     print_bracket(t("suggest_type", type=_infer_type(staged_files)))
     for file_path in staged_files:

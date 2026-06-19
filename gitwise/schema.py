@@ -11,12 +11,14 @@ SCHEMA_VERSION_DEFAULT = "v1"
 
 @lru_cache(maxsize=1)
 def _schema_roots() -> tuple[Path, ...]:
+    """Return the ordered list of schema root directories."""
     from ._paths import share_dir
 
     return (share_dir() / "schemas",)
 
 
 def schema_root(version: str = SCHEMA_VERSION_DEFAULT) -> Path:
+    """Return the schema directory for *version*, falling back to the first root."""
     roots = _schema_roots()
     for candidate in roots:
         version_root = candidate / version
@@ -26,12 +28,14 @@ def schema_root(version: str = SCHEMA_VERSION_DEFAULT) -> Path:
 
 
 def command_input_schema_path(*, command: str, version: str = SCHEMA_VERSION_DEFAULT) -> Path:
+    """Return the path to the JSON schema for *command* input."""
     return schema_root(version) / "input" / f"{command}.json"
 
 
 def load_command_input_schema(
     *, command: str, version: str = SCHEMA_VERSION_DEFAULT
 ) -> dict | None:
+    """Load and return the JSON schema for *command*, or None if missing."""
     path = command_input_schema_path(command=command, version=version)
     if not path.exists():
         return None
@@ -43,6 +47,7 @@ def load_command_input_schema(
 
 
 def list_command_input_schema_files(*, version: str = SCHEMA_VERSION_DEFAULT) -> list[Path]:
+    """Return sorted paths of all command input schema JSON files."""
     input_dir = schema_root(version) / "input"
     if not input_dir.is_dir():
         return []

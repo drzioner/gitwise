@@ -29,6 +29,8 @@ HookMode = Literal["preserve", "native", "legacy", "skip"]
 
 
 class SetupChange(TypedDict):
+    """A single config mutation planned by the setup command."""
+
     op: Literal["set", "add", "unset"]
     key: str
     desired: str
@@ -81,6 +83,7 @@ def _check_gpg_state(cwd: Path) -> list[str]:
 
 
 def _plan_base_changes(cwd: Path) -> list[SetupChange]:
+    """Diff the current repo config against the modern defaults table."""
     changes: list[SetupChange] = []
     for key, desired in _BASE_CONFIGS:
         if key in _PROTECTED_KEYS:
@@ -100,6 +103,7 @@ def _plan_base_changes(cwd: Path) -> list[SetupChange]:
 
 
 def _plan_platform_feature_changes(cwd: Path) -> list[SetupChange]:
+    """Plan platform-specific configs (fsmonitor on macOS, manyFiles)."""
     changes: list[SetupChange] = []
 
     # fsmonitor: macOS only, requires git >= 2.36 (built-in FSEvents) or watchman
@@ -138,6 +142,7 @@ def _plan_platform_feature_changes(cwd: Path) -> list[SetupChange]:
 
 
 def _detect_hook_managers(cwd: Path) -> list[str]:
+    """Return names of detected hook managers (lefthook, husky)."""
     managers: list[str] = []
     if (cwd / "lefthook.yml").exists() or (cwd / ".lefthook").exists():
         managers.append("lefthook")
@@ -147,10 +152,12 @@ def _detect_hook_managers(cwd: Path) -> list[str]:
 
 
 def _same_path(left: Path, right: Path) -> bool:
+    """Return True if both paths resolve to the same inode."""
     return os.path.realpath(str(left)) == os.path.realpath(str(right))
 
 
 def _active_hooks_dir(repo_root: Path) -> Path | None:
+    """Return the directory git consults for hooks, or None."""
     configured = git_config("core.hooksPath", cwd=repo_root)
     if configured:
         configured_path = Path(configured)
@@ -165,6 +172,7 @@ def _active_hooks_dir(repo_root: Path) -> Path | None:
 
 
 def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
+    """Return hook events already scripted outside the gitwise hooks dir."""
     active_dir = _active_hooks_dir(repo_root)
     if active_dir is None:
         return []
@@ -180,6 +188,7 @@ def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
 
 
 def _plan_native_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
+    """Plan gitwise hook scripts via ``hook.<name>.command`` config."""
     changes: list[SetupChange] = []
 
     current_hookspath = git_config("core.hooksPath", cwd=cwd)
@@ -227,6 +236,7 @@ def _plan_native_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
 
 
 def _plan_legacy_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
+    """Plan pointing ``core.hooksPath`` at the gitwise hooks directory."""
     current = git_config("core.hooksPath", cwd=cwd)
     desired = str(hooks_dir)
     if current == desired:
@@ -250,6 +260,11 @@ def _choose_hooks_backend(
     managers: list[str],
     existing_events: list[str],
 ) -> tuple[Literal["native", "legacy", "skip"], list[str]]:
+    """Decide the hook backend based on mode, git version, and safety checks.
+
+    Returns the chosen backend and any warnings.  ``"skip"`` means no
+    hook changes will be applied (e.g. conflicting hook manager detected).
+    """
     warnings: list[str] = []
     native_supported = supports_config_hooks(cwd=cwd)
     current = git_config("core.hooksPath", cwd=cwd)
@@ -296,6 +311,7 @@ def _plan_hook_changes(
     repo_root: Path,
     hooks_mode: HookMode,
 ) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
+    """Plan hook changes: returns (changes, warnings, managers, backend)."""
     hooks_dir = _share_dir() / "hooks"
     managers = _detect_hook_managers(repo_root)
     existing_events = _detect_existing_hook_events(repo_root, hooks_dir)
@@ -319,6 +335,7 @@ def _plan_changes(
     repo_root: Path,
     hooks_mode: HookMode,
 ) -> tuple[list[SetupChange], list[str], list[str], Literal["native", "legacy", "skip"]]:
+    """Aggregate all planned config and hook changes."""
     changes: list[SetupChange] = []
     changes.extend(_plan_base_changes(repo_root))
     changes.extend(_plan_platform_feature_changes(repo_root))
@@ -331,6 +348,7 @@ def _plan_changes(
 
 
 def _format_desired(change: SetupChange) -> str:
+    """Render the desired-value column for display."""
     op = change["op"]
     if op == "add":
         return f"+ {change['desired']}"
@@ -340,6 +358,7 @@ def _format_desired(change: SetupChange) -> str:
 
 
 def _apply_change(change: SetupChange, cwd: Path) -> bool:
+    """Execute a single config mutation.  Returns True on success."""
     op = change["op"]
     key = change["key"]
 
@@ -362,6 +381,7 @@ def _json_report(
     hooks_mode: HookMode,
     hooks_backend: Literal["native", "legacy", "skip"],
 ) -> dict[str, object]:
+    """Build the JSON payload for a setup run report."""
     return {
         "dry_run": dry_run,
         "root": str(root),
@@ -381,6 +401,7 @@ def _print_setup_context(
     hooks_backend: Literal["native", "legacy", "skip"],
     hooks_mode: HookMode,
 ) -> None:
+    """Print GPG and hook warnings plus the selected backend."""
     for warning_text in gpg_warnings + hook_warnings:
         warn(warning_text)
     info(t("setup_hook_backend_selected", backend=hooks_backend, requested=hooks_mode))
@@ -391,6 +412,7 @@ def _print_setup_context(
 
 
 def _print_change_plan(changes: list[SetupChange]) -> None:
+    """Print a human-readable table of planned config changes."""
     print_header(t("planned_changes", count=str(len(changes))))
     for change in changes:
         note = f"  [{change['note']}]" if change["note"] else ""
@@ -404,6 +426,7 @@ def _print_change_plan(changes: list[SetupChange]) -> None:
 def _apply_changes(
     changes: list[SetupChange], cwd: Path, *, quiet: bool = False
 ) -> list[dict[str, object]]:
+    """Apply config changes and return per-key results.  Suppresses terminal output when *quiet*."""
     results: list[dict[str, object]] = []
     for change in changes:
         desired_text = _format_desired(change)
@@ -430,6 +453,11 @@ def run_setup(
     as_json: bool = False,
     hooks_mode: HookMode = "preserve",
 ) -> int:
+    """Apply modern git defaults and optional hook configuration.
+
+    Returns 0 on success, 1 on partial failure, 2 when ``--json`` is used
+    without ``--yes``.  In dry-run mode returns 0 without modifying config.
+    """
     root, err = require_root()
     if err:
         return err

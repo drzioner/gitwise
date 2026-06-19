@@ -18,6 +18,8 @@ from .utils.parsing import non_empty_lines, to_int
 
 
 class HealthDetails(TypedDict):
+    """Detailed booleans and counts that feed into the health score."""
+
     has_remote: bool
     has_upstream: bool
     gpg_ready: bool
@@ -30,6 +32,8 @@ class HealthDetails(TypedDict):
 
 
 class HealthResult(TypedDict):
+    """Aggregated health score, letter grade, and breakdown."""
+
     score: int
     grade: str
     breakdown: dict[str, int]
@@ -37,21 +41,25 @@ class HealthResult(TypedDict):
 
 
 def _untracked_count(cwd: Path) -> int:
+    """Count untracked files not matched by .gitignore."""
     r = git_run(["ls-files", "--others", "--exclude-standard"], cwd=cwd, check=False)
     return len(non_empty_lines(r.stdout)) if r.returncode == 0 else 0
 
 
 def _stash_count(cwd: Path) -> int:
+    """Count stash entries."""
     r = git_run(["stash", "list"], cwd=cwd, check=False)
     return len(non_empty_lines(r.stdout)) if r.returncode == 0 else 0
 
 
 def _commit_count(cwd: Path) -> int:
+    """Count reachable commits on HEAD."""
     r = git_run(["rev-list", "--count", "HEAD"], cwd=cwd, check=False)
     return to_int(r.stdout, default=0) if r.returncode == 0 else 0
 
 
 def _branch_info(cwd: Path) -> tuple[int, list[str]]:
+    """Return total local branch count and list of stale branch names."""
     r = git_run(
         ["for-each-ref", "--format=%(refname:short) %(upstream:track)", "refs/heads/"],
         cwd=cwd,
@@ -72,6 +80,7 @@ def _branch_info(cwd: Path) -> tuple[int, list[str]]:
 
 
 def _breakdown_labels() -> dict[str, str]:
+    """Return localised labels for each breakdown key."""
     return {
         "remote": t("health_remote"),
         "upstream": t("health_upstream"),
@@ -89,6 +98,7 @@ _GRADE_MAP = [(90, "A"), (75, "B"), (60, "C"), (40, "D"), (0, "F")]
 
 
 def _grade(score: int) -> str:
+    """Map a 0-100 score to a letter grade (A/B/C/D/F)."""
     for threshold, letter in _GRADE_MAP:
         if score >= threshold:
             return letter
@@ -98,6 +108,7 @@ def _grade(score: int) -> str:
 def _apply_remote_penalties(
     *, score: int, breakdown: dict[str, int], root: Path
 ) -> tuple[int, bool, bool]:
+    """Deduct points for missing remote/upstream. Returns (score, has_remote, has_upstream)."""
     has_rem = has_remote(root)
     has_up = has_upstream(root) if has_rem else False
     if not has_rem:
@@ -110,6 +121,7 @@ def _apply_remote_penalties(
 
 
 def _apply_gpg_penalty(*, score: int, breakdown: dict[str, int], root: Path) -> tuple[int, dict]:
+    """Deduct points if GPG signing is disabled. Returns (score, gpg_info)."""
     gpg = gpg_status(root)
     if not gpg["gpgsign_enabled"]:
         score -= 10
@@ -124,6 +136,7 @@ def _apply_branch_penalties(
     root: Path,
     stale_override: list[str] | None,
 ) -> tuple[int, int, list[str]]:
+    """Deduct points for stale and excess branches. Returns (score, branch_count, stale_list)."""
     branch_count, stale = _branch_info(root) if stale_override is None else (0, stale_override)
     if stale:
         penalty = min(len(stale) * 5, 15)
@@ -143,6 +156,7 @@ def _apply_commit_graph_penalty(
     root: Path,
     commit_graph_override: bool | None,
 ) -> tuple[int, bool]:
+    """Deduct points for missing commit-graph. Returns (score, has_commit_graph)."""
     has_cg = commit_graph_override if commit_graph_override is not None else has_commit_graph(root)
     if not has_cg:
         score -= 5
@@ -153,6 +167,7 @@ def _apply_commit_graph_penalty(
 def _apply_repo_size_penalties(
     *, score: int, breakdown: dict[str, int], root: Path
 ) -> tuple[int, int, int, int]:
+    """Deduct points for old stashes, untracked clutter, and zero commits. Returns (score, stashes, untracked, commits)."""
     stashes = _stash_count(root)
     if stashes > 3:
         penalty = min((stashes - 3) * 2, 10)
@@ -181,6 +196,7 @@ def _remote_state(
     has_remote_override: bool | None,
     has_upstream_override: bool | None,
 ) -> tuple[int, bool, bool]:
+    """Compute remote state, using overrides when provided for testability."""
     if has_remote_override is not None or has_upstream_override is not None:
         has_rem = has_remote_override if has_remote_override is not None else has_remote(root)
         has_up = (
@@ -205,6 +221,7 @@ def _gpg_state(
     breakdown: dict[str, int],
     gpg_override: dict | None,
 ) -> tuple[int, dict]:
+    """Compute GPG state, using override when provided for testability."""
     if gpg_override is not None:
         gpg = gpg_override
         if not gpg["gpgsign_enabled"]:
@@ -228,6 +245,7 @@ def _build_health_result(
     branches: int,
     has_cg: bool,
 ) -> HealthResult:
+    """Assemble the final HealthResult, clamping the score to 0-100."""
     bounded_score = max(0, min(100, score))
     return {
         "score": bounded_score,
@@ -255,6 +273,7 @@ def _remaining_health_state(
     stale_override: list[str] | None,
     commit_graph_override: bool | None,
 ) -> tuple[int, int, list[str], bool, int, int, int]:
+    """Apply branch, commit-graph, and repo-size penalties in sequence."""
     score, branches, stale = _apply_branch_penalties(
         score=score,
         breakdown=breakdown,
@@ -284,6 +303,11 @@ def compute_health(
     _has_upstream: bool | None = None,
     _stale_branches: list[str] | None = None,
 ) -> HealthResult:
+    """Compute the 0-100 health score for *root*.
+
+    Underscore-prefixed overrides allow deterministic testing without
+    touching the real git repo.
+    """
     score = 100
     breakdown: dict[str, int] = {}
     score, has_rem, has_up = _remote_state(
@@ -324,6 +348,7 @@ def compute_health(
 
 
 def run_health(*, as_json: bool = False) -> int:
+    """Entry point for the ``gitwise health`` command."""
     root, err = require_root()
     if err:
         return err

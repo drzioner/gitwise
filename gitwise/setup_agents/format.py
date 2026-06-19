@@ -9,10 +9,12 @@ _SETUP_AGENTS_SCHEMA_COMPAT = [1, 2, 3]
 
 
 def _action_summaries(actions: list[ActionDict]) -> list[dict[str, str]]:
+    """Extract a lightweight (file, action) summary from each action dict."""
     return [{"file": a["file"], "action": a["action"]} for a in actions]
 
 
 def _canonical_layout_local(state: StateDict) -> str:
+    """Determine the canonical layout label based on state alone."""
     if state["agents_dir"]:
         return "agents_dir"
     if state["a_state"] != "absent":
@@ -26,6 +28,7 @@ def _canonical_layout_local_with_actions(
     actions: list[ActionDict],
     migrate_legacy_claude: bool,
 ) -> str:
+    """Determine the canonical layout label considering both state and planned actions."""
     if migrate_legacy_claude:
         return "agents_dir"
     if any(a.get("file") == "AGENTS.md" for a in actions):
@@ -36,6 +39,7 @@ def _canonical_layout_local_with_actions(
 
 
 def _canonical_layout_global(*, has_agents_dir: bool) -> str:
+    """Determine the canonical layout label for global mode."""
     if has_agents_dir:
         return "agents_dir"
     return "claude_only"
@@ -49,6 +53,7 @@ def format_json_output_global(
     has_agents_dir: bool,
     dry_run: bool = False,
 ) -> dict[str, object]:
+    """Build the JSON output dict for a successful global setup-agents run."""
     summary = build_action_summary(actions)
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
@@ -73,6 +78,7 @@ def format_json_output_global_error(
     has_agents_dir: bool,
     dry_run: bool = False,
 ) -> dict[str, object]:
+    """Build the JSON output dict for a failed global setup-agents run."""
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
@@ -102,6 +108,7 @@ def format_json_output_local_error(
     all_warnings: list[str],
     migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
+    """Build the JSON output dict for a failed local setup-agents run."""
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
@@ -139,6 +146,7 @@ def format_json_output_local(
     state: StateDict,
     migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
+    """Build the JSON output dict for a successful local setup-agents run."""
     summary = build_action_summary(actions)
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,

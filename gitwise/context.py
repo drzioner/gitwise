@@ -9,6 +9,7 @@ from .output import info, print_blank, print_bracket, print_dim, print_header, p
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
+    """Return Unicode box-drawing lines for the directory tree, skipping common noise dirs."""
     lines: list[str] = []
     skip = {
         ".git",
@@ -21,6 +22,7 @@ def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
     }
 
     def _walk(path: Path, prefix: str, depth: int) -> None:
+        """Recursively append tree lines for *path* at *depth*."""
         if depth > max_depth:
             return
         try:
@@ -43,6 +45,7 @@ def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
 
 
 def _top_contributors(root: Path, count: int = 5) -> list[dict[str, str | int]]:
+    """Return top-N contributors by commit count."""
     r = git_run(["shortlog", "-sne", "HEAD"], cwd=root, check=False)
     if r.returncode != 0:
         return []
@@ -55,6 +58,7 @@ def _top_contributors(root: Path, count: int = 5) -> list[dict[str, str | int]]:
 
 
 def _file_type_breakdown(root: Path) -> dict[str, int]:
+    """Return a ``{ext: count}`` dict for the top 15 file extensions in HEAD."""
     r = git_run(["ls-tree", "-r", "--name-only", "HEAD"], cwd=root, check=False)
     if r.returncode != 0:
         return {}
@@ -67,7 +71,10 @@ def _file_type_breakdown(root: Path) -> dict[str, int]:
 
 
 def _todo_fixme_counts(root: Path) -> dict[str, int]:
+    """Count TODO and FIXME occurrences in HEAD."""
+
     def _count_pattern(pattern: str) -> int:
+        """Count occurrences of *pattern* across files in HEAD."""
         r = git_run(
             ["grep", "-c", "-e", pattern, "HEAD", "--", "."],
             cwd=root,
@@ -87,6 +94,7 @@ def _todo_fixme_counts(root: Path) -> dict[str, int]:
 
 
 def _branch_topology(root: Path) -> dict[str, list[str]]:
+    """Return ``{local: [...], remote: [...]}`` branch name lists."""
     r = git_run(["branch", "-a", "--format=%(refname)"], cwd=root, check=False)
     if r.returncode != 0:
         return {"local": [], "remote": []}
@@ -102,6 +110,7 @@ def _branch_topology(root: Path) -> dict[str, list[str]]:
 
 
 def run_context(*, as_json: bool = False) -> int:
+    """Entry point for the ``gitwise context`` command."""
     root, err = require_root()
     if err:
         return err

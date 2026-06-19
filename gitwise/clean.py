@@ -64,6 +64,12 @@ def run_clean(
     yes: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Delete stale branches whose upstream tracking ref is gone.
+
+    Requires ``--branches`` to be set.  Returns 0 on success (including
+    user-cancelled), 1 on delete failures or missing flag, 2 when
+    ``--json`` is used without ``--yes``.
+    """
     if refs:
         error(t("clean_refs_not_implemented"))
         return 1

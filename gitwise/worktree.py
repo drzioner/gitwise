@@ -20,6 +20,7 @@ from .utils.json_envelope import ok_envelope, passthrough_envelope
 
 
 def _list_worktrees(cwd: Path) -> list[dict]:
+    """Parse ``git worktree list --porcelain`` into dicts with path/branch/locked/prunable."""
     r = git_run(["worktree", "list", "--porcelain"], cwd=cwd, check=False)
     if r.returncode != 0:
         return []
@@ -89,6 +90,7 @@ def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
 
 
 def _worktree_new(branch: str, root: Path) -> int:
+    """Create a worktree for *branch* and print human output."""
     rc, path, data = _worktree_create(branch, root)
     if rc != 0:
         error(data.get("error", t("worktree_failed", error="unknown")))
@@ -100,11 +102,13 @@ def _worktree_new(branch: str, root: Path) -> int:
 
 
 def _worktree_new_json(branch: str, root: Path) -> tuple[int, dict]:
+    """Create a worktree for *branch* and return a JSON-ready dict."""
     rc, _path, data = _worktree_create(branch, root)
     return rc, data
 
 
 def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) -> int:
+    """Prune stale worktree admin files and report orphaned worktrees."""
     # git worktree prune removes stale admin files
     prune_args = ["worktree", "prune"]
     if dry_run:
@@ -159,6 +163,7 @@ def run_worktree(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Entry point for the ``gitwise worktree`` command."""
     root, err = require_root()
     if err:
         return err
