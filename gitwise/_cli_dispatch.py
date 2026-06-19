@@ -137,10 +137,13 @@ def _run_diff(args: argparse.Namespace) -> int:
     from .diff import run_diff
 
     return run_diff(
+        refspec=args.refspec,
+        paths=args.paths,
         staged=args.staged,
         stat=args.stat,
         name_only=args.name_only,
         full=args.full,
+        summary=args.summary,
         as_json=args.json,
     )
 

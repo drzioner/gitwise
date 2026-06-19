@@ -166,3 +166,101 @@ def test_diff_patch_alias(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("more changes\n")
     result = _run("diff", "--patch", cwd=tmp_git_repo)
     assert result.returncode == 0
+
+
+# ── D1: refspecs (commit, branch, two-dot range, three-dot range) ────────────
+
+
+def _repo_with_history(repo: Path) -> str:
+    """Create a second commit and return the first commit hash for range tests."""
+    first = _git(["rev-parse", "HEAD"], repo).stdout.decode().strip()
+    (repo / "README.md").write_text("v2 content\n")
+    _git(["add", "."], repo)
+    _git(["commit", "--no-gpg-sign", "-m", "chore: second commit"], repo)
+    return first
+
+
+def test_diff_ref_single_commit(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    result = _run("diff", first, cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+
+
+def test_diff_ref_single_commit_json(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    result = _run("diff", first, "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["count"] >= 1
+    assert any("README.md" in f.get("path", "") for f in data["files"])
+
+
+def test_diff_two_dot_range(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    refspec = f"{first}..HEAD"
+    result = _run("diff", refspec, cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+
+
+def test_diff_three_dot_range(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    refspec = f"{first}...HEAD"
+    result = _run("diff", refspec, cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+
+
+def test_diff_invalid_refspec_fails(tmp_git_repo):
+    result = _run("diff", "nonexistent-ref-xyz", cwd=tmp_git_repo)
+    assert result.returncode == 1
+
+
+# ── D2: path scope (-- separator) ────────────────────────────────────────────
+
+
+def test_diff_path_scope(tmp_git_repo):
+    (tmp_git_repo / "README.md").write_text("changed\n")
+    (tmp_git_repo / "other.txt").write_text("changed\n")
+    result = _run("diff", "--", "README.md", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+    assert "other.txt" not in result.stdout
+
+
+def test_diff_refspec_with_paths(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    (tmp_git_repo / "extra.txt").write_text("extra change\n")
+    result = _run("diff", first, "--", "README.md", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+    assert "extra.txt" not in result.stdout
+
+
+# ── D5: --summary ────────────────────────────────────────────────────────────
+
+
+def test_diff_summary(tmp_git_repo):
+    (tmp_git_repo / "README.md").write_text("line1\nline2\nline3\n")
+    result = _run("diff", "--summary", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+
+
+def test_diff_summary_json(tmp_git_repo):
+    (tmp_git_repo / "README.md").write_text("line1\nline2\nline3\n")
+    result = _run("diff", "--summary", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["count"] >= 1
+    assert all("path" in f and "insertions" in f and "deletions" in f for f in data["files"])
+    assert "totals" in data
+
+
+# ── D4: large binary warning ─────────────────────────────────────────────────
+
+
+def test_diff_binary_lfs_warning(tmp_git_repo_with_large_blob):
+    result = _run("diff", "--stat", cwd=tmp_git_repo_with_large_blob)
+    assert result.returncode == 0

@@ -178,7 +178,24 @@ def build_parser() -> argparse.ArgumentParser:
     diff_group.add_argument(
         "--full", "--patch", action="store_true", help="show full patch with delta integration"
     )
+    diff_group.add_argument(
+        "--summary",
+        action="store_true",
+        help="compact summary: additions/deletions per file, no patch",
+    )
     p.add_argument("--stat", action="store_true", help="show diffstat (default behavior)")
+    p.add_argument(
+        "refspec",
+        nargs="?",
+        default=None,
+        help="commit, branch, or range to diff (e.g. HEAD~3, main..feat, main...feat)",
+    )
+    p.add_argument(
+        "paths",
+        nargs="*",
+        metavar="PATH",
+        help="limit to paths (use -- to separate from refspec)",
+    )
 
     p = sub.add_parser("log", help="pretty git log with filters", parents=[parent])
     p.add_argument("--oneline", action="store_true", help="one line per commit")

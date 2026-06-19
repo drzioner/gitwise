@@ -47,10 +47,26 @@
       "description": "show full patch with delta integration",
       "default": false
     },
+    "summary": {
+      "type": "boolean",
+      "description": "compact summary: additions/deletions per file, no patch",
+      "default": false
+    },
     "stat": {
       "type": "boolean",
       "description": "show diffstat (default behavior)",
       "default": false
+    },
+    "refspec": {
+      "type": "string",
+      "description": "commit, branch, or range to diff (e.g. HEAD~3, main..feat, main...feat)"
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "limit to paths (use -- to separate from refspec)"
+      }
     }
   }
 }
