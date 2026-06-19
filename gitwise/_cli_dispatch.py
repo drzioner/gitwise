@@ -255,6 +255,8 @@ def _run_merge(args: argparse.Namespace) -> int:
         no_ff=args.no_ff,
         dry_run=args.dry_run,
         yes=args.yes,
+        abort=args.abort,
+        continue_merge=args.continue_merge,
         as_json=args.json,
     )
 

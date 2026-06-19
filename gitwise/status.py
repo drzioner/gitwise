@@ -16,6 +16,7 @@ from .output import (
     print_json,
     status,
 )
+from .utils.in_progress import detect_in_progress
 from .utils.parsing import parse_two_ints
 
 
@@ -67,6 +68,8 @@ def run_status(*, as_json: bool = False) -> int:
             if behind:
                 behind_commits = _range_commits(root, "HEAD..@{u}")
 
+        in_progress = detect_in_progress(root)
+
     if as_json:
         print_json(
             {
@@ -78,6 +81,7 @@ def run_status(*, as_json: bool = False) -> int:
                 "behind": behind,
                 "ahead_commits": ahead_commits,
                 "behind_commits": behind_commits,
+                "in_progress": in_progress,
                 "staged": len(staged),
                 "unstaged": len(unstaged),
                 "untracked": len(untracked),

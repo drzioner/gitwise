@@ -34,7 +34,7 @@ Todas las referencias a archivos son baselines pre-0.28 verificadas con
 
 ---
 
-## Sprint 1 — Seguridad en operaciones en curso y endurecimiento i18n
+## Sprint 1 — Seguridad en operaciones en curso y endurecimiento i18n — IMPLEMENTADO
 
 **Objetivo:** evitar que un agente commitee a mitad de un merge/rebase/
 cherry-pick, y hacer que la paridad i18n sea exigible por locale.
@@ -42,6 +42,9 @@ cherry-pick, y hacer que la paridad i18n sea exigible por locale.
 **Por qué primero:** un commit a mitad de rebase corrompe el estado del
 repositorio silenciosamente. Es el único sprint cuya ausencia es un riesgo
 activo de pérdida de datos, no solo un gap de capacidad.
+
+**Estado:** Entregado en PR (post-0.28). Ver la matriz de verificación en
+"Criterios de salida" más abajo.
 
 ### Ítems de trabajo
 

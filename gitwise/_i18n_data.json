@@ -251,6 +251,10 @@
     "es": "mensaje",
     "en": "msg"
   },
+  "commit_blocked_in_progress": {
+    "es": "No se puede commitear: hay una operación {state} en curso. Resuélvela o aborta primero.",
+    "en": "Cannot commit: a {state} operation is in progress. Resolve or abort it first."
+  },
   "commit_no_message": {
     "es": "usa -m para proveer un mensaje de commit",
     "en": "use -m to provide a commit message"
@@ -846,6 +850,26 @@
   "merge_merge_label": {
     "es": "merge",
     "en": "merge"
+  },
+  "merge_aborted": {
+    "es": "Mezcla abortada",
+    "en": "Merge aborted"
+  },
+  "merge_abort_continue_mutually_exclusive": {
+    "es": "--abort y --continue son mutuamente excluyentes",
+    "en": "--abort and --continue are mutually exclusive"
+  },
+  "merge_branch_required": {
+    "es": "Especifica la rama a mezclar, o usa --abort/--continue para una operación pausada",
+    "en": "Specify a branch to merge, or use --abort/--continue for a paused operation"
+  },
+  "merge_continued": {
+    "es": "Mezcla continuada",
+    "en": "Merge continued"
+  },
+  "merge_no_in_progress": {
+    "es": "No hay mezcla/rebase en curso (estado actual: {state}). Usa {action} solo cuando gitwise detecta operación pausada.",
+    "en": "No merge/rebase in progress (current state: {state}). Use {action} only when gitwise detects a paused operation."
   },
   "merge_ok": {
     "es": "Mezcla completada: {branch} → {into}",
@@ -1666,6 +1690,10 @@
   "suggest_message": {
     "es": "Sugerencia: {message}",
     "en": "Suggestion: {message}"
+  },
+  "suggest_blocked_in_progress": {
+    "es": "No se puede sugerir commit: hay una operación {state} en curso. Resuélvela o aborta primero.",
+    "en": "Cannot suggest commit: a {state} operation is in progress. Resolve or abort it first."
   },
   "suggest_no_staged": {
     "es": "No hay archivos en área de preparación",

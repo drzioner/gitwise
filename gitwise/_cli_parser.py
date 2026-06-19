@@ -269,11 +269,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
 
     p = sub.add_parser("merge", help="merge/rebase with pre-flight checks", parents=[parent])
-    p.add_argument("branch", help="branch to merge/rebase from")
+    p.add_argument(
+        "branch", nargs="?", help="branch to merge/rebase from (omit with --abort/--continue)"
+    )
     p.add_argument("--rebase", action="store_true", help="rebase instead of merge")
     p.add_argument("--no-ff", action="store_true", help="force no-fast-forward")
     p.add_argument("--dry-run", action="store_true", help="show checks without merging")
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
+    p.add_argument("--abort", action="store_true", help="abort an in-progress merge or rebase")
+    p.add_argument(
+        "--continue",
+        dest="continue_merge",
+        action="store_true",
+        help="continue an in-progress merge or rebase after resolving conflicts",
+    )
 
     p = sub.add_parser(
         "conflicts", help="conflict detection and resolution helper", parents=[parent]

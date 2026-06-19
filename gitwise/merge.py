@@ -14,6 +14,7 @@ from .output import (
     print_json,
     warn,
 )
+from .utils.in_progress import detect_in_progress
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import to_int
 
@@ -143,19 +144,70 @@ def _report_merge_error(*, as_json: bool, err: str) -> int:
     return 1
 
 
+def _execute_abort_or_continue(*, root: Path, abort: bool) -> tuple[bool, str]:
+    """Run `git merge --abort` or `git merge --continue`. Returns (success, error_msg)."""
+    args = ["merge", "--abort" if abort else "--continue"]
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode == 0:
+        return True, ""
+    return False, result.stderr.strip() or result.stdout.strip()
+
+
 def run_merge(
-    branch: str,
+    branch: str | None = None,
     *,
     rebase: bool = False,
     no_ff: bool = False,
     dry_run: bool = False,
     yes: bool = False,
+    abort: bool = False,
+    continue_merge: bool = False,
     as_json: bool = False,
 ) -> int:
     root, err = require_root()
     if err:
         return err
     if root is None:
+        return 1
+
+    if abort and continue_merge:
+        msg = t("merge_abort_continue_mutually_exclusive")
+        if as_json:
+            print_json(error_envelope(error=msg, code="merge_invalid_args"))
+        else:
+            error(msg)
+        return 1
+
+    if abort or continue_merge:
+        in_progress = detect_in_progress(root)
+        if in_progress["state"] not in ("merge", "rebase"):
+            available = "git merge --abort / --continue" if abort else "git merge --continue"
+            msg = t(
+                "merge_no_in_progress",
+                action=available,
+                state=in_progress["state"],
+            )
+            if as_json:
+                print_json(error_envelope(error=msg, code="merge_no_in_progress"))
+            else:
+                error(msg)
+            return 1
+        success, err_msg = _execute_abort_or_continue(root=root, abort=abort)
+        if not success:
+            return _report_merge_error(as_json=as_json, err=err_msg)
+        label_key = "merge_aborted" if abort else "merge_continued"
+        if as_json:
+            print_json(ok_envelope(action="abort" if abort else "continue"))
+        else:
+            ok(t(label_key))
+        return 0
+
+    if branch is None:
+        msg = t("merge_branch_required")
+        if as_json:
+            print_json(error_envelope(error=msg, code="merge_branch_required"))
+        else:
+            error(msg)
         return 1
 
     cur = current_branch(root)

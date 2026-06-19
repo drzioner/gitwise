@@ -6,6 +6,7 @@ from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, print_bracket, print_file_status, print_header, print_json, status
+from .utils.in_progress import detect_in_progress, in_progress_hint
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import stripped_non_empty_lines
 
@@ -114,6 +115,22 @@ def run_suggest(*, as_json: bool = False) -> int:
     if err:
         return err
     if root is None:
+        return 1
+
+    in_progress = detect_in_progress(root)
+    if in_progress["state"] != "none":
+        hint = in_progress_hint(in_progress["state"])
+        blocked_msg = t("suggest_blocked_in_progress", state=in_progress["state"])
+        if as_json:
+            print_json(
+                error_envelope(
+                    error=blocked_msg,
+                    code=f"in_progress_{in_progress['state']}",
+                    hint=hint,
+                )
+            )
+            return 1
+        error(blocked_msg, hint=hint)
         return 1
 
     try:

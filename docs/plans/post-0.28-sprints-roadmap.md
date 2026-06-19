@@ -28,7 +28,7 @@ All file references are pre-0.28 baselines verified by
 
 ---
 
-## Sprint 1 — In-progress safety and i18n hardening
+## Sprint 1 — In-progress safety and i18n hardening — IMPLEMENTED
 
 **Goal:** prevent an agent from committing mid-merge/rebase/cherry-pick, and
 make i18n parity enforceable per-locale.
@@ -36,6 +36,9 @@ make i18n parity enforceable per-locale.
 **Why first:** a commit mid-rebase corrupts repository state silently. This
 is the only sprint whose absence is an active data-loss risk, not just a
 capability gap.
+
+**Status:** Shipped in PR (post-0.28). See "Exit criteria" below for the
+verification matrix.
 
 ### Work items
 
