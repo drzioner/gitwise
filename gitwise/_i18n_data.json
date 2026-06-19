@@ -447,9 +447,21 @@
     "es": "Diagnóstico{suffix} — {count} observación(es):",
     "en": "Diagnostic{suffix} — {count} finding(s):"
   },
+  "diff_binary_lfs_hint": {
+    "es": "archivo binario {path} ({mib} MiB) -- considera Git LFS",
+    "en": "binary file {path} ({mib} MiB) -- consider Git LFS"
+  },
   "diff_prefix": {
     "es": "diff: {stat}",
     "en": "diff: {stat}"
+  },
+  "diff_summary_header": {
+    "es": "Resumen -- {count} archivo(s):",
+    "en": "Summary -- {count} file(s):"
+  },
+  "diff_too_many_refs": {
+    "es": "demasiados argumentos posicionales antes de '--' ({count}); gitwise diff acepta un unico refspec (usa a..b para un rango)",
+    "en": "too many positional arguments before '--' ({count}); gitwise diff accepts a single refspec (use a..b for a range)"
   },
   "directory_exists": {
     "es": "el directorio ya existe: {path}",
