@@ -33,6 +33,12 @@ def _range_commits(root: Path, rev_range: str) -> list[dict[str, str]]:
 
 
 def run_status(*, as_json: bool = False) -> int:
+    """Print a compact, agent-friendly view of the working-tree state.
+
+    Exposes branch, ahead/behind counts and commit lists, staged/unstaged/
+    untracked file counts, and an ``in_progress`` snapshot of any paused
+    merge/rebase/cherry-pick/revert/bisect operation.
+    """
     root, err = require_root()
     if err:
         return err

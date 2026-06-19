@@ -100,6 +100,15 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Functions: one purpose, max ~50 lines; extract when complexity grows
 - Composition over inheritance; prefer protocols for interface definitions
 - No `Any` type without explicit justification comment
+- **Docstrings (PEP 257) on every public symbol**: functions, classes, and
+  methods whose name does NOT start with `_` (and dunder methods that are
+  part of the public contract). One-line summary when the contract is
+  obvious from the signature; add a second paragraph for non-obvious
+  behavior, side effects, or the WHY behind a choice. Private helpers
+  (`_foo`) may omit docstrings only when the name + body are
+  self-documenting. Enforced externally: a "Docstring Coverage" check
+  (reported on the PR's Pre-merge panel but NOT part of the repo CI) gates
+  at ≥80% of public symbols — every PR must keep coverage above that line.
 
 ## Error Handling
 

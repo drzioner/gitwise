@@ -202,6 +202,13 @@ def run_merge(
     continue_merge: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Merge or rebase a branch with pre-flight checks, or resolve a paused op.
+
+    With ``--abort``/``--continue`` delegates to git's merge/rebase abort and
+    continue (subcommand chosen from the detected paused state). Otherwise
+    validates the target ref, warns on divergent branches, and asks for
+    confirmation before running ``git merge`` (or ``git rebase``).
+    """
     root, err = require_root()
     if err:
         return err

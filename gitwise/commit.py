@@ -105,6 +105,12 @@ def run_commit(
     dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Validate a conventional-commit message and create a GPG-signed commit.
+
+    Refuses with ``in_progress_<state>`` if an operation is paused. Enforces
+    the project's amend policy (no amending pushed or protected branches)
+    and GPG readiness before delegating to ``git commit``.
+    """
     root, err = require_root()
     if err:
         return err

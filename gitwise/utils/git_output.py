@@ -26,6 +26,12 @@ def status_label(code: str) -> str:
 
 
 def parse_diffstat_entries(raw: str, *, default_status: str | None = None) -> list[dict[str, str]]:
+    """Parse `git diff --stat` lines into ``{path, changes[, status]}`` dicts.
+
+    Lines without ``|`` (summary/blank) are skipped. ``default_status`` is
+    attached when the caller knows the change kind (e.g. "staged") but the
+    diffstat output does not carry it.
+    """
     entries: list[dict[str, str]] = []
     for line in raw.splitlines():
         if "|" not in line:
@@ -43,6 +49,11 @@ def parse_diffstat_entries(raw: str, *, default_status: str | None = None) -> li
 
 
 def parse_name_status_entries(raw: str) -> list[dict[str, str]]:
+    """Parse `git diff --name-status` lines into ``{status, path[, code, score, old_path]}`` dicts.
+
+    Handles R/C (rename/copy) entries whose second column is the old path;
+    the score (e.g. ``R100``) is preserved when present.
+    """
     entries: list[dict[str, str]] = []
     for line in raw.splitlines():
         parts = line.split("\t")
