@@ -1,1358 +1,2102 @@
 {
-    "aborted": {"es": "cancelado.", "en": "aborted."},
-    "adapter_created": {
-        "es": "adaptador {adapter}: creado {file}",
-        "en": "adapter {adapter}: created {file}",
-    },
-    "adapter_exists": {
-        "es": "adaptador {adapter}: {file} ya existe",
-        "en": "adapter {adapter}: {file} already exists",
-    },
-    "adapter_alias_deprecated": {
-        "es": 'alias deprecado: usa "{target}" en lugar de "{alias}"',
-        "en": 'deprecated alias: use "{target}" instead of "{alias}"',
-    },
-    "providers_available": {
-        "es": "providers disponibles: {list}",
-        "en": "available providers: {list}",
-    },
-    "adapter_no_template": {
-        "es": "plantilla de adaptador no encontrada: {path}",
-        "en": "adapter template not found: {path}",
-    },
-    "adapters_available": {
-        "es": "adaptadores disponibles: {list}",
-        "en": "available adapters: {list}",
-    },
-    "adapters_none_with_others": {
-        "es": '"none" no se puede combinar con otros adaptadores',
-        "en": '"none" cannot be combined with other adapters',
-    },
-    "adapters_require_local": {
-        "es": "los adaptadores requieren --local",
-        "en": "adapters require --local",
-    },
-    "action_failed": {
-        "es": "acción falló: {error} — revirtiendo {count} acciones previas",
-        "en": "action failed: {error} — rolling back {count} previous actions",
-    },
-    "actions_to_perform": {"es": "acciones a realizar:", "en": "actions to perform:"},
-    "active_in_worktree": {"es": "activa en un worktree", "en": "active in a worktree"},
-    "already_contains_conventions": {
-        "es": "ya contiene convenciones git",
-        "en": "already contains git conventions",
-    },
-    "already_exists": {"es": "ya existe", "en": "already exists"},
-    "already_points_to_agents": {
-        "es": "ya apunta a AGENTS.md",
-        "en": "already points to AGENTS.md",
-    },
-    "already_up_to_date": {"es": "Ya está actualizado.", "en": "Already up to date."},
-    "audit_fix_label": {"es": "solución", "en": "fix"},
-    "audit_ignore_label": {"es": "ignorar", "en": "ignore"},
-    "branch_deleted": {"es": "eliminada: {branch}", "en": "deleted: {branch}"},
-    "branch_label": {"es": "rama: {branch}", "en": "branch: {branch}"},
-    "branch_list_title": {"es": "Ramas", "en": "Branches"},
-    "branch_list_title_current": {
-        "es": "Ramas (actual: {branch})",
-        "en": "Branches (current: {branch})",
-    },
-    "branches_ahead": {"es": "adelantada", "en": "ahead"},
-    "branches_behind": {"es": "atrasada", "en": "behind"},
-    "branches_current": {"es": "actual", "en": "current"},
-    "branches_merged": {"es": "fusionadas", "en": "merged"},
-    "branches_remote_label": {"es": "remotas", "en": "remote"},
-    "branches_sort_label": {"es": "ordenar por: {sort}", "en": "sort by: {sort}"},
-    "branches_stale_label": {"es": "antiguas [gone]", "en": "stale [gone]"},
-    "branches_to_delete": {
-        "es": "ramas sin seguimiento remoto a eliminar ({count}):",
-        "en": "stale branches to delete ({count}):",
-    },
-    "branches_worktree": {"es": "worktree", "en": "worktree"},
-    "cancelled": {"es": "cancelado.", "en": "cancelled."},
-    "changed_files": {"es": "archivos modificados: ({count})", "en": "changed files: ({count})"},
-    "claude_md_identical_content": {
-        "es": "contenido idéntico a AGENTS.md",
-        "en": "identical content to AGENTS.md",
-    },
-    "claude_md_replaced": {
-        "es": "{file} reemplazado por symlink a {target} (backup: {backup})",
-        "en": "{file} replaced by symlink to {target} (backup: {backup})",
-    },
-    "claude_md_separate": {
-        "es": "{c} y {a} son archivos separados con contenido distinto. Para unificar: revisa `diff {c} {a}`, mueve contenido relevante manualmente, luego ejecuta `gitwise setup-agents --replace-claude-with-symlink`.",
-        "en": "{c} and {a} are separate files with different content. To unify: review `diff {c} {a}`, move relevant content manually, then run `gitwise setup-agents --replace-claude-with-symlink`.",
-    },
-    "claude_md_symlink_other": {
-        "es": "{file} es symlink a '{existing}', no a '{expected}'. Revisa manualmente. Para reemplazar: `gitwise setup-agents --replace-claude-with-symlink`",
-        "en": "{file} is symlink to '{existing}', not '{expected}'. Review manually. To replace: `gitwise setup-agents --replace-claude-with-symlink`",
-    },
-    "clean_fix": {
-        "es": "gitwise clean --branches --dry-run",
-        "en": "gitwise clean --branches --dry-run",
-    },
-    "clean_refs_not_implemented": {
-        "es": "'clean --refs' no está implementado",
-        "en": "'clean --refs' is not implemented",
-    },
-    "clean_specify_flag": {
-        "es": "especifica --branches  (o --refs)",
-        "en": "specify --branches  (or --refs)",
-    },
-    "clean_to_delete": {
-        "es": "para eliminar: gitwise clean --branches --yes",
-        "en": "to delete: gitwise clean --branches --yes",
-    },
-    "col_age": {"es": "Antigüedad", "en": "Age"},
-    "col_author": {"es": "Autor", "en": "Author"},
-    "col_branch": {"es": "Rama", "en": "Branch"},
-    "col_date": {"es": "Fecha", "en": "Date"},
-    "col_name": {"es": "Nombre", "en": "Name"},
-    "col_sha": {"es": "SHA", "en": "SHA"},
-    "col_status": {"es": "Estado", "en": "Status"},
-    "col_subject": {"es": "Asunto", "en": "Subject"},
-    "col_tag": {"es": "Tag", "en": "Tag"},
-    "commit_amend_label": {"es": "amend", "en": "amend"},
-    "commit_amend_protected": {
-        "es": "no se puede hacer --amend en rama protegida: {branch}",
-        "en": "cannot --amend on protected branch: {branch}",
-    },
-    "commit_amend_pushed": {
-        "es": "no se puede hacer --amend: {branch} ya fue pusheada (requeriría force-push)",
-        "en": "cannot --amend: {branch} already pushed (would require force-push)",
-    },
-    "commit_branch_label": {"es": "rama", "en": "branch"},
-    "commit_breaking_hint": {"es": "cambio rompedor", "en": "breaking change"},
-    "commit_graph_ausente": {
-        "es": "commit-graph ausente — git log puede ser 2-10x más lento",
-        "en": "commit-graph missing — git log can be 2-10x slower",
-    },
-    "commit_graph_cost": {
-        "es": "latencia acumulada en cada sesión de Claude",
-        "en": "accumulated latency in each Claude session",
-    },
-    "commit_graph_failed": {
-        "es": "commit-graph: falló (repo puede estar vacío)",
-        "en": "commit-graph: failed (repo may be empty)",
-    },
-    "commit_graph_fix": {"es": "gitwise optimize --yes", "en": "gitwise optimize --yes"},
-    "commit_graph_fix_cost": {"es": "trivial (segundos)", "en": "trivial (seconds)"},
-    "commit_graph_updated": {"es": "commit-graph actualizado", "en": "commit-graph updated"},
-    "commit_invalid_format": {
-        "es": "el mensaje no sigue conventional commits: tipo(scope): descripción",
-        "en": "message does not follow conventional commits: type(scope): description",
-    },
-    "commit_msg_label": {"es": "mensaje", "en": "msg"},
-    "commit_blocked_in_progress": {
-        "es": "No se puede commitear: hay una operación {state} en curso. Resuélvela o aborta primero.",
-        "en": "Cannot commit: a {state} operation is in progress. Resolve or abort it first.",
-    },
-    "commit_no_message": {
-        "es": "usa -m para proveer un mensaje de commit",
-        "en": "use -m to provide a commit message",
-    },
-    "commit_scope_hint": {"es": "ámbito: {scope}", "en": "scope: {scope}"},
-    "commit_type_invalid": {
-        "es": "tipo inválido: {type}. Válidos: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert",
-        "en": "invalid type: {type}. Valid: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert",
-    },
-    "completed_in": {"es": "completado en {elapsed}s", "en": "completed in {elapsed}s"},
-    "completions_unsupported_shell": {
-        "es": "shell no soportado para completions: {shell}",
-        "en": "unsupported shell for completions: {shell}",
-    },
-    "aliases_label": {"es": "aliases", "en": "aliases"},
-    "missing_dependency_completions_shtab": {
-        "es": "dependencia faltante: shtab (requerida para completions bash/zsh)",
-        "en": "missing dependency: shtab (required for bash/zsh completions)",
-    },
-    "missing_dependency_hint": {
-        "es": "usa `uv run python -m gitwise ...` o instala deps con `uv sync`",
-        "en": "use `uv run python -m gitwise ...` or install dependencies with `uv sync`",
-    },
-    "config_failed": {
-        "es": "config {name}: falló (continuando)",
-        "en": "config {name}: failed (continuing)",
-    },
-    "config_up_to_date": {
-        "es": "configuración de git ya está actualizada",
-        "en": "git config is already up to date",
-    },
-    "configuring_agents_global": {
-        "es": "configurando agentes globalmente en: {path}",
-        "en": "configuring agents globally in: {path}",
-    },
-    "configuring_agents_in": {
-        "es": "configurando agentes en: {root}",
-        "en": "configuring agents in: {root}",
-    },
-    "confirm_delete_branches": {
-        "es": "¿eliminar {count} rama(s)? [s/N] ",
-        "en": "delete {count} branch(es)? [y/N] ",
-    },
-    "confirm_optimize": {
-        "es": "¿ejecutar optimizaciones? [s/N] ",
-        "en": "run optimizations? [y/N] ",
-    },
-    "confirm_setup_changes": {
-        "es": "¿aplicar estos cambios? [s/N] ",
-        "en": "apply these changes? [y/N] ",
-    },
-    "confirm_stash_clean": {
-        "es": "¿Limpiar {count} stash(es)? (y/N)",
-        "en": "Clear {count} stash(es)? (y/N)",
-    },
-    "confirm_stash_drop": {"es": "¿Eliminar {ref}? (y/N)", "en": "Drop {ref}? (y/N)"},
-    "confirm_tag_delete": {"es": "¿Eliminar tag {name}? (y/N)", "en": "Delete tag {name}? (y/N)"},
-    "conflict_dir_agents": {"es": "conflicto dir/agents", "en": "conflict dir/agents"},
-    "conflicts_found": {
-        "es": "{count} archivo(s) en conflicto",
-        "en": "{count} file(s) in conflict",
-    },
-    "conflicts_hint": {
-        "es": "Usa --ours o --theirs para resolver automaticamente",
-        "en": "Use --ours or --theirs to auto-resolve",
-    },
-    "conflicts_none": {"es": "No hay conflictos", "en": "No conflicts"},
-    "conflicts_resolved_ours": {
-        "es": "{count} conflicto(s) resuelto(s) con ours",
-        "en": "{count} conflict(s) resolved with ours",
-    },
-    "conflicts_resolved_theirs": {
-        "es": "{count} conflicto(s) resuelto(s) con theirs",
-        "en": "{count} conflict(s) resolved with theirs",
-    },
-    "continue_prompt": {"es": "¿continuar? [s/N] ", "en": "continue? [y/N] "},
-    "conventions_heading": {
-        "es": "## Convenciones git para este proyecto",
-        "en": "## Git conventions for this project",
-    },
-    "conventions_pointer": {"es": "\n\n@AGENTS.md\n", "en": "\n\n@AGENTS.md\n"},
-    "could_not_delete": {
-        "es": "no se pudo eliminar: {branch}  ({error})",
-        "en": "could not delete: {branch}  ({error})",
-    },
-    "created": {"es": "creado: {file}", "en": "created: {file}"},
-    "ctx_branches": {
-        "es": "## Ramas: {local} local, {remote} remota(s)",
-        "en": "## Branches: {local} local, {remote} remote",
-    },
-    "ctx_directory_tree": {"es": "## Árbol de directorios", "en": "## Directory Tree"},
-    "ctx_file_types": {"es": "## Tipos de archivo", "en": "## File Types"},
-    "ctx_more_entries": {
-        "es": "  ... ({count} entradas más)",
-        "en": "  ... ({count} more entries)",
-    },
-    "ctx_todo_fixme": {
-        "es": "## TODO/FIXME: {todo} TODO, {fixme} FIXME",
-        "en": "## TODO/FIXME: {todo} TODO, {fixme} FIXME",
-    },
-    "ctx_top_contributors": {"es": "## Top contribuidores", "en": "## Top Contributors"},
-    "current_branch_msg": {"es": "rama actual (activa)", "en": "current branch (checked out)"},
-    "current_value": {"es": " (actual: {current})", "en": " (current: {current})"},
-    "debug_mkdir": {"es": "mkdir: {file}", "en": "mkdir: {file}"},
-    "debug_rollback_deleted": {
-        "es": "rollback: eliminado {file}",
-        "en": "rollback: deleted {file}",
-    },
-    "debug_rollback_failed": {
-        "es": "rollback falló para {file}: {error}",
-        "en": "rollback failed for {file}: {error}",
-    },
-    "debug_rollback_restored": {
-        "es": "rollback: restaurado {file} desde {backup}",
-        "en": "rollback: restored {file} from {backup}",
-    },
-    "debug_rollback_restored_skill": {
-        "es": "rollback: restaurado {file} desde {skill}",
-        "en": "rollback: restored {file} from {skill}",
-    },
-    "debug_rollback_symlink": {
-        "es": "rollback: eliminado symlink {file}",
-        "en": "rollback: deleted symlink {file}",
-    },
-    "debug_skip": {"es": "skip: {file}", "en": "skip: {file}"},
-    "debug_snapshot_written": {
-        "es": "snapshot escrito en {path}",
-        "en": "snapshot written to {path}",
-    },
-    "deleted_count": {
-        "es": "eliminadas {count} rama(s) sin seguimiento remoto",
-        "en": "deleted {count} stale branch(es)",
-    },
-    "detached_head": {"es": "(HEAD desacoplado)", "en": "(detached HEAD)"},
-    "diagnostic": {
-        "es": "Diagnóstico{suffix} — {count} observación(es):",
-        "en": "Diagnostic{suffix} — {count} finding(s):",
-    },
-    "diff_binary_lfs_hint": {
-        "es": "archivo binario {path} ({mib} MiB) -- considera Git LFS",
-        "en": "binary file {path} ({mib} MiB) -- consider Git LFS",
-    },
-    "diff_prefix": {"es": "diff: {stat}", "en": "diff: {stat}"},
-    "diff_summary_header": {
-        "es": "Resumen -- {count} archivo(s):",
-        "en": "Summary -- {count} file(s):",
-    },
-    "diff_too_many_refs": {
-        "es": "demasiados argumentos posicionales antes de '--' ({count}); gitwise diff acepta un unico refspec (usa a..b para un rango)",
-        "en": "too many positional arguments before '--' ({count}); gitwise diff accepts a single refspec (use a..b for a range)",
-    },
-    "secret_scan_clean": {
-        "es": "no se detectaron secretos en el diff",
-        "en": "no secrets detected in the diff",
-    },
-    "secret_scan_found": {
-        "es": "{rule} en {path}:{line} ({preview})",
-        "en": "{rule} at {path}:{line} ({preview})",
-    },
-    "secret_scan_found_header": {
-        "es": "Secretos detectados -- {count} hallazgo(s):",
-        "en": "Secrets detected -- {count} finding(s):",
-    },
-    "secret_scan_blocked_high": {
-        "es": "commit bloqueado: {count} secreto(s) de alta severidad en el área de staging",
-        "en": "commit blocked: {count} high-severity secret(s) in the staging area",
-    },
-    "secret_scan_blocked_hint": {
-        "es": "revoque o rote el secreto, remuévalo del stage, o use --allow-secret (con confirmación) para commitear de todos modos",
-        "en": "revoke/rotate the secret, unstage it, or use --allow-secret (with confirmation) to commit anyway",
-    },
-    "secret_scan_allow_confirm": {
-        "es": "Se detectaron {count} secreto(s) de alta severidad. ¿Commitear de todos modos?",
-        "en": "{count} high-severity secret(s) detected. Commit anyway?",
-    },
-    "secret_scan_medium_warning": {
-        "es": "advertencia: {rule} en {path}:{line} ({preview})",
-        "en": "warning: {rule} at {path}:{line} ({preview})",
-    },
-    "secret_scan_unavailable": {
-        "es": "no se pudo escanear el área de staging (fail-closed): {error}",
-        "en": "could not scan the staging area (fail-closed): {error}",
-    },
-    "directory_exists": {
-        "es": "el directorio ya existe: {path}",
-        "en": "directory already exists: {path}",
-    },
-    "doctor_git_label": {"es": "git", "en": "git"},
-    "doctor_install_label": {"es": "instalación", "en": "install"},
-    "doctor_purpose_label": {"es": "propósito", "en": "purpose"},
-    "doctor_python_label": {"es": "python", "en": "python"},
-    "dry_run_no_clean": {
-        "es": "modo simulación — no se limpiará nada",
-        "en": "dry-run mode — nothing will be cleaned",
-    },
-    "dry_run_no_delete": {
-        "es": "modo simulación — no se eliminará nada",
-        "en": "dry-run mode — nothing will be deleted",
-    },
-    "dry_run_no_exec": {
-        "es": "modo simulación — no se ejecutará nada",
-        "en": "dry-run mode — nothing will be executed",
-    },
-    "dry_run_nothing": {
-        "es": "modo simulación — no se escribirá nada:",
-        "en": "dry-run mode — nothing will be written:",
-    },
-    "error": {"es": "error", "en": "error"},
-    "error_updating": {"es": "error al actualizar", "en": "error updating"},
-    "file_too_large": {
-        "es": ".claude/rules/{name}: archivo demasiado grande — no validado",
-        "en": ".claude/rules/{name}: file too large — not validated",
-    },
-    "fix_label": {"es": "fix", "en": "fix"},
-    "fsmonitor_cost": {
-        "es": "~50ms extra por git status en repos medianos",
-        "en": "~50ms extra per git status in medium repos",
-    },
-    "fsmonitor_disabled": {
-        "es": "core.fsmonitor desactivado — git status más lento en repos grandes",
-        "en": "core.fsmonitor disabled — slower git status in large repos",
-    },
-    "fsmonitor_fix": {"es": "gitwise setup --yes", "en": "gitwise setup --yes"},
-    "fsmonitor_fix_cost": {"es": "trivial", "en": "trivial"},
-    "fsmonitor_not_supported": {
-        "es": "fsmonitor integrado no está soportado en Linux (solo macOS y Windows)",
-        "en": "built-in fsmonitor not supported on Linux (macOS and Windows only)",
-    },
-    "setup_agents_windows_global_unsupported": {
-        "es": "setup-agents en modo global no está soportado en Windows (requiere symlinks POSIX en ~/.claude/).",
-        "en": "setup-agents global mode is not supported on Windows (requires POSIX symlinks in ~/.claude/).",
-    },
-    "setup_agents_windows_workaround_local": {
-        "es": "Workaround: usá 'gitwise setup-agents --local --no-symlinks' dentro del repo donde quieras configurar los agentes.",
-        "en": "Workaround: use 'gitwise setup-agents --local --no-symlinks' inside the repo where you want to set up agents.",
-    },
-    "setup_agents_windows_auto_no_symlinks": {
-        "es": "Windows detectado: activando --no-symlinks automáticamente (los symlinks POSIX no son confiables en Windows).",
-        "en": "Windows detected: auto-enabling --no-symlinks (POSIX symlinks are not reliable on Windows).",
-    },
-    "gc_already_running": {
-        "es": "git gc/maintenance ya está en ejecución — esperá a que termine",
-        "en": "git gc/maintenance already running — wait for it to finish",
-    },
-    "git_command_failed": {
-        "es": "Error al ejecutar {cmd}: {error}",
-        "en": "Failed to run {cmd}: {error}",
-    },
-    "git_diff_failed": {"es": "git diff falló: {error}", "en": "git diff failed: {error}"},
-    "git_log_failed": {"es": "Error al obtener log: {error}", "en": "Failed to get log: {error}"},
-    "git_log_title": {"es": "Commits", "en": "Commits"},
-    "git_ref_failed": {
-        "es": "Error al listar refs: {error}",
-        "en": "Failed to list refs: {error}",
-    },
-    "git_show_failed": {
-        "es": "Error al mostrar commit: {error}",
-        "en": "Failed to show commit: {error}",
-    },
-    "git_too_old": {
-        "es": "git {ver} demasiado antiguo — se requiere ≥ {min}",
-        "en": "git {ver} too old — ≥ {min} required",
-    },
-    "git_version_ok": {
-        "es": "git {ver} (≥ {min} requerido)",
-        "en": "git {ver} (≥ {min} required)",
-    },
-    "gitattributes_conflict": {
-        "es": ".gitattributes: '{pattern}' tiene regla existente '{existing}' que puede entrar en conflicto con la de gitwise '{desired}'. Elimina la línea fuera del bloque managed para evitar duplicados.",
-        "en": ".gitattributes: '{pattern}' has existing rule '{existing}' that may conflict with gitwise's '{desired}'. Remove the line outside the managed block to avoid duplicates.",
-    },
-    "gitattributes_force_lf": {
-        "es": "# Convention files: force LF for cross-platform consistency",
-        "en": "# Convention files: force LF for cross-platform consistency",
-    },
-    "gitattributes_merge_ours": {
-        "es": "# Generated snapshot: use local version on merge",
-        "en": "# Generated snapshot: use local version on merge",
-    },
-    "gitignore_backups": {
-        "es": "# Backups from gitwise setup-agents",
-        "en": "# Backups from gitwise setup-agents",
-    },
-    "gitignore_claude_local": {
-        "es": "# Claude Code local/personal files (do not commit)",
-        "en": "# Claude Code local/personal files (do not commit)",
-    },
-    "gitignore_snapshot": {
-        "es": "# Snapshot regenerated each gitwise run (timestamps change)",
-        "en": "# Snapshot regenerated each gitwise run (timestamps change)",
-    },
-    "gitwise": {"es": "gitwise", "en": "gitwise"},
-    "global_skill_symlink_broken": {
-        "es": "~/.claude/skills/{skill} es un symlink roto — arréglalo manualmente",
-        "en": "~/.claude/skills/{skill} is a broken symlink — fix it manually",
-    },
-    "global_skill_symlink_different": {
-        "es": "~/.claude/skills/{skill} es symlink a '{existing}', no a '{expected}' — se mantiene como está",
-        "en": "~/.claude/skills/{skill} is symlink to '{existing}', not '{expected}' — keeping as is",
-    },
-    "gpg_active_no_key_repo": {
-        "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
-        "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",
-    },
-    "gpg_binary_fix_cost": {"es": "trivial", "en": "trivial"},
-    "gpg_binary_missing_audit": {
-        "es": "commit.gpgsign=true pero gpg no instalado — los commits fallarán",
-        "en": "commit.gpgsign=true but gpg not installed — commits will fail",
-    },
-    "gpg_binary_missing_cost": {
-        "es": "ningún git commit funcionará hasta instalarlo",
-        "en": "no git commit will work until installed",
-    },
-    "gpg_binary_missing_fix": {"es": "brew install gnupg", "en": "brew install gnupg"},
-    "gpg_enable_instruction": {
-        "es": "      → git config --global commit.gpgsign true",
-        "en": "      → git config --global commit.gpgsign true",
-    },
-    "gpg_install_instruction": {
-        "es": "      → brew install gnupg",
-        "en": "      → brew install gnupg",
-    },
-    "gpg_key_fix_cost": {"es": "trivial", "en": "trivial"},
-    "gpg_key_instruction": {
-        "es": "      → git config --global user.signingkey <key-id>",
-        "en": "      → git config --global user.signingkey <key-id>",
-    },
-    "gpg_key_missing_audit": {
-        "es": "commit.gpgsign=true pero user.signingkey no configurado",
-        "en": "commit.gpgsign=true but user.signingkey not configured",
-    },
-    "gpg_key_missing_cost": {
-        "es": "ningún git commit funcionará",
-        "en": "no git commit will work",
-    },
-    "gpg_key_missing_fix": {
-        "es": "git config user.signingkey <key-id>",
-        "en": "git config user.signingkey <key-id>",
-    },
-    "gpg_no_signing_key": {
-        "es": "  commit.gpgsign=true pero user.signingkey no configurado",
-        "en": "  commit.gpgsign=true but user.signingkey not configured",
-    },
-    "gpg_not_configured_audit": {
-        "es": "GPG no configurado — commits sin firma digital",
-        "en": "GPG not configured — unsigned commits",
-    },
-    "gpg_not_configured_cost": {
-        "es": "commits no verificables criptográficamente",
-        "en": "commits not cryptographically verifiable",
-    },
-    "gpg_not_configured_fix": {
-        "es": "brew install gnupg  →  git config --global commit.gpgsign true",
-        "en": "brew install gnupg  →  git config --global commit.gpgsign true",
-    },
-    "gpg_not_configured_fix_cost": {
-        "es": "requiere crear llave GPG (~5 min)",
-        "en": "requires creating GPG key (~5 min)",
-    },
-    "gpg_not_enabled": {
-        "es": "  gpg instalado pero commit.gpgsign no activado",
-        "en": "  gpg installed but commit.gpgsign not enabled",
-    },
-    "gpg_not_installed": {
-        "es": "  gpg no instalado — commits no se firmarán",
-        "en": "  gpg not installed — commits won't be signed",
-    },
-    "gpg_not_installed_commit": {
-        "es": "GPG no instalado — no se pueden firmar commits",
-        "en": "GPG not installed — cannot sign commits",
-    },
-    "gpg_ready_msg": {
-        "es": "  GPG listo — commit.gpgsign=true, llave y binario configurados",
-        "en": "  GPG ready — commit.gpgsign=true, key and binary configured",
-    },
-    "gpg_signing_active_global": {
-        "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
-        "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",
-    },
-    "gpg_signing_active_no_key": {
-        "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
-        "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>",
-    },
-    "gpg_signing_not_configured": {
-        "es": "GPG signing no configurado — si lo deseas: git config commit.gpgsign true",
-        "en": "GPG signing not configured — if desired: git config commit.gpgsign true",
-    },
-    "gpg_title": {"es": "GPG (firma de commits):", "en": "GPG (commit signing):"},
-    "health_commit_graph": {"es": "commit-graph ausente", "en": "no commit-graph"},
-    "health_gpg_signing": {"es": "firma GPG desactivada", "en": "GPG signing off"},
-    "health_label": {
-        "es": "Salud: {score}/100  Nota: {grade}",
-        "en": "Health: {score}/100  Grade: {grade}",
-    },
-    "health_no_commits": {"es": "sin commits", "en": "no commits"},
-    "health_old_stashes": {"es": "stashes acumulados", "en": "old stashes"},
-    "health_remote": {"es": "sin remoto", "en": "no remote"},
-    "health_stale_branches": {"es": "ramas sin seguimiento remoto", "en": "stale branches"},
-    "health_too_many_branches": {"es": "exceso de ramas", "en": "too many branches"},
-    "health_untracked_clutter": {"es": "archivos sin seguimiento", "en": "untracked clutter"},
-    "health_upstream": {"es": "sin rama seguimiento", "en": "no upstream"},
-    "help_group_options": {"es": "opciones", "en": "options"},
-    "help_group_positional_arguments": {
-        "es": "argumentos posicionales",
-        "en": "positional arguments",
-    },
-    "help_root_environment_epilog": {
-        "es": "Entorno:\n  GITWISE_DEBUG=1          imprime logs debug de subprocess git\n  GITWISE_LOG_JSON=1       logs estructurados en stderr (JSON lines)\n  GITWISE_JSON_PRETTY=1    activa JSON con formato por defecto\n  GITWISE_LANG=es|en       fuerza el locale de salida\n  GITWISE_THEME=dark|light|auto override de tema de color\n  GITWISE_NO_COLOR=1       desactiva salida ANSI color\n  GITWISE_OUTPUT=agent     modo de salida orientado a máquina\n  GITWISE_AGENT=1          alias para forzar modo agent\n  GITWISE_GIT_TIMEOUT=<s>  timeout de subprocess git en segundos\n  GITWISE_WIDTH=<cols>     override del ancho de salida\n  GITWISE_BIN_DIR=<path>   destino de instalación para install.sh",
-        "en": "Environment:\n  GITWISE_DEBUG=1          print git subprocess debug logs\n  GITWISE_LOG_JSON=1       structured stderr logs (JSON lines)\n  GITWISE_JSON_PRETTY=1    pretty-print JSON output by default\n  GITWISE_LANG=es|en       force output locale\n  GITWISE_THEME=dark|light|auto color theme override\n  GITWISE_NO_COLOR=1       disable ANSI color output\n  GITWISE_OUTPUT=agent     machine-oriented output mode\n  GITWISE_AGENT=1          alias to force agent output mode\n  GITWISE_GIT_TIMEOUT=<s>  git subprocess timeout in seconds\n  GITWISE_WIDTH=<cols>     override output width\n  GITWISE_BIN_DIR=<path>   install destination for install.sh",
-    },
-    "hint_prefix": {"es": "sugerencia", "en": "hint"},
-    "hook_install_note": {
-        "es": "instala hooks GPG + conventional commits",
-        "en": "installs GPG + conventional commit hooks",
-    },
-    "hook_installs": {
-        "es": "instala hooks GPG + conventional commits",
-        "en": "installs GPG + conventional commit hooks",
-    },
-    "ignora_label": {"es": "ignora", "en": "ignore"},
-    "installed_globally": {"es": "instalado globalmente", "en": "installed globally"},
-    "invalid_json": {
-        "es": ".claude/settings.json existente tiene JSON inválido — se sobreescribirá",
-        "en": "existing .claude/settings.json has invalid JSON — will be overwritten",
-    },
-    "large_blobs": {
-        "es": "{count} archivo(s) grandes (≥1MB) en HEAD",
-        "en": "{count} large file(s) (≥1MB) in HEAD",
-    },
-    "large_blobs_cost": {"es": "lentitud en clone y fetch", "en": "slow clone and fetch"},
-    "large_blobs_fix": {
-        "es": "considerar git-lfs o eliminación de la historia",
-        "en": "consider git-lfs or history removal",
-    },
-    "large_blobs_fix_cost": {"es": "depende del archivo", "en": "depends on the file"},
-    "last_commits": {"es": "últimos {count} commits:", "en": "last {count} commits:"},
-    "legacy_commands": {
-        "es": ".claude/commands/{skill}.md es formato antiguo — ahora se usa .claude/skills/{skill}/SKILL.md. Eliminá el .md viejo manualmente.",
-        "en": ".claude/commands/{skill}.md is legacy format — now using .claude/skills/{skill}/SKILL.md. Delete the old .md manually.",
-    },
-    "legacy_migration_mode": {
-        "es": "modo migracion legacy activo: se prioriza layout canonico (AGENTS.md + .agents/skills)",
-        "en": "legacy migration mode enabled: canonical layout (AGENTS.md + .agents/skills) is enforced",
-    },
-    "log_no_commits": {"es": "sin commits aún", "en": "no commits yet"},
-    "managed_block_created": {
-        "es": "creado bloque managed: {file}",
-        "en": "created managed block: {file}",
-    },
-    "managed_block_unclosed": {
-        "es": "{file}: bloque managed sin marcador de cierre — se dejará intacto",
-        "en": "{file}: managed block missing closing marker — will be left intact",
-    },
-    "managed_block_updated": {
-        "es": "actualizado bloque managed: {file}",
-        "en": "updated managed block: {file}",
-    },
-    "markers_label": {"es": "marcadores", "en": "markers"},
-    "merge_branch_not_found": {
-        "es": "Branch {branch} no encontrada",
-        "en": "Branch {branch} not found",
-    },
-    "merge_conflicts": {
-        "es": "Conflictos detectados durante la mezcla",
-        "en": "Conflicts detected during merge",
-    },
-    "merge_detached_head": {
-        "es": "HEAD desacoplado, no se puede mezclar",
-        "en": "Detached HEAD, cannot merge",
-    },
-    "merge_diverged": {
-        "es": "Branches divergidas (ahead: {ahead}, behind: {behind})",
-        "en": "Branches diverged (ahead: {ahead}, behind: {behind})",
-    },
-    "merge_merge_label": {"es": "merge", "en": "merge"},
-    "merge_aborted": {"es": "Mezcla abortada", "en": "Merge aborted"},
-    "merge_abort_continue_mutually_exclusive": {
-        "es": "--abort y --continue son mutuamente excluyentes",
-        "en": "--abort and --continue are mutually exclusive",
-    },
-    "merge_branch_required": {
-        "es": "Especifica la rama a mezclar, o usa --abort/--continue para una operación pausada",
-        "en": "Specify a branch to merge, or use --abort/--continue for a paused operation",
-    },
-    "merge_continued": {"es": "Mezcla continuada", "en": "Merge continued"},
-    "merge_no_in_progress": {
-        "es": "No hay mezcla/rebase en curso (estado actual: {state}). Usa {action} solo cuando gitwise detecta operación pausada.",
-        "en": "No merge/rebase in progress (current state: {state}). Use {action} only when gitwise detects a paused operation.",
-    },
-    "merge_ok": {
-        "es": "Mezcla completada: {branch} → {into}",
-        "en": "Merge completed: {branch} → {into}",
-    },
-    "merge_proceed": {"es": "¿Continuar con la mezcla? (y/N)", "en": "Proceed with merge? (y/N)"},
-    "merge_rebase_label": {"es": "rebase", "en": "rebase"},
-    "merge_rebased": {
-        "es": "Rebase completado: {branch} → {into}",
-        "en": "Rebase completed: {branch} → {into}",
-    },
-    "merge_hint": {
-        "es": "Revisa conflictos o usa --dry-run para ver advertencias antes de ejecutar.",
-        "en": "Review conflicts or use --dry-run to inspect warnings before running.",
-    },
-    "merge_same_branch": {
-        "es": "No se puede mezclar una branch consigo misma",
-        "en": "Cannot merge a branch into itself",
-    },
-    "merge_uncommitted": {
-        "es": "Hay cambios sin confirmar",
-        "en": "There are uncommitted changes",
-    },
-    "schema_unknown_command": {
-        "es": "comando desconocido: {name}",
-        "en": "unknown command: {name}",
-    },
-    "schema_unknown_command_hint": {
-        "es": "ejecuta `gitwise commands --json` para listar comandos disponibles",
-        "en": "run `gitwise commands --json` to list available commands",
-    },
-    "schema_file_missing": {
-        "es": "schema no encontrado para comando '{command}' en versión {version}",
-        "en": "schema not found for command '{command}' in version {version}",
-    },
-    "schema_file_missing_hint": {
-        "es": "ejecuta `gitwise schema <command> --version v1 --json` o verifica `share/schemas/v1/input/*.json`",
-        "en": "run `gitwise schema <command> --version v1 --json` or verify `share/schemas/v1/input/*.json`",
-    },
-    "migrated_skill": {
-        "es": "migrado: {file} → {target} (symlink)",
-        "en": "migrated: {file} → {target} (symlink)",
-    },
-    "migrate_requires_local": {
-        "es": "--migrate-legacy-claude requiere --local",
-        "en": "--migrate-legacy-claude requires --local",
-    },
-    "missing_globs_frontmatter": {
-        "es": ".claude/rules/{name}: falta 'globs:' en frontmatter — la regla no se activará",
-        "en": ".claude/rules/{name}: missing 'globs:' in frontmatter — rule won't activate",
-    },
-    "mixed_staging": {
-        "es": "hay archivos en área de preparación y sin confirmar — el commit no sería atómico",
-        "en": "staged and unstaged files present — commit wouldn't be atomic",
-    },
-    "mixed_staging_cost": {
-        "es": "commits no atómicos dificultan el historial",
-        "en": "non-atomic commits make history harder to follow",
-    },
-    "mixed_staging_fix": {
-        "es": "revisar con git diff --staged antes de confirmar",
-        "en": "review with git diff --staged before committing",
-    },
-    "mixed_staging_fix_cost": {"es": "n/a", "en": "n/a"},
-    "modified_files_status": {
-        "es": "estado ({count} archivos modificados):",
-        "en": "status ({count} modified files):",
-    },
-    "no_commits_yet": {"es": "sin commits aún", "en": "no commits yet"},
-    "no_commits_yet_note": {"es": "sin commits aún", "en": "no commits yet"},
-    "no_deletable_branches": {"es": "no hay ramas eliminables", "en": "no branches to delete"},
-    "no_orphaned_worktrees": {
-        "es": "no hay worktrees huérfanos{suffix}",
-        "en": "no orphaned worktrees{suffix}",
-    },
-    "no_repo_root": {
-        "es": "no se pudo determinar la raíz del repositorio",
-        "en": "could not determine repository root",
-    },
-    "no_stale_branches": {
-        "es": "no hay ramas sin seguimiento remoto ([gone])",
-        "en": "no stale branches ([gone])",
-    },
-    "no_uncommitted_changes": {"es": "sin cambios sin confirmar", "en": "no uncommitted changes"},
-    "no_upstream_audit": {
-        "es": "Branch sin upstream configurado",
-        "en": "Branch has no upstream configured",
-    },
-    "no_upstream_cost": {
-        "es": "push/pull podrían fallar sin upstream",
-        "en": "push/pull may fail without upstream",
-    },
-    "no_upstream_fix": {
-        "es": "git branch --set-upstream-to=origin/<branch>",
-        "en": "git branch --set-upstream-to=origin/<branch>",
-    },
-    "not_a_git_repo": {"es": "no es un repositorio git", "en": "not a git repository"},
-    "not_configured": {"es": " (no configurado)", "en": " (not configured)"},
-    "nothing_staged": {"es": "nada en área de preparación", "en": "nothing staged"},
-    "ok_prefix": {"es": "✓", "en": "✓"},
-    "old_stashes_msg": {
-        "es": "{count} stash(es) con más de {days} días",
-        "en": "{count} stash(es) older than {days} days",
-    },
-    "optimizing": {"es": "optimizando: {root}", "en": "optimizing: {root}"},
-    "optional_tools": {"es": "herramientas opcionales:", "en": "optional tools:"},
-    "orphaned_worktrees": {
-        "es": "worktrees huérfanos detectados ({count}) — directorio inexistente:",
-        "en": "orphaned worktrees detected ({count}) — missing directory:",
-    },
-    "output_exceeds_8kb": {
-        "es": "output {size} bytes supera 8KB — usa --max-commits menor",
-        "en": "output {size} bytes exceeds 8KB — use smaller --max-commits",
-    },
-    "pending": {"es": "pendiente", "en": "pending"},
-    "pick_aborted": {"es": "Pick abortado", "en": "Pick aborted"},
-    "pick_conflicts": {"es": "Conflictos durante pick", "en": "Conflicts during pick"},
-    "pick_continued": {"es": "Pick continuado", "en": "Pick continued"},
-    "pick_dry": {"es": "Se ejecutaría {action} en: {refs}", "en": "Would {action}: {refs}"},
-    "pick_no_refs": {"es": "Se requieren refs de commits", "en": "Commit refs required"},
-    "pick_ok": {"es": "{action} completado: {refs}", "en": "{action} completed: {refs}"},
-    "planned_changes": {
-        "es": "cambios planificados ({count}):",
-        "en": "planned changes ({count}):",
-    },
-    "platform_label": {"es": "plataforma: {name}", "en": "platform: {name}"},
-    "pr_gh_required": {
-        "es": "gh CLI no encontrado — instala: brew install gh",
-        "en": "gh CLI not found — install: brew install gh",
-    },
-    "pr_invalid_json": {
-        "es": "respuesta JSON inválida desde gh",
-        "en": "invalid JSON response from gh",
-    },
-    "pr_invalid_selector": {
-        "es": "selector de PR inválido: {selector}",
-        "en": "invalid PR selector: {selector}",
-    },
-    "pr_list_title": {"es": "Pull Requests", "en": "Pull Requests"},
-    "pr_body_title": {"es": "Descripción", "en": "Description"},
-    "pr_body_truncated": {"es": "(texto truncado)", "en": "(text truncated)"},
-    "pr_comment_empty": {"es": "(sin contenido)", "en": "(empty body)"},
-    "pr_comment_header": {
-        "es": "Comentario {index} — {author} — {created}",
-        "en": "Comment {index} - {author} - {created}",
-    },
-    "pr_comment_truncated": {"es": "(comentario truncado)", "en": "(comment truncated)"},
-    "pr_comments_none": {"es": "no hay comentarios en este PR", "en": "no comments on this PR"},
-    "pr_comments_title": {
-        "es": "Comentarios PR #{number}: {title}",
-        "en": "PR #{number} comments: {title}",
-    },
-    "pr_current_label": {"es": "PR actual", "en": "current PR"},
-    "pr_checks_col_duration": {"es": "Duración", "en": "Duration"},
-    "pr_checks_col_name": {"es": "Check", "en": "Check"},
-    "pr_checks_col_status": {"es": "Estado", "en": "Status"},
-    "pr_checks_col_workflow": {"es": "Workflow", "en": "Workflow"},
-    "pr_checks_links_title": {"es": "Links", "en": "Links"},
-    "pr_checks_none": {"es": "no hay checks para este PR", "en": "no checks for this PR"},
-    "pr_check_state_cancel": {"es": "cancelado", "en": "cancelled"},
-    "pr_check_state_fail": {"es": "fallido", "en": "failed"},
-    "pr_check_state_other": {"es": "otro", "en": "other"},
-    "pr_check_state_pass": {"es": "ok", "en": "pass"},
-    "pr_check_state_pending": {"es": "pendiente", "en": "pending"},
-    "pr_check_state_queued": {"es": "en cola", "en": "queued"},
-    "pr_check_state_running": {"es": "en ejecución", "en": "running"},
-    "pr_check_state_skip": {"es": "omitido", "en": "skipped"},
-    "pr_checks_summary": {"es": "Resumen", "en": "Summary"},
-    "pr_checks_summary_value": {
-        "es": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}",
-        "en": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}",
-    },
-    "pr_checks_table_title": {"es": "Checks", "en": "Checks"},
-    "pr_checks_title": {"es": "Checks {selector}", "en": "Checks {selector}"},
-    "pr_field_assignees": {"es": "Assignees", "en": "Assignees"},
-    "pr_field_author": {"es": "Autor", "en": "Author"},
-    "pr_field_branch": {"es": "Ramas", "en": "Branches"},
-    "pr_field_changes": {"es": "Cambios", "en": "Changes"},
-    "pr_field_comments": {"es": "Comentarios", "en": "Comments"},
-    "pr_field_closed_at": {"es": "Cerrado", "en": "Closed"},
-    "pr_field_labels": {"es": "Labels", "en": "Labels"},
-    "pr_field_mergeable": {"es": "Mergeable", "en": "Mergeable"},
-    "pr_field_merged_at": {"es": "Mergeado", "en": "Merged"},
-    "pr_field_review": {"es": "Review", "en": "Review"},
-    "pr_field_review_requests": {"es": "Review requests", "en": "Review requests"},
-    "pr_field_state": {"es": "Estado", "en": "State"},
-    "pr_field_url": {"es": "URL", "en": "URL"},
-    "pr_none": {"es": "no hay pull requests abiertos", "en": "no open pull requests"},
-    "pr_unknown_action": {
-        "es": "acción desconocida: {action}. Usa: list, checks, view, comments",
-        "en": "unknown action: {action}. Use: list, checks, view, comments",
-    },
-    "pr_view_title": {"es": "PR #{number}: {title}", "en": "PR #{number}: {title}"},
-    "protected_branch": {"es": "protegida (lista por defecto)", "en": "protected (default list)"},
-    "protected_key": {
-        "es": "Intento de modificar clave protegida: {name}",
-        "en": "Attempt to modify protected key: {name}",
-    },
-    "protected_key_attempt": {
-        "es": "Intento de modificar clave protegida: {key}",
-        "en": "Attempt to modify protected key: {key}",
-    },
-    "protected_stale_branches": {
-        "es": "ramas sin seguimiento remoto protegidas ({count}) — no se tocarán:",
-        "en": "protected stale branches ({count}) — won't be touched:",
-    },
-    "prune_complete": {"es": "prune completado", "en": "prune complete"},
-    "prune_not_critical": {
-        "es": "prune: no crítico, continuando",
-        "en": "prune: not critical, continuing",
-    },
-    "python_too_old": {
-        "es": "Python {ver} demasiado antiguo — se requiere ≥ 3.9",
-        "en": "Python {ver} too old — ≥ 3.9 required",
-    },
-    "python_version_ok": {"es": "Python {ver}", "en": "Python {ver}"},
-    "repack_complete": {"es": "repack completado", "en": "repack complete"},
-    "repack_failed": {"es": "repack: falló", "en": "repack: failed"},
-    "repack_fallo_bitmap": {
-        "es": "repack --write-bitmap-index falló, reintentando sin bitmap",
-        "en": "repack --write-bitmap-index failed, retrying without bitmap",
-    },
-    "replaced": {
-        "es": "reemplazado: {file} (backup: {backup})",
-        "en": "replaced: {file} (backup: {backup})",
-    },
-    "repo_good_shape": {
-        "es": "repositorio en buen estado{suffix}",
-        "en": "repository in good shape{suffix}",
-    },
-    "repo_size": {"es": "tamaño del repo: {size}KB", "en": "repo size: {size}KB"},
-    "section_current_branch": {"es": "## Rama actual", "en": "## Current branch"},
-    "section_last_commits": {"es": "## Últimos 10 commits", "en": "## Last 10 commits"},
-    "section_status": {"es": "## Estado", "en": "## Status"},
-    "settings_sin_gpg_deny": {
-        "es": "settings.json no tiene reglas deny para GPG bypass — revisar manualmente",
-        "en": "settings.json missing deny rules for GPG bypass — check manually",
-    },
-    "settings_updated_merged": {
-        "es": "actualizado (deny rules merged): .claude/settings.json",
-        "en": "updated (deny rules merged): .claude/settings.json",
-    },
-    "setup_agents_complete": {"es": "setup-agents completado", "en": "setup-agents complete"},
-    "setup_agents_failed": {
-        "es": "setup-agents falló: {error}",
-        "en": "setup-agents failed: {error}",
-    },
-    "setup_agents_global_complete": {
-        "es": "setup-agents global completado",
-        "en": "setup-agents global complete",
-    },
-    "setup_agents_global_failed": {
-        "es": "setup-agents (global) falló: {error}",
-        "en": "setup-agents (global) failed: {error}",
-    },
-    "setup_complete": {"es": "setup completado", "en": "setup complete"},
-    "setup_hook_backend_selected": {
-        "es": "hooks backend: {backend} (modo solicitado: {requested})",
-        "en": "hooks backend: {backend} (requested mode: {requested})",
-    },
-    "setup_hook_managers_detected": {
-        "es": "managers detectados: {managers}",
-        "en": "detected managers: {managers}",
-    },
-    "setup_hook_warning_legacy_conflict": {
-        "es": "core.hooksPath apunta a '{current}'. Con modo preserve se omiten hooks para no romper configuración existente.",
-        "en": "core.hooksPath points to '{current}'. In preserve mode, hooks are skipped to avoid breaking existing setup.",
-    },
-    "setup_hook_warning_legacy_overwrite": {
-        "es": "modo legacy sobrescribirá core.hooksPath actual: '{current}'",
-        "en": "legacy mode will overwrite current core.hooksPath: '{current}'",
-    },
-    "setup_hook_warning_managers_no_native": {
-        "es": "detectados {managers} y Git sin hooks nativos: se omite instalación de hooks para evitar conflictos.",
-        "en": "detected {managers} and native config hooks unavailable: skipping hook installation to avoid conflicts.",
-    },
-    "setup_hook_warning_managers_preserve": {
-        "es": "detectados {managers}. Con modo preserve se omite instalación de hooks para evitar conflictos.",
-        "en": "detected {managers}. In preserve mode, hook installation is skipped to avoid conflicts.",
-    },
-    "setup_hook_warning_existing_scripts": {
-        "es": "hooks ya existentes detectados ({hooks}) en el directorio activo. Con modo preserve se omite instalación de hooks para evitar sobreescritura.",
-        "en": "existing hooks detected ({hooks}) in the active hooks directory. In preserve mode, hook installation is skipped to avoid overwriting.",
-    },
-    "setup_hook_warning_native_unsupported": {
-        "es": "modo native requiere soporte de hooks por configuración de Git (git hook + hook.<name>.*). Se omite instalación de hooks.",
-        "en": "native mode requires Git config hooks support (git hook + hook.<name>.*). Hook installation is skipped.",
-    },
-    "setup_note_fsmonitor": {"es": "solo macOS", "en": "macOS only"},
-    "setup_note_hooks_legacy": {
-        "es": "instala hooks Gitwise vía core.hooksPath (modo legacy)",
-        "en": "installs Gitwise hooks via core.hooksPath (legacy mode)",
-    },
-    "setup_note_hooks_native": {
-        "es": "instala hook nativo por configuración Git (modo native)",
-        "en": "installs native hook via Git config (native mode)",
-    },
-    "setup_note_hooks_native_event": {
-        "es": "agrega evento del hook nativo en Git config",
-        "en": "adds native hook event in Git config",
-    },
-    "setup_note_hooks_native_migrate": {
-        "es": "migra desde core.hooksPath de Gitwise a hooks nativos",
-        "en": "migrates from Gitwise core.hooksPath to native hooks",
-    },
-    "setup_note_hooks": {
-        "es": "instala hooks GPG + conventional commits",
-        "en": "installs GPG + conventional commit hooks",
-    },
-    "setup_note_manyfiles": {"es": "opcional, git ≥ 2.40", "en": "opt-in, git ≥ 2.40"},
-    "show_header": {"es": "mostrar {ref}", "en": "show {ref}"},
-    "show_ref_not_found": {"es": "referencia no encontrada: {ref}", "en": "ref not found: {ref}"},
-    "skill_conflict_dir_agents": {
-        "es": "~/.claude/skills/{skill} es dir regular y ~/.agents/skills/{skill} también existe — sin cambios. Consolida manualmente.",
-        "en": "~/.claude/skills/{skill} is a regular dir and ~/.agents/skills/{skill} also exists — no changes. Consolidate manually.",
-    },
-    "skill_dir_regular_with_agents": {
-        "es": ".claude/skills/{skill} es un directorio regular aunque .agents/ existe — gitwise escribe SKILL.md directamente",
-        "en": ".claude/skills/{skill} is a regular directory even though .agents/ exists — gitwise writes SKILL.md directly",
-    },
-    "skill_globally_available": {
-        "es": ".claude/skills/{skill}: skill ya disponible globalmente (~/.claude/skills/) — se omite creación local (prioridad user > project)",
-        "en": ".claude/skills/{skill}: skill already available globally (~/.claude/skills/) — skipping local creation (user > project priority)",
-    },
-    "skill_symlink_broken": {
-        "es": ".claude/skills/{skill} es un symlink roto — arréglalo manualmente",
-        "en": ".claude/skills/{skill} is a broken symlink — fix it manually",
-    },
-    "skill_symlink_different": {
-        "es": ".claude/skills/{skill} es symlink a '{existing}', no a '{expected}' — se mantiene como está",
-        "en": ".claude/skills/{skill} is symlink to '{existing}', not '{expected}' — keeping as is",
-    },
-    "skills_already_configured": {
-        "es": "skills ({count}): ya configurados",
-        "en": "skills ({count}): already configured",
-    },
-    "snapshot_generated": {"es": "snapshot generado: {path}", "en": "snapshot generated: {path}"},
-    "space_freed": {
-        "es": "espacio liberado: {saved}KB  ({before}KB → {after}KB)",
-        "en": "space freed: {saved}KB  ({before}KB → {after}KB)",
-    },
-    "stale_branches_audit": {
-        "es": "{count} rama(s) con upstream eliminado ([gone])",
-        "en": "{count} branch(es) with deleted upstream ([gone])",
-    },
-    "stale_branches_cost": {
-        "es": "clutter en `git branch`; confunde agentes Claude",
-        "en": "clutter in `git branch`; confuses Claude agents",
-    },
-    "stale_branches_fix_cost": {"es": "trivial", "en": "trivial"},
-    "stash_clean_dry": {
-        "es": "Se eliminarían {count} stash(es)",
-        "en": "Would drop {count} stash(es)",
-    },
-    "stash_cleaned": {"es": "{count} stash(es) eliminados", "en": "{count} stash(es) cleared"},
-    "stash_cleared_count": {
-        "es": "{count} stash(es) eliminados",
-        "en": "{count} stash(es) cleared",
-    },
-    "stash_col_branch": {"es": "Rama", "en": "Branch"},
-    "stash_col_message": {"es": "Mensaje", "en": "Message"},
-    "stash_col_ref": {"es": "Ref", "en": "Ref"},
-    "stash_cost": {
-        "es": "acumulación de WIP probablemente irrelevante",
-        "en": "accumulation of probably irrelevant WIP",
-    },
-    "stash_dropped": {"es": "Stash {ref} eliminado", "en": "Stash {ref} dropped"},
-    "stash_empty": {"es": "No hay stashes", "en": "No stashes"},
-    "stash_fix": {
-        "es": "git stash drop stash@{N}  o  git stash clear",
-        "en": "git stash drop stash@{N}  or  git stash clear",
-    },
-    "stash_fix_cost": {"es": "irreversible — revisar antes", "en": "irreversible — review first"},
-    "stash_list_title": {"es": "Stashes", "en": "Stashes"},
-    "stash_not_found": {
-        "es": "stash@{{{index}}} no encontrado",
-        "en": "stash@{{{index}}} not found",
-    },
-    "stash_popped": {"es": "Stash {ref} restaurado", "en": "Stash {ref} restored"},
-    "stash_hint": {
-        "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
-        "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop.",
-    },
-    "stash_unknown_action": {
-        "es": "Acción desconocida: {action}",
-        "en": "Unknown action: {action}",
-    },
-    "stashes_section": {"es": "## Stashes: {count}", "en": "## Stashes: {count}"},
-    "status_ahead_label": {"es": "adelante", "en": "ahead"},
-    "status_behind_label": {"es": "atrás", "en": "behind"},
-    "status_clean": {"es": "(limpio)", "en": "(clean)"},
-    "status_more_files": {"es": "... +{count} más", "en": "... +{count} more"},
-    "status_staged": {
-        "es": "{count} archivo(s) en área de preparación",
-        "en": "{count} file(s) staged",
-    },
-    "status_conflicted_label": {"es": "en conflicto", "en": "conflicted"},
-    "status_staged_label": {"es": "preparados", "en": "staged"},
-    "status_unstaged": {
-        "es": "{count} archivo(s) modificado(s)",
-        "en": "{count} file(s) modified",
-    },
-    "status_unstaged_label": {"es": "modificados", "en": "unstaged"},
-    "status_untracked": {
-        "es": "{count} archivo(s) sin seguimiento",
-        "en": "{count} untracked file(s)",
-    },
-    "status_untracked_label": {"es": "sin seguimiento", "en": "untracked"},
-    "status_sync_fetch": {"es": "Sincronizando: fetch...", "en": "Syncing: fetch..."},
-    "status_sync_pull": {"es": "Sincronizando: pull...", "en": "Syncing: pull..."},
-    "status_sync_push": {"es": "Sincronizando: push...", "en": "Syncing: push..."},
-    "status_optimize_commit_graph": {
-        "es": "Optimizando: actualizando commit-graph...",
-        "en": "Optimizing: updating commit-graph...",
-    },
-    "status_optimize_repack": {"es": "Optimizando: repack...", "en": "Optimizing: repack..."},
-    "status_optimize_prune": {"es": "Optimizando: prune...", "en": "Optimizing: prune..."},
-    "status_audit_stashes": {
-        "es": "Auditando: revisando stashes...",
-        "en": "Auditing: checking stashes...",
-    },
-    "status_audit_blobs": {
-        "es": "Auditando: buscando blobs grandes...",
-        "en": "Auditing: scanning large blobs...",
-    },
-    "status_audit_sizer": {
-        "es": "Auditando: ejecutando git-sizer...",
-        "en": "Auditing: running git-sizer...",
-    },
-    "status_worktree_add": {
-        "es": "Creando worktree para {branch}...",
-        "en": "Creating worktree for {branch}...",
-    },
-    "status_health_scan": {
-        "es": "Calculando salud del repositorio...",
-        "en": "Computing repository health...",
-    },
-    "status_context_scan": {
-        "es": "Recolectando contexto del repositorio...",
-        "en": "Gathering repository context...",
-    },
-    "status_snapshot_gen": {"es": "Generando snapshot...", "en": "Generating snapshot..."},
-    "status_reading_status": {
-        "es": "Leyendo estado del repositorio...",
-        "en": "Reading repository status...",
-    },
-    "status_summarizing": {"es": "Resumiendo repositorio...", "en": "Summarizing repository..."},
-    "status_reading_diff": {"es": "Calculando cambios...", "en": "Computing changes..."},
-    "status_reading_log": {
-        "es": "Leyendo historial de commits...",
-        "en": "Reading commit history...",
-    },
-    "status_loading_commit": {"es": "Cargando commit...", "en": "Loading commit..."},
-    "status_analyzing_branches": {"es": "Analizando ramas...", "en": "Analyzing branches..."},
-    "status_analyzing_staged": {
-        "es": "Analizando cambios preparados...",
-        "en": "Analyzing staged changes...",
-    },
-    "status_detecting_conflicts": {
-        "es": "Detectando conflictos...",
-        "en": "Detecting conflicts...",
-    },
-    "status_reading_stashes": {"es": "Leyendo stashes...", "en": "Reading stashes..."},
-    "status_reading_tags": {"es": "Leyendo tags...", "en": "Reading tags..."},
-    "status_querying_github": {"es": "Consultando GitHub...", "en": "Querying GitHub..."},
-    "status_checking_env": {"es": "Verificando entorno...", "en": "Checking environment..."},
-    "status_scanning_stale": {
-        "es": "Buscando ramas y refs obsoletos...",
-        "en": "Scanning stale branches and refs...",
-    },
-    "status_updating": {"es": "Actualizando gitwise...", "en": "Updating gitwise..."},
-    "step_commit_graph": {
-        "es": "git commit-graph write --reachable --changed-paths",
-        "en": "git commit-graph write --reachable --changed-paths",
-    },
-    "step_prune": {
-        "es": "git prune (elimina objetos no referenciados)",
-        "en": "git prune (remove unreachable objects)",
-    },
-    "step_repack": {
-        "es": "git repack -A -d --write-bitmap-index",
-        "en": "git repack -A -d --write-bitmap-index",
-    },
-    "strict_warnings": {
-        "es": "--strict: warnings tratados como errores",
-        "en": "--strict: warnings treated as errors",
-    },
-    "suggest_diff_failed": {
-        "es": "No se pudo obtener diff staged",
-        "en": "Failed to get staged diff",
-    },
-    "suggest_message": {"es": "Sugerencia: {message}", "en": "Suggestion: {message}"},
-    "suggest_blocked_in_progress": {
-        "es": "No se puede sugerir commit: hay una operación {state} en curso. Resuélvela o aborta primero.",
-        "en": "Cannot suggest commit: a {state} operation is in progress. Resolve or abort it first.",
-    },
-    "suggest_no_staged": {"es": "No hay archivos en área de preparación", "en": "No staged files"},
-    "suggest_type": {"es": "tipo {type}", "en": "type {type}"},
-    "suggest_update_file": {"es": "actualizar {filename}", "en": "update {filename}"},
-    "suggest_update_files": {"es": "actualizar {count} archivos", "en": "update {count} files"},
-    "summary": {"es": "resumen", "en": "summary"},
-    "symlink_conflict_broken": {
-        "es": "{file} es un symlink roto — arréglalo manualmente",
-        "en": "{file} is a broken symlink — fix it manually",
-    },
-    "symlink_conflict_file": {
-        "es": "{file} es un archivo regular — no se sobreescribirá automáticamente",
-        "en": "{file} is a regular file — won't be overwritten automatically",
-    },
-    "symlink_conflict_regular": {
-        "es": "{file} ya es symlink a '{existing}', se esperaba '{expected}'",
-        "en": "{file} is already a symlink to '{existing}', expected '{expected}'",
-    },
-    "symlink_created_msg": {
-        "es": "symlink: {file} → {target}",
-        "en": "symlink: {file} → {target}",
-    },
-    "symlink_read_failed": {
-        "es": "no se pudo leer symlink {file}: {error}",
-        "en": "could not read symlink {file}: {error}",
-    },
-    "symlink_escapes_root": {
-        "es": "Symlink target escapa del root del repositorio: {target}",
-        "en": "Symlink target escapes repository root: {target}",
-    },
-    "symlink_outside_repo": {
-        "es": ".claude/rules/{name}: symlink fuera del repo — ignorado",
-        "en": ".claude/rules/{name}: symlink outside repo — ignored",
-    },
-    "sync_action_fetch_all": {"es": "fetch --all --prune", "en": "fetch --all --prune"},
-    "sync_action_fetch_remote": {"es": "fetch {remote}", "en": "fetch {remote}"},
-    "sync_complete": {
-        "es": "sync completado: {branch} ↑{ahead} ↓{behind}",
-        "en": "sync complete: {branch} ↑{ahead} ↓{behind}",
-    },
-    "sync_complete_title": {"es": "sincronización completa", "en": "sync complete"},
-    "sync_dry_run_title": {"es": "sincronización (simulación)", "en": "sync (dry-run)"},
-    "sync_fetch_failed": {"es": "fetch falló: {error}", "en": "fetch failed: {error}"},
-    "sync_pull_diverged": {
-        "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
-        "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)",
-    },
-    "sync_pull_diverged_hint": {
-        "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",
-        "en": "Inspect state with: gitwise sync --dry-run --json. Reconcile with: git pull --rebase (recommended) or git pull --no-rebase. Then: gitwise sync --push.",
-    },
-    "yes_required_with_json": {
-        "es": "--json en un comando con efectos requiere --yes explícito (no se puede confirmar de forma interactiva)",
-        "en": "--json on a side-effecting command requires explicit --yes (cannot confirm interactively)",
-    },
-    "yes_required_hint": {
-        "es": "Vuelve a ejecutar con --yes o usa --dry-run para inspeccionar el plan sin efectos.",
-        "en": "Re-run with --yes, or use --dry-run to inspect the plan without side effects.",
-    },
-    "optimize_partial_failure": {
-        "es": "optimize completó con fallos en uno o más pasos",
-        "en": "optimize completed with one or more failed steps",
-    },
-    "clean_delete_failures": {
-        "es": "clean no pudo borrar {count} branches",
-        "en": "clean could not delete {count} branches",
-    },
-    "setup_partial_failure": {
-        "es": "setup completó con fallos en uno o más keys",
-        "en": "setup completed with one or more failed keys",
-    },
-    "sync_pull_ff": {"es": "pull --ff-only", "en": "pull --ff-only"},
-    "sync_push_commits": {"es": "push ({count} commits)", "en": "push ({count} commits)"},
-    "sync_push_failed": {"es": "push falló: {error}", "en": "push failed: {error}"},
-    "sync_hint": {
-        "es": "Verifica remote/upstream y prueba con --dry-run antes de reintentar.",
-        "en": "Check remote/upstream and try --dry-run before retrying.",
-    },
-    "sync_push_protected_hint": {
-        "es": "Haz push desde una branch de feature y abre PR hacia la rama protegida.",
-        "en": "Push from a feature branch and open a PR into the protected branch.",
-    },
-    "sync_push_protected": {
-        "es": "no se puede hacer push a rama protegida: {branch}",
-        "en": "cannot push to protected branch: {branch}",
-    },
-    "sync_status": {
-        "es": "ahead {ahead}, behind {behind}",
-        "en": "ahead {ahead}, behind {behind}",
-    },
-    "tag_create_dry": {"es": "Se crearía tag {name}", "en": "Would create tag {name}"},
-    "tag_created": {"es": "Tag {name} creado", "en": "Tag {name} created"},
-    "tag_delete_dry": {"es": "Se eliminaría tag {name}", "en": "Would delete tag {name}"},
-    "tag_deleted": {"es": "Tag {name} eliminado", "en": "Tag {name} deleted"},
-    "tag_empty": {"es": "No hay tags", "en": "No tags"},
-    "tag_latest_title": {"es": "último tag", "en": "latest tag"},
-    "tag_list_title": {"es": "Tags", "en": "Tags"},
-    "tag_name_required": {"es": "Se requiere nombre de tag", "en": "Tag name required"},
-    "tag_no_semver": {"es": "No se encontró tag semver", "en": "No semver tag found"},
-    "tag_unknown_action": {"es": "Acción desconocida: {action}", "en": "Unknown action: {action}"},
-    "template_not_found": {
-        "es": "template no encontrado: {path}",
-        "en": "template not found: {path}",
-    },
-    "tip_staged": {
-        "es": "sin cambios sin confirmar  (tip: --staged para archivos en staging)",
-        "en": "no uncommitted changes  (tip: --staged for staged files)",
-    },
-    "tool_bat_desc": {
-        "es": "visualización de archivos con syntax highlighting",
-        "en": "file viewing with syntax highlighting",
-    },
-    "tool_delta_desc": {
-        "es": "diffs con syntax highlighting",
-        "en": "diffs with syntax highlighting",
-    },
-    "tool_eza_desc": {"es": "listado de directorios moderno", "en": "modern directory listing"},
-    "tool_git_sizer_desc": {
-        "es": "análisis de tamaño e historia del repo",
-        "en": "repo size and history analysis",
-    },
-    "tool_rg_desc": {
-        "es": "búsqueda rápida en código (ripgrep)",
-        "en": "fast code search (ripgrep)",
-    },
-    "tool_watchman_desc": {
-        "es": "fsmonitor nativo — acelera git status",
-        "en": "native fsmonitor — speeds up git status",
-    },
-    "trivial": {"es": "trivial", "en": "trivial"},
-    "undo_complete": {
-        "es": "undo completado: HEAD ahora en {ref}",
-        "en": "undo complete: HEAD now at {ref}",
-    },
-    "undo_complete_title": {"es": "undo completo", "en": "undo complete"},
-    "undo_confirm_hard": {
-        "es": "¿reset --hard a {ref}? Esto descartará cambios sin commit [s/N] ",
-        "en": "reset --hard to {ref}? This will discard uncommitted changes [y/N] ",
-    },
-    "undo_dry_run_title": {"es": "undo (simulación)", "en": "undo (dry-run)"},
-    "undo_no_entries": {"es": "no hay entradas en el reflog", "en": "no reflog entries"},
-    "undo_not_enough_history": {
-        "es": "no hay suficiente historial para retroceder {steps} pasos",
-        "en": "not enough history to go back {steps} steps",
-    },
-    "undo_reflog_failed": {"es": "no se pudo leer el reflog", "en": "could not read reflog"},
-    "undo_reset_to": {"es": "reset a", "en": "reset to"},
-    "unknown_action": {
-        "es": "acción desconocida: {action} en {file}",
-        "en": "unknown action: {action} on {file}",
-    },
-    "unknown_adapter": {"es": "adaptador desconocido: {name}", "en": "unknown adapter: {name}"},
-    "unknown_branch": {"es": "desconocida", "en": "unknown"},
-    "unset_value": {"es": "<unset>", "en": "<unset>"},
-    "update_dry_run": {
-        "es": "ejecutaría: git pull --ff-only en {dir}",
-        "en": "would run: git pull --ff-only in {dir}",
-    },
-    "updated_git_conventions": {
-        "es": "actualizado: {file} (convenciones git agregadas)",
-        "en": "updated: {file} (git conventions added)",
-    },
-    "updating_from": {"es": "actualizando desde {dir}...", "en": "updating from {dir}..."},
-    "using_delta": {"es": "usando delta para mostrar diff", "en": "using delta to display diff"},
-    "warning_label": {"es": "advertencia", "en": "warning"},
-    "working_tree_clean": {"es": "working tree limpio", "en": "working tree clean"},
-    "worktree_branch_msg": {"es": "  rama: {branch}", "en": "  branch: {branch}"},
-    "worktree_created": {"es": "worktree creado: {path}", "en": "worktree created: {path}"},
-    "worktree_failed": {
-        "es": "no se pudo crear worktree: {error}",
-        "en": "could not create worktree: {error}",
-    },
-    "worktree_to_use": {"es": "  para usarlo: cd {path}", "en": "  to use: cd {path}"},
-    "worktree_usage": {
-        "es": "uso: gitwise worktree new <branch>",
-        "en": "usage: gitwise worktree new <branch>",
-    },
-    "worktree_usage_full": {
-        "es": "uso: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]",
-        "en": "usage: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]",
-    },
-    "worktrees_active": {
-        "es": "## Worktrees activos: {count}",
-        "en": "## Active worktrees: {count}",
-    },
-    "worktrees_cleaned": {
-        "es": "limpiados {count} worktree(s) huérfano(s)",
-        "en": "cleaned {count} orphaned worktree(s)",
-    },
-    "worktrees_to_clean": {"es": "worktrees a limpiar:", "en": "worktrees to clean:"},
-    "yes_response": {"es": "s", "en": "y"},
-    "invalid_ref": {"es": "referencia inválida: {ref}", "en": "invalid ref: {ref}"},
-    "invalid_branch_name": {
-        "es": "nombre de rama inválido: {name}",
-        "en": "invalid branch name: {name}",
-    },
-    "no_remote_branches": {"es": "no hay ramas remotas", "en": "no remote branches"},
-    "update_requires_git_clone": {
-        "es": "update requiere una instalación vía git clone (no se encontró .git/)",
-        "en": "update requires a git clone installation (.git/ not found)",
-    },
-    "update_no_upstream": {
-        "es": "la rama actual '{branch}' no tiene rama de seguimiento; update solo puede actualizar una rama con upstream",
-        "en": "current branch '{branch}' has no upstream; update can only fast-forward a tracking branch",
-    },
-    "update_no_upstream_hint": {
-        "es": "cambia a tu rama principal (p.ej. 'git switch main') o configura el upstream con 'git branch --set-upstream-to=origin/{branch}'",
-        "en": "switch to your main branch (e.g. 'git switch main') or set an upstream with 'git branch --set-upstream-to=origin/{branch}'",
-    },
-    "invalid_grep_pattern": {
-        "es": "patrón de búsqueda inválido o peligroso: {pattern}",
-        "en": "invalid or unsafe grep pattern: {pattern}",
-    },
-    "invalid_author_pattern": {
-        "es": "patrón de author inválido o peligroso: {pattern}",
-        "en": "invalid or unsafe author pattern: {pattern}",
-    },
-    "unexpected_error": {
-        "es": "error inesperado. Ejecuta con GITWISE_DEBUG=1 para más detalles.",
-        "en": "unexpected error. Run with GITWISE_DEBUG=1 for details.",
-    },
-    "invalid_sort_field": {
-        "es": "campo de ordenamiento no válido: {field}. Campos válidos: refname, committerdate, creatordate, authordate",
-        "en": "invalid sort field: {field}. Valid fields: refname, committerdate, creatordate, authordate",
-    },
+  "aborted": {
+    "es": "cancelado.",
+    "en": "aborted."
+  },
+  "adapter_created": {
+    "es": "adaptador {adapter}: creado {file}",
+    "en": "adapter {adapter}: created {file}"
+  },
+  "adapter_exists": {
+    "es": "adaptador {adapter}: {file} ya existe",
+    "en": "adapter {adapter}: {file} already exists"
+  },
+  "adapter_alias_deprecated": {
+    "es": "alias deprecado: usa \"{target}\" en lugar de \"{alias}\"",
+    "en": "deprecated alias: use \"{target}\" instead of \"{alias}\""
+  },
+  "providers_available": {
+    "es": "providers disponibles: {list}",
+    "en": "available providers: {list}"
+  },
+  "adapter_no_template": {
+    "es": "plantilla de adaptador no encontrada: {path}",
+    "en": "adapter template not found: {path}"
+  },
+  "adapters_available": {
+    "es": "adaptadores disponibles: {list}",
+    "en": "available adapters: {list}"
+  },
+  "adapters_none_with_others": {
+    "es": "\"none\" no se puede combinar con otros adaptadores",
+    "en": "\"none\" cannot be combined with other adapters"
+  },
+  "adapters_require_local": {
+    "es": "los adaptadores requieren --local",
+    "en": "adapters require --local"
+  },
+  "action_failed": {
+    "es": "acción falló: {error} — revirtiendo {count} acciones previas",
+    "en": "action failed: {error} — rolling back {count} previous actions"
+  },
+  "actions_to_perform": {
+    "es": "acciones a realizar:",
+    "en": "actions to perform:"
+  },
+  "active_in_worktree": {
+    "es": "activa en un worktree",
+    "en": "active in a worktree"
+  },
+  "already_contains_conventions": {
+    "es": "ya contiene convenciones git",
+    "en": "already contains git conventions"
+  },
+  "already_exists": {
+    "es": "ya existe",
+    "en": "already exists"
+  },
+  "already_points_to_agents": {
+    "es": "ya apunta a AGENTS.md",
+    "en": "already points to AGENTS.md"
+  },
+  "already_up_to_date": {
+    "es": "Ya está actualizado.",
+    "en": "Already up to date."
+  },
+  "audit_fix_label": {
+    "es": "solución",
+    "en": "fix"
+  },
+  "audit_ignore_label": {
+    "es": "ignorar",
+    "en": "ignore"
+  },
+  "branch_deleted": {
+    "es": "eliminada: {branch}",
+    "en": "deleted: {branch}"
+  },
+  "branch_label": {
+    "es": "rama: {branch}",
+    "en": "branch: {branch}"
+  },
+  "branch_list_title": {
+    "es": "Ramas",
+    "en": "Branches"
+  },
+  "branch_list_title_current": {
+    "es": "Ramas (actual: {branch})",
+    "en": "Branches (current: {branch})"
+  },
+  "branches_ahead": {
+    "es": "adelantada",
+    "en": "ahead"
+  },
+  "branches_behind": {
+    "es": "atrasada",
+    "en": "behind"
+  },
+  "branches_current": {
+    "es": "actual",
+    "en": "current"
+  },
+  "branches_merged": {
+    "es": "fusionadas",
+    "en": "merged"
+  },
+  "branches_remote_label": {
+    "es": "remotas",
+    "en": "remote"
+  },
+  "branches_sort_label": {
+    "es": "ordenar por: {sort}",
+    "en": "sort by: {sort}"
+  },
+  "branches_stale_label": {
+    "es": "antiguas [gone]",
+    "en": "stale [gone]"
+  },
+  "branches_to_delete": {
+    "es": "ramas sin seguimiento remoto a eliminar ({count}):",
+    "en": "stale branches to delete ({count}):"
+  },
+  "branches_worktree": {
+    "es": "worktree",
+    "en": "worktree"
+  },
+  "cancelled": {
+    "es": "cancelado.",
+    "en": "cancelled."
+  },
+  "changed_files": {
+    "es": "archivos modificados: ({count})",
+    "en": "changed files: ({count})"
+  },
+  "claude_md_identical_content": {
+    "es": "contenido idéntico a AGENTS.md",
+    "en": "identical content to AGENTS.md"
+  },
+  "claude_md_replaced": {
+    "es": "{file} reemplazado por symlink a {target} (backup: {backup})",
+    "en": "{file} replaced by symlink to {target} (backup: {backup})"
+  },
+  "claude_md_separate": {
+    "es": "{c} y {a} son archivos separados con contenido distinto. Para unificar: revisa `diff {c} {a}`, mueve contenido relevante manualmente, luego ejecuta `gitwise setup-agents --replace-claude-with-symlink`.",
+    "en": "{c} and {a} are separate files with different content. To unify: review `diff {c} {a}`, move relevant content manually, then run `gitwise setup-agents --replace-claude-with-symlink`."
+  },
+  "claude_md_symlink_other": {
+    "es": "{file} es symlink a '{existing}', no a '{expected}'. Revisa manualmente. Para reemplazar: `gitwise setup-agents --replace-claude-with-symlink`",
+    "en": "{file} is symlink to '{existing}', not '{expected}'. Review manually. To replace: `gitwise setup-agents --replace-claude-with-symlink`"
+  },
+  "clean_fix": {
+    "es": "gitwise clean --branches --dry-run",
+    "en": "gitwise clean --branches --dry-run"
+  },
+  "clean_refs_not_implemented": {
+    "es": "'clean --refs' no está implementado",
+    "en": "'clean --refs' is not implemented"
+  },
+  "clean_specify_flag": {
+    "es": "especifica --branches  (o --refs)",
+    "en": "specify --branches  (or --refs)"
+  },
+  "clean_to_delete": {
+    "es": "para eliminar: gitwise clean --branches --yes",
+    "en": "to delete: gitwise clean --branches --yes"
+  },
+  "col_age": {
+    "es": "Antigüedad",
+    "en": "Age"
+  },
+  "col_author": {
+    "es": "Autor",
+    "en": "Author"
+  },
+  "col_branch": {
+    "es": "Rama",
+    "en": "Branch"
+  },
+  "col_date": {
+    "es": "Fecha",
+    "en": "Date"
+  },
+  "col_name": {
+    "es": "Nombre",
+    "en": "Name"
+  },
+  "col_sha": {
+    "es": "SHA",
+    "en": "SHA"
+  },
+  "col_status": {
+    "es": "Estado",
+    "en": "Status"
+  },
+  "col_subject": {
+    "es": "Asunto",
+    "en": "Subject"
+  },
+  "col_tag": {
+    "es": "Tag",
+    "en": "Tag"
+  },
+  "commit_amend_label": {
+    "es": "amend",
+    "en": "amend"
+  },
+  "commit_amend_protected": {
+    "es": "no se puede hacer --amend en rama protegida: {branch}",
+    "en": "cannot --amend on protected branch: {branch}"
+  },
+  "commit_amend_pushed": {
+    "es": "no se puede hacer --amend: {branch} ya fue pusheada (requeriría force-push)",
+    "en": "cannot --amend: {branch} already pushed (would require force-push)"
+  },
+  "commit_branch_label": {
+    "es": "rama",
+    "en": "branch"
+  },
+  "commit_breaking_hint": {
+    "es": "cambio rompedor",
+    "en": "breaking change"
+  },
+  "commit_graph_ausente": {
+    "es": "commit-graph ausente — git log puede ser 2-10x más lento",
+    "en": "commit-graph missing — git log can be 2-10x slower"
+  },
+  "commit_graph_cost": {
+    "es": "latencia acumulada en cada sesión de Claude",
+    "en": "accumulated latency in each Claude session"
+  },
+  "commit_graph_failed": {
+    "es": "commit-graph: falló (repo puede estar vacío)",
+    "en": "commit-graph: failed (repo may be empty)"
+  },
+  "commit_graph_fix": {
+    "es": "gitwise optimize --yes",
+    "en": "gitwise optimize --yes"
+  },
+  "commit_graph_fix_cost": {
+    "es": "trivial (segundos)",
+    "en": "trivial (seconds)"
+  },
+  "commit_graph_updated": {
+    "es": "commit-graph actualizado",
+    "en": "commit-graph updated"
+  },
+  "commit_invalid_format": {
+    "es": "el mensaje no sigue conventional commits: tipo(scope): descripción",
+    "en": "message does not follow conventional commits: type(scope): description"
+  },
+  "commit_msg_label": {
+    "es": "mensaje",
+    "en": "msg"
+  },
+  "commit_blocked_in_progress": {
+    "es": "No se puede commitear: hay una operación {state} en curso. Resuélvela o aborta primero.",
+    "en": "Cannot commit: a {state} operation is in progress. Resolve or abort it first."
+  },
+  "commit_no_message": {
+    "es": "usa -m para proveer un mensaje de commit",
+    "en": "use -m to provide a commit message"
+  },
+  "commit_scope_hint": {
+    "es": "ámbito: {scope}",
+    "en": "scope: {scope}"
+  },
+  "commit_type_invalid": {
+    "es": "tipo inválido: {type}. Válidos: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert",
+    "en": "invalid type: {type}. Valid: feat, fix, refactor, docs, chore, test, style, perf, ci, build, revert"
+  },
+  "completed_in": {
+    "es": "completado en {elapsed}s",
+    "en": "completed in {elapsed}s"
+  },
+  "completions_unsupported_shell": {
+    "es": "shell no soportado para completions: {shell}",
+    "en": "unsupported shell for completions: {shell}"
+  },
+  "aliases_label": {
+    "es": "aliases",
+    "en": "aliases"
+  },
+  "missing_dependency_completions_shtab": {
+    "es": "dependencia faltante: shtab (requerida para completions bash/zsh)",
+    "en": "missing dependency: shtab (required for bash/zsh completions)"
+  },
+  "missing_dependency_hint": {
+    "es": "usa `uv run python -m gitwise ...` o instala deps con `uv sync`",
+    "en": "use `uv run python -m gitwise ...` or install dependencies with `uv sync`"
+  },
+  "config_failed": {
+    "es": "config {name}: falló (continuando)",
+    "en": "config {name}: failed (continuing)"
+  },
+  "config_up_to_date": {
+    "es": "configuración de git ya está actualizada",
+    "en": "git config is already up to date"
+  },
+  "configuring_agents_global": {
+    "es": "configurando agentes globalmente en: {path}",
+    "en": "configuring agents globally in: {path}"
+  },
+  "configuring_agents_in": {
+    "es": "configurando agentes en: {root}",
+    "en": "configuring agents in: {root}"
+  },
+  "confirm_delete_branches": {
+    "es": "¿eliminar {count} rama(s)? [s/N] ",
+    "en": "delete {count} branch(es)? [y/N] "
+  },
+  "confirm_optimize": {
+    "es": "¿ejecutar optimizaciones? [s/N] ",
+    "en": "run optimizations? [y/N] "
+  },
+  "confirm_setup_changes": {
+    "es": "¿aplicar estos cambios? [s/N] ",
+    "en": "apply these changes? [y/N] "
+  },
+  "confirm_stash_clean": {
+    "es": "¿Limpiar {count} stash(es)? (y/N)",
+    "en": "Clear {count} stash(es)? (y/N)"
+  },
+  "confirm_stash_drop": {
+    "es": "¿Eliminar {ref}? (y/N)",
+    "en": "Drop {ref}? (y/N)"
+  },
+  "confirm_tag_delete": {
+    "es": "¿Eliminar tag {name}? (y/N)",
+    "en": "Delete tag {name}? (y/N)"
+  },
+  "conflict_dir_agents": {
+    "es": "conflicto dir/agents",
+    "en": "conflict dir/agents"
+  },
+  "conflicts_found": {
+    "es": "{count} archivo(s) en conflicto",
+    "en": "{count} file(s) in conflict"
+  },
+  "conflicts_hint": {
+    "es": "Usa --ours o --theirs para resolver automaticamente",
+    "en": "Use --ours or --theirs to auto-resolve"
+  },
+  "conflicts_none": {
+    "es": "No hay conflictos",
+    "en": "No conflicts"
+  },
+  "conflicts_resolved_ours": {
+    "es": "{count} conflicto(s) resuelto(s) con ours",
+    "en": "{count} conflict(s) resolved with ours"
+  },
+  "conflicts_resolved_theirs": {
+    "es": "{count} conflicto(s) resuelto(s) con theirs",
+    "en": "{count} conflict(s) resolved with theirs"
+  },
+  "continue_prompt": {
+    "es": "¿continuar? [s/N] ",
+    "en": "continue? [y/N] "
+  },
+  "conventions_heading": {
+    "es": "## Convenciones git para este proyecto",
+    "en": "## Git conventions for this project"
+  },
+  "conventions_pointer": {
+    "es": "\n\n@AGENTS.md\n",
+    "en": "\n\n@AGENTS.md\n"
+  },
+  "could_not_delete": {
+    "es": "no se pudo eliminar: {branch}  ({error})",
+    "en": "could not delete: {branch}  ({error})"
+  },
+  "created": {
+    "es": "creado: {file}",
+    "en": "created: {file}"
+  },
+  "ctx_branches": {
+    "es": "## Ramas: {local} local, {remote} remota(s)",
+    "en": "## Branches: {local} local, {remote} remote"
+  },
+  "ctx_directory_tree": {
+    "es": "## Árbol de directorios",
+    "en": "## Directory Tree"
+  },
+  "ctx_file_types": {
+    "es": "## Tipos de archivo",
+    "en": "## File Types"
+  },
+  "ctx_more_entries": {
+    "es": "  ... ({count} entradas más)",
+    "en": "  ... ({count} more entries)"
+  },
+  "ctx_todo_fixme": {
+    "es": "## TODO/FIXME: {todo} TODO, {fixme} FIXME",
+    "en": "## TODO/FIXME: {todo} TODO, {fixme} FIXME"
+  },
+  "ctx_top_contributors": {
+    "es": "## Top contribuidores",
+    "en": "## Top Contributors"
+  },
+  "current_branch_msg": {
+    "es": "rama actual (activa)",
+    "en": "current branch (checked out)"
+  },
+  "current_value": {
+    "es": " (actual: {current})",
+    "en": " (current: {current})"
+  },
+  "debug_mkdir": {
+    "es": "mkdir: {file}",
+    "en": "mkdir: {file}"
+  },
+  "debug_rollback_deleted": {
+    "es": "rollback: eliminado {file}",
+    "en": "rollback: deleted {file}"
+  },
+  "debug_rollback_failed": {
+    "es": "rollback falló para {file}: {error}",
+    "en": "rollback failed for {file}: {error}"
+  },
+  "debug_rollback_restored": {
+    "es": "rollback: restaurado {file} desde {backup}",
+    "en": "rollback: restored {file} from {backup}"
+  },
+  "debug_rollback_restored_skill": {
+    "es": "rollback: restaurado {file} desde {skill}",
+    "en": "rollback: restored {file} from {skill}"
+  },
+  "debug_rollback_symlink": {
+    "es": "rollback: eliminado symlink {file}",
+    "en": "rollback: deleted symlink {file}"
+  },
+  "debug_skip": {
+    "es": "skip: {file}",
+    "en": "skip: {file}"
+  },
+  "debug_snapshot_written": {
+    "es": "snapshot escrito en {path}",
+    "en": "snapshot written to {path}"
+  },
+  "deleted_count": {
+    "es": "eliminadas {count} rama(s) sin seguimiento remoto",
+    "en": "deleted {count} stale branch(es)"
+  },
+  "detached_head": {
+    "es": "(HEAD desacoplado)",
+    "en": "(detached HEAD)"
+  },
+  "diagnostic": {
+    "es": "Diagnóstico{suffix} — {count} observación(es):",
+    "en": "Diagnostic{suffix} — {count} finding(s):"
+  },
+  "diff_binary_lfs_hint": {
+    "es": "archivo binario {path} ({mib} MiB) -- considera Git LFS",
+    "en": "binary file {path} ({mib} MiB) -- consider Git LFS"
+  },
+  "diff_prefix": {
+    "es": "diff: {stat}",
+    "en": "diff: {stat}"
+  },
+  "diff_summary_header": {
+    "es": "Resumen -- {count} archivo(s):",
+    "en": "Summary -- {count} file(s):"
+  },
+  "diff_too_many_refs": {
+    "es": "demasiados argumentos posicionales antes de '--' ({count}); gitwise diff acepta un unico refspec (usa a..b para un rango)",
+    "en": "too many positional arguments before '--' ({count}); gitwise diff accepts a single refspec (use a..b for a range)"
+  },
+  "secret_scan_clean": {
+    "es": "no se detectaron secretos en el diff",
+    "en": "no secrets detected in the diff"
+  },
+  "secret_scan_found": {
+    "es": "{rule} en {path}:{line} ({preview})",
+    "en": "{rule} at {path}:{line} ({preview})"
+  },
+  "secret_scan_found_header": {
+    "es": "Secretos detectados -- {count} hallazgo(s):",
+    "en": "Secrets detected -- {count} finding(s):"
+  },
+  "secret_scan_blocked_high": {
+    "es": "commit bloqueado: {count} secreto(s) de alta severidad en el área de staging",
+    "en": "commit blocked: {count} high-severity secret(s) in the staging area"
+  },
+  "secret_scan_blocked_hint": {
+    "es": "revoque o rote el secreto, remuévalo del stage, o use --allow-secret (con confirmación) para commitear de todos modos",
+    "en": "revoke/rotate the secret, unstage it, or use --allow-secret (with confirmation) to commit anyway"
+  },
+  "secret_scan_allow_confirm": {
+    "es": "Se detectaron {count} secreto(s) de alta severidad. ¿Commitear de todos modos?",
+    "en": "{count} high-severity secret(s) detected. Commit anyway?"
+  },
+  "secret_scan_medium_warning": {
+    "es": "advertencia: {rule} en {path}:{line} ({preview})",
+    "en": "warning: {rule} at {path}:{line} ({preview})"
+  },
+  "secret_scan_unavailable": {
+    "es": "no se pudo escanear el área de staging (fail-closed): {error}",
+    "en": "could not scan the staging area (fail-closed): {error}"
+  },
+  "directory_exists": {
+    "es": "el directorio ya existe: {path}",
+    "en": "directory already exists: {path}"
+  },
+  "doctor_git_label": {
+    "es": "git",
+    "en": "git"
+  },
+  "doctor_install_label": {
+    "es": "instalación",
+    "en": "install"
+  },
+  "doctor_purpose_label": {
+    "es": "propósito",
+    "en": "purpose"
+  },
+  "doctor_python_label": {
+    "es": "python",
+    "en": "python"
+  },
+  "dry_run_no_clean": {
+    "es": "modo simulación — no se limpiará nada",
+    "en": "dry-run mode — nothing will be cleaned"
+  },
+  "dry_run_no_delete": {
+    "es": "modo simulación — no se eliminará nada",
+    "en": "dry-run mode — nothing will be deleted"
+  },
+  "dry_run_no_exec": {
+    "es": "modo simulación — no se ejecutará nada",
+    "en": "dry-run mode — nothing will be executed"
+  },
+  "dry_run_nothing": {
+    "es": "modo simulación — no se escribirá nada:",
+    "en": "dry-run mode — nothing will be written:"
+  },
+  "error": {
+    "es": "error",
+    "en": "error"
+  },
+  "error_updating": {
+    "es": "error al actualizar",
+    "en": "error updating"
+  },
+  "file_too_large": {
+    "es": ".claude/rules/{name}: archivo demasiado grande — no validado",
+    "en": ".claude/rules/{name}: file too large — not validated"
+  },
+  "fix_label": {
+    "es": "fix",
+    "en": "fix"
+  },
+  "fsmonitor_cost": {
+    "es": "~50ms extra por git status en repos medianos",
+    "en": "~50ms extra per git status in medium repos"
+  },
+  "fsmonitor_disabled": {
+    "es": "core.fsmonitor desactivado — git status más lento en repos grandes",
+    "en": "core.fsmonitor disabled — slower git status in large repos"
+  },
+  "fsmonitor_fix": {
+    "es": "gitwise setup --yes",
+    "en": "gitwise setup --yes"
+  },
+  "fsmonitor_fix_cost": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "fsmonitor_not_supported": {
+    "es": "fsmonitor integrado no está soportado en Linux (solo macOS y Windows)",
+    "en": "built-in fsmonitor not supported on Linux (macOS and Windows only)"
+  },
+  "setup_agents_windows_global_unsupported": {
+    "es": "setup-agents en modo global no está soportado en Windows (requiere symlinks POSIX en ~/.claude/).",
+    "en": "setup-agents global mode is not supported on Windows (requires POSIX symlinks in ~/.claude/)."
+  },
+  "setup_agents_windows_workaround_local": {
+    "es": "Workaround: usá 'gitwise setup-agents --local --no-symlinks' dentro del repo donde quieras configurar los agentes.",
+    "en": "Workaround: use 'gitwise setup-agents --local --no-symlinks' inside the repo where you want to set up agents."
+  },
+  "setup_agents_windows_auto_no_symlinks": {
+    "es": "Windows detectado: activando --no-symlinks automáticamente (los symlinks POSIX no son confiables en Windows).",
+    "en": "Windows detected: auto-enabling --no-symlinks (POSIX symlinks are not reliable on Windows)."
+  },
+  "gc_already_running": {
+    "es": "git gc/maintenance ya está en ejecución — esperá a que termine",
+    "en": "git gc/maintenance already running — wait for it to finish"
+  },
+  "git_command_failed": {
+    "es": "Error al ejecutar {cmd}: {error}",
+    "en": "Failed to run {cmd}: {error}"
+  },
+  "git_diff_failed": {
+    "es": "git diff falló: {error}",
+    "en": "git diff failed: {error}"
+  },
+  "git_log_failed": {
+    "es": "Error al obtener log: {error}",
+    "en": "Failed to get log: {error}"
+  },
+  "git_log_title": {
+    "es": "Commits",
+    "en": "Commits"
+  },
+  "git_ref_failed": {
+    "es": "Error al listar refs: {error}",
+    "en": "Failed to list refs: {error}"
+  },
+  "git_show_failed": {
+    "es": "Error al mostrar commit: {error}",
+    "en": "Failed to show commit: {error}"
+  },
+  "git_too_old": {
+    "es": "git {ver} demasiado antiguo — se requiere ≥ {min}",
+    "en": "git {ver} too old — ≥ {min} required"
+  },
+  "git_version_ok": {
+    "es": "git {ver} (≥ {min} requerido)",
+    "en": "git {ver} (≥ {min} required)"
+  },
+  "gitattributes_conflict": {
+    "es": ".gitattributes: '{pattern}' tiene regla existente '{existing}' que puede entrar en conflicto con la de gitwise '{desired}'. Elimina la línea fuera del bloque managed para evitar duplicados.",
+    "en": ".gitattributes: '{pattern}' has existing rule '{existing}' that may conflict with gitwise's '{desired}'. Remove the line outside the managed block to avoid duplicates."
+  },
+  "gitattributes_force_lf": {
+    "es": "# Convention files: force LF for cross-platform consistency",
+    "en": "# Convention files: force LF for cross-platform consistency"
+  },
+  "gitattributes_merge_ours": {
+    "es": "# Generated snapshot: use local version on merge",
+    "en": "# Generated snapshot: use local version on merge"
+  },
+  "gitignore_backups": {
+    "es": "# Backups from gitwise setup-agents",
+    "en": "# Backups from gitwise setup-agents"
+  },
+  "gitignore_claude_local": {
+    "es": "# Claude Code local/personal files (do not commit)",
+    "en": "# Claude Code local/personal files (do not commit)"
+  },
+  "gitignore_snapshot": {
+    "es": "# Snapshot regenerated each gitwise run (timestamps change)",
+    "en": "# Snapshot regenerated each gitwise run (timestamps change)"
+  },
+  "gitwise": {
+    "es": "gitwise",
+    "en": "gitwise"
+  },
+  "global_skill_symlink_broken": {
+    "es": "~/.claude/skills/{skill} es un symlink roto — arréglalo manualmente",
+    "en": "~/.claude/skills/{skill} is a broken symlink — fix it manually"
+  },
+  "global_skill_symlink_different": {
+    "es": "~/.claude/skills/{skill} es symlink a '{existing}', no a '{expected}' — se mantiene como está",
+    "en": "~/.claude/skills/{skill} is symlink to '{existing}', not '{expected}' — keeping as is"
+  },
+  "gpg_active_no_key_repo": {
+    "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
+    "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>"
+  },
+  "gpg_binary_fix_cost": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "gpg_binary_missing_audit": {
+    "es": "commit.gpgsign=true pero gpg no instalado — los commits fallarán",
+    "en": "commit.gpgsign=true but gpg not installed — commits will fail"
+  },
+  "gpg_binary_missing_cost": {
+    "es": "ningún git commit funcionará hasta instalarlo",
+    "en": "no git commit will work until installed"
+  },
+  "gpg_binary_missing_fix": {
+    "es": "brew install gnupg",
+    "en": "brew install gnupg"
+  },
+  "gpg_enable_instruction": {
+    "es": "      → git config --global commit.gpgsign true",
+    "en": "      → git config --global commit.gpgsign true"
+  },
+  "gpg_install_instruction": {
+    "es": "      → brew install gnupg",
+    "en": "      → brew install gnupg"
+  },
+  "gpg_key_fix_cost": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "gpg_key_instruction": {
+    "es": "      → git config --global user.signingkey <key-id>",
+    "en": "      → git config --global user.signingkey <key-id>"
+  },
+  "gpg_key_missing_audit": {
+    "es": "commit.gpgsign=true pero user.signingkey no configurado",
+    "en": "commit.gpgsign=true but user.signingkey not configured"
+  },
+  "gpg_key_missing_cost": {
+    "es": "ningún git commit funcionará",
+    "en": "no git commit will work"
+  },
+  "gpg_key_missing_fix": {
+    "es": "git config user.signingkey <key-id>",
+    "en": "git config user.signingkey <key-id>"
+  },
+  "gpg_no_signing_key": {
+    "es": "  commit.gpgsign=true pero user.signingkey no configurado",
+    "en": "  commit.gpgsign=true but user.signingkey not configured"
+  },
+  "gpg_not_configured_audit": {
+    "es": "GPG no configurado — commits sin firma digital",
+    "en": "GPG not configured — unsigned commits"
+  },
+  "gpg_not_configured_cost": {
+    "es": "commits no verificables criptográficamente",
+    "en": "commits not cryptographically verifiable"
+  },
+  "gpg_not_configured_fix": {
+    "es": "brew install gnupg  →  git config --global commit.gpgsign true",
+    "en": "brew install gnupg  →  git config --global commit.gpgsign true"
+  },
+  "gpg_not_configured_fix_cost": {
+    "es": "requiere crear llave GPG (~5 min)",
+    "en": "requires creating GPG key (~5 min)"
+  },
+  "gpg_not_enabled": {
+    "es": "  gpg instalado pero commit.gpgsign no activado",
+    "en": "  gpg installed but commit.gpgsign not enabled"
+  },
+  "gpg_not_installed": {
+    "es": "  gpg no instalado — commits no se firmarán",
+    "en": "  gpg not installed — commits won't be signed"
+  },
+  "gpg_not_installed_commit": {
+    "es": "GPG no instalado — no se pueden firmar commits",
+    "en": "GPG not installed — cannot sign commits"
+  },
+  "gpg_ready_msg": {
+    "es": "  GPG listo — commit.gpgsign=true, llave y binario configurados",
+    "en": "  GPG ready — commit.gpgsign=true, key and binary configured"
+  },
+  "gpg_signing_active_global": {
+    "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
+    "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>"
+  },
+  "gpg_signing_active_no_key": {
+    "es": "GPG signing activo pero sin user.signingkey — ejecuta: git config user.signingkey <id>",
+    "en": "GPG signing active but no user.signingkey — run: git config user.signingkey <id>"
+  },
+  "gpg_signing_not_configured": {
+    "es": "GPG signing no configurado — si lo deseas: git config commit.gpgsign true",
+    "en": "GPG signing not configured — if desired: git config commit.gpgsign true"
+  },
+  "gpg_title": {
+    "es": "GPG (firma de commits):",
+    "en": "GPG (commit signing):"
+  },
+  "health_commit_graph": {
+    "es": "commit-graph ausente",
+    "en": "no commit-graph"
+  },
+  "health_gpg_signing": {
+    "es": "firma GPG desactivada",
+    "en": "GPG signing off"
+  },
+  "health_label": {
+    "es": "Salud: {score}/100  Nota: {grade}",
+    "en": "Health: {score}/100  Grade: {grade}"
+  },
+  "health_no_commits": {
+    "es": "sin commits",
+    "en": "no commits"
+  },
+  "health_old_stashes": {
+    "es": "stashes acumulados",
+    "en": "old stashes"
+  },
+  "health_remote": {
+    "es": "sin remoto",
+    "en": "no remote"
+  },
+  "health_stale_branches": {
+    "es": "ramas sin seguimiento remoto",
+    "en": "stale branches"
+  },
+  "health_too_many_branches": {
+    "es": "exceso de ramas",
+    "en": "too many branches"
+  },
+  "health_untracked_clutter": {
+    "es": "archivos sin seguimiento",
+    "en": "untracked clutter"
+  },
+  "health_upstream": {
+    "es": "sin rama seguimiento",
+    "en": "no upstream"
+  },
+  "help_group_options": {
+    "es": "opciones",
+    "en": "options"
+  },
+  "help_group_positional_arguments": {
+    "es": "argumentos posicionales",
+    "en": "positional arguments"
+  },
+  "help_root_environment_epilog": {
+    "es": "Entorno:\n  GITWISE_DEBUG=1          imprime logs debug de subprocess git\n  GITWISE_LOG_JSON=1       logs estructurados en stderr (JSON lines)\n  GITWISE_JSON_PRETTY=1    activa JSON con formato por defecto\n  GITWISE_LANG=es|en       fuerza el locale de salida\n  GITWISE_THEME=dark|light|auto override de tema de color\n  GITWISE_NO_COLOR=1       desactiva salida ANSI color\n  GITWISE_OUTPUT=agent     modo de salida orientado a máquina\n  GITWISE_AGENT=1          alias para forzar modo agent\n  GITWISE_GIT_TIMEOUT=<s>  timeout de subprocess git en segundos\n  GITWISE_WIDTH=<cols>     override del ancho de salida\n  GITWISE_BIN_DIR=<path>   destino de instalación para install.sh",
+    "en": "Environment:\n  GITWISE_DEBUG=1          print git subprocess debug logs\n  GITWISE_LOG_JSON=1       structured stderr logs (JSON lines)\n  GITWISE_JSON_PRETTY=1    pretty-print JSON output by default\n  GITWISE_LANG=es|en       force output locale\n  GITWISE_THEME=dark|light|auto color theme override\n  GITWISE_NO_COLOR=1       disable ANSI color output\n  GITWISE_OUTPUT=agent     machine-oriented output mode\n  GITWISE_AGENT=1          alias to force agent output mode\n  GITWISE_GIT_TIMEOUT=<s>  git subprocess timeout in seconds\n  GITWISE_WIDTH=<cols>     override output width\n  GITWISE_BIN_DIR=<path>   install destination for install.sh"
+  },
+  "hint_prefix": {
+    "es": "sugerencia",
+    "en": "hint"
+  },
+  "hook_install_note": {
+    "es": "instala hooks GPG + conventional commits",
+    "en": "installs GPG + conventional commit hooks"
+  },
+  "hook_installs": {
+    "es": "instala hooks GPG + conventional commits",
+    "en": "installs GPG + conventional commit hooks"
+  },
+  "ignora_label": {
+    "es": "ignora",
+    "en": "ignore"
+  },
+  "installed_globally": {
+    "es": "instalado globalmente",
+    "en": "installed globally"
+  },
+  "invalid_json": {
+    "es": ".claude/settings.json existente tiene JSON inválido — se sobreescribirá",
+    "en": "existing .claude/settings.json has invalid JSON — will be overwritten"
+  },
+  "large_blobs": {
+    "es": "{count} archivo(s) grandes (≥1MB) en HEAD",
+    "en": "{count} large file(s) (≥1MB) in HEAD"
+  },
+  "large_blobs_cost": {
+    "es": "lentitud en clone y fetch",
+    "en": "slow clone and fetch"
+  },
+  "large_blobs_fix": {
+    "es": "considerar git-lfs o eliminación de la historia",
+    "en": "consider git-lfs or history removal"
+  },
+  "large_blobs_fix_cost": {
+    "es": "depende del archivo",
+    "en": "depends on the file"
+  },
+  "last_commits": {
+    "es": "últimos {count} commits:",
+    "en": "last {count} commits:"
+  },
+  "legacy_commands": {
+    "es": ".claude/commands/{skill}.md es formato antiguo — ahora se usa .claude/skills/{skill}/SKILL.md. Eliminá el .md viejo manualmente.",
+    "en": ".claude/commands/{skill}.md is legacy format — now using .claude/skills/{skill}/SKILL.md. Delete the old .md manually."
+  },
+  "legacy_migration_mode": {
+    "es": "modo migracion legacy activo: se prioriza layout canonico (AGENTS.md + .agents/skills)",
+    "en": "legacy migration mode enabled: canonical layout (AGENTS.md + .agents/skills) is enforced"
+  },
+  "log_no_commits": {
+    "es": "sin commits aún",
+    "en": "no commits yet"
+  },
+  "managed_block_created": {
+    "es": "creado bloque managed: {file}",
+    "en": "created managed block: {file}"
+  },
+  "managed_block_unclosed": {
+    "es": "{file}: bloque managed sin marcador de cierre — se dejará intacto",
+    "en": "{file}: managed block missing closing marker — will be left intact"
+  },
+  "managed_block_updated": {
+    "es": "actualizado bloque managed: {file}",
+    "en": "updated managed block: {file}"
+  },
+  "markers_label": {
+    "es": "marcadores",
+    "en": "markers"
+  },
+  "merge_branch_not_found": {
+    "es": "Branch {branch} no encontrada",
+    "en": "Branch {branch} not found"
+  },
+  "merge_conflicts": {
+    "es": "Conflictos detectados durante la mezcla",
+    "en": "Conflicts detected during merge"
+  },
+  "merge_detached_head": {
+    "es": "HEAD desacoplado, no se puede mezclar",
+    "en": "Detached HEAD, cannot merge"
+  },
+  "merge_diverged": {
+    "es": "Branches divergidas (ahead: {ahead}, behind: {behind})",
+    "en": "Branches diverged (ahead: {ahead}, behind: {behind})"
+  },
+  "merge_merge_label": {
+    "es": "merge",
+    "en": "merge"
+  },
+  "merge_aborted": {
+    "es": "Mezcla abortada",
+    "en": "Merge aborted"
+  },
+  "merge_abort_continue_mutually_exclusive": {
+    "es": "--abort y --continue son mutuamente excluyentes",
+    "en": "--abort and --continue are mutually exclusive"
+  },
+  "merge_branch_required": {
+    "es": "Especifica la rama a mezclar, o usa --abort/--continue para una operación pausada",
+    "en": "Specify a branch to merge, or use --abort/--continue for a paused operation"
+  },
+  "merge_continued": {
+    "es": "Mezcla continuada",
+    "en": "Merge continued"
+  },
+  "merge_no_in_progress": {
+    "es": "No hay mezcla/rebase en curso (estado actual: {state}). Usa {action} solo cuando gitwise detecta operación pausada.",
+    "en": "No merge/rebase in progress (current state: {state}). Use {action} only when gitwise detects a paused operation."
+  },
+  "merge_ok": {
+    "es": "Mezcla completada: {branch} → {into}",
+    "en": "Merge completed: {branch} → {into}"
+  },
+  "merge_proceed": {
+    "es": "¿Continuar con la mezcla? (y/N)",
+    "en": "Proceed with merge? (y/N)"
+  },
+  "merge_rebase_label": {
+    "es": "rebase",
+    "en": "rebase"
+  },
+  "merge_rebased": {
+    "es": "Rebase completado: {branch} → {into}",
+    "en": "Rebase completed: {branch} → {into}"
+  },
+  "merge_hint": {
+    "es": "Revisa conflictos o usa --dry-run para ver advertencias antes de ejecutar.",
+    "en": "Review conflicts or use --dry-run to inspect warnings before running."
+  },
+  "merge_same_branch": {
+    "es": "No se puede mezclar una branch consigo misma",
+    "en": "Cannot merge a branch into itself"
+  },
+  "merge_uncommitted": {
+    "es": "Hay cambios sin confirmar",
+    "en": "There are uncommitted changes"
+  },
+  "schema_unknown_command": {
+    "es": "comando desconocido: {name}",
+    "en": "unknown command: {name}"
+  },
+  "schema_unknown_command_hint": {
+    "es": "ejecuta `gitwise commands --json` para listar comandos disponibles",
+    "en": "run `gitwise commands --json` to list available commands"
+  },
+  "schema_file_missing": {
+    "es": "schema no encontrado para comando '{command}' en versión {version}",
+    "en": "schema not found for command '{command}' in version {version}"
+  },
+  "schema_file_missing_hint": {
+    "es": "ejecuta `gitwise schema <command> --version v1 --json` o verifica `share/schemas/v1/input/*.json`",
+    "en": "run `gitwise schema <command> --version v1 --json` or verify `share/schemas/v1/input/*.json`"
+  },
+  "migrated_skill": {
+    "es": "migrado: {file} → {target} (symlink)",
+    "en": "migrated: {file} → {target} (symlink)"
+  },
+  "migrate_requires_local": {
+    "es": "--migrate-legacy-claude requiere --local",
+    "en": "--migrate-legacy-claude requires --local"
+  },
+  "missing_globs_frontmatter": {
+    "es": ".claude/rules/{name}: falta 'globs:' en frontmatter — la regla no se activará",
+    "en": ".claude/rules/{name}: missing 'globs:' in frontmatter — rule won't activate"
+  },
+  "mixed_staging": {
+    "es": "hay archivos en área de preparación y sin confirmar — el commit no sería atómico",
+    "en": "staged and unstaged files present — commit wouldn't be atomic"
+  },
+  "mixed_staging_cost": {
+    "es": "commits no atómicos dificultan el historial",
+    "en": "non-atomic commits make history harder to follow"
+  },
+  "mixed_staging_fix": {
+    "es": "revisar con git diff --staged antes de confirmar",
+    "en": "review with git diff --staged before committing"
+  },
+  "mixed_staging_fix_cost": {
+    "es": "n/a",
+    "en": "n/a"
+  },
+  "modified_files_status": {
+    "es": "estado ({count} archivos modificados):",
+    "en": "status ({count} modified files):"
+  },
+  "no_commits_yet": {
+    "es": "sin commits aún",
+    "en": "no commits yet"
+  },
+  "no_commits_yet_note": {
+    "es": "sin commits aún",
+    "en": "no commits yet"
+  },
+  "no_deletable_branches": {
+    "es": "no hay ramas eliminables",
+    "en": "no branches to delete"
+  },
+  "no_orphaned_worktrees": {
+    "es": "no hay worktrees huérfanos{suffix}",
+    "en": "no orphaned worktrees{suffix}"
+  },
+  "no_repo_root": {
+    "es": "no se pudo determinar la raíz del repositorio",
+    "en": "could not determine repository root"
+  },
+  "no_stale_branches": {
+    "es": "no hay ramas sin seguimiento remoto ([gone])",
+    "en": "no stale branches ([gone])"
+  },
+  "no_uncommitted_changes": {
+    "es": "sin cambios sin confirmar",
+    "en": "no uncommitted changes"
+  },
+  "no_upstream_audit": {
+    "es": "Branch sin upstream configurado",
+    "en": "Branch has no upstream configured"
+  },
+  "no_upstream_cost": {
+    "es": "push/pull podrían fallar sin upstream",
+    "en": "push/pull may fail without upstream"
+  },
+  "no_upstream_fix": {
+    "es": "git branch --set-upstream-to=origin/<branch>",
+    "en": "git branch --set-upstream-to=origin/<branch>"
+  },
+  "not_a_git_repo": {
+    "es": "no es un repositorio git",
+    "en": "not a git repository"
+  },
+  "not_configured": {
+    "es": " (no configurado)",
+    "en": " (not configured)"
+  },
+  "nothing_staged": {
+    "es": "nada en área de preparación",
+    "en": "nothing staged"
+  },
+  "ok_prefix": {
+    "es": "✓",
+    "en": "✓"
+  },
+  "old_stashes_msg": {
+    "es": "{count} stash(es) con más de {days} días",
+    "en": "{count} stash(es) older than {days} days"
+  },
+  "optimizing": {
+    "es": "optimizando: {root}",
+    "en": "optimizing: {root}"
+  },
+  "optional_tools": {
+    "es": "herramientas opcionales:",
+    "en": "optional tools:"
+  },
+  "orphaned_worktrees": {
+    "es": "worktrees huérfanos detectados ({count}) — directorio inexistente:",
+    "en": "orphaned worktrees detected ({count}) — missing directory:"
+  },
+  "output_exceeds_8kb": {
+    "es": "output {size} bytes supera 8KB — usa --max-commits menor",
+    "en": "output {size} bytes exceeds 8KB — use smaller --max-commits"
+  },
+  "pending": {
+    "es": "pendiente",
+    "en": "pending"
+  },
+  "pick_aborted": {
+    "es": "Pick abortado",
+    "en": "Pick aborted"
+  },
+  "pick_conflicts": {
+    "es": "Conflictos durante pick",
+    "en": "Conflicts during pick"
+  },
+  "pick_continued": {
+    "es": "Pick continuado",
+    "en": "Pick continued"
+  },
+  "pick_dry": {
+    "es": "Se ejecutaría {action} en: {refs}",
+    "en": "Would {action}: {refs}"
+  },
+  "pick_no_refs": {
+    "es": "Se requieren refs de commits",
+    "en": "Commit refs required"
+  },
+  "pick_ok": {
+    "es": "{action} completado: {refs}",
+    "en": "{action} completed: {refs}"
+  },
+  "planned_changes": {
+    "es": "cambios planificados ({count}):",
+    "en": "planned changes ({count}):"
+  },
+  "platform_label": {
+    "es": "plataforma: {name}",
+    "en": "platform: {name}"
+  },
+  "pr_gh_required": {
+    "es": "gh CLI no encontrado — instala: brew install gh",
+    "en": "gh CLI not found — install: brew install gh"
+  },
+  "pr_invalid_json": {
+    "es": "respuesta JSON inválida desde gh",
+    "en": "invalid JSON response from gh"
+  },
+  "pr_invalid_selector": {
+    "es": "selector de PR inválido: {selector}",
+    "en": "invalid PR selector: {selector}"
+  },
+  "pr_list_title": {
+    "es": "Pull Requests",
+    "en": "Pull Requests"
+  },
+  "pr_body_title": {
+    "es": "Descripción",
+    "en": "Description"
+  },
+  "pr_body_truncated": {
+    "es": "(texto truncado)",
+    "en": "(text truncated)"
+  },
+  "pr_comment_empty": {
+    "es": "(sin contenido)",
+    "en": "(empty body)"
+  },
+  "pr_comment_header": {
+    "es": "Comentario {index} — {author} — {created}",
+    "en": "Comment {index} - {author} - {created}"
+  },
+  "pr_comment_truncated": {
+    "es": "(comentario truncado)",
+    "en": "(comment truncated)"
+  },
+  "pr_comments_none": {
+    "es": "no hay comentarios en este PR",
+    "en": "no comments on this PR"
+  },
+  "pr_comments_title": {
+    "es": "Comentarios PR #{number}: {title}",
+    "en": "PR #{number} comments: {title}"
+  },
+  "pr_current_label": {
+    "es": "PR actual",
+    "en": "current PR"
+  },
+  "pr_checks_col_duration": {
+    "es": "Duración",
+    "en": "Duration"
+  },
+  "pr_checks_col_name": {
+    "es": "Check",
+    "en": "Check"
+  },
+  "pr_checks_col_status": {
+    "es": "Estado",
+    "en": "Status"
+  },
+  "pr_checks_col_workflow": {
+    "es": "Workflow",
+    "en": "Workflow"
+  },
+  "pr_checks_links_title": {
+    "es": "Links",
+    "en": "Links"
+  },
+  "pr_checks_none": {
+    "es": "no hay checks para este PR",
+    "en": "no checks for this PR"
+  },
+  "pr_check_state_cancel": {
+    "es": "cancelado",
+    "en": "cancelled"
+  },
+  "pr_check_state_fail": {
+    "es": "fallido",
+    "en": "failed"
+  },
+  "pr_check_state_other": {
+    "es": "otro",
+    "en": "other"
+  },
+  "pr_check_state_pass": {
+    "es": "ok",
+    "en": "pass"
+  },
+  "pr_check_state_pending": {
+    "es": "pendiente",
+    "en": "pending"
+  },
+  "pr_check_state_queued": {
+    "es": "en cola",
+    "en": "queued"
+  },
+  "pr_check_state_running": {
+    "es": "en ejecución",
+    "en": "running"
+  },
+  "pr_check_state_skip": {
+    "es": "omitido",
+    "en": "skipped"
+  },
+  "pr_checks_summary": {
+    "es": "Resumen",
+    "en": "Summary"
+  },
+  "pr_checks_summary_value": {
+    "es": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}",
+    "en": "{total} total | {passed} {label_pass} | {failed} {label_fail} | {running} {label_running} | {other} {label_other}"
+  },
+  "pr_checks_table_title": {
+    "es": "Checks",
+    "en": "Checks"
+  },
+  "pr_checks_title": {
+    "es": "Checks {selector}",
+    "en": "Checks {selector}"
+  },
+  "pr_field_assignees": {
+    "es": "Assignees",
+    "en": "Assignees"
+  },
+  "pr_field_author": {
+    "es": "Autor",
+    "en": "Author"
+  },
+  "pr_field_branch": {
+    "es": "Ramas",
+    "en": "Branches"
+  },
+  "pr_field_changes": {
+    "es": "Cambios",
+    "en": "Changes"
+  },
+  "pr_field_comments": {
+    "es": "Comentarios",
+    "en": "Comments"
+  },
+  "pr_field_closed_at": {
+    "es": "Cerrado",
+    "en": "Closed"
+  },
+  "pr_field_labels": {
+    "es": "Labels",
+    "en": "Labels"
+  },
+  "pr_field_mergeable": {
+    "es": "Mergeable",
+    "en": "Mergeable"
+  },
+  "pr_field_merged_at": {
+    "es": "Mergeado",
+    "en": "Merged"
+  },
+  "pr_field_review": {
+    "es": "Review",
+    "en": "Review"
+  },
+  "pr_field_review_requests": {
+    "es": "Review requests",
+    "en": "Review requests"
+  },
+  "pr_field_state": {
+    "es": "Estado",
+    "en": "State"
+  },
+  "pr_field_url": {
+    "es": "URL",
+    "en": "URL"
+  },
+  "pr_none": {
+    "es": "no hay pull requests abiertos",
+    "en": "no open pull requests"
+  },
+  "pr_unknown_action": {
+    "es": "acción desconocida: {action}. Usa: list, checks, view, comments",
+    "en": "unknown action: {action}. Use: list, checks, view, comments"
+  },
+  "pr_view_title": {
+    "es": "PR #{number}: {title}",
+    "en": "PR #{number}: {title}"
+  },
+  "protected_branch": {
+    "es": "protegida (lista por defecto)",
+    "en": "protected (default list)"
+  },
+  "protected_key": {
+    "es": "Intento de modificar clave protegida: {name}",
+    "en": "Attempt to modify protected key: {name}"
+  },
+  "protected_key_attempt": {
+    "es": "Intento de modificar clave protegida: {key}",
+    "en": "Attempt to modify protected key: {key}"
+  },
+  "protected_stale_branches": {
+    "es": "ramas sin seguimiento remoto protegidas ({count}) — no se tocarán:",
+    "en": "protected stale branches ({count}) — won't be touched:"
+  },
+  "prune_complete": {
+    "es": "prune completado",
+    "en": "prune complete"
+  },
+  "prune_not_critical": {
+    "es": "prune: no crítico, continuando",
+    "en": "prune: not critical, continuing"
+  },
+  "python_too_old": {
+    "es": "Python {ver} demasiado antiguo — se requiere ≥ 3.9",
+    "en": "Python {ver} too old — ≥ 3.9 required"
+  },
+  "python_version_ok": {
+    "es": "Python {ver}",
+    "en": "Python {ver}"
+  },
+  "repack_complete": {
+    "es": "repack completado",
+    "en": "repack complete"
+  },
+  "repack_failed": {
+    "es": "repack: falló",
+    "en": "repack: failed"
+  },
+  "repack_fallo_bitmap": {
+    "es": "repack --write-bitmap-index falló, reintentando sin bitmap",
+    "en": "repack --write-bitmap-index failed, retrying without bitmap"
+  },
+  "replaced": {
+    "es": "reemplazado: {file} (backup: {backup})",
+    "en": "replaced: {file} (backup: {backup})"
+  },
+  "repo_good_shape": {
+    "es": "repositorio en buen estado{suffix}",
+    "en": "repository in good shape{suffix}"
+  },
+  "repo_size": {
+    "es": "tamaño del repo: {size}KB",
+    "en": "repo size: {size}KB"
+  },
+  "section_current_branch": {
+    "es": "## Rama actual",
+    "en": "## Current branch"
+  },
+  "section_last_commits": {
+    "es": "## Últimos 10 commits",
+    "en": "## Last 10 commits"
+  },
+  "section_status": {
+    "es": "## Estado",
+    "en": "## Status"
+  },
+  "settings_sin_gpg_deny": {
+    "es": "settings.json no tiene reglas deny para GPG bypass — revisar manualmente",
+    "en": "settings.json missing deny rules for GPG bypass — check manually"
+  },
+  "settings_updated_merged": {
+    "es": "actualizado (deny rules merged): .claude/settings.json",
+    "en": "updated (deny rules merged): .claude/settings.json"
+  },
+  "setup_agents_complete": {
+    "es": "setup-agents completado",
+    "en": "setup-agents complete"
+  },
+  "setup_agents_failed": {
+    "es": "setup-agents falló: {error}",
+    "en": "setup-agents failed: {error}"
+  },
+  "setup_agents_global_complete": {
+    "es": "setup-agents global completado",
+    "en": "setup-agents global complete"
+  },
+  "setup_agents_global_failed": {
+    "es": "setup-agents (global) falló: {error}",
+    "en": "setup-agents (global) failed: {error}"
+  },
+  "setup_complete": {
+    "es": "setup completado",
+    "en": "setup complete"
+  },
+  "setup_hook_backend_selected": {
+    "es": "hooks backend: {backend} (modo solicitado: {requested})",
+    "en": "hooks backend: {backend} (requested mode: {requested})"
+  },
+  "setup_hook_managers_detected": {
+    "es": "managers detectados: {managers}",
+    "en": "detected managers: {managers}"
+  },
+  "setup_hook_warning_legacy_conflict": {
+    "es": "core.hooksPath apunta a '{current}'. Con modo preserve se omiten hooks para no romper configuración existente.",
+    "en": "core.hooksPath points to '{current}'. In preserve mode, hooks are skipped to avoid breaking existing setup."
+  },
+  "setup_hook_warning_legacy_overwrite": {
+    "es": "modo legacy sobrescribirá core.hooksPath actual: '{current}'",
+    "en": "legacy mode will overwrite current core.hooksPath: '{current}'"
+  },
+  "setup_hook_warning_managers_no_native": {
+    "es": "detectados {managers} y Git sin hooks nativos: se omite instalación de hooks para evitar conflictos.",
+    "en": "detected {managers} and native config hooks unavailable: skipping hook installation to avoid conflicts."
+  },
+  "setup_hook_warning_managers_preserve": {
+    "es": "detectados {managers}. Con modo preserve se omite instalación de hooks para evitar conflictos.",
+    "en": "detected {managers}. In preserve mode, hook installation is skipped to avoid conflicts."
+  },
+  "setup_hook_warning_existing_scripts": {
+    "es": "hooks ya existentes detectados ({hooks}) en el directorio activo. Con modo preserve se omite instalación de hooks para evitar sobreescritura.",
+    "en": "existing hooks detected ({hooks}) in the active hooks directory. In preserve mode, hook installation is skipped to avoid overwriting."
+  },
+  "setup_hook_warning_native_unsupported": {
+    "es": "modo native requiere soporte de hooks por configuración de Git (git hook + hook.<name>.*). Se omite instalación de hooks.",
+    "en": "native mode requires Git config hooks support (git hook + hook.<name>.*). Hook installation is skipped."
+  },
+  "setup_note_fsmonitor": {
+    "es": "solo macOS",
+    "en": "macOS only"
+  },
+  "setup_note_hooks_legacy": {
+    "es": "instala hooks Gitwise vía core.hooksPath (modo legacy)",
+    "en": "installs Gitwise hooks via core.hooksPath (legacy mode)"
+  },
+  "setup_note_hooks_native": {
+    "es": "instala hook nativo por configuración Git (modo native)",
+    "en": "installs native hook via Git config (native mode)"
+  },
+  "setup_note_hooks_native_event": {
+    "es": "agrega evento del hook nativo en Git config",
+    "en": "adds native hook event in Git config"
+  },
+  "setup_note_hooks_native_migrate": {
+    "es": "migra desde core.hooksPath de Gitwise a hooks nativos",
+    "en": "migrates from Gitwise core.hooksPath to native hooks"
+  },
+  "setup_note_hooks": {
+    "es": "instala hooks GPG + conventional commits",
+    "en": "installs GPG + conventional commit hooks"
+  },
+  "setup_note_manyfiles": {
+    "es": "opcional, git ≥ 2.40",
+    "en": "opt-in, git ≥ 2.40"
+  },
+  "show_header": {
+    "es": "mostrar {ref}",
+    "en": "show {ref}"
+  },
+  "show_ref_not_found": {
+    "es": "referencia no encontrada: {ref}",
+    "en": "ref not found: {ref}"
+  },
+  "skill_conflict_dir_agents": {
+    "es": "~/.claude/skills/{skill} es dir regular y ~/.agents/skills/{skill} también existe — sin cambios. Consolida manualmente.",
+    "en": "~/.claude/skills/{skill} is a regular dir and ~/.agents/skills/{skill} also exists — no changes. Consolidate manually."
+  },
+  "skill_dir_regular_with_agents": {
+    "es": ".claude/skills/{skill} es un directorio regular aunque .agents/ existe — gitwise escribe SKILL.md directamente",
+    "en": ".claude/skills/{skill} is a regular directory even though .agents/ exists — gitwise writes SKILL.md directly"
+  },
+  "skill_globally_available": {
+    "es": ".claude/skills/{skill}: skill ya disponible globalmente (~/.claude/skills/) — se omite creación local (prioridad user > project)",
+    "en": ".claude/skills/{skill}: skill already available globally (~/.claude/skills/) — skipping local creation (user > project priority)"
+  },
+  "skill_symlink_broken": {
+    "es": ".claude/skills/{skill} es un symlink roto — arréglalo manualmente",
+    "en": ".claude/skills/{skill} is a broken symlink — fix it manually"
+  },
+  "skill_symlink_different": {
+    "es": ".claude/skills/{skill} es symlink a '{existing}', no a '{expected}' — se mantiene como está",
+    "en": ".claude/skills/{skill} is symlink to '{existing}', not '{expected}' — keeping as is"
+  },
+  "skills_already_configured": {
+    "es": "skills ({count}): ya configurados",
+    "en": "skills ({count}): already configured"
+  },
+  "snapshot_generated": {
+    "es": "snapshot generado: {path}",
+    "en": "snapshot generated: {path}"
+  },
+  "space_freed": {
+    "es": "espacio liberado: {saved}KB  ({before}KB → {after}KB)",
+    "en": "space freed: {saved}KB  ({before}KB → {after}KB)"
+  },
+  "stale_branches_audit": {
+    "es": "{count} rama(s) con upstream eliminado ([gone])",
+    "en": "{count} branch(es) with deleted upstream ([gone])"
+  },
+  "stale_branches_cost": {
+    "es": "clutter en `git branch`; confunde agentes Claude",
+    "en": "clutter in `git branch`; confuses Claude agents"
+  },
+  "stale_branches_fix_cost": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "stash_clean_dry": {
+    "es": "Se eliminarían {count} stash(es)",
+    "en": "Would drop {count} stash(es)"
+  },
+  "stash_cleaned": {
+    "es": "{count} stash(es) eliminados",
+    "en": "{count} stash(es) cleared"
+  },
+  "stash_cleared_count": {
+    "es": "{count} stash(es) eliminados",
+    "en": "{count} stash(es) cleared"
+  },
+  "stash_col_branch": {
+    "es": "Rama",
+    "en": "Branch"
+  },
+  "stash_col_message": {
+    "es": "Mensaje",
+    "en": "Message"
+  },
+  "stash_col_ref": {
+    "es": "Ref",
+    "en": "Ref"
+  },
+  "stash_cost": {
+    "es": "acumulación de WIP probablemente irrelevante",
+    "en": "accumulation of probably irrelevant WIP"
+  },
+  "stash_dropped": {
+    "es": "Stash {ref} eliminado",
+    "en": "Stash {ref} dropped"
+  },
+  "stash_empty": {
+    "es": "No hay stashes",
+    "en": "No stashes"
+  },
+  "stash_fix": {
+    "es": "git stash drop stash@{N}  o  git stash clear",
+    "en": "git stash drop stash@{N}  or  git stash clear"
+  },
+  "stash_fix_cost": {
+    "es": "irreversible — revisar antes",
+    "en": "irreversible — review first"
+  },
+  "stash_list_title": {
+    "es": "Stashes",
+    "en": "Stashes"
+  },
+  "stash_not_found": {
+    "es": "stash@{{{index}}} no encontrado",
+    "en": "stash@{{{index}}} not found"
+  },
+  "stash_popped": {
+    "es": "Stash {ref} restaurado",
+    "en": "Stash {ref} restored"
+  },
+  "stash_hint": {
+    "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
+    "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."
+  },
+  "stash_unknown_action": {
+    "es": "Acción desconocida: {action}",
+    "en": "Unknown action: {action}"
+  },
+  "stashes_section": {
+    "es": "## Stashes: {count}",
+    "en": "## Stashes: {count}"
+  },
+  "status_ahead_label": {
+    "es": "adelante",
+    "en": "ahead"
+  },
+  "status_behind_label": {
+    "es": "atrás",
+    "en": "behind"
+  },
+  "status_clean": {
+    "es": "(limpio)",
+    "en": "(clean)"
+  },
+  "status_more_files": {
+    "es": "... +{count} más",
+    "en": "... +{count} more"
+  },
+  "status_staged": {
+    "es": "{count} archivo(s) en área de preparación",
+    "en": "{count} file(s) staged"
+  },
+  "status_conflicted_label": {
+    "es": "en conflicto",
+    "en": "conflicted"
+  },
+  "status_staged_label": {
+    "es": "preparados",
+    "en": "staged"
+  },
+  "status_unstaged": {
+    "es": "{count} archivo(s) modificado(s)",
+    "en": "{count} file(s) modified"
+  },
+  "status_unstaged_label": {
+    "es": "modificados",
+    "en": "unstaged"
+  },
+  "status_untracked": {
+    "es": "{count} archivo(s) sin seguimiento",
+    "en": "{count} untracked file(s)"
+  },
+  "status_untracked_label": {
+    "es": "sin seguimiento",
+    "en": "untracked"
+  },
+  "status_sync_fetch": {
+    "es": "Sincronizando: fetch...",
+    "en": "Syncing: fetch..."
+  },
+  "status_sync_pull": {
+    "es": "Sincronizando: pull...",
+    "en": "Syncing: pull..."
+  },
+  "status_sync_push": {
+    "es": "Sincronizando: push...",
+    "en": "Syncing: push..."
+  },
+  "status_optimize_commit_graph": {
+    "es": "Optimizando: actualizando commit-graph...",
+    "en": "Optimizing: updating commit-graph..."
+  },
+  "status_optimize_repack": {
+    "es": "Optimizando: repack...",
+    "en": "Optimizing: repack..."
+  },
+  "status_optimize_prune": {
+    "es": "Optimizando: prune...",
+    "en": "Optimizing: prune..."
+  },
+  "status_audit_stashes": {
+    "es": "Auditando: revisando stashes...",
+    "en": "Auditing: checking stashes..."
+  },
+  "status_audit_blobs": {
+    "es": "Auditando: buscando blobs grandes...",
+    "en": "Auditing: scanning large blobs..."
+  },
+  "status_audit_sizer": {
+    "es": "Auditando: ejecutando git-sizer...",
+    "en": "Auditing: running git-sizer..."
+  },
+  "status_worktree_add": {
+    "es": "Creando worktree para {branch}...",
+    "en": "Creating worktree for {branch}..."
+  },
+  "status_health_scan": {
+    "es": "Calculando salud del repositorio...",
+    "en": "Computing repository health..."
+  },
+  "status_context_scan": {
+    "es": "Recolectando contexto del repositorio...",
+    "en": "Gathering repository context..."
+  },
+  "status_snapshot_gen": {
+    "es": "Generando snapshot...",
+    "en": "Generating snapshot..."
+  },
+  "status_reading_status": {
+    "es": "Leyendo estado del repositorio...",
+    "en": "Reading repository status..."
+  },
+  "status_summarizing": {
+    "es": "Resumiendo repositorio...",
+    "en": "Summarizing repository..."
+  },
+  "status_reading_diff": {
+    "es": "Calculando cambios...",
+    "en": "Computing changes..."
+  },
+  "status_reading_log": {
+    "es": "Leyendo historial de commits...",
+    "en": "Reading commit history..."
+  },
+  "status_loading_commit": {
+    "es": "Cargando commit...",
+    "en": "Loading commit..."
+  },
+  "status_analyzing_branches": {
+    "es": "Analizando ramas...",
+    "en": "Analyzing branches..."
+  },
+  "status_analyzing_staged": {
+    "es": "Analizando cambios preparados...",
+    "en": "Analyzing staged changes..."
+  },
+  "status_detecting_conflicts": {
+    "es": "Detectando conflictos...",
+    "en": "Detecting conflicts..."
+  },
+  "status_reading_stashes": {
+    "es": "Leyendo stashes...",
+    "en": "Reading stashes..."
+  },
+  "status_reading_tags": {
+    "es": "Leyendo tags...",
+    "en": "Reading tags..."
+  },
+  "status_querying_github": {
+    "es": "Consultando GitHub...",
+    "en": "Querying GitHub..."
+  },
+  "status_checking_env": {
+    "es": "Verificando entorno...",
+    "en": "Checking environment..."
+  },
+  "status_scanning_stale": {
+    "es": "Buscando ramas y refs obsoletos...",
+    "en": "Scanning stale branches and refs..."
+  },
+  "status_updating": {
+    "es": "Actualizando gitwise...",
+    "en": "Updating gitwise..."
+  },
+  "step_commit_graph": {
+    "es": "git commit-graph write --reachable --changed-paths",
+    "en": "git commit-graph write --reachable --changed-paths"
+  },
+  "step_prune": {
+    "es": "git prune (elimina objetos no referenciados)",
+    "en": "git prune (remove unreachable objects)"
+  },
+  "step_repack": {
+    "es": "git repack -A -d --write-bitmap-index",
+    "en": "git repack -A -d --write-bitmap-index"
+  },
+  "strict_warnings": {
+    "es": "--strict: warnings tratados como errores",
+    "en": "--strict: warnings treated as errors"
+  },
+  "suggest_diff_failed": {
+    "es": "No se pudo obtener diff staged",
+    "en": "Failed to get staged diff"
+  },
+  "suggest_message": {
+    "es": "Sugerencia: {message}",
+    "en": "Suggestion: {message}"
+  },
+  "suggest_blocked_in_progress": {
+    "es": "No se puede sugerir commit: hay una operación {state} en curso. Resuélvela o aborta primero.",
+    "en": "Cannot suggest commit: a {state} operation is in progress. Resolve or abort it first."
+  },
+  "suggest_no_staged": {
+    "es": "No hay archivos en área de preparación",
+    "en": "No staged files"
+  },
+  "suggest_type": {
+    "es": "tipo {type}",
+    "en": "type {type}"
+  },
+  "suggest_update_file": {
+    "es": "actualizar {filename}",
+    "en": "update {filename}"
+  },
+  "suggest_update_files": {
+    "es": "actualizar {count} archivos",
+    "en": "update {count} files"
+  },
+  "summary": {
+    "es": "resumen",
+    "en": "summary"
+  },
+  "symlink_conflict_broken": {
+    "es": "{file} es un symlink roto — arréglalo manualmente",
+    "en": "{file} is a broken symlink — fix it manually"
+  },
+  "symlink_conflict_file": {
+    "es": "{file} es un archivo regular — no se sobreescribirá automáticamente",
+    "en": "{file} is a regular file — won't be overwritten automatically"
+  },
+  "symlink_conflict_regular": {
+    "es": "{file} ya es symlink a '{existing}', se esperaba '{expected}'",
+    "en": "{file} is already a symlink to '{existing}', expected '{expected}'"
+  },
+  "symlink_created_msg": {
+    "es": "symlink: {file} → {target}",
+    "en": "symlink: {file} → {target}"
+  },
+  "symlink_read_failed": {
+    "es": "no se pudo leer symlink {file}: {error}",
+    "en": "could not read symlink {file}: {error}"
+  },
+  "symlink_escapes_root": {
+    "es": "Symlink target escapa del root del repositorio: {target}",
+    "en": "Symlink target escapes repository root: {target}"
+  },
+  "symlink_outside_repo": {
+    "es": ".claude/rules/{name}: symlink fuera del repo — ignorado",
+    "en": ".claude/rules/{name}: symlink outside repo — ignored"
+  },
+  "sync_action_fetch_all": {
+    "es": "fetch --all --prune",
+    "en": "fetch --all --prune"
+  },
+  "sync_action_fetch_remote": {
+    "es": "fetch {remote}",
+    "en": "fetch {remote}"
+  },
+  "sync_complete": {
+    "es": "sync completado: {branch} ↑{ahead} ↓{behind}",
+    "en": "sync complete: {branch} ↑{ahead} ↓{behind}"
+  },
+  "sync_complete_title": {
+    "es": "sincronización completa",
+    "en": "sync complete"
+  },
+  "sync_dry_run_title": {
+    "es": "sincronización (simulación)",
+    "en": "sync (dry-run)"
+  },
+  "sync_fetch_failed": {
+    "es": "fetch falló: {error}",
+    "en": "fetch failed: {error}"
+  },
+  "sync_pull_diverged": {
+    "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
+    "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)"
+  },
+  "sync_pull_diverged_hint": {
+    "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",
+    "en": "Inspect state with: gitwise sync --dry-run --json. Reconcile with: git pull --rebase (recommended) or git pull --no-rebase. Then: gitwise sync --push."
+  },
+  "yes_required_with_json": {
+    "es": "--json en un comando con efectos requiere --yes explícito (no se puede confirmar de forma interactiva)",
+    "en": "--json on a side-effecting command requires explicit --yes (cannot confirm interactively)"
+  },
+  "yes_required_hint": {
+    "es": "Vuelve a ejecutar con --yes o usa --dry-run para inspeccionar el plan sin efectos.",
+    "en": "Re-run with --yes, or use --dry-run to inspect the plan without side effects."
+  },
+  "optimize_partial_failure": {
+    "es": "optimize completó con fallos en uno o más pasos",
+    "en": "optimize completed with one or more failed steps"
+  },
+  "clean_delete_failures": {
+    "es": "clean no pudo borrar {count} branches",
+    "en": "clean could not delete {count} branches"
+  },
+  "setup_partial_failure": {
+    "es": "setup completó con fallos en uno o más keys",
+    "en": "setup completed with one or more failed keys"
+  },
+  "sync_pull_ff": {
+    "es": "pull --ff-only",
+    "en": "pull --ff-only"
+  },
+  "sync_push_commits": {
+    "es": "push ({count} commits)",
+    "en": "push ({count} commits)"
+  },
+  "sync_push_failed": {
+    "es": "push falló: {error}",
+    "en": "push failed: {error}"
+  },
+  "sync_hint": {
+    "es": "Verifica remote/upstream y prueba con --dry-run antes de reintentar.",
+    "en": "Check remote/upstream and try --dry-run before retrying."
+  },
+  "sync_push_protected_hint": {
+    "es": "Haz push desde una branch de feature y abre PR hacia la rama protegida.",
+    "en": "Push from a feature branch and open a PR into the protected branch."
+  },
+  "sync_push_protected": {
+    "es": "no se puede hacer push a rama protegida: {branch}",
+    "en": "cannot push to protected branch: {branch}"
+  },
+  "sync_status": {
+    "es": "ahead {ahead}, behind {behind}",
+    "en": "ahead {ahead}, behind {behind}"
+  },
+  "tag_create_dry": {
+    "es": "Se crearía tag {name}",
+    "en": "Would create tag {name}"
+  },
+  "tag_created": {
+    "es": "Tag {name} creado",
+    "en": "Tag {name} created"
+  },
+  "tag_delete_dry": {
+    "es": "Se eliminaría tag {name}",
+    "en": "Would delete tag {name}"
+  },
+  "tag_deleted": {
+    "es": "Tag {name} eliminado",
+    "en": "Tag {name} deleted"
+  },
+  "tag_empty": {
+    "es": "No hay tags",
+    "en": "No tags"
+  },
+  "tag_latest_title": {
+    "es": "último tag",
+    "en": "latest tag"
+  },
+  "tag_list_title": {
+    "es": "Tags",
+    "en": "Tags"
+  },
+  "tag_name_required": {
+    "es": "Se requiere nombre de tag",
+    "en": "Tag name required"
+  },
+  "tag_no_semver": {
+    "es": "No se encontró tag semver",
+    "en": "No semver tag found"
+  },
+  "tag_unknown_action": {
+    "es": "Acción desconocida: {action}",
+    "en": "Unknown action: {action}"
+  },
+  "template_not_found": {
+    "es": "template no encontrado: {path}",
+    "en": "template not found: {path}"
+  },
+  "tip_staged": {
+    "es": "sin cambios sin confirmar  (tip: --staged para archivos en staging)",
+    "en": "no uncommitted changes  (tip: --staged for staged files)"
+  },
+  "tool_bat_desc": {
+    "es": "visualización de archivos con syntax highlighting",
+    "en": "file viewing with syntax highlighting"
+  },
+  "tool_delta_desc": {
+    "es": "diffs con syntax highlighting",
+    "en": "diffs with syntax highlighting"
+  },
+  "tool_eza_desc": {
+    "es": "listado de directorios moderno",
+    "en": "modern directory listing"
+  },
+  "tool_git_sizer_desc": {
+    "es": "análisis de tamaño e historia del repo",
+    "en": "repo size and history analysis"
+  },
+  "tool_rg_desc": {
+    "es": "búsqueda rápida en código (ripgrep)",
+    "en": "fast code search (ripgrep)"
+  },
+  "tool_watchman_desc": {
+    "es": "fsmonitor nativo — acelera git status",
+    "en": "native fsmonitor — speeds up git status"
+  },
+  "trivial": {
+    "es": "trivial",
+    "en": "trivial"
+  },
+  "undo_complete": {
+    "es": "undo completado: HEAD ahora en {ref}",
+    "en": "undo complete: HEAD now at {ref}"
+  },
+  "undo_complete_title": {
+    "es": "undo completo",
+    "en": "undo complete"
+  },
+  "undo_confirm_hard": {
+    "es": "¿reset --hard a {ref}? Esto descartará cambios sin commit [s/N] ",
+    "en": "reset --hard to {ref}? This will discard uncommitted changes [y/N] "
+  },
+  "undo_dry_run_title": {
+    "es": "undo (simulación)",
+    "en": "undo (dry-run)"
+  },
+  "undo_no_entries": {
+    "es": "no hay entradas en el reflog",
+    "en": "no reflog entries"
+  },
+  "undo_not_enough_history": {
+    "es": "no hay suficiente historial para retroceder {steps} pasos",
+    "en": "not enough history to go back {steps} steps"
+  },
+  "undo_reflog_failed": {
+    "es": "no se pudo leer el reflog",
+    "en": "could not read reflog"
+  },
+  "undo_reset_to": {
+    "es": "reset a",
+    "en": "reset to"
+  },
+  "unknown_action": {
+    "es": "acción desconocida: {action} en {file}",
+    "en": "unknown action: {action} on {file}"
+  },
+  "unknown_adapter": {
+    "es": "adaptador desconocido: {name}",
+    "en": "unknown adapter: {name}"
+  },
+  "unknown_branch": {
+    "es": "desconocida",
+    "en": "unknown"
+  },
+  "unset_value": {
+    "es": "<unset>",
+    "en": "<unset>"
+  },
+  "update_dry_run": {
+    "es": "ejecutaría: git pull --ff-only en {dir}",
+    "en": "would run: git pull --ff-only in {dir}"
+  },
+  "updated_git_conventions": {
+    "es": "actualizado: {file} (convenciones git agregadas)",
+    "en": "updated: {file} (git conventions added)"
+  },
+  "updating_from": {
+    "es": "actualizando desde {dir}...",
+    "en": "updating from {dir}..."
+  },
+  "using_delta": {
+    "es": "usando delta para mostrar diff",
+    "en": "using delta to display diff"
+  },
+  "warning_label": {
+    "es": "advertencia",
+    "en": "warning"
+  },
+  "working_tree_clean": {
+    "es": "working tree limpio",
+    "en": "working tree clean"
+  },
+  "worktree_branch_msg": {
+    "es": "  rama: {branch}",
+    "en": "  branch: {branch}"
+  },
+  "worktree_created": {
+    "es": "worktree creado: {path}",
+    "en": "worktree created: {path}"
+  },
+  "worktree_failed": {
+    "es": "no se pudo crear worktree: {error}",
+    "en": "could not create worktree: {error}"
+  },
+  "worktree_to_use": {
+    "es": "  para usarlo: cd {path}",
+    "en": "  to use: cd {path}"
+  },
+  "worktree_usage": {
+    "es": "uso: gitwise worktree new <branch>",
+    "en": "usage: gitwise worktree new <branch>"
+  },
+  "worktree_usage_full": {
+    "es": "uso: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]",
+    "en": "usage: gitwise worktree new <branch>  |  gitwise worktree clean [--dry-run]"
+  },
+  "worktrees_active": {
+    "es": "## Worktrees activos: {count}",
+    "en": "## Active worktrees: {count}"
+  },
+  "worktrees_cleaned": {
+    "es": "limpiados {count} worktree(s) huérfano(s)",
+    "en": "cleaned {count} orphaned worktree(s)"
+  },
+  "worktrees_to_clean": {
+    "es": "worktrees a limpiar:",
+    "en": "worktrees to clean:"
+  },
+  "yes_response": {
+    "es": "s",
+    "en": "y"
+  },
+  "invalid_ref": {
+    "es": "referencia inválida: {ref}",
+    "en": "invalid ref: {ref}"
+  },
+  "invalid_branch_name": {
+    "es": "nombre de rama inválido: {name}",
+    "en": "invalid branch name: {name}"
+  },
+  "no_remote_branches": {
+    "es": "no hay ramas remotas",
+    "en": "no remote branches"
+  },
+  "update_requires_git_clone": {
+    "es": "update requiere una instalación vía git clone (no se encontró .git/)",
+    "en": "update requires a git clone installation (.git/ not found)"
+  },
+  "update_no_upstream": {
+    "es": "la rama actual '{branch}' no tiene rama de seguimiento; update solo puede actualizar una rama con upstream",
+    "en": "current branch '{branch}' has no upstream; update can only fast-forward a tracking branch"
+  },
+  "update_no_upstream_hint": {
+    "es": "cambia a tu rama principal (p.ej. 'git switch main') o configura el upstream con 'git branch --set-upstream-to=origin/{branch}'",
+    "en": "switch to your main branch (e.g. 'git switch main') or set an upstream with 'git branch --set-upstream-to=origin/{branch}'"
+  },
+  "invalid_grep_pattern": {
+    "es": "patrón de búsqueda inválido o peligroso: {pattern}",
+    "en": "invalid or unsafe grep pattern: {pattern}"
+  },
+  "invalid_author_pattern": {
+    "es": "patrón de author inválido o peligroso: {pattern}",
+    "en": "invalid or unsafe author pattern: {pattern}"
+  },
+  "unexpected_error": {
+    "es": "error inesperado. Ejecuta con GITWISE_DEBUG=1 para más detalles.",
+    "en": "unexpected error. Run with GITWISE_DEBUG=1 for details."
+  },
+  "invalid_sort_field": {
+    "es": "campo de ordenamiento no válido: {field}. Campos válidos: refname, committerdate, creatordate, authordate",
+    "en": "invalid sort field: {field}. Valid fields: refname, committerdate, creatordate, authordate"
+  }
 }
