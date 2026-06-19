@@ -1,7 +1,7 @@
 # Historial de cambios
 
 Source: CHANGELOG.md
-Last sync: 2026-06-18
+Last sync: 2026-06-19
 
 [English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
 
@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.26.1 (2026-06-18)
+## v0.27.0 (2026-06-19)
 
-### Fix
+### Feat
 
-- **ci**: bump all actions to Node 24 + document Homebrew install path (#62)
+- **install**: Windows installer + extend audit to detect unpinned uses: (#63)
