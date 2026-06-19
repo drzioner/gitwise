@@ -15,6 +15,18 @@ def _write_and_stage(repo: Path, filename: str, content: str = "change\n") -> No
 # ── Empty repo (no commits) ──────────────────────────────────────────────────
 
 
+def test_diff_json_v3_envelope_shape(tmp_git_repo):
+    result = _run("diff", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    env = json.loads(result.stdout)
+    assert env["v"] == 3
+    assert env["ok"] is True
+    assert env["command"] == "diff"
+    assert isinstance(env["data"], dict)
+    assert isinstance(env["hints"], list)
+    assert isinstance(env["errors"], list)
+
+
 def test_diff_no_commits(tmp_path):
     _init_repo(tmp_path)
     result = _run("diff", cwd=tmp_path)
@@ -26,7 +38,7 @@ def test_diff_no_commits_json(tmp_path):
     _init_repo(tmp_path)
     result = _run("diff", "--json", cwd=tmp_path)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["files"] == []
     assert data["count"] == 0
     assert "note" in data
@@ -44,7 +56,7 @@ def test_diff_no_changes(tmp_git_repo):
 def test_diff_no_changes_json(tmp_git_repo):
     result = _run("diff", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["files"] == []
     assert data["count"] == 0
 
@@ -63,7 +75,7 @@ def test_diff_unstaged_json(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("modified\n")
     result = _run("diff", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert any("README.md" in f.get("path", "") for f in data["files"])
 
@@ -89,7 +101,7 @@ def test_diff_staged_json(tmp_git_repo):
     _write_and_stage(tmp_git_repo, "newfile.txt")
     result = _run("diff", "--staged", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] == 1
     assert any(f["path"] == "newfile.txt" for f in data["files"])
 
@@ -109,7 +121,7 @@ def test_diff_stat_json(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("line1\nline2\n")
     result = _run("diff", "--stat", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert all("path" in f and "changes" in f for f in data["files"])
     assert "totals" in data
@@ -122,7 +134,7 @@ def test_diff_stat_json_includes_structured_fields(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("line1\nline2\nline3\n")
     result = _run("diff", "--stat", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     readme_entry = next((f for f in data["files"] if f.get("path") == "README.md"), None)
     assert readme_entry is not None
     assert readme_entry["status"] == "M"
@@ -193,7 +205,7 @@ def test_diff_ref_single_commit_json(tmp_git_repo):
     first = _repo_with_history(tmp_git_repo)
     result = _run("diff", first, "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert any("README.md" in f.get("path", "") for f in data["files"])
 
@@ -285,7 +297,7 @@ def test_diff_summary_json(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("line1\nline2\nline3\n")
     result = _run("diff", "--summary", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert all("path" in f and "insertions" in f and "deletions" in f for f in data["files"])
     assert "totals" in data
@@ -322,7 +334,7 @@ def test_diff_binary_lfs_warning_json(tmp_git_repo):
     _stage_large_binary(tmp_git_repo)
     result = _run("diff", "--stat", "--staged", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert "binary_warnings" in data
     assert len(data["binary_warnings"]) >= 1
 
@@ -337,7 +349,7 @@ def test_diff_scan_secrets_detects_high(tmp_git_repo):
     _git(["add", "config.py"], tmp_git_repo)
     result = _run("diff", "--scan-secrets", "--json", cwd=tmp_git_repo)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert any(f["severity"] == "high" for f in data["findings"])
 
