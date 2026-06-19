@@ -111,13 +111,22 @@ Nuevo `secret_scan(diff_text: str) -> list[Finding]` donde `Finding` es
 Ruleset inicial (patrones verificados, sin falsos positivos en fixtures):
 - AWS access key: `AKIA[0-9A-Z]{16}` (Verificado: AWS docs §IAM identifiers)
 - AWS secret: base64 de 40 chars tras `aws_secret_access_key`
-- GitHub PAT clásico: `gh[pousr]_[A-Za-z0-9]{36}` (Verificado: GitHub blog
-  2021-04-12 cambio de formato de token clásico). Los PATs fine-grained usan
-  un formato distinto `github_pat_[A-Za-z0-9_]{82}` y necesitan una regla
-  separada.
-- GitLab PAT: `glpat-[A-Za-z0-9_-]{20}` (Verificado: GitLab docs §Personal
-  access tokens)
-- Bloque de private key: `-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----`
+- Token de GitHub (cualquier prefijo): `gh[pousr]_[A-Za-z0-9]{36,}` y
+  `github_pat_[A-Za-z0-9_]{82,}` — nota: GitHub recomienda tratar los tokens
+  como opacos y advierte que los formatos pueden evolucionar (Verificado:
+  GitHub blog 2021-04-12 + GitHub docs §Keeping API credentials secure). La
+  implementación debería preferir detección por prefijo sobre validación
+  rígida de longitud para que futuros cambios de formato no regreden la
+  detección silenciosamente.
+- GitLab PAT: `glpat-[A-Za-z0-9_-]{20,300}` — los tokens modernos van de
+  27–300 chars según el tipo (personal/CI/deploy/feed). (Verificado: GitLab
+  docs §Personal access tokens + GitLab §Token prefixes)
+- Bloque de private key — ambos formatos, dado que OpenSSH 7.8+ (2018) usa
+  por defecto el formato binario nuevo:
+  - PEM: `-----BEGIN (RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----`
+  - OpenSSH nuevo: magic bytes `openssh-key-v1`, o la forma base64
+    `b3BlbnNzaC1rZXktdjE` cuando se captura como texto en un diff
+    (Verificado: PROTOCOL.key §OpenSSH key format)
 - Asignación `.env`: `^[A-Z_]+=(https?://|\S+@)` tras header de archivo `.env`
 
 Salida: `gitwise diff --scan-secrets --json` devuelve findings; exit no-cero
