@@ -15,6 +15,7 @@ from .output import (
     print_json,
     print_kv,
     print_status_line,
+    status,
     warn,
 )
 
@@ -33,17 +34,18 @@ _TOOL_INFO: dict[str, tuple[str, str]] = {
 
 
 def run_doctor(*, as_json: bool = False) -> int:
-    git_ver = git_version()
-    git_ok = git_ver >= MIN_GIT
+    with status(t("status_checking_env")):
+        git_ver = git_version()
+        git_ok = git_ver >= MIN_GIT
 
-    python_ver = sys.version_info[:3]
-    python_ok = python_ver >= (3, 9)
+        python_ver = sys.version_info[:3]
+        python_ok = python_ver >= (3, 9)
 
-    platform_name = platform.system()
-    fsmonitor_supported = platform_name in ("Darwin", "Windows")
+        platform_name = platform.system()
+        fsmonitor_supported = platform_name in ("Darwin", "Windows")
 
-    optional = {tool: bool(shutil.which(tool)) for tool in _OPTIONAL_TOOLS}
-    gpg = gpg_status()
+        optional = {tool: bool(shutil.which(tool)) for tool in _OPTIONAL_TOOLS}
+        gpg = gpg_status()
 
     result = {
         "v": 2,

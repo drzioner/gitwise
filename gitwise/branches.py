@@ -1,14 +1,37 @@
 """gitwise branches — intelligence dashboard with ahead/behind, merged, stale, worktree info."""
 
+from pathlib import Path
+from typing import TypedDict
+
 from .git import require_root, stale_branches, worktree_branches
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, print_dim, print_json, print_table
+from .output import error, info, print_dim, print_json, print_table, status
 from .utils.json_envelope import ok_envelope
 
 
-def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
-    branches: list[dict[str, str]] = []
+class BranchEntry(TypedDict):
+    name: str
+    current: bool
+    sha: str
+    subject: str
+    age: str
+    upstream: str | None
+    ahead: int | None
+    behind: int | None
+    tracking: str | None
+    in_worktree: bool
+
+
+def _parse_track_count(tracking: str, marker: str) -> int | None:
+    if marker not in tracking:
+        return None
+    raw = tracking.split(marker)[1].split(",")[0].strip().rstrip("]")
+    return int(raw) if raw.isdigit() else None
+
+
+def _parse_branches(raw: str, wt_branches: set[str]) -> list[BranchEntry]:
+    branches: list[BranchEntry] = []
     for line in raw.splitlines():
         if not line.strip():
             continue
@@ -23,24 +46,18 @@ def _parse_branches(raw: str, wt_branches: set[str]) -> list[dict[str, str]]:
         tracking = parts[5] if len(parts) > 5 else ""
         upstream = parts[6] if len(parts) > 6 else ""
 
-        ahead = behind = ""
-        if "[ahead" in tracking:
-            ahead = tracking.split("ahead")[1].split(",")[0].strip().rstrip("]")
-        if "behind" in tracking:
-            behind = tracking.split("behind")[1].strip().rstrip("]")
-
         branches.append(
             {
                 "name": name,
-                "current": str(is_current).lower(),
+                "current": is_current,
                 "sha": sha,
                 "subject": subject,
                 "age": age,
-                "upstream": upstream,
-                "ahead": ahead,
-                "behind": behind,
-                "tracking": tracking,
-                "in_worktree": str(name in wt_branches).lower(),
+                "upstream": upstream or None,
+                "ahead": _parse_track_count(tracking, "ahead"),
+                "behind": _parse_track_count(tracking, "behind"),
+                "tracking": tracking or None,
+                "in_worktree": name in wt_branches,
             }
         )
     return branches
@@ -72,7 +89,7 @@ def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
     return 0
 
 
-def _fetch_branch_rows(*, root, remote: bool, sort: str) -> list[dict[str, str]] | None:
+def _fetch_branch_rows(*, root: Path, remote: bool, sort: str) -> list[BranchEntry] | None:
     wt_branches = worktree_branches(cwd=root)
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
     fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
@@ -94,7 +111,7 @@ def _fetch_branch_rows(*, root, remote: bool, sort: str) -> list[dict[str, str]]
 
 
 def _build_branch_rows(
-    branches: list[dict[str, str]],
+    branches: list[BranchEntry],
 ) -> tuple[list[list[str]], set[int], int | None]:
     rows: list[list[str]] = []
     highlight_rows: set[int] = set()
@@ -102,28 +119,28 @@ def _build_branch_rows(
     for idx, branch_item in enumerate(branches):
         sha = branch_item["sha"][:8]
         subject = branch_item["subject"][:40]
-        age = branch_item.get("age", "")
+        age = branch_item["age"]
         flags: list[str] = []
-        if branch_item.get("ahead"):
+        if branch_item["ahead"]:
             flags.append(f"↑{branch_item['ahead']}")
-        if branch_item.get("behind"):
+        if branch_item["behind"]:
             flags.append(f"↓{branch_item['behind']}")
-        if branch_item.get("in_worktree") == "true":
+        if branch_item["in_worktree"]:
             flags.append("wt")
-        if branch_item.get("upstream"):
+        if branch_item["upstream"]:
             flags.append(f"→{branch_item['upstream']}")
         status = " ".join(flags) if flags else ""
         name_display = (
-            f"* {branch_item['name']}" if branch_item["current"] == "true" else branch_item["name"]
+            f"* {branch_item['name']}" if branch_item["current"] else branch_item["name"]
         )
         rows.append([name_display, sha, subject, age, status])
-        if branch_item["current"] == "true":
+        if branch_item["current"]:
             current_idx = idx
             highlight_rows.add(idx)
     return rows, highlight_rows, current_idx
 
 
-def _print_branch_table(branches: list[dict[str, str]]) -> None:
+def _print_branch_table(branches: list[BranchEntry]) -> None:
     columns = [
         (t("col_branch"), "name"),
         (t("col_sha"), "sha"),
@@ -163,13 +180,15 @@ def run_branches(
         return 1
 
     if stale:
-        names = stale_branches(cwd=root)
+        with status(t("status_analyzing_branches")):
+            names = stale_branches(cwd=root)
         return _print_stale_branches(names=names, as_json=as_json)
 
     if not _validate_sort_field(sort):
         return 1
 
-    branches = _fetch_branch_rows(root=root, remote=remote, sort=sort)
+    with status(t("status_analyzing_branches")):
+        branches = _fetch_branch_rows(root=root, remote=remote, sort=sort)
     if branches is None:
         return 1
     if not branches:

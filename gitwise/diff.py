@@ -15,8 +15,9 @@ from .output import (
     print_file_status,
     print_header,
     print_json,
+    status,
 )
-from .utils.git_output import parse_name_status_entries
+from .utils.git_output import parse_name_status_entries, status_label
 from .utils.json_envelope import ok_envelope
 
 DiffValue = str | int | bool
@@ -205,6 +206,9 @@ def _render_stat_output(
         numstat_details=numstat_details,
     )
     if as_json:
+        for entry in merged_files:
+            raw_code = str(entry.get("code", entry.get("status", "")))
+            entry["status_label"] = status_label(raw_code)
         print_json(
             ok_envelope(
                 files=merged_files,
@@ -251,7 +255,14 @@ def _render_non_stat_output(
         for line in lines:
             parts = line.split("\t", 1)
             if len(parts) == 2:
-                files.append({"status": parts[0].strip(), "path": parts[1].strip()})
+                code = parts[0].strip()
+                files.append(
+                    {
+                        "status": code,
+                        "status_label": status_label(code),
+                        "path": parts[1].strip(),
+                    }
+                )
 
     if as_json:
         print_json(ok_envelope(files=files, count=len(files)))
@@ -287,7 +298,8 @@ def run_diff(
 
     use_stat = stat or (not staged and not name_only and not full)
     cmd = _diff_cmd(use_stat=use_stat, staged=staged, name_only=name_only, full=full)
-    result = git_run(cmd, cwd=cwd, check=False)
+    with status(t("status_reading_diff")):
+        result = git_run(cmd, cwd=cwd, check=False)
     if result.returncode != 0:
         error(t("git_diff_failed", error=result.stderr.strip()))
         return 1

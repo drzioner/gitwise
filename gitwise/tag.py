@@ -14,6 +14,7 @@ from .output import (
     print_header,
     print_json,
     print_table,
+    status,
     warn,
 )
 from .utils.json_envelope import error_envelope, ok_envelope
@@ -22,15 +23,16 @@ _SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]
 
 
 def _list_tags(root: Path) -> list[dict[str, str]]:
-    r = git_run(
-        [
-            "for-each-ref",
-            "--format=%(refname:short)\t%(objectname:short)\t%(creatordate:iso)",
-            "refs/tags/",
-        ],
-        cwd=root,
-        check=False,
-    )
+    with status(t("status_reading_tags")):
+        r = git_run(
+            [
+                "for-each-ref",
+                "--format=%(refname:short)\t%(objectname:short)\t%(creatordate:iso-strict)",
+                "refs/tags/",
+            ],
+            cwd=root,
+            check=False,
+        )
     if r.returncode != 0 or not r.stdout.strip():
         return []
     tags: list[dict[str, str]] = []

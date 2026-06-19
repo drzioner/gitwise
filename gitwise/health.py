@@ -12,7 +12,7 @@ from .git import (
 )
 from .git import run as git_run
 from .i18n import t
-from .output import print_header, print_json, print_status_line
+from .output import print_header, print_json, print_status_line, status
 from .utils.json_envelope import ok_envelope
 from .utils.parsing import non_empty_lines, to_int
 
@@ -330,7 +330,8 @@ def run_health(*, as_json: bool = False) -> int:
     if root is None:
         return 1
 
-    h = compute_health(root)
+    with status(t("status_health_scan")):
+        h = compute_health(root)
 
     if as_json:
         print_json(ok_envelope(payload=h))

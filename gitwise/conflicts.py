@@ -5,7 +5,16 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, ok, print_accent, print_blank, print_dim, print_header, print_json
+from .output import (
+    error,
+    ok,
+    print_accent,
+    print_blank,
+    print_dim,
+    print_header,
+    print_json,
+    status,
+)
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import stripped_non_empty_lines, to_int
 
@@ -90,7 +99,8 @@ def run_conflicts(
     if root is None:
         return 1
 
-    conflicts = _find_conflict_files(root)
+    with status(t("status_detecting_conflicts")):
+        conflicts = _find_conflict_files(root)
 
     if not conflicts:
         return _report_no_conflicts(as_json=as_json)

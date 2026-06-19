@@ -1,5 +1,29 @@
 """Reusable parsers for git command output formats."""
 
+_STATUS_LABELS = {
+    "M": "modified",
+    "A": "added",
+    "D": "deleted",
+    "R": "renamed",
+    "C": "copied",
+    "T": "type_changed",
+    "U": "conflicted",
+    "?": "untracked",
+    "!": "ignored",
+}
+
+_CONFLICT_CODES = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
+
+
+def status_label(code: str) -> str:
+    """Map a raw git status code (M, ??, UU, R100, ...) to a stable label for agents."""
+    normalized = code.strip().upper()
+    if not normalized:
+        return "unknown"
+    if normalized in _CONFLICT_CODES:
+        return "conflicted"
+    return _STATUS_LABELS.get(normalized[0], "unknown")
+
 
 def parse_diffstat_entries(raw: str, *, default_status: str | None = None) -> list[dict[str, str]]:
     entries: list[dict[str, str]] = []

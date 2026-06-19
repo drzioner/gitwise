@@ -22,7 +22,9 @@ def test_snapshot_has_generated_at(tmp_git_repo):
 def test_snapshot_updates_timestamp_on_rerun(tmp_git_repo):
     _run("snapshot", cwd=tmp_git_repo)
     first_mtime = (tmp_git_repo / ".claude" / "git-snapshot.md").stat().st_mtime
-    time.sleep(0.05)
+    # Exceed coarse (1s-granularity) filesystem mtime resolution so the second
+    # write is reliably newer, even under parallel scheduler jitter.
+    time.sleep(1.1)
     _run("snapshot", cwd=tmp_git_repo)
     second_mtime = (tmp_git_repo / ".claude" / "git-snapshot.md").stat().st_mtime
     assert second_mtime > first_mtime

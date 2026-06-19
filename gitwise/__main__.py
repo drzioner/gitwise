@@ -7,7 +7,7 @@ from ._cli_dispatch import DISPATCH
 from ._cli_introspection import extract_command_token, help_payload
 from ._cli_parser import build_parser
 from .i18n import t
-from .output import print_dim, print_json, set_json_pretty
+from .output import print_dim, print_json, set_json_mode, set_json_pretty
 
 
 def _is_log_json_enabled() -> bool:
@@ -100,6 +100,7 @@ def main() -> int:
         reset_runtime_config()
 
     set_json_pretty(args.json_pretty)
+    set_json_mode(args.json)
 
     if args.lang:
         set_locale(args.lang)

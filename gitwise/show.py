@@ -3,7 +3,7 @@
 from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, print_diffstat, print_header, print_json
+from .output import bat_pipe, error, print_diffstat, print_header, print_json, status
 from .utils.git_output import parse_diffstat_entries, parse_name_status_entries
 from .utils.json_envelope import ok_envelope
 
@@ -87,7 +87,8 @@ def run_show(
         print_json(ok_envelope(payload=data))
     else:
         if stat:
-            r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
+            with status(t("status_loading_commit")):
+                r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
             if r.returncode != 0:
                 error(t("git_show_failed", error=r.stderr.strip()))
                 return 1
@@ -108,7 +109,8 @@ def run_show(
                 bat_pipe(r.stdout, language="diff")
         else:
             args = _build_show_args(ref, stat)
-            r = git_run(args, cwd=root, check=False)
+            with status(t("status_loading_commit")):
+                r = git_run(args, cwd=root, check=False)
             if r.returncode != 0:
                 error(t("git_show_failed", error=r.stderr.strip()))
                 return 1

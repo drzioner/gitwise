@@ -1,6 +1,7 @@
 """Tests for gitwise tag command."""
 
 import json
+from pathlib import Path
 
 from conftest import run_gitwise
 
@@ -17,6 +18,25 @@ def test_tag_list_json(tmp_git_repo):
     data = json.loads(r.stdout)
     assert data["v"] == 2
     assert data["count"] == 0
+
+
+def test_tag_list_json_iso_strict_date(tmp_git_repo: Path) -> None:
+    """tag list --json emits dates in iso-strict format per the JSON contract."""
+    import re
+
+    from conftest import _git
+
+    _git(["tag", "v1.0.0"], tmp_git_repo)
+    r = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["count"] == 1
+    tag_date = data["tags"][0]["date"]
+    # git creatordate:iso-strict emits "Z" for UTC and "+/-HH:MM" otherwise (RFC 3339 time-offset)
+    assert re.match(
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+\-]\d{2}:\d{2})$",
+        tag_date,
+    ), f"expected iso-strict date (T separator + Z or numeric offset), got {tag_date!r}"
 
 
 def test_tag_create_and_list(tmp_git_repo):

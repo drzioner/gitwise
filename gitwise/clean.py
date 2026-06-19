@@ -22,6 +22,7 @@ from .output import (
     print_header,
     print_json,
     print_success,
+    status,
     warn,
 )
 from .utils.json_envelope import error_envelope, ok_envelope
@@ -78,7 +79,8 @@ def run_clean(
         return 1
     cwd = root
 
-    deletable, skipped = _categorize(cwd)
+    with status(t("status_scanning_stale")):
+        deletable, skipped = _categorize(cwd)
 
     if dry_run:
         if as_json:

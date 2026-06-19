@@ -46,6 +46,7 @@ gitwise = "gitwise.__main__:main"
 dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
+    "pytest-xdist>=3.6",
     "ruff>=0.9",
     "commitizen>=4.0",
     "basedpyright>=1.0",

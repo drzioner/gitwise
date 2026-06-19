@@ -40,6 +40,7 @@ _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
 
 _LOG_JSON = os.environ.get("GITWISE_LOG_JSON", "").lower() in ("1", "true")
 _JSON_PRETTY = os.environ.get("GITWISE_JSON_PRETTY", "").lower() in ("1", "true")
+_JSON_MODE = False
 
 
 def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
@@ -56,6 +57,11 @@ def _structured_log(level: str, msg: str, **kwargs: Any) -> None:
 def set_json_pretty(pretty: bool) -> None:
     global _JSON_PRETTY
     _JSON_PRETTY = pretty
+
+
+def set_json_mode(enabled: bool) -> None:
+    global _JSON_MODE
+    _JSON_MODE = enabled
 
 
 class _ModuleAttr:
@@ -287,6 +293,10 @@ def confirm(prompt: str) -> bool:
 
 @contextmanager
 def status(message: str) -> Iterator[None]:
+    if _JSON_MODE:
+        yield
+        return
+
     if _should_use_rich():
         with _get_console().status(message):
             yield

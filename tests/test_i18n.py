@@ -89,3 +89,31 @@ def test_confirm_responses_es():
     assert "s" in responses
     assert "si" in responses
     reset_cache()
+
+
+def test_all_keys_have_es_and_en_translations() -> None:
+    """Every i18n key must define non-empty Spanish and English translations.
+
+    Prevents silent regressions where a new key ships with only one locale
+    defined. The ROADMAP.md 'i18n keys' baseline is a proxy for completeness;
+    this test makes parity enforceable per-locale.
+    """
+    from pathlib import Path
+
+    data_path = Path(__file__).parent.parent / "gitwise" / "_i18n_data.json"
+    data = json.loads(data_path.read_text(encoding="utf-8"))
+
+    def _missing(locale: str) -> list[str]:
+        return sorted(
+            k
+            for k, v in data.items()
+            if not isinstance(v, dict)
+            or not isinstance(v.get(locale), str)
+            or not v[locale].strip()
+        )
+
+    missing_es = _missing("es")
+    missing_en = _missing("en")
+
+    assert not missing_es, f"{len(missing_es)} keys missing Spanish translation: {missing_es[:10]}"
+    assert not missing_en, f"{len(missing_en)} keys missing English translation: {missing_en[:10]}"

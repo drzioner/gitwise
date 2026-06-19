@@ -5,7 +5,7 @@ import re
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, print_bracket, print_file_status, print_header, print_json
+from .output import error, print_bracket, print_file_status, print_header, print_json, status
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import stripped_non_empty_lines
 
@@ -117,7 +117,9 @@ def run_suggest(*, as_json: bool = False) -> int:
         return 1
 
     try:
-        staged_files, staged_map = _collect_staged_files(root)
+        with status(t("status_analyzing_staged")):
+            staged_files, staged_map = _collect_staged_files(root)
+            additions, deletions = _numstat_totals(root) if staged_files else (0, 0)
     except RuntimeError:
         error(t("suggest_diff_failed"))
         return 1
@@ -128,8 +130,6 @@ def run_suggest(*, as_json: bool = False) -> int:
             return 1
         error(t("suggest_no_staged"))
         return 1
-
-    additions, deletions = _numstat_totals(root)
 
     message = _build_message(staged_files, additions, deletions)
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import info, print_blank, print_bracket, print_dim, print_header, print_json
+from .output import info, print_blank, print_bracket, print_dim, print_header, print_json, status
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
@@ -108,11 +108,12 @@ def run_context(*, as_json: bool = False) -> int:
     if root is None:
         return 1
 
-    tree = _directory_tree(root)
-    contributors = _top_contributors(root)
-    file_types = _file_type_breakdown(root)
-    todo_fixme = _todo_fixme_counts(root)
-    topology = _branch_topology(root)
+    with status(t("status_context_scan")):
+        tree = _directory_tree(root)
+        contributors = _top_contributors(root)
+        file_types = _file_type_breakdown(root)
+        todo_fixme = _todo_fixme_counts(root)
+        topology = _branch_topology(root)
 
     if as_json:
         from .health import compute_health
