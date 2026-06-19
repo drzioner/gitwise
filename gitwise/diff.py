@@ -108,9 +108,9 @@ def _name_status_details(
     args = ["--no-pager", "diff", "--name-status"]
     if staged:
         args.append("--staged")
-    elif refspec:
+    if refspec:
         args.append(refspec)
-    else:
+    elif not staged:
         args.append("HEAD")
     if paths:
         args.append("--")
@@ -128,9 +128,9 @@ def _numstat_details(
     args = ["--no-pager", "diff", "--numstat"]
     if staged:
         args.append("--staged")
-    elif refspec:
+    if refspec:
         args.append(refspec)
-    else:
+    elif not staged:
         args.append("HEAD")
     if paths:
         args.append("--")
@@ -339,7 +339,7 @@ def _render_non_stat_output(
 
 def _warn_large_binaries(
     *, cwd: Path, files: list[DiffFileEntry], as_json: bool
-) -> list[dict[str, str | int]]:
+) -> list[dict[str, str | float]]:
     """Detect binary files at or above the LFS threshold and warn (human mode).
 
     Size is read from the working tree when the path exists there; committed
@@ -348,7 +348,7 @@ def _warn_large_binaries(
     the offender list (``{"path", "mib"}``) so JSON callers can include it in
     the envelope -- silent drops in JSON mode would hide the signal from agents.
     """
-    offenders: list[dict[str, str | int]] = []
+    offenders: list[dict[str, str | float]] = []
     for entry in files:
         if entry.get("is_binary") is not True:
             continue
@@ -361,7 +361,7 @@ def _warn_large_binaries(
         except OSError:
             continue
         if size >= LFS_WARN_BYTES:
-            mib = size // _BYTES_PER_MIB
+            mib = round(size / _BYTES_PER_MIB, 1)
             offenders.append({"path": path_value, "mib": mib})
             if not as_json:
                 warn(t("diff_binary_lfs_hint", path=path_value, mib=str(mib)))
@@ -371,7 +371,7 @@ def _warn_large_binaries(
 def _render_summary_output(
     *,
     files: list[DiffFileEntry],
-    binary_warnings: list[dict[str, str | int]],
+    binary_warnings: list[dict[str, str | float]],
     as_json: bool,
 ) -> int:
     if not files:

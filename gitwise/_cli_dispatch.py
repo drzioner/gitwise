@@ -1,6 +1,7 @@
 """Command dispatchers: thin wrappers that delegate to subcommand modules."""
 
 import argparse
+import sys
 from collections.abc import Callable
 
 from . import __version__
@@ -132,13 +133,47 @@ def _run_worktree(args: argparse.Namespace) -> int:
     )
 
 
+def _recover_diff_pathspec_boundary() -> tuple[str | None, list[str] | None]:
+    """Recover the explicit ``--`` pathspec boundary argparse loses.
+
+    With ``refspec nargs="?"`` + ``paths nargs="*"``, a path-only invocation
+    like ``gitwise diff -- src/`` mis-assigns ``src/`` to ``refspec``. git
+    treats ``--`` as a hard pathspec separator, so honor it here: anything
+    positional before ``--`` (excluding flags) feeds ``refspec``; anything
+    after ``--`` is literal paths, even values starting with ``-``.
+    """
+    try:
+        sub_idx = sys.argv.index("diff")
+    except ValueError:
+        return None, None
+    cmd_argv = sys.argv[sub_idx + 1 :]
+    if "--" not in cmd_argv:
+        return None, None
+    sep = cmd_argv.index("--")
+    before = [a for a in cmd_argv[:sep] if not a.startswith("-")]
+    after = list(cmd_argv[sep + 1 :])
+    refspec = before[0] if before else None
+    paths = after if after else None
+    return refspec, paths
+
+
 def _run_diff(args: argparse.Namespace) -> int:
     """Dispatch to ``diff`` subcommand."""
     from .diff import run_diff
 
+    refspec = args.refspec
+    paths = args.paths
+    # Honor `--` as a pathspec separator (git semantics). argparse's nargs="?"
+    # + nargs="*" otherwise mis-assigns path-only invocations to refspec.
+    if "--" in sys.argv:
+        recovered_refspec, recovered_paths = _recover_diff_pathspec_boundary()
+        if recovered_refspec is not None or recovered_paths is not None:
+            refspec = recovered_refspec
+            paths = recovered_paths
+
     return run_diff(
-        refspec=args.refspec,
-        paths=args.paths,
+        refspec=refspec,
+        paths=paths,
         staged=args.staged,
         stat=args.stat,
         name_only=args.name_only,
