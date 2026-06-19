@@ -2,7 +2,7 @@
 
 > Compatible with: `python@3.10+` · `ruff` · `basedpyright`
 > Minimal dependencies. `rich` for terminal rendering + stdlib.
-> Last reviewed: 2026-05-18
+> Last reviewed: 2026-06-19
 
 Python code standards for the project. Every rule is mandatory.
 
@@ -723,6 +723,90 @@ class SymlinkExecutor(BaseExecutor):
 
 ---
 
+## 19. Docstrings (PEP 257)
+
+Every public symbol MUST have a docstring. Public means: functions, classes,
+and methods whose name does NOT start with `_`, plus dunder methods that are
+part of the public contract (`__init__`, `__enter__`, `__exit__`, etc.).
+
+### What to document
+
+| Element | Required docstring |
+|---------|--------------------|
+| `def run_<cmd>(...)` | One-line summary + (if non-obvious) a second paragraph |
+| Public helper `def parse_foo(...)` | One-line summary; second line if return contract is non-trivial |
+| `class Foo:` (public) | Class purpose; non-trivial invariants |
+| `class Foo:` `__init__` | Required parameters when not obvious from types |
+| Private `def _helper(...)` | Optional — only when name + body are NOT self-documenting |
+| Lambda | Never (already inline) |
+
+### Style — concise but contract-clear
+
+```python
+# CORRECT — one-line summary when signature is self-explanatory
+def parse_two_ints(text: str) -> tuple[int, int] | None:
+    """Parse two whitespace-separated ints (e.g. git ahead/behind counts). None on failure."""
+    ...
+
+# CORRECT — second paragraph when behavior is non-obvious
+def detect_in_progress(root: Path) -> InProgressInfo:
+    """Inspect `root` for any paused git operation.
+
+    Returns `{"state": "none", "ref": None}` when the working tree is clean
+    of in-progress operations. Priority order: merge > rebase > cherry-pick
+    > revert > bisect.
+    """
+    ...
+```
+
+### Why mandatory
+
+- External "Docstring Coverage" check (on the PR Pre-merge panel, NOT part
+  of CI) gates at ≥80% of public symbols. Every PR must keep coverage above
+  that line.
+- Docstrings are the only contract documentation that survives refactors:
+  callers read them in IDE hover, agents read them to understand intent,
+  reviewers read them to verify behavior.
+- A function without a docstring forces the reader to read the body —
+  expensive when the function is reused.
+
+### When to skip
+
+| Case | Action |
+|------|--------|
+| Private `_helper` with self-documenting name + simple body | Skip is acceptable |
+| Test functions | Optional; add when the test name does not convey the scenario |
+| Trivial `__repr__`, `__str__` returning a format string | Skip is acceptable |
+
+### Prohibited patterns
+
+```python
+# PROHIBITED — no docstring on public function
+def run_clean(branches: bool = False, refs: bool = False) -> int:
+    ...
+
+# PROHIBITED — docstring describing what the code already says
+def parse_two_ints(text: str) -> tuple[int, int] | None:
+    """Parse two ints. Returns a tuple of two ints or None."""
+    # the signature already says this
+    ...
+
+# CORRECT — docstring adds the WHY and the canonical example
+def parse_two_ints(text: str) -> tuple[int, int] | None:
+    """Parse two whitespace-separated ints (e.g. git ahead/behind counts). None on failure."""
+    ...
+```
+
+### Enforcement
+
+| Layer | Mechanism |
+|-------|-----------|
+| Pre-commit (`ruff`) | pydocstyle rules where configured |
+| PR panel (external) | Docstring Coverage check, gates ≥80% |
+| Reviewer | Manual; flag any new public symbol without a docstring |
+
+---
+
 ## Quick summary
 
 | Category | Required | Prohibited |
@@ -740,6 +824,7 @@ class SymlinkExecutor(BaseExecutor):
 | Semantic strings | Named constant | Literal in 2+ places |
 | Semantic numbers | Named constant | Literal anywhere |
 | Comments | Only the WHY | What the code already says |
+| Docstrings | PEP 257 on every public symbol (external check gates ≥80%) | Public function without docstring |
 | i18n | `t("key")` for user text | Literal strings in output |
 | Exceptions | Specific types, chain with `from e` | Bare `except`, lost traceback |
 | Error handling | Validate at boundaries, `try` at I/O only | Business logic catching I/O errors |

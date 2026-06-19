@@ -100,6 +100,26 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Functions: one purpose, max ~50 lines; extract when complexity grows
 - Composition over inheritance; prefer protocols for interface definitions
 - No `Any` type without explicit justification comment
+- **Docstrings (PEP 257) on every public symbol**: functions, classes, and
+  methods whose name does NOT start with `_` (and dunder methods that are
+  part of the public contract). One-line summary when the contract is
+  obvious from the signature; add a second paragraph for non-obvious
+  behavior, side effects, or the WHY behind a choice. Private helpers
+  (`_foo`) may omit docstrings only when the name + body are
+  self-documenting. Enforced externally: a "Docstring Coverage" check
+  (reported on the PR's Pre-merge panel but NOT part of the repo CI) gates
+  at ≥80% of public symbols — every PR must keep coverage above that line.
+- **No "AI-tell" Unicode characters in docs, commit messages, or comments**.
+  Forbidden: the section sign (U+00A7, the dual-S glyph used in legal-doc
+  style — use the word "section" or just the heading name), smart quotes
+  (`" "` `' '` — use straight ASCII), smart apostrophes (`’` — use `'`),
+  `→` arrows in prose (use `->` or rewrite as a sentence), `•`/`★`/`✓`/`✗`
+  as bullets (use `-` or `*`), and any emoji unless the user explicitly
+  asks for them. These characters are the most reliable signal of
+  AI-generated text, hurt readability on monospace renderers, and break
+  copy-paste. Em dashes (`—`) are allowed only inside code comments where
+  the project already uses them; in user-facing docs prefer `--` or a
+  comma. Enforced by `ruff` (where applicable) and by reviewer.
 
 ## Error Handling
 

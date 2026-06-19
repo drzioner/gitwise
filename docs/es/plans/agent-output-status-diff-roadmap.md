@@ -52,7 +52,7 @@ chocaría con los prompts.
 |---|-----|-------|--------|
 | S1 | **Operación en curso** (merge/rebase/cherry-pick/revert/bisect) no se detecta. Un agente puede commitear en medio de un rebase. Detectar `MERGE_HEAD`, `rebase-merge/`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG` → exponer `in_progress: "rebase"`. | Seguridad+Workflow+AI | pendiente |
 | S2 | **Conflictos/unmerged** no son categoría propia. `status.py` clasifica con `ln[0]/ln[1]` y mezcla `UU/AA/DD` dentro de staged/unstaged. Necesita categoría explícita `conflicted`. | Seguridad+AI | pendiente |
-| S3 | **JSON lossy:** `files: [rutas]` sin código de estado. El agente recibe `unstaged: 21` y una lista plana, no sabe cuál es staged/untracked/conflictivo. Debe ser `files: [{path, code, status, staged}]`. | AI workflow | pendiente (parte de §4 FileEntry) |
+| S3 | **JSON lossy:** `files: [rutas]` sin código de estado. El agente recibe `unstaged: 21` y una lista plana, no sabe cuál es staged/untracked/conflictivo. Debe ser `files: [{path, code, status, staged}]`. | AI workflow | pendiente (parte de 4 FileEntry) |
 
 ### Mejoras de DX/orientación (menor prioridad)
 
@@ -176,7 +176,7 @@ QA/test-arch, DX/consumidor-AI/docs) validó esta tanda. Hallazgos reales, fixes
   Y los pre-existentes con `--no-pager` (diff/summarize/snapshot).
 - **HIGH — commits ahead/behind estructurados (corregido):** ahora `[{hash, short_hash, subject}]`.
 - **MEDIUM — doble spinner en suggest.py (corregido):** consolidado en un solo spinner.
-- **CRITICAL — cambio incompatible de tipos en `branches`:** reconocido y documentado (ver §5);
+- **CRITICAL — cambio incompatible de tipos en `branches`:** reconocido y documentado (ver 5);
   los tipos son correctos, el break se marca para el PR/CHANGELOG, `v3` completo diferido.
 - **LOW — flicker del spinner** en comandos sub-100ms y **higiene de escapes de terminal**:
   documentados como pendientes.

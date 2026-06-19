@@ -14,6 +14,7 @@ from .output import (
     print_json,
     warn,
 )
+from .utils.in_progress import detect_in_progress
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import to_int
 
@@ -143,19 +144,94 @@ def _report_merge_error(*, as_json: bool, err: str) -> int:
     return 1
 
 
+def _abort_or_continue_args(state: str, abort: bool) -> list[str]:
+    """Build the git argv for resolving a paused merge or rebase.
+
+    The subcommand must match the paused operation: `git merge --abort` errors
+    with "There is no merge to abort" when a rebase is paused, and vice versa.
+    Extracted as a pure function so the selection logic is testable without
+    driving a real paused rebase.
+    """
+    cmd = "rebase" if state == "rebase" else "merge"
+    flag = "--abort" if abort else "--continue"
+    return [cmd, flag]
+
+
+def _execute_abort_or_continue(*, root: Path, state: str, abort: bool) -> tuple[bool, str]:
+    """Run `git merge/rebase --abort` or `--continue`. Returns (success, error_msg)."""
+    result = git_run(_abort_or_continue_args(state=state, abort=abort), cwd=root, check=False)
+    if result.returncode == 0:
+        return True, ""
+    return False, result.stderr.strip() or result.stdout.strip()
+
+
+def _handle_abort_or_continue(*, root: Path, abort: bool, as_json: bool) -> int:
+    """Resolve a paused merge or rebase via `git merge/rebase --abort` / `--continue`."""
+    in_progress = detect_in_progress(root)
+    if in_progress["state"] not in ("merge", "rebase"):
+        available = (
+            "git merge/rebase --abort / --continue" if abort else "git merge/rebase --continue"
+        )
+        msg = t("merge_no_in_progress", action=available, state=in_progress["state"])
+        if as_json:
+            print_json(error_envelope(error=msg, code="merge_no_in_progress"))
+        else:
+            error(msg)
+        return 1
+    success, err_msg = _execute_abort_or_continue(
+        root=root, state=in_progress["state"], abort=abort
+    )
+    if not success:
+        return _report_merge_error(as_json=as_json, err=err_msg)
+    label_key = "merge_aborted" if abort else "merge_continued"
+    if as_json:
+        print_json(ok_envelope(action="abort" if abort else "continue"))
+    else:
+        ok(t(label_key))
+    return 0
+
+
 def run_merge(
-    branch: str,
+    branch: str | None = None,
     *,
     rebase: bool = False,
     no_ff: bool = False,
     dry_run: bool = False,
     yes: bool = False,
+    abort: bool = False,
+    continue_merge: bool = False,
     as_json: bool = False,
 ) -> int:
+    """Merge or rebase a branch with pre-flight checks, or resolve a paused op.
+
+    With ``--abort``/``--continue`` delegates to git's merge/rebase abort and
+    continue (subcommand chosen from the detected paused state). Otherwise
+    validates the target ref, warns on divergent branches, and asks for
+    confirmation before running ``git merge`` (or ``git rebase``).
+    """
     root, err = require_root()
     if err:
         return err
     if root is None:
+        return 1
+
+    if abort and continue_merge:
+        msg = t("merge_abort_continue_mutually_exclusive")
+        if as_json:
+            print_json(error_envelope(error=msg, code="merge_invalid_args"))
+        else:
+            error(msg)
+        return 1
+
+    if abort or continue_merge:
+        return _handle_abort_or_continue(root=root, abort=abort, as_json=as_json)
+
+    if branch is None:
+        msg = t("merge_branch_required")
+        if as_json:
+            print_json(error_envelope(error=msg, code="merge_branch_required"))
+        else:
+            error(msg)
         return 1
 
     cur = current_branch(root)

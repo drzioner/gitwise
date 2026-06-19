@@ -16,6 +16,7 @@ from .output import (
     print_json,
     status,
 )
+from .utils.in_progress import detect_in_progress
 from .utils.parsing import parse_two_ints
 
 
@@ -32,6 +33,12 @@ def _range_commits(root: Path, rev_range: str) -> list[dict[str, str]]:
 
 
 def run_status(*, as_json: bool = False) -> int:
+    """Print a compact, agent-friendly view of the working-tree state.
+
+    Exposes branch, ahead/behind counts and commit lists, staged/unstaged/
+    untracked file counts, and an ``in_progress`` snapshot of any paused
+    merge/rebase/cherry-pick/revert/bisect operation.
+    """
     root, err = require_root()
     if err:
         return err
@@ -67,6 +74,8 @@ def run_status(*, as_json: bool = False) -> int:
             if behind:
                 behind_commits = _range_commits(root, "HEAD..@{u}")
 
+        in_progress = detect_in_progress(root)
+
     if as_json:
         print_json(
             {
@@ -78,6 +87,7 @@ def run_status(*, as_json: bool = False) -> int:
                 "behind": behind,
                 "ahead_commits": ahead_commits,
                 "behind_commits": behind_commits,
+                "in_progress": in_progress,
                 "staged": len(staged),
                 "unstaged": len(unstaged),
                 "untracked": len(untracked),

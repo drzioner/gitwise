@@ -9,6 +9,11 @@ def ok_envelope(
     version: int = 2,
     **extra: object,
 ) -> dict[str, object]:
+    """Build a success envelope: ``{v, ok: true, ...payload, ...extra}``.
+
+    ``payload`` and ``extra`` are flattened into the top-level dict so callers
+    can pass command-specific fields (e.g. ``message=``, ``merged=``) directly.
+    """
     data: dict[str, object] = {}
     if payload is not None:
         data.update(payload)
@@ -27,6 +32,12 @@ def error_envelope(
     version: int = 2,
     **extra: object,
 ) -> dict[str, object]:
+    """Build an error envelope: ``{v, ok: false, error, errors: [{code, message, hint?}]}``.
+
+    ``code`` defaults to ``"error"``; pass a stable machine-readable code
+    (e.g. ``"in_progress_merge"``) so agents can branch on it. ``hint`` is
+    surfaced both in ``errors[0].hint`` and (by callers) in human output.
+    """
     data: dict[str, object] = {}
     if payload is not None:
         data.update(payload)
@@ -50,6 +61,12 @@ def passthrough_envelope(
     version: int = 2,
     **extra: object,
 ) -> dict[str, object]:
+    """Build a versioned envelope without an ``ok`` field.
+
+    Used by commands whose payload already carries the success/failure signal
+    (e.g. ``health`` returns its own status), so forcing ``ok: true/false``
+    would duplicate or contradict it.
+    """
     data: dict[str, object] = {}
     if payload is not None:
         data.update(payload)

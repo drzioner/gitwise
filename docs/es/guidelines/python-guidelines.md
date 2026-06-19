@@ -1,7 +1,7 @@
 # Guia de Python
 
 Source: docs/guidelines/python-guidelines.md
-Last sync: 2026-05-22
+Last sync: 2026-06-19
 
 [English](../../guidelines/python-guidelines.md) | [Español](python-guidelines.md)
 

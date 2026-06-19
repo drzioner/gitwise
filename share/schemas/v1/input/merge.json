@@ -34,7 +34,7 @@
     },
     "branch": {
       "type": "string",
-      "description": "branch to merge/rebase from"
+      "description": "branch to merge/rebase from (omit with --abort/--continue)"
     },
     "rebase": {
       "type": "boolean",
@@ -55,9 +55,16 @@
       "type": "boolean",
       "description": "skip confirmation",
       "default": false
+    },
+    "abort": {
+      "type": "boolean",
+      "description": "abort an in-progress merge or rebase",
+      "default": false
+    },
+    "continue_merge": {
+      "type": "boolean",
+      "description": "continue an in-progress merge or rebase after resolving conflicts",
+      "default": false
     }
-  },
-  "required": [
-    "branch"
-  ]
+  }
 }
