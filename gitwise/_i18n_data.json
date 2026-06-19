@@ -463,6 +463,34 @@
     "es": "demasiados argumentos posicionales antes de '--' ({count}); gitwise diff acepta un unico refspec (usa a..b para un rango)",
     "en": "too many positional arguments before '--' ({count}); gitwise diff accepts a single refspec (use a..b for a range)"
   },
+  "secret_scan_clean": {
+    "es": "no se detectaron secretos en el diff",
+    "en": "no secrets detected in the diff"
+  },
+  "secret_scan_found": {
+    "es": "{rule} en {path}:{line} ({preview})",
+    "en": "{rule} at {path}:{line} ({preview})"
+  },
+  "secret_scan_found_header": {
+    "es": "Secretos detectados -- {count} hallazgo(s):",
+    "en": "Secrets detected -- {count} finding(s):"
+  },
+  "secret_scan_blocked_high": {
+    "es": "commit bloqueado: {count} secreto(s) de alta severidad en el area de staging",
+    "en": "commit blocked: {count} high-severity secret(s) in the staging area"
+  },
+  "secret_scan_blocked_hint": {
+    "es": "revoca/rotar el secreto, remuevelo del stage, o usa --allow-secret (con confirmacion) para committear de todos modos",
+    "en": "revoke/rotate the secret, unstage it, or use --allow-secret (with confirmation) to commit anyway"
+  },
+  "secret_scan_allow_confirm": {
+    "es": "Se detectaron {count} secreto(s) de alta severidad. Committear de todos modos?",
+    "en": "{count} high-severity secret(s) detected. Commit anyway?"
+  },
+  "secret_scan_medium_warning": {
+    "es": "advertencia: {rule} en {path}:{line} ({preview})",
+    "en": "warning: {rule} at {path}:{line} ({preview})"
+  },
   "directory_exists": {
     "es": "el directorio ya existe: {path}",
     "en": "directory already exists: {path}"

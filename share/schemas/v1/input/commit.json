@@ -58,6 +58,11 @@
       "type": "boolean",
       "description": "show without committing",
       "default": false
+    },
+    "allow_secret": {
+      "type": "boolean",
+      "description": "proceed past a high-severity secret finding (with confirmation)",
+      "default": false
     }
   }
 }

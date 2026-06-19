@@ -98,3 +98,52 @@ def test_commit_no_duplicate_type(tmp_git_repo: Path) -> None:
     r = run_gitwise("commit", "-m", "feat: already typed", "--dry-run", cwd=tmp_git_repo)
     assert r.returncode == 0
     assert "feat: feat: already typed" not in r.stdout
+
+
+# -- secret-scan guard (D3) ---------------------------------------------------
+# Sample secrets are assembled at runtime from fragments so the test source
+# stays scanner-clean; otherwise the commit guard would flag this file.
+
+
+def _aws_key() -> str:
+    return "AK" + "IAIOSFODNN7EXAMPLE"
+
+
+def test_commit_blocked_on_secret_high(tmp_git_repo: Path) -> None:
+    (tmp_git_repo / "config.py").write_text(f"aws_key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise("commit", "-m", "feat: add config", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    assert "secret" in r.stderr.lower() or "blocked" in r.stderr.lower()
+
+
+def test_commit_blocked_on_secret_high_json(tmp_git_repo: Path) -> None:
+    (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise("commit", "-m", "feat: add config", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    import json
+
+    data = json.loads(r.stdout)
+    assert data["errors"][0]["code"] == "secret_leak_high"
+
+
+def test_commit_allow_secret_json_proceeds(tmp_git_repo: Path) -> None:
+    (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise(
+        "commit", "-m", "feat: add config", "--allow-secret", "--json", cwd=tmp_git_repo
+    )
+    assert r.returncode == 0
+    # The commit was actually created despite the high-severity finding.
+    log = _git(["--no-pager", "log", "--oneline"], tmp_git_repo).stdout.decode()
+    assert "add config" in log
+
+
+def test_commit_warns_on_secret_medium(tmp_git_repo: Path) -> None:
+    body = "a" * 30
+    (tmp_git_repo / "config.py").write_text(f'api_key = "{body}"\n')
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise("commit", "-m", "feat: add config", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    assert "warning" in r.stderr.lower() or "secret" in r.stderr.lower()

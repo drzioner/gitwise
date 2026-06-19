@@ -185,6 +185,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--stat", action="store_true", help="show diffstat (default behavior)")
     p.add_argument(
+        "--scan-secrets",
+        action="store_true",
+        help="scan the diff for leaked credentials (advisory, opt-in)",
+    )
+    p.add_argument(
         "refspec",
         nargs="?",
         default=None,
@@ -218,6 +223,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--breaking", action="store_true", help="breaking change (!)")
     p.add_argument("--amend", action="store_true", help="amend last commit")
     p.add_argument("--dry-run", action="store_true", help="show without committing")
+    p.add_argument(
+        "--allow-secret",
+        action="store_true",
+        help="proceed past a high-severity secret finding (with confirmation)",
+    )
 
     p = sub.add_parser("branches", help="branch intelligence dashboard", parents=[parent])
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
