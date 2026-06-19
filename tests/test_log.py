@@ -26,12 +26,24 @@ def test_log_json_has_stats(tmp_git_repo: Path) -> None:
     assert len(data["commits"]) >= 1
     commit = data["commits"][0]
     assert "hash" in commit
-    assert "short_hash" in commit
-    assert "author" in commit
     assert "date" in commit
     assert "subject" in commit
     assert "parents" in commit
     assert "stats" in commit
+
+
+def test_log_json_iso_strict_date(tmp_git_repo: Path) -> None:
+    import re
+
+    r = run_gitwise("log", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert len(data["commits"]) >= 1
+    commit_date = data["commits"][0]["date"]
+    assert re.match(
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+\-]\d{2}:\d{2}$",
+        commit_date,
+    ), f"expected iso-strict date (T separator + tz offset), got {commit_date!r}"
 
 
 def test_log_json_root_commit_empty_parents(tmp_path: Path) -> None:

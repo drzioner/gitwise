@@ -19,6 +19,22 @@ def test_tag_list_json(tmp_git_repo):
     assert data["count"] == 0
 
 
+def test_tag_list_json_iso_strict_date(tmp_git_repo):
+    import re
+
+    from conftest import _git
+
+    _git(["tag", "v1.0.0"], tmp_git_repo)
+    r = run_gitwise("tag", "list", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["count"] == 1
+    tag_date = data["tags"][0]["date"]
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", tag_date), (
+        f"expected iso-strict date (T separator), got {tag_date!r}"
+    )
+
+
 def test_tag_create_and_list(tmp_git_repo):
     r = run_gitwise("tag", "create", "v0.1.0", cwd=tmp_git_repo)
     assert r.returncode == 0
