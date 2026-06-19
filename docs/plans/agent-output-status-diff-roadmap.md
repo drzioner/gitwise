@@ -46,7 +46,7 @@ collide with the prompts.
 |---|-----|--------|--------|
 | S1 | **In-progress operation** (merge/rebase/cherry-pick/revert/bisect) is not detected. An agent may commit mid-rebase. Detect `MERGE_HEAD`, `rebase-merge/`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG` → expose `in_progress: "rebase"`. | Security+Workflow+AI | pending |
 | S2 | **Conflicts/unmerged** are not their own category. `status.py` classifies with `ln[0]/ln[1]` and mixes `UU/AA/DD` into staged/unstaged. Needs an explicit `conflicted` category. | Security+AI | pending |
-| S3 | **Lossy JSON:** `files: [paths]` with no status code. The agent gets `unstaged: 21` and a flat list, cannot tell which is staged/untracked/conflicted. Should be `files: [{path, code, status, staged}]`. | AI workflow | pending (part of §4 FileEntry) |
+| S3 | **Lossy JSON:** `files: [paths]` with no status code. The agent gets `unstaged: 21` and a flat list, cannot tell which is staged/untracked/conflicted. Should be `files: [{path, code, status, staged}]`. | AI workflow | pending (part of 4 FileEntry) |
 
 ### DX/orientation improvements (lower priority)
 
@@ -170,7 +170,7 @@ DX/AI-consumer/docs) validated this batch. Real findings, fixes applied in this 
   calls AND pre-existing `--no-pager` sites (diff/summarize/snapshot).
 - **HIGH — structured ahead/behind commits (fixed):** now `[{hash, short_hash, subject}]`.
 - **MEDIUM — suggest.py double spinner (fixed):** consolidated into one spinner span.
-- **CRITICAL — `branches` breaking type change:** acknowledged and documented (see §5); the
+- **CRITICAL — `branches` breaking type change:** acknowledged and documented (see 5); the
   types are correct, the break is flagged for the PR/CHANGELOG, full `v3` deferred.
 - **LOW — spinner flicker** on sub-100ms commands and **terminal-escape hygiene**: documented
   as pending (no min-duration guard in Rich `status`; global output sanitization).

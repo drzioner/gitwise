@@ -112,24 +112,24 @@ Nuevo `secret_scan(diff_text: str) -> list[Finding]` donde `Finding` es
 `{"rule": str, "path": str, "line": int, "preview": str, "severity": "high"|"medium"}`.
 
 Ruleset inicial (patrones verificados, sin falsos positivos en fixtures):
-- AWS access key: `AKIA[0-9A-Z]{16}` (Verificado: AWS docs §IAM identifiers)
+- AWS access key: `AKIA[0-9A-Z]{16}` (Verificado: AWS docs IAM identifiers)
 - AWS secret: base64 de 40 chars tras `aws_secret_access_key`
 - Token de GitHub (cualquier prefijo): `gh[pousr]_[A-Za-z0-9]{36,}` y
   `github_pat_[A-Za-z0-9_]{82,}` — nota: GitHub recomienda tratar los tokens
   como opacos y advierte que los formatos pueden evolucionar (Verificado:
-  GitHub blog 2021-04-12 + GitHub docs §Keeping API credentials secure). La
+  GitHub blog 2021-04-12 + GitHub docs Keeping API credentials secure). La
   implementación debería preferir detección por prefijo sobre validación
   rígida de longitud para que futuros cambios de formato no regreden la
   detección silenciosamente.
 - GitLab PAT: `glpat-[A-Za-z0-9_-]{20,300}` — los tokens modernos van de
   27–300 chars según el tipo (personal/CI/deploy/feed). (Verificado: GitLab
-  docs §Personal access tokens + GitLab §Token prefixes)
+  docs Personal access tokens + GitLab Token prefixes)
 - Bloque de private key — ambos formatos, dado que OpenSSH 7.8+ (2018) usa
   por defecto el formato binario nuevo:
   - PEM: `-----BEGIN (RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----`
   - OpenSSH nuevo: magic bytes `openssh-key-v1`, o la forma base64
     `b3BlbnNzaC1rZXktdjE` cuando se captura como texto en un diff
-    (Verificado: PROTOCOL.key §OpenSSH key format)
+    (Verificado: PROTOCOL.key OpenSSH key format)
 - Asignación `.env`: `^[A-Z_]+=(https?://|\S+@)` tras header de archivo `.env`
 
 Salida: `gitwise diff --scan-secrets --json` devuelve findings; exit no-cero
@@ -348,9 +348,9 @@ antes de abrir cualquier PR de gitwise para evitar reaprenderlas.
 5. **`Path.resolve()` prohibido para symlink sandbox checks** — usar
    `os.path.realpath()`. `Path.resolve()` puede fallar en symlinks rotos,
    lo cual importa dentro de `.git/worktrees/`. Impuesto por AGENTS.md
-   §Boundaries.
+   Boundaries.
 6. **Las llamadas subprocess necesitan `timeout` explícito** — AGENTS.md
-   §Resource Management exige `subprocess.run(..., timeout=N,
+   Resource Management exige `subprocess.run(..., timeout=N,
    capture_output=True)` para toda llamada git. El helper `git_run` ya lo
    impone; el `subprocess.run` crudo en tests debe añadir `timeout=`
    explícitamente.
