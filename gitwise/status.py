@@ -17,7 +17,17 @@ from .output import (
     status,
 )
 from .utils.in_progress import detect_in_progress
+from .utils.json_envelope import ok_envelope
 from .utils.parsing import parse_two_ints
+from .utils.types import CONFLICT_CODES, FileEntry, build_file_entry
+
+
+def _split_rename(raw_path: str) -> tuple[str, str | None]:
+    """Split a porcelain rename entry ``old -> new`` into (new, old)."""
+    if " -> " in raw_path:
+        old, new = raw_path.split(" -> ", 1)
+        return new, old
+    return raw_path, None
 
 
 def _range_commits(root: Path, rev_range: str) -> list[dict[str, str]]:
@@ -55,9 +65,24 @@ def run_status(*, as_json: bool = False) -> int:
         status_r = git_run(["status", "--porcelain"], cwd=root, check=False)
         status_lines = status_r.stdout.splitlines() if status_r.returncode == 0 else []
 
-        staged = [ln for ln in status_lines if ln and ln[0] not in (" ", "?")]
-        unstaged = [ln for ln in status_lines if ln and ln[1] not in (" ", "?")]
-        untracked = [ln for ln in status_lines if ln and ln.startswith("??")]
+        files: list[FileEntry] = []
+        staged_n = unstaged_n = untracked_n = conflicted_n = 0
+        for ln in status_lines:
+            if not ln:
+                continue
+            code = ln[:2]
+            raw_path = ln[3:]
+            is_conflict = code in CONFLICT_CODES
+            in_index = code[0] not in (" ", "?")
+            in_wtree = code[1] not in (" ", "?")
+            path, old_path = _split_rename(raw_path)
+            files.append(build_file_entry(path, code, staged=in_index, old_path=old_path))
+            if is_conflict:
+                conflicted_n += 1
+            else:
+                staged_n += int(in_index)
+                unstaged_n += int(in_wtree)
+                untracked_n += int(code.startswith("??"))
 
         upstream = has_upstream(root)
         if upstream:
@@ -79,21 +104,21 @@ def run_status(*, as_json: bool = False) -> int:
 
     if as_json:
         print_json(
-            {
-                "v": 2,
-                "ok": True,
-                "branch": branch,
-                "has_upstream": upstream,
-                "ahead": ahead,
-                "behind": behind,
-                "ahead_commits": ahead_commits,
-                "behind_commits": behind_commits,
-                "in_progress": in_progress,
-                "staged": len(staged),
-                "unstaged": len(unstaged),
-                "untracked": len(untracked),
-                "files": [ln[3:] for ln in status_lines],
-            }
+            ok_envelope(
+                "status",
+                branch=branch,
+                has_upstream=upstream,
+                ahead=ahead,
+                behind=behind,
+                ahead_commits=ahead_commits,
+                behind_commits=behind_commits,
+                in_progress=in_progress,
+                staged=staged_n,
+                unstaged=unstaged_n,
+                untracked=untracked_n,
+                conflicted=conflicted_n,
+                files=files,
+            )
         )
         return 0
 
@@ -111,24 +136,43 @@ def run_status(*, as_json: bool = False) -> int:
         ok(t("working_tree_clean"))
         return 0
 
-    if staged:
+    staged_disp = [
+        ln
+        for ln in status_lines
+        if ln and ln[0] not in (" ", "?") and ln[:2] not in CONFLICT_CODES
+    ]
+    unstaged_disp = [
+        ln
+        for ln in status_lines
+        if ln and ln[1] not in (" ", "?") and ln[:2] not in CONFLICT_CODES
+    ]
+    untracked_disp = [ln for ln in status_lines if ln.startswith("??")]
+    conflicted_disp = [ln for ln in status_lines if ln[:2] in CONFLICT_CODES]
+
+    if conflicted_disp:
         print_blank()
-        print_header(f"{t('status_staged_label')} ({len(staged)}):")
-        for line in staged:
+        print_header(f"{t('status_conflicted_label')} ({len(conflicted_disp)}):")
+        for line in conflicted_disp:
             print_file_status(line[:2], line[3:])
 
-    if unstaged:
+    if staged_disp:
         print_blank()
-        print_header(f"{t('status_unstaged_label')} ({len(unstaged)}):")
-        for line in unstaged:
+        print_header(f"{t('status_staged_label')} ({len(staged_disp)}):")
+        for line in staged_disp:
             print_file_status(line[:2], line[3:])
 
-    if untracked:
+    if unstaged_disp:
         print_blank()
-        print_header(f"{t('status_untracked_label')} ({len(untracked)}):")
-        for line in untracked[:10]:
+        print_header(f"{t('status_unstaged_label')} ({len(unstaged_disp)}):")
+        for line in unstaged_disp:
+            print_file_status(line[:2], line[3:])
+
+    if untracked_disp:
+        print_blank()
+        print_header(f"{t('status_untracked_label')} ({len(untracked_disp)}):")
+        for line in untracked_disp[:10]:
             print_file_status("??", line[3:])
-        if len(untracked) > 10:
-            info(f"    {t('status_more_files', count=str(len(untracked) - 10))}")
+        if len(untracked_disp) > 10:
+            info(f"    {t('status_more_files', count=str(len(untracked_disp) - 10))}")
 
     return 0
