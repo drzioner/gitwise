@@ -118,6 +118,36 @@ def test_scan_tracks_path_from_diff_header():
     assert findings[0]["path"] == "config/prod.py"
 
 
+def test_scan_tracks_path_without_b_prefix():
+    """The path is still captured when diff.noprefix=true strips the b/ prefix."""
+    diff = f"+++ config/prod.py\n+key = '{_AWS_KEY}'\n"
+    findings = secret_scan(diff)
+    assert findings[0]["path"] == "config/prod.py"
+
+
+def test_scan_line_number_from_hunk_header():
+    """Reported line numbers follow the @@ -a,+b @@ hunk header, not a 0-based count."""
+    diff = f"+++ b/config.py\n@@ -1,3 +1,3 @@\n context line one\n-old line\n+key = '{_AWS_KEY}'\n"
+    findings = secret_scan(diff)
+    assert findings[0]["line"] == 2
+
+
+def test_scan_line_number_across_multiple_hunks():
+    """Each hunk resets the counter to its own +new_start, even with deletions."""
+    diff = (
+        f"+++ b/config.py\n"
+        f"@@ -1,1 +1,1 @@\n"
+        f"+key = '{_AWS_KEY}'\n"
+        f"@@ -50,2 +100,2 @@\n"
+        f" context\n"
+        f"+token = '{_GHP}'\n"
+    )
+    findings = secret_scan(diff)
+    lines = {f["rule"]: f["line"] for f in findings}
+    assert lines["aws_access_key_id"] == 1
+    assert lines["github_token"] == 101
+
+
 def test_scan_preview_redaction():
     """The full secret never appears in the preview."""
     findings = secret_scan(f"+x = '{_GHP}'\n")

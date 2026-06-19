@@ -9,7 +9,7 @@ from .i18n import t
 from .output import confirm, error, print_bracket, print_header, print_json, warn
 from .utils.in_progress import detect_in_progress, in_progress_hint
 from .utils.json_envelope import error_envelope, ok_envelope
-from .utils.secret_scan import scan_staged_diff
+from .utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
@@ -117,8 +117,18 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
     Runs by default on every commit. High-severity findings block unless
     ``allow_secret`` is set (human mode still asks for confirmation); medium
     findings only warn. The full secret is never printed -- previews are redacted.
+    Fails closed: if the staged diff cannot be read, the commit is blocked
+    rather than allowed through unscanned.
     """
-    findings = scan_staged_diff(root)
+    try:
+        findings = scan_staged_diff(root)
+    except SecretScanUnavailable as exc:
+        unavailable = t("secret_scan_unavailable", error=str(exc))
+        if as_json:
+            print_json(error_envelope(error=unavailable, code="secret_scan_unavailable"))
+        else:
+            error(unavailable)
+        return 1
     if not findings:
         return None
     high = [f for f in findings if f["severity"] == "high"]

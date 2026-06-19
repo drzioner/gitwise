@@ -476,20 +476,24 @@
     "en": "Secrets detected -- {count} finding(s):"
   },
   "secret_scan_blocked_high": {
-    "es": "commit bloqueado: {count} secreto(s) de alta severidad en el area de staging",
+    "es": "commit bloqueado: {count} secreto(s) de alta severidad en el área de staging",
     "en": "commit blocked: {count} high-severity secret(s) in the staging area"
   },
   "secret_scan_blocked_hint": {
-    "es": "revoca/rotar el secreto, remuevelo del stage, o usa --allow-secret (con confirmacion) para committear de todos modos",
+    "es": "revoque o rote el secreto, remuévalo del stage, o use --allow-secret (con confirmación) para commitear de todos modos",
     "en": "revoke/rotate the secret, unstage it, or use --allow-secret (with confirmation) to commit anyway"
   },
   "secret_scan_allow_confirm": {
-    "es": "Se detectaron {count} secreto(s) de alta severidad. Committear de todos modos?",
+    "es": "Se detectaron {count} secreto(s) de alta severidad. ¿Commitear de todos modos?",
     "en": "{count} high-severity secret(s) detected. Commit anyway?"
   },
   "secret_scan_medium_warning": {
     "es": "advertencia: {rule} en {path}:{line} ({preview})",
     "en": "warning: {rule} at {path}:{line} ({preview})"
+  },
+  "secret_scan_unavailable": {
+    "es": "no se pudo escanear el área de staging (fail-closed): {error}",
+    "en": "could not scan the staging area (fail-closed): {error}"
   },
   "directory_exists": {
     "es": "el directorio ya existe: {path}",

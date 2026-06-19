@@ -31,6 +31,11 @@ from ..git import run as git_run
 SecretSeverity = Literal["high", "medium"]
 
 _DIFF_ADDED_LINE_RE = re.compile(r"^\+(?!\+\+)")
+_HUNK_HEADER_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+
+
+class SecretScanUnavailable(RuntimeError):
+    """Raised when the staged diff cannot be read, so a scan cannot run."""
 
 
 class SecretFinding(TypedDict):
@@ -91,25 +96,44 @@ def _redact(match: str) -> str:
 
 
 def _staged_diff_text(root: Path) -> str:
-    """Return the full cached diff text, or empty string if nothing is staged."""
+    """Return the full cached diff text.
+
+    Raises ``SecretScanUnavailable`` when git itself reports a failure, so the
+    commit guard fails closed (block) instead of silently treating an
+    unscannable index as clean.
+    """
     result = git_run(["--no-pager", "diff", "--cached"], cwd=root, check=False)
-    return result.stdout if result.returncode == 0 else ""
+    if result.returncode != 0:
+        raise SecretScanUnavailable(result.stderr.strip() or "git diff --cached failed")
+    return result.stdout
 
 
 def _parse_diff_hunk_for_path(line: str) -> str | None:
-    """Return the path from a `+++ b/<path>` diff header, or None."""
-    if not line.startswith("+++ b/"):
+    """Return the path from a `+++ <path>` diff header, or None.
+
+    Handles both the default `+++ b/<path>` prefix and the prefixless form a
+    user gets with `diff.noprefix=true`, plus `/dev/null` (file absent on the
+    new side of a delete).
+    """
+    if not line.startswith("+++ "):
         return None
-    return line[len("+++ b/") :]
+    rest = line[4:]
+    if rest == "/dev/null":
+        return None
+    if rest.startswith("b/"):
+        return rest[2:]
+    return rest
 
 
 def secret_scan(diff_text: str) -> list[SecretFinding]:
     """Scan added lines of a unified diff for credential patterns.
 
     Only lines introduced by the diff (leading `+`, excluding the `+++` header)
-    are inspected, so pre-existing content is never flagged. Each match becomes
-    a ``SecretFinding`` with a redacted preview. Returns findings in document
-    order; callers decide blocking policy by severity.
+    are inspected, so pre-existing content is never flagged. Reported line
+    numbers are the true new-file line numbers parsed from each
+    ``@@ -old,+new @@`` hunk header (so a finding points at the exact line to
+    remediate even across multi-hunk or delete-heavy diffs). Each match becomes
+    a ``SecretFinding`` with a redacted preview.
     """
     findings: list[SecretFinding] = []
     current_path = ""
@@ -119,6 +143,16 @@ def secret_scan(diff_text: str) -> list[SecretFinding]:
         if path_from_header is not None:
             current_path = path_from_header
             line_no = 0
+            continue
+        hunk = _HUNK_HEADER_RE.match(raw)
+        if hunk:
+            # Next context/added line in the new file is +new_start; decrement
+            # so the increment below lands on the right number.
+            line_no = int(hunk.group(1)) - 1
+            continue
+        if raw.startswith("-"):
+            # Removed lines belong to the old file only and do not advance the
+            # new-file line counter.
             continue
         if not _DIFF_ADDED_LINE_RE.match(raw):
             if raw.startswith(" "):
