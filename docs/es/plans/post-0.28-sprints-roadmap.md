@@ -111,8 +111,10 @@ Nuevo `secret_scan(diff_text: str) -> list[Finding]` donde `Finding` es
 Ruleset inicial (patrones verificados, sin falsos positivos en fixtures):
 - AWS access key: `AKIA[0-9A-Z]{16}` (Verificado: AWS docs §IAM identifiers)
 - AWS secret: base64 de 40 chars tras `aws_secret_access_key`
-- GitHub PAT: `gh[pousr]_[A-Za-z0-9]{36}` (Verificado: GitHub blog 2021-04-12
-  cambio de formato de token)
+- GitHub PAT clásico: `gh[pousr]_[A-Za-z0-9]{36}` (Verificado: GitHub blog
+  2021-04-12 cambio de formato de token clásico). Los PATs fine-grained usan
+  un formato distinto `github_pat_[A-Za-z0-9_]{82}` y necesitan una regla
+  separada.
 - GitLab PAT: `glpat-[A-Za-z0-9_-]{20}` (Verificado: GitLab docs §Personal
   access tokens)
 - Bloque de private key: `-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----`

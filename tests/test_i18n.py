@@ -91,7 +91,7 @@ def test_confirm_responses_es():
     reset_cache()
 
 
-def test_all_keys_have_es_and_en_translations():
+def test_all_keys_have_es_and_en_translations() -> None:
     """Every i18n key must define non-empty Spanish and English translations.
 
     Prevents silent regressions where a new key ships with only one locale
@@ -103,8 +103,17 @@ def test_all_keys_have_es_and_en_translations():
     data_path = Path(__file__).parent.parent / "gitwise" / "_i18n_data.json"
     data = json.loads(data_path.read_text(encoding="utf-8"))
 
-    missing_es = sorted(k for k, v in data.items() if "es" not in v or not str(v["es"]).strip())
-    missing_en = sorted(k for k, v in data.items() if "en" not in v or not str(v["en"]).strip())
+    def _missing(locale: str) -> list[str]:
+        return sorted(
+            k
+            for k, v in data.items()
+            if not isinstance(v, dict)
+            or not isinstance(v.get(locale), str)
+            or not v[locale].strip()
+        )
+
+    missing_es = _missing("es")
+    missing_en = _missing("en")
 
     assert not missing_es, f"{len(missing_es)} keys missing Spanish translation: {missing_es[:10]}"
     assert not missing_en, f"{len(missing_en)} keys missing English translation: {missing_en[:10]}"

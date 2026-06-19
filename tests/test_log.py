@@ -33,6 +33,7 @@ def test_log_json_has_stats(tmp_git_repo: Path) -> None:
 
 
 def test_log_json_iso_strict_date(tmp_git_repo: Path) -> None:
+    """log --json emits commit dates in iso-strict format (T separator, Z or numeric offset)."""
     import re
 
     r = run_gitwise("log", "--json", cwd=tmp_git_repo)
@@ -40,10 +41,11 @@ def test_log_json_iso_strict_date(tmp_git_repo: Path) -> None:
     data = json.loads(r.stdout)
     assert len(data["commits"]) >= 1
     commit_date = data["commits"][0]["date"]
+    # git --date=iso-strict emits "Z" for UTC and "+/-HH:MM" otherwise (RFC 3339 time-offset)
     assert re.match(
-        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+\-]\d{2}:\d{2}$",
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+\-]\d{2}:\d{2})$",
         commit_date,
-    ), f"expected iso-strict date (T separator + tz offset), got {commit_date!r}"
+    ), f"expected iso-strict date (T separator + Z or numeric offset), got {commit_date!r}"
 
 
 def test_log_json_root_commit_empty_parents(tmp_path: Path) -> None:

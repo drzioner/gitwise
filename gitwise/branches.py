@@ -1,5 +1,6 @@
 """gitwise branches — intelligence dashboard with ahead/behind, merged, stale, worktree info."""
 
+from pathlib import Path
 from typing import TypedDict
 
 from .git import require_root, stale_branches, worktree_branches
@@ -88,7 +89,7 @@ def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
     return 0
 
 
-def _fetch_branch_rows(*, root, remote: bool, sort: str) -> list[BranchEntry] | None:
+def _fetch_branch_rows(*, root: Path, remote: bool, sort: str) -> list[BranchEntry] | None:
     wt_branches = worktree_branches(cwd=root)
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
     fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
