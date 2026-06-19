@@ -27,7 +27,8 @@ DiffFileEntry = dict[str, DiffValue]
 # GitHub recommends 1 MiB as the maximum single-object size before considering
 # Git LFS or external storage; above it is enforced at 100 MiB.
 # Verified: docs.github.com/en/repositories/creating-and-managing-repositories/repository-limits (retrieved 2026-06-19)
-LFS_WARN_BYTES = 1 * 1024 * 1024
+_BYTES_PER_MIB = 1024 * 1024
+LFS_WARN_BYTES = 1 * _BYTES_PER_MIB
 
 
 def _parse_diffstat_entries(lines: list[str]) -> list[DiffFileEntry]:
@@ -193,11 +194,11 @@ def _diff_cmd(
         cmd.append("--stat")
     elif name_only:
         cmd.append("--name-only")
-    elif staged:
-        cmd.append("--name-status")
-        cmd.append("--staged")
     else:
         cmd.append("--name-status")
+
+    if staged:
+        cmd.append("--staged")
 
     if refspec:
         cmd.append(refspec)
@@ -264,18 +265,19 @@ def _render_stat_output(
         status_details=status_details,
         numstat_details=numstat_details,
     )
-    _warn_large_binaries(cwd=cwd, files=merged_files, as_json=as_json)
+    binary_warnings = _warn_large_binaries(cwd=cwd, files=merged_files, as_json=as_json)
     if as_json:
         for entry in merged_files:
             raw_code = str(entry.get("code", entry.get("status", "")))
             entry["status_label"] = status_label(raw_code)
-        print_json(
-            ok_envelope(
-                files=merged_files,
-                count=len(merged_files),
-                totals=_diff_totals(merged_files),
-            )
+        envelope = ok_envelope(
+            files=merged_files,
+            count=len(merged_files),
+            totals=_diff_totals(merged_files),
         )
+        if binary_warnings:
+            envelope["binary_warnings"] = binary_warnings
+        print_json(envelope)
         return 0
 
     styled_files = [
@@ -335,14 +337,18 @@ def _render_non_stat_output(
     return 0
 
 
-def _warn_large_binaries(*, cwd: Path, files: list[DiffFileEntry], as_json: bool) -> None:
-    """Warn about binary files at or above the LFS threshold.
+def _warn_large_binaries(
+    *, cwd: Path, files: list[DiffFileEntry], as_json: bool
+) -> list[dict[str, str | int]]:
+    """Detect binary files at or above the LFS threshold and warn (human mode).
 
     Size is read from the working tree when the path exists there; committed
     blobs outside the working tree are skipped to avoid an extra round trip,
-    since the binary marker itself is already surfaced in the output.
+    since the binary marker itself is already surfaced in the output. Returns
+    the offender list (``{"path", "mib"}``) so JSON callers can include it in
+    the envelope -- silent drops in JSON mode would hide the signal from agents.
     """
-    offenders: list[tuple[str, int]] = []
+    offenders: list[dict[str, str | int]] = []
     for entry in files:
         if entry.get("is_binary") is not True:
             continue
@@ -355,18 +361,17 @@ def _warn_large_binaries(*, cwd: Path, files: list[DiffFileEntry], as_json: bool
         except OSError:
             continue
         if size >= LFS_WARN_BYTES:
-            offenders.append((path_value, size))
-    if not offenders:
-        return
-    for path_value, size in offenders:
-        mib = size // (1024 * 1024)
-        if not as_json:
-            warn(t("diff_binary_lfs_hint", path=path_value, mib=str(mib)))
+            mib = size // _BYTES_PER_MIB
+            offenders.append({"path": path_value, "mib": mib})
+            if not as_json:
+                warn(t("diff_binary_lfs_hint", path=path_value, mib=str(mib)))
+    return offenders
 
 
 def _render_summary_output(
     *,
     files: list[DiffFileEntry],
+    binary_warnings: list[dict[str, str | int]],
     as_json: bool,
 ) -> int:
     if not files:
@@ -390,13 +395,14 @@ def _render_summary_output(
         )
     totals = _diff_totals(files)
     if as_json:
-        print_json(
-            ok_envelope(
-                files=summary_files,
-                count=len(summary_files),
-                totals=totals,
-            )
+        envelope = ok_envelope(
+            files=summary_files,
+            count=len(summary_files),
+            totals=totals,
         )
+        if binary_warnings:
+            envelope["binary_warnings"] = binary_warnings
+        print_json(envelope)
         return 0
 
     print_header(t("diff_summary_header", count=str(len(summary_files))))
@@ -418,10 +424,13 @@ def run_diff(
     summary: bool = False,
     as_json: bool = False,
 ) -> int:
-    """Show changed files relative to HEAD with optional stat, name-only, or full diff.
+    """Render a diff of changed files, a refspec, or a range.
 
-    Defaults to stat mode for unstaged changes when no explicit mode is set.
-    Returns 0 with an empty-files envelope for repositories that have no commits.
+    With no arguments, shows the working-tree diffstat vs HEAD. ``refspec`` can
+    be a commit, branch, or range (``a..b`` / ``a...b``); it is forwarded
+    verbatim because git diff compares endpoints, not revision ranges. ``paths``
+    scopes the output after ``--``. ``--summary`` prints additions/deletions per
+    file with no patch (token-efficient for agents).
     """
     root, err = require_root()
     if err:
@@ -437,7 +446,15 @@ def run_diff(
         info(t("no_commits_yet"))
         return 0
 
-    use_stat = stat or (not staged and not name_only and not full and not summary)
+    if summary:
+        numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
+        summary_files = list(numstat_details.values())
+        binary_warnings = _warn_large_binaries(cwd=cwd, files=summary_files, as_json=as_json)
+        return _render_summary_output(
+            files=summary_files, binary_warnings=binary_warnings, as_json=as_json
+        )
+
+    use_stat = stat or (not staged and not name_only and not full)
     cmd = _diff_cmd(
         use_stat=use_stat,
         staged=staged,
@@ -460,12 +477,6 @@ def run_diff(
         return 0
 
     lines = [line for line in result.stdout.splitlines() if line.strip()]
-    if summary:
-        numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
-        summary_files = list(numstat_details.values())
-        _warn_large_binaries(cwd=cwd, files=summary_files, as_json=as_json)
-        return _render_summary_output(files=summary_files, as_json=as_json)
-
     if use_stat:
         files = _parse_diffstat_entries(lines)
         return _render_stat_output(

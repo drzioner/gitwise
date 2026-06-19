@@ -258,9 +258,33 @@ def test_diff_summary_json(tmp_git_repo):
     assert "totals" in data
 
 
+def test_diff_summary_with_refspec(tmp_git_repo):
+    first = _repo_with_history(tmp_git_repo)
+    result = _run("diff", "--summary", first, cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "README.md" in result.stdout
+
+
 # ── D4: large binary warning ─────────────────────────────────────────────────
 
 
-def test_diff_binary_lfs_warning(tmp_git_repo_with_large_blob):
-    result = _run("diff", "--stat", cwd=tmp_git_repo_with_large_blob)
+def _stage_large_binary(repo: Path) -> None:
+    """Stage a ~2 MiB binary file (null bytes so git marks it binary)."""
+    (repo / "blob.bin").write_bytes(b"\x00\x01\x02\x03" * 500_000)
+    _git(["add", "blob.bin"], repo)
+
+
+def test_diff_binary_lfs_warning(tmp_git_repo):
+    _stage_large_binary(tmp_git_repo)
+    result = _run("diff", "--stat", "--staged", cwd=tmp_git_repo)
     assert result.returncode == 0
+    assert "Git LFS" in result.stderr
+
+
+def test_diff_binary_lfs_warning_json(tmp_git_repo):
+    _stage_large_binary(tmp_git_repo)
+    result = _run("diff", "--stat", "--staged", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert "binary_warnings" in data
+    assert len(data["binary_warnings"]) >= 1
