@@ -1,0 +1,148 @@
+name: Test Windows Installer
+
+# Verifies install.ps1 end-to-end on a real Windows runner. macOS/Linux
+# cannot run this script locally because it uses Windows-specific env vars
+# ($env:USERPROFILE), `powershell.exe`, and Windows-only Environment scopes.
+
+on:
+  pull_request:
+    paths:
+      - "install.ps1"
+      - ".github/workflows/test-windows-installer.yml"
+  push:
+    branches: [main]
+    paths:
+      - "install.ps1"
+      - ".github/workflows/test-windows-installer.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific version to install (default: latest)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-windows-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke-test:
+    name: Smoke Test
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Run installer
+        env:
+          TARGET_VERSION: ${{ inputs.version }}
+        shell: pwsh
+        run: |
+          if ($env:TARGET_VERSION) {
+            .\install.ps1 -Version $env:TARGET_VERSION
+          } else {
+            .\install.ps1
+          }
+
+      - name: Reinstall from source
+        # install.ps1 pulls gitwise-cli from PyPI (the published version).
+        # When this workflow runs on a PR, the fix being tested is NOT in
+        # PyPI yet. Reinstall from the checked-out source so the rest of
+        # the steps exercise the code in this branch rather than the
+        # published artifact.
+        shell: pwsh
+        run: |
+          Write-Host "Reinstalling gitwise from source (cwd: $(Get-Location))"
+          uv tool install --reinstall --from . gitwise-cli
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Error: uv tool install --from . failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Verify on PATH
+        shell: pwsh
+        run: |
+          $cmd = Get-Command gitwise -ErrorAction SilentlyContinue
+          if (-not $cmd) {
+            Write-Host "Error: gitwise was not found on PATH after install.ps1 finished." -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "gitwise path: $($cmd.Source)"
+
+      - name: Verify --version
+        shell: pwsh
+        run: |
+          $version = & gitwise --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Error: gitwise --version failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+          if ($version -notmatch '^\s*gitwise\s+\d+\.\d+\.\d+') {
+            Write-Host "Error: Unexpected version output: '$version'" -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "Installed: $version"
+
+      - name: Verify doctor runs
+        shell: pwsh
+        run: |
+          # Strict smoke check: doctor must run without Python exceptions AND
+          # without the CLI's "unexpected error" handler firing. Exit codes
+          # 0/1/2 are acceptable verdicts (ok / errors detected / strict
+          # warnings) because the runner env lacks git config user.email and
+          # optional tools — those surface as doctor warnings, not as Python
+          # exceptions.
+          $output = & gitwise doctor 2>&1 | Out-String
+          Write-Host $output
+
+          # Hard-fail patterns: presence of any of these in stdout/stderr
+          # means doctor crashed at the Python level (or hit the CLI's
+          # catch-all "unexpected error" branch). Either is a real bug that
+          # the test must surface, not swallow.
+          if ($output -match 'Traceback \(most recent call last\)|UnicodeEncodeError|UnicodeDecodeError|unexpected error\.') {
+            Write-Host "Error: doctor output contains an error pattern. See full log above." -ForegroundColor Red
+            Write-Host "Matched against: Traceback | UnicodeEncodeError | UnicodeDecodeError | 'unexpected error.'" -ForegroundColor Red
+            exit 1
+          }
+
+          if ($LASTEXITCODE -notin 0, 1, 2) {
+            Write-Host "Error: gitwise doctor raised exit code $LASTEXITCODE (not 0/1/2); likely a Python exception." -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "gitwise doctor ran successfully (exit $LASTEXITCODE, treated as installer-OK)."
+          exit 0
+
+      - name: Run pytest
+        # PyPI classifiers declare Windows support; CI must validate it.
+        # The macos/ubuntu matrix in ci.yml does not cover Windows, so this
+        # step is the canonical Windows-side pytest run. Run from the checked
+        # out source so we exercise the branch code, not the published PyPI
+        # artifact.
+        #
+        # Two test files are POSIX-only by design (setup_agents uses os.symlink
+        # with strict target validation that Windows does not support the same
+        # way) and are excluded here. See issue tracker for the "Windows
+        # support in setup_agents" follow-up.
+        shell: pwsh
+        run: |
+          Write-Host "----- uv sync --group dev -----"
+          uv sync --group dev 2>&1 | Select-Object -Last 3
+          Write-Host "----- uv run pytest -----"
+          uv run pytest --tb=short `
+            --ignore=tests/test_setup_agents.py `
+            --ignore=tests/test_sa_unit.py `
+            2>&1
+          $pytestExit = $LASTEXITCODE
+          Write-Host "----- pytest exit code: $pytestExit -----"
+          if ($pytestExit -ne 0) {
+            Write-Host "Error: pytest failed on Windows with exit code $pytestExit." -ForegroundColor Red
+            Write-Host "If the failures are Windows-specific path/symlink issues, mark the affected tests with @pytest.mark.skipif(sys.platform == 'win32', reason='...') rather than expanding the ignore list." -ForegroundColor Yellow
+            exit 1
+          }

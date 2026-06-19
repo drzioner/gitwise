@@ -5,12 +5,15 @@
 # Remote one-liner:
 #   curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
 #
+# Windows? Use install.ps1 instead:
+#   irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex
+#
 # This installer:
 #   1. Installs uv if not present (via https://astral.sh/uv/install.sh).
 #   2. Runs `uv tool install --upgrade gitwise-cli` (isolated venv, no PyPI pollution).
 #   3. Prints PATH guidance if `gitwise` is not yet on PATH.
 #
-# Supported OS: macOS, Linux. Windows users: see README for alternatives.
+# Supported OS: macOS, Linux. Windows users: see install.ps1 or README.
 
 set -Eeuo pipefail
 
@@ -66,7 +69,8 @@ case "$OS" in
     Linux)  printf 'gitwise installer - Linux (%s)\n' "$ARCH" ;;
     *)
         echo "error: unsupported OS '$OS'. This installer supports macOS and Linux." >&2
-        echo "Windows users: see README for alternative install methods." >&2
+        echo "Windows users: use install.ps1 -> https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1" >&2
+        echo "Or: irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex" >&2
         exit 1
         ;;
 esac

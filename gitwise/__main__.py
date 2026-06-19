@@ -32,12 +32,36 @@ def _install_rich_traceback() -> None:
         return
 
 
+def _ensure_utf8_stdio() -> None:
+    """Force stdout/stderr to UTF-8.
+
+    Windows defaults to a system codepage (often cp1252) for the Python
+    embedded in console apps. That codepage cannot encode characters like
+    U+2713 (✓) used throughout gitwise's status output, causing
+    UnicodeEncodeError when the user is not running through a wrapper that
+    sets PYTHONIOENCODING. macOS/Linux are already UTF-8 by default, so
+    this reconfigure is a no-op there.
+    """
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        # TextIOWrapper.reconfigure exists on Python 3.7+; guard just in case
+        # the stream has been replaced with something non-standard.
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (TypeError, ValueError):
+                # Stream does not accept these kwargs or is closed; ignore.
+                pass
+
+
 def main() -> int:
     import os
 
     from ._runtime_config import reset_runtime_config
     from .i18n import set_locale
 
+    _ensure_utf8_stdio()
     _install_rich_traceback()
 
     parser = build_parser()
@@ -93,6 +117,13 @@ def main() -> int:
         except Exception:
             if _should_show_rich_traceback():
                 raise
+            # No Rich traceback available (CI / non-tty / LOG_JSON mode).
+            # Still emit the raw traceback to stderr so CI logs are
+            # diagnostic. Otherwise the user only sees "unexpected error"
+            # and has no way to identify the root cause.
+            import traceback as _traceback
+
+            _traceback.print_exc()
             from .output import error as _error
 
             _error(t("unexpected_error"))

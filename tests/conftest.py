@@ -34,6 +34,12 @@ def run_gitwise(
         [sys.executable, "-m", "gitwise"] + list(args),
         capture_output=True,
         text=True,
+        # gitwise forces UTF-8 stdio on Windows (see _ensure_utf8_stdio in
+        # __main__.py); the test harness must decode the captured stream as
+        # UTF-8 too, otherwise locale.getpreferredencoding() (cp1252 on
+        # English Windows) mangles non-ASCII characters in the assertion
+        # strings (e.g. "huérfanos" in the worktree-clean success message).
+        encoding="utf-8",
         cwd=cwd or PROJECT_ROOT,
         env=base_env,
     )
