@@ -1,6 +1,5 @@
 """gitwise log — pretty git log with filters and JSON output."""
 
-import subprocess
 from pathlib import Path
 
 from .git import require_root, validate_author_pattern, validate_grep_pattern
@@ -70,8 +69,9 @@ def _build_log_json_args(
     args = [
         "log",
         f"--max-count={max_count}",
-        "--format=%H%n%h%n%an%n%ae%n%ad%n%s%n%P%n---END---",
+        "--format=___GW_REC___%H%n%h%n%an%n%ae%n%ad%n%s%n%P",
         "--date=iso-strict",
+        "--numstat",
     ]
     if author:
         if not validate_author_pattern(author):
@@ -93,76 +93,64 @@ def _build_log_json_args(
     return args
 
 
-def _parse_log_json(raw: str) -> list[dict[str, str]]:
-    """Parse ``---END---``-separated log entries into commit dicts."""
-    commits: list[dict[str, str]] = []
-    entries = raw.split("---END---")
-    for entry in entries:
-        lines = entry.strip().splitlines()
-        if len(lines) >= 7:
-            commits.append(
-                {
-                    "hash": lines[0],
-                    "short_hash": lines[1],
-                    "author": lines[2],
-                    "email": lines[3],
-                    "date": lines[4],
-                    "subject": lines[5],
-                    "parents": lines[6],
-                }
-            )
-        elif len(lines) == 6:
-            commits.append(
-                {
-                    "hash": lines[0],
-                    "short_hash": lines[1],
-                    "author": lines[2],
-                    "email": lines[3],
-                    "date": lines[4],
-                    "subject": lines[5],
-                    "parents": "",
-                }
-            )
-    return commits
+_REC_MARKER = "___GW_REC___"
 
 
-def _enrich_with_stats(commits: list[dict[str, str]], cwd: Path) -> None:
-    """Attach per-commit diff-tree stat output to each commit dict in place."""
-    if not commits:
-        return
-    hashes = "\n".join(c["hash"] for c in commits)
-    r = subprocess.run(
-        ["git", "diff-tree", "--stdin", "--no-commit-id", "--stat", "-r"],
-        input=hashes,
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-        timeout=120,
-    )
-    if r.returncode != 0:
-        for c in commits:
-            c["stats"] = ""
-        return
-    stats_by_hash: dict[str, str] = {}
-    current_hash = ""
-    current_lines: list[str] = []
-    for line in r.stdout.splitlines():
-        if not line and current_hash:
-            stats_by_hash[current_hash] = "\n".join(current_lines).strip()
-            current_hash = ""
-            current_lines = []
+def _parse_log_json(raw: str) -> list[dict[str, object]]:
+    """Parse the ``___GW_REC___``-marked log (with ``--numstat``) into commit dicts.
+
+    Each commit carries ``parents`` as a list of hashes and ``stats`` as a list
+    of ``{path, insertions, deletions, binary}`` records (roadmap J7).
+    """
+    commits: list[dict[str, object]] = []
+    lines = raw.splitlines()
+    n = len(lines)
+    i = 0
+    while i < n:
+        line = lines[i]
+        if not line.startswith(_REC_MARKER):
+            i += 1
             continue
-        if len(line) >= 40 and all(c in "0123456789abcdef" for c in line[:40]):
-            if current_hash and current_lines:
-                stats_by_hash[current_hash] = "\n".join(current_lines).strip()
-            current_hash = line.strip()
-            current_lines = []
-        else:
-            current_lines.append(line)
-    if current_hash and current_lines:
-        stats_by_hash[current_hash] = "\n".join(current_lines).strip()
-    for c in commits:
-        c["stats"] = stats_by_hash.get(c["hash"], "")
+        full_hash = line.removeprefix(_REC_MARKER)
+        short_hash = lines[i + 1] if i + 1 < n else ""
+        author = lines[i + 2] if i + 2 < n else ""
+        email = lines[i + 3] if i + 3 < n else ""
+        date = lines[i + 4] if i + 4 < n else ""
+        subject = lines[i + 5] if i + 5 < n else ""
+        parents_str = lines[i + 6] if i + 6 < n else ""
+        i += 7
+        stats: list[dict[str, object]] = []
+        while i < n and not lines[i].startswith(_REC_MARKER):
+            stat_line = lines[i]
+            i += 1
+            if not stat_line:
+                continue
+            parts = stat_line.split("\t")
+            if len(parts) != 3:
+                continue
+            ins, dels, path = parts
+            is_bin = ins == "-" or dels == "-"
+            stats.append(
+                {
+                    "path": path,
+                    "insertions": 0 if is_bin else int(ins),
+                    "deletions": 0 if is_bin else int(dels),
+                    "binary": is_bin,
+                }
+            )
+        commits.append(
+            {
+                "hash": full_hash,
+                "short_hash": short_hash,
+                "author": author,
+                "email": email,
+                "date": date,
+                "subject": subject,
+                "parents": parents_str.split() if parents_str else [],
+                "stats": stats,
+            }
+        )
+    return commits
 
 
 def _parse_log_table(raw: str) -> list[list[str]]:
@@ -211,20 +199,33 @@ def _run_log_json(
             since=since,
             until=until,
             file=file,
-            max_count=max_count,
+            max_count=max_count + 1,
         )
     except ValueError:
         return 1
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         if "does not have any commits yet" in result.stderr:
-            print_json(ok_envelope(commits=[], count=0))
+            print_json(ok_envelope("log", commits=[], count=0))
             return 0
         error(t("git_log_failed", error=result.stderr.strip()))
         return 1
     commits = _parse_log_json(result.stdout)
-    _enrich_with_stats(commits, root)
-    print_json(ok_envelope(commits=commits, count=len(commits)))
+    truncated = len(commits) > max_count
+    commits = commits[:max_count]
+    hints: list[str] = []
+    if truncated:
+        hints.append(f"gitwise log --max-count {max_count} (more commits exist)")
+    print_json(
+        ok_envelope(
+            "log",
+            commits=commits,
+            count=len(commits),
+            total=len(commits),
+            truncated=truncated,
+            hints=hints or None,
+        )
+    )
     return 0
 
 
@@ -346,5 +347,5 @@ def run_log(
         since=since,
         until=until,
         file=file,
-        max_count=max_count,
+        max_count=max_count + 1,
     )
