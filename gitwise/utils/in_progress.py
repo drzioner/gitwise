@@ -18,6 +18,7 @@ builtin/merge.c, git-rebase--merge.sh, gitglossary(7)):
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal, TypedDict
 
@@ -45,7 +46,10 @@ def _resolve_git_dir(root: Path) -> Path | None:
     raw = result.stdout.strip()
     if not raw:
         return None
-    git_dir = (root / raw).resolve() if not Path(raw).is_absolute() else Path(raw)
+    # Use os.path.realpath (not Path.resolve()) per AGENTS.md: Path.resolve()
+    # can fail on broken symlinks, which matters inside .git/worktrees/.
+    candidate = Path(raw)
+    git_dir = Path(os.path.realpath(candidate if candidate.is_absolute() else root / raw))
     return git_dir if git_dir.is_dir() else None
 
 

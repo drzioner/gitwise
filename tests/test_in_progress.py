@@ -7,6 +7,7 @@ for the rare-state paths and a real conflicting merge for the integration path.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -16,16 +17,23 @@ from conftest import run_gitwise
 
 
 def _git_dir(repo: Path) -> Path:
-    """Resolve the real git-dir via git rev-parse (handles worktrees)."""
+    """Resolve the real git-dir via git rev-parse (handles worktrees).
+
+    Uses os.path.realpath per AGENTS.md (Path.resolve() can fail on broken
+    symlinks) and explicit timeout per AGENTS.md "subprocess.run with explicit
+    timeout".
+    """
     r = subprocess.run(
         ["git", "rev-parse", "--git-dir"],
         cwd=repo,
         capture_output=True,
         text=True,
         check=True,
+        timeout=10,
     )
     raw = r.stdout.strip()
-    return (repo / raw).resolve() if not Path(raw).is_absolute() else Path(raw)
+    candidate = Path(raw)
+    return Path(os.path.realpath(candidate if candidate.is_absolute() else repo / raw))
 
 
 def test_clean_repo_returns_none(tmp_git_repo: Path) -> None:
