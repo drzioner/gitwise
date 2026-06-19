@@ -418,8 +418,13 @@ def _render_summary_output(
 def _render_secret_scan_output(
     *, root: Path, refspec: str | None, paths: list[str] | None, as_json: bool
 ) -> int:
-    """Scan the diff patch for leaked credentials and report findings (opt-in)."""
-    args = ["--no-pager", "diff"]
+    """Scan the diff patch for leaked credentials and report findings (opt-in).
+
+    The diff flags defeat user config that could bypass the scanner
+    (``color.ui=always`` ANSI, external/textconv drivers) -- same reasoning as
+    the commit-time guard in ``_staged_diff_text``.
+    """
+    args = ["--no-pager", "diff", "--no-color", "--no-ext-diff", "--no-textconv"]
     if refspec:
         args.append(refspec)
     else:

@@ -147,3 +147,12 @@ def test_commit_warns_on_secret_medium(tmp_git_repo: Path) -> None:
     r = run_gitwise("commit", "-m", "feat: add config", cwd=tmp_git_repo)
     assert r.returncode == 0
     assert "warning" in r.stderr.lower() or "secret" in r.stderr.lower()
+
+
+def test_commit_blocked_on_secret_despite_color_always(tmp_git_repo: Path) -> None:
+    """color.ui=always must not bypass the guard via ANSI-wrapped diff lines."""
+    _git(["config", "color.ui", "always"], tmp_git_repo)
+    (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise("commit", "-m", "feat: add config", cwd=tmp_git_repo)
+    assert r.returncode == 1

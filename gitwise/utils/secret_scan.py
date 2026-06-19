@@ -100,9 +100,16 @@ def _staged_diff_text(root: Path) -> str:
 
     Raises ``SecretScanUnavailable`` when git itself reports a failure, so the
     commit guard fails closed (block) instead of silently treating an
-    unscannable index as clean.
+    unscannable index as clean. The diff flags defeat user config that could
+    otherwise bypass the scanner: ``--no-color`` strips ANSI that breaks line
+    parsing, ``--no-ext-diff`` and ``--no-textconv`` ignore external/textconv
+    drivers that could hide added content while still exiting 0.
     """
-    result = git_run(["--no-pager", "diff", "--cached"], cwd=root, check=False)
+    result = git_run(
+        ["--no-pager", "diff", "--cached", "--no-color", "--no-ext-diff", "--no-textconv"],
+        cwd=root,
+        check=False,
+    )
     if result.returncode != 0:
         raise SecretScanUnavailable(result.stderr.strip() or "git diff --cached failed")
     return result.stdout
