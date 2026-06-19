@@ -374,6 +374,7 @@ def _render_summary_output(
     binary_warnings: list[dict[str, str | float]],
     as_json: bool,
 ) -> int:
+    """Print the compact summary (path + insertions/deletions, no patch)."""
     if not files:
         if as_json:
             print_json(ok_envelope(files=[], count=0, totals={"insertions": 0, "deletions": 0}))
