@@ -262,6 +262,13 @@ def test_diff_path_only_separator_disambiguates_from_ref(tmp_git_repo):
     assert "other.txt" not in result.stdout
 
 
+def test_diff_too_many_refs_before_separator_fails(tmp_git_repo):
+    """two positionals before `--` fails fast (gitwise takes one refspec)."""
+    first = _repo_with_history(tmp_git_repo)
+    result = _run("diff", first, "HEAD", "--", "README.md", cwd=tmp_git_repo)
+    assert result.returncode == 1
+
+
 # ── D5: --summary ────────────────────────────────────────────────────────────
 
 

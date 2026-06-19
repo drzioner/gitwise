@@ -459,6 +459,10 @@
     "es": "Resumen -- {count} archivo(s):",
     "en": "Summary -- {count} file(s):"
   },
+  "diff_too_many_refs": {
+    "es": "demasiados argumentos posicionales antes de '--' ({count}); gitwise diff acepta un unico refspec (usa a..b para un rango)",
+    "en": "too many positional arguments before '--' ({count}); gitwise diff accepts a single refspec (use a..b for a range)"
+  },
   "directory_exists": {
     "es": "el directorio ya existe: {path}",
     "en": "directory already exists: {path}"
