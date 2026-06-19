@@ -1571,6 +1571,78 @@
     "es": "Auditando: ejecutando git-sizer...",
     "en": "Auditing: running git-sizer..."
   },
+  "status_worktree_add": {
+    "es": "Creando worktree para {branch}...",
+    "en": "Creating worktree for {branch}..."
+  },
+  "status_health_scan": {
+    "es": "Calculando salud del repositorio...",
+    "en": "Computing repository health..."
+  },
+  "status_context_scan": {
+    "es": "Recolectando contexto del repositorio...",
+    "en": "Gathering repository context..."
+  },
+  "status_snapshot_gen": {
+    "es": "Generando snapshot...",
+    "en": "Generating snapshot..."
+  },
+  "status_reading_status": {
+    "es": "Leyendo estado del repositorio...",
+    "en": "Reading repository status..."
+  },
+  "status_summarizing": {
+    "es": "Resumiendo repositorio...",
+    "en": "Summarizing repository..."
+  },
+  "status_reading_diff": {
+    "es": "Calculando cambios...",
+    "en": "Computing changes..."
+  },
+  "status_reading_log": {
+    "es": "Leyendo historial de commits...",
+    "en": "Reading commit history..."
+  },
+  "status_loading_commit": {
+    "es": "Cargando commit...",
+    "en": "Loading commit..."
+  },
+  "status_analyzing_branches": {
+    "es": "Analizando ramas...",
+    "en": "Analyzing branches..."
+  },
+  "status_analyzing_staged": {
+    "es": "Analizando cambios preparados...",
+    "en": "Analyzing staged changes..."
+  },
+  "status_detecting_conflicts": {
+    "es": "Detectando conflictos...",
+    "en": "Detecting conflicts..."
+  },
+  "status_reading_stashes": {
+    "es": "Leyendo stashes...",
+    "en": "Reading stashes..."
+  },
+  "status_reading_tags": {
+    "es": "Leyendo tags...",
+    "en": "Reading tags..."
+  },
+  "status_querying_github": {
+    "es": "Consultando GitHub...",
+    "en": "Querying GitHub..."
+  },
+  "status_checking_env": {
+    "es": "Verificando entorno...",
+    "en": "Checking environment..."
+  },
+  "status_scanning_stale": {
+    "es": "Buscando ramas y refs obsoletos...",
+    "en": "Scanning stale branches and refs..."
+  },
+  "status_updating": {
+    "es": "Actualizando gitwise...",
+    "en": "Updating gitwise..."
+  },
   "step_commit_graph": {
     "es": "git commit-graph write --reachable --changed-paths",
     "en": "git commit-graph write --reachable --changed-paths"
@@ -1926,6 +1998,14 @@
   "update_requires_git_clone": {
     "es": "update requiere una instalación vía git clone (no se encontró .git/)",
     "en": "update requires a git clone installation (.git/ not found)"
+  },
+  "update_no_upstream": {
+    "es": "la rama actual '{branch}' no tiene rama de seguimiento; update solo puede actualizar una rama con upstream",
+    "en": "current branch '{branch}' has no upstream; update can only fast-forward a tracking branch"
+  },
+  "update_no_upstream_hint": {
+    "es": "cambia a tu rama principal (p.ej. 'git switch main') o configura el upstream con 'git branch --set-upstream-to=origin/{branch}'",
+    "en": "switch to your main branch (e.g. 'git switch main') or set an upstream with 'git branch --set-upstream-to=origin/{branch}'"
   },
   "invalid_grep_pattern": {
     "es": "patrón de búsqueda inválido o peligroso: {pattern}",

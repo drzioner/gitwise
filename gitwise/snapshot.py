@@ -6,7 +6,7 @@ from pathlib import Path
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
-from .output import debug, print_header, print_json
+from .output import debug, print_header, print_json, status
 from .utils.json_envelope import ok_envelope
 
 
@@ -100,7 +100,8 @@ def run_snapshot(*, as_json: bool = False) -> int:
     if root is None:
         return 1
 
-    path = generate_snapshot(root)
+    with status(t("status_snapshot_gen")):
+        path = generate_snapshot(root)
 
     if as_json:
         print_json(ok_envelope(path=str(path)))

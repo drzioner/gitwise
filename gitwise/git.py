@@ -61,7 +61,7 @@ def run(
 ) -> subprocess.CompletedProcess[str]:
     from .output import debug
 
-    cmd_name = args[0] if args else None
+    cmd_name = next((arg for arg in args if not arg.startswith("-")), None)
     actual_timeout = timeout if timeout is not None else _get_timeout(cmd_name)
     debug(f"git {' '.join(args)}")
     try:

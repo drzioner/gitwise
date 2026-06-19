@@ -2,9 +2,10 @@
 
 from pathlib import Path
 
+from .git import current_branch, has_upstream
 from .git import run as git_run
 from .i18n import t
-from .output import error, info, print_dim, print_header, print_json
+from .output import error, info, print_dim, print_header, print_json, status
 from .utils.json_envelope import error_envelope, ok_envelope
 
 
@@ -22,8 +23,19 @@ def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
             return 0
         print_dim(t("update_dry_run", dir=str(install_dir)))
         return 0
+    if not has_upstream(install_dir):
+        branch = current_branch(install_dir) or "HEAD"
+        msg = t("update_no_upstream", branch=branch)
+        hint = t("update_no_upstream_hint", branch=branch)
+        if as_json:
+            print_json(error_envelope(error=msg, code="no_upstream", hint=hint))
+        else:
+            error(msg, hint=hint)
+        return 1
+
     print_header(t("updating_from", dir=str(install_dir)))
-    r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
+    with status(t("status_updating")):
+        r = git_run(["pull", "--ff-only"], cwd=install_dir, check=False)
     if r.returncode == 0 and r.stdout.strip() and r.stdout.strip() != "Already up to date.":
         if as_json:
             print_json(ok_envelope(updated=True, output=r.stdout.strip()))

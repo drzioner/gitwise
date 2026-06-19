@@ -14,6 +14,7 @@ from .output import (
     print_header,
     print_json,
     print_table,
+    status,
     warn,
 )
 from .utils.git_output import parse_diffstat_entries
@@ -25,7 +26,8 @@ def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
 
 
 def _stash_list(root: Path) -> list[dict[str, str]]:
-    r = git_run(["stash", "list"], cwd=root, check=False)
+    with status(t("status_reading_stashes")):
+        r = git_run(["stash", "list"], cwd=root, check=False)
     if r.returncode != 0 or not r.stdout.strip():
         return []
     result: list[dict[str, str]] = []
@@ -78,7 +80,8 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
     stat_args = ["stash", "show", "--stat", ref]
     if patch:
         stat_args = ["stash", "show", "-p", ref]
-    r = git_run(stat_args, cwd=root, check=False)
+    with status(t("status_reading_stashes")):
+        r = git_run(stat_args, cwd=root, check=False)
     if r.returncode != 0:
         msg = t("stash_not_found", index=str(index))
         if as_json:

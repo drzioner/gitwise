@@ -16,6 +16,7 @@ from .output import (
     print_file_status,
     print_header,
     print_json,
+    status,
     warn,
 )
 
@@ -98,24 +99,25 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         return 1
     cwd = root
 
-    branch_r = git_run(["branch", "--show-current"], cwd=cwd, check=False)
-    branch = branch_r.stdout.strip() if branch_r.returncode == 0 else "detached-HEAD"
+    with status(t("status_summarizing")):
+        branch_r = git_run(["branch", "--show-current"], cwd=cwd, check=False)
+        branch = branch_r.stdout.strip() if branch_r.returncode == 0 else "detached-HEAD"
 
-    status_r = git_run(["status", "--short"], cwd=cwd, check=False)
-    status_lines = status_r.stdout.splitlines() if status_r.returncode == 0 else []
+        status_r = git_run(["status", "--short"], cwd=cwd, check=False)
+        status_lines = status_r.stdout.splitlines() if status_r.returncode == 0 else []
 
-    log_r = git_run(
-        ["--no-pager", "log", "--oneline", f"-n{max_commits}"],
-        cwd=cwd,
-        check=False,
-    )
-    log_lines = log_r.stdout.splitlines() if log_r.returncode == 0 else []
+        log_r = git_run(
+            ["--no-pager", "log", "--oneline", f"-n{max_commits}"],
+            cwd=cwd,
+            check=False,
+        )
+        log_lines = log_r.stdout.splitlines() if log_r.returncode == 0 else []
 
-    shortstat_r = git_run(["--no-pager", "diff", "--shortstat"], cwd=cwd, check=False)
-    shortstat = shortstat_r.stdout.strip() if shortstat_r.returncode == 0 else ""
+        shortstat_r = git_run(["--no-pager", "diff", "--shortstat"], cwd=cwd, check=False)
+        shortstat = shortstat_r.stdout.strip() if shortstat_r.returncode == 0 else ""
 
-    changed_r = git_run(["--no-pager", "diff", "--name-status", "HEAD"], cwd=cwd, check=False)
-    changed_files = changed_r.stdout.splitlines() if changed_r.returncode == 0 else []
+        changed_r = git_run(["--no-pager", "diff", "--name-status", "HEAD"], cwd=cwd, check=False)
+        changed_files = changed_r.stdout.splitlines() if changed_r.returncode == 0 else []
 
     status_entries = _parse_status_entries(status_lines)
     status_map = {entry["path"]: entry["status"] for entry in status_entries}

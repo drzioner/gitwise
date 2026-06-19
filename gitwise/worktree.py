@@ -14,6 +14,7 @@ from .output import (
     print_dim,
     print_header,
     print_json,
+    status,
 )
 from .utils.json_envelope import ok_envelope, passthrough_envelope
 
@@ -73,10 +74,13 @@ def _worktree_create(branch: str, root: Path) -> tuple[int, str | None, dict]:
         == 0
     )
 
-    if branch_exists:
-        r = git_run(["worktree", "add", "--", str(wt_path), branch], cwd=root, check=False)
-    else:
-        r = git_run(["worktree", "add", "-b", branch, "--", str(wt_path)], cwd=root, check=False)
+    with status(t("status_worktree_add", branch=branch)):
+        if branch_exists:
+            r = git_run(["worktree", "add", "--", str(wt_path), branch], cwd=root, check=False)
+        else:
+            r = git_run(
+                ["worktree", "add", "-b", branch, "--", str(wt_path)], cwd=root, check=False
+            )
 
     if r.returncode != 0:
         return 1, None, {"ok": False, "error": r.stderr.strip()}

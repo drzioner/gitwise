@@ -17,6 +17,7 @@ from .output import (
     print_header,
     print_json,
     print_table,
+    status,
 )
 from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import dict_list, to_int
@@ -60,14 +61,15 @@ def _gh_available() -> bool:
 def _gh(args: list[str], cwd) -> tuple[int, str, str]:
     import subprocess
 
-    r = subprocess.run(
-        ["gh"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=120,
-    )
+    with status(t("status_querying_github")):
+        r = subprocess.run(
+            ["gh"] + args,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
     return r.returncode, r.stdout.strip(), r.stderr.strip()
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from .git import require_root, validate_author_pattern, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
-from .output import bat_pipe, error, info, print_json, print_table
+from .output import bat_pipe, error, info, print_json, print_table, status
 from .utils.json_envelope import ok_envelope
 
 
@@ -62,7 +62,7 @@ def _build_log_json_args(
         "log",
         f"--max-count={max_count}",
         "--format=%H%n%h%n%an%n%ae%n%ad%n%s%n%P%n---END---",
-        "--date=iso",
+        "--date=iso-strict",
     ]
     if author:
         if not validate_author_pattern(author):
@@ -240,7 +240,8 @@ def _run_log_human(
         )
     except ValueError:
         return 1
-    result = git_run(args, cwd=root, check=False)
+    with status(t("status_reading_log")):
+        result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         if result.stderr and "does not have any commits yet" in result.stderr:
             info(t("no_commits_yet"))
