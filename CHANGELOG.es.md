@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.30.0 (2026-06-19)
+## v0.31.0 (2026-06-19)
 
 ### Feat
 
-- **diff**: support refs, path scope, and summary (Sprint 2 PR-A) (#66)
+- **secret-scan**: commit-time guard and diff --scan-secrets (Sprint 2 D3) (#68)
