@@ -1,6 +1,9 @@
 """Tests for the adapter registry and planning system."""
 
 import json
+import sys
+
+import pytest
 
 from conftest import run_gitwise
 
@@ -196,6 +199,11 @@ class TestAdapterDryRun:
         assert any(a.get("file") == ".claude/settings.json" for a in data.get("actions", []))
         assert any("deprecated alias" in w for w in data.get("warnings", []))
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="setup-agents global mode is intentionally blocked on Windows "
+        "(see run_setup_agents Windows guard); test asserts the POSIX behavior.",
+    )
     def test_adapters_claude_only_warns_in_global_mode(self, tmp_path):
         result = run_gitwise(
             "setup-agents",
@@ -212,6 +220,11 @@ class TestAdapterDryRun:
         assert data["mode"] == "global"
         assert any("deprecated alias" in w for w in data.get("warnings", []))
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="setup-agents global mode is intentionally blocked on Windows "
+        "(see run_setup_agents Windows guard); test asserts the POSIX behavior.",
+    )
     def test_global_mode_allows_adapters(self, tmp_path):
         result = run_gitwise(
             "setup-agents",
