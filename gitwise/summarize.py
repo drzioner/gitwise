@@ -19,6 +19,7 @@ from .output import (
     status,
     warn,
 )
+from .utils.json_envelope import ok_envelope
 
 _MAX_STATUS_LINES = 12
 
@@ -133,9 +134,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
     if as_json:
         import json
 
-        result: dict = {
-            "v": 3,
-            "ok": True,
+        summarize_data: dict[str, object] = {
             "branch": branch,
             "status": status_map,
             "status_count": len(status_entries),
@@ -147,7 +146,8 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         }
         if diff:
             diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
-            result["diff"] = diff_r.stdout if diff_r.returncode == 0 else ""
+            summarize_data["diff"] = diff_r.stdout if diff_r.returncode == 0 else ""
+        result = ok_envelope("summarize", data=summarize_data)
         print_json(result)
         output_size = len(json.dumps(result))
         if output_size > 8192:

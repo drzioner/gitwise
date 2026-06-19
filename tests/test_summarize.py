@@ -10,9 +10,11 @@ from conftest import run_gitwise
 def test_summarize_json_ok(tmp_git_repo):
     result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
-    assert data["v"] == 3
-    assert data["ok"] is True
+    env = json.loads(result.stdout)
+    assert env["v"] == 3
+    assert env["ok"] is True
+    assert env["command"] == "summarize"
+    data = env["data"]
     assert "branch" in data
     assert "status" in data
     assert "log" in data
@@ -48,8 +50,8 @@ def test_summarize_max_commits_flag(tmp_git_repo):
 
     result_default = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     result_limited = run_gitwise("summarize", "--json", "--max-commits", "2", cwd=tmp_git_repo)
-    d_default = json.loads(result_default.stdout)
-    d_limited = json.loads(result_limited.stdout)
+    d_default = json.loads(result_default.stdout)["data"]
+    d_limited = json.loads(result_limited.stdout)["data"]
     assert d_limited["log_count"] <= 2
     assert d_default["log_count"] <= 10
 
@@ -59,7 +61,7 @@ def test_summarize_diff_json_includes_diff_field(tmp_git_repo):
     readme.write_text("modified content\n")
     result = run_gitwise("summarize", "--diff", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert "diff" in data
     assert "modified content" in data["diff"]
 
@@ -67,7 +69,7 @@ def test_summarize_diff_json_includes_diff_field(tmp_git_repo):
 def test_summarize_json_without_diff(tmp_git_repo):
     result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert "diff" not in data
 
 
@@ -77,7 +79,7 @@ def test_summarize_json_structured_fields_with_changes(tmp_git_repo):
 
     result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
 
     assert isinstance(data["status"], dict)
     assert isinstance(data["log"], dict)
@@ -98,7 +100,7 @@ def test_summarize_changed_files_omits_duplicate_code_when_not_needed(tmp_git_re
 
     result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
 
     readme_entry = next(
         (entry for entry in data["changed_files"] if entry.get("path") == "README.md"), None
