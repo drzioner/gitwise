@@ -20,6 +20,7 @@ from .output import (
 )
 from .utils.git_output import parse_name_status_entries, status_label
 from .utils.json_envelope import ok_envelope
+from .utils.secret_scan import secret_scan
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]
@@ -414,6 +415,51 @@ def _render_summary_output(
     return 0
 
 
+def _render_secret_scan_output(
+    *, root: Path, refspec: str | None, paths: list[str] | None, as_json: bool
+) -> int:
+    """Scan the diff patch for leaked credentials and report findings (opt-in).
+
+    The diff flags defeat user config that could bypass the scanner
+    (``color.ui=always`` ANSI, external/textconv drivers) -- same reasoning as
+    the commit-time guard in ``_staged_diff_text``.
+    """
+    args = ["--no-pager", "diff", "--no-color", "--no-ext-diff", "--no-textconv"]
+    if refspec:
+        args.append(refspec)
+    else:
+        args.append("HEAD")
+    if paths:
+        args.append("--")
+        args.extend(paths)
+    result = git_run(args, cwd=root, check=False)
+    if result.returncode != 0:
+        error(t("git_diff_failed", error=result.stderr.strip()))
+        return 1
+    findings = secret_scan(result.stdout)
+    if as_json:
+        print_json(ok_envelope(findings=findings, count=len(findings)))
+        return 1 if any(f["severity"] == "high" for f in findings) else 0
+    if not findings:
+        info(t("secret_scan_clean"))
+        return 0
+    print_header(t("secret_scan_found_header", count=str(len(findings))))
+    for f in findings:
+        sev = f["severity"]
+        line = t(
+            "secret_scan_found",
+            rule=f["rule"],
+            path=f["path"],
+            line=str(f["line"]),
+            preview=f["preview"],
+        )
+        if sev == "high":
+            error(line)
+        else:
+            warn(line)
+    return 1 if any(f["severity"] == "high" for f in findings) else 0
+
+
 def run_diff(
     *,
     refspec: str | None = None,
@@ -423,6 +469,7 @@ def run_diff(
     name_only: bool = False,
     full: bool = False,
     summary: bool = False,
+    scan_secrets: bool = False,
     as_json: bool = False,
 ) -> int:
     """Render a diff of changed files, a refspec, or a range.
@@ -446,6 +493,9 @@ def run_diff(
             return 0
         info(t("no_commits_yet"))
         return 0
+
+    if scan_secrets:
+        return _render_secret_scan_output(root=cwd, refspec=refspec, paths=paths, as_json=as_json)
 
     if summary:
         numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)

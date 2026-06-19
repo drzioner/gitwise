@@ -325,3 +325,27 @@ def test_diff_binary_lfs_warning_json(tmp_git_repo):
     data = json.loads(result.stdout)
     assert "binary_warnings" in data
     assert len(data["binary_warnings"]) >= 1
+
+
+# ── D3: --scan-secrets (opt-in advisory scan) ────────────────────────────────
+
+
+def test_diff_scan_secrets_detects_high(tmp_git_repo):
+    """--scan-secrets flags a staged high-severity credential."""
+    aws = "AK" + "IAIOSFODNN7EXAMPLE"
+    (tmp_git_repo / "config.py").write_text(f"key = '{aws}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    result = _run("diff", "--scan-secrets", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["count"] >= 1
+    assert any(f["severity"] == "high" for f in data["findings"])
+
+
+def test_diff_scan_secrets_clean(tmp_git_repo):
+    """--scan-secrets on a clean diff reports no findings and exits 0."""
+    (tmp_git_repo / "README.md").write_text("hello world\n")
+    _git(["add", "README.md"], tmp_git_repo)
+    result = _run("diff", "--scan-secrets", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "no secrets" in result.stdout.lower()

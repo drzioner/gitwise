@@ -57,6 +57,11 @@
       "description": "show diffstat (default behavior)",
       "default": false
     },
+    "scan_secrets": {
+      "type": "boolean",
+      "description": "scan the diff for leaked credentials (advisory, opt-in)",
+      "default": false
+    },
     "refspec": {
       "type": "string",
       "description": "commit, branch, or range to diff (e.g. HEAD~3, main..feat, main...feat)"

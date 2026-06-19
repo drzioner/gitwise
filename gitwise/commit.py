@@ -6,9 +6,10 @@ from pathlib import Path
 from .git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
 from .git import run as git_run
 from .i18n import t
-from .output import error, print_bracket, print_header, print_json
+from .output import confirm, error, print_bracket, print_header, print_json, warn
 from .utils.in_progress import detect_in_progress, in_progress_hint
 from .utils.json_envelope import error_envelope, ok_envelope
+from .utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
@@ -110,6 +111,68 @@ def _report_commit_error(*, as_json: bool, err: str) -> int:
     return 1
 
 
+def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> int | None:
+    """Scan staged content for leaked credentials; return 1 to block, None to proceed.
+
+    Runs by default on every commit. High-severity findings block unless
+    ``allow_secret`` is set (human mode still asks for confirmation); medium
+    findings only warn. The full secret is never printed -- previews are redacted.
+    Fails closed: if the staged diff cannot be read, the commit is blocked
+    rather than allowed through unscanned.
+    """
+    try:
+        findings = scan_staged_diff(root)
+    except SecretScanUnavailable as exc:
+        unavailable = t("secret_scan_unavailable", error=str(exc))
+        if as_json:
+            print_json(error_envelope(error=unavailable, code="secret_scan_unavailable"))
+        else:
+            error(unavailable)
+        return 1
+    if not findings:
+        return None
+    high = [f for f in findings if f["severity"] == "high"]
+    medium = [f for f in findings if f["severity"] == "medium"]
+    for f in medium:
+        warn(
+            t(
+                "secret_scan_medium_warning",
+                rule=f["rule"],
+                path=f["path"],
+                line=str(f["line"]),
+                preview=f["preview"],
+            )
+        )
+    if not high:
+        return None
+    if not allow_secret:
+        if as_json:
+            print_json(
+                error_envelope(
+                    error=t("secret_scan_blocked_high", count=str(len(high))),
+                    code="secret_leak_high",
+                    hint=t("secret_scan_blocked_hint"),
+                    findings=high,
+                )
+            )
+        else:
+            for f in high:
+                error(
+                    t(
+                        "secret_scan_found",
+                        rule=f["rule"],
+                        path=f["path"],
+                        line=str(f["line"]),
+                        preview=f["preview"],
+                    )
+                )
+            error(t("secret_scan_blocked_hint"))
+        return 1
+    if not as_json and not confirm(t("secret_scan_allow_confirm", count=str(len(high)))):
+        return 1
+    return None
+
+
 def run_commit(
     *,
     message: str | None = None,
@@ -118,6 +181,7 @@ def run_commit(
     breaking: bool = False,
     amend: bool = False,
     dry_run: bool = False,
+    allow_secret: bool = False,
     as_json: bool = False,
 ) -> int:
     """Validate a conventional-commit message and create a GPG-signed commit.
@@ -163,6 +227,10 @@ def run_commit(
 
     if not _validate_gpg_ready(root):
         return 1
+
+    secret_rc = _enforce_secret_guard(root=root, allow_secret=allow_secret, as_json=as_json)
+    if secret_rc is not None:
+        return secret_rc
 
     if dry_run:
         if as_json:

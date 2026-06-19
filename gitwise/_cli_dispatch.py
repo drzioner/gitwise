@@ -193,6 +193,7 @@ def _run_diff(args: argparse.Namespace) -> int:
         name_only=args.name_only,
         full=args.full,
         summary=args.summary,
+        scan_secrets=args.scan_secrets,
         as_json=args.json,
     )
 
@@ -232,6 +233,7 @@ def _run_commit(args: argparse.Namespace) -> int:
         breaking=args.breaking,
         amend=args.amend,
         dry_run=args.dry_run,
+        allow_secret=args.allow_secret,
         as_json=args.json,
     )
 
