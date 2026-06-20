@@ -318,6 +318,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
     p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
+    p.add_argument(
+        "--union", action="store_true", help="resolve all conflicts keeping both sides (union)"
+    )
 
     p = sub.add_parser(
         "suggest",

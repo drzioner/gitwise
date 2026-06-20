@@ -351,6 +351,14 @@
     "es": "{count} conflicto(s) resuelto(s) con theirs",
     "en": "{count} conflict(s) resolved with theirs"
   },
+  "conflicts_resolved_union": {
+    "es": "{count} conflicto(s) resuelto(s) con union (ambos lados)",
+    "en": "{count} conflict(s) resolved with union (both sides)"
+  },
+  "conflicts_union_failed": {
+    "es": "no se pudo resolver union para {file}",
+    "en": "could not union-resolve {file}"
+  },
   "continue_prompt": {
     "es": "¿continuar? [s/N] ",
     "en": "continue? [y/N] "
