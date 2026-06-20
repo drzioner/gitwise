@@ -147,10 +147,14 @@ commit on in-progress + refuses on secret leak — same guard layer).
 
 ---
 
-## Sprint 3 — Envelope v3 (contract redesign)
+## Sprint 3 — Envelope v3 (contract redesign) — IMPLEMENTED (0.31.x -> 0.32.0)
 
 **Goal:** unify the `--json` envelope so consumers can parse every command
 with one schema, and publish output schemas so agents can self-discover them.
+
+**Status:** Shipped on `feat/envelope-v3`. See
+[`2026-06-19-envelope-v3.md`](./2026-06-19-envelope-v3.md) for the migration
+notes (before/after per command).
 
 **Why third, not first:** this is the largest sprint (~1500 lines, every
 command touched) and ships a real breaking change. Doing it before S1/S2
