@@ -372,12 +372,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "completions",
-        help="print shell completion script (bash/zsh/fish)",
+        help="print shell completion script (bash/zsh/fish/powershell)",
         parents=[parent],
     )
     p.add_argument(
         "shell",
-        choices=["bash", "zsh", "fish"],
+        choices=["bash", "zsh", "fish", "powershell"],
         default="bash",
         nargs="?",
         help="target shell for completion script",
