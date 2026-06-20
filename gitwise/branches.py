@@ -3,12 +3,11 @@
 from pathlib import Path
 from typing import TypedDict
 
+from gitwise.git import require_root, stale_branches, worktree_branches
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import error, info, print_dim, print_json, print_table, status
 from gitwise.utils.json_envelope import ok_envelope
-
-from .git import require_root, stale_branches, worktree_branches
-from .git import run as git_run
-from .i18n import t
-from .output import error, info, print_dim, print_json, print_table, status
 
 
 class BranchEntry(TypedDict):

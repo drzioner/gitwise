@@ -3,12 +3,10 @@
 import re
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     error,
     ok,
@@ -19,6 +17,7 @@ from .output import (
     status,
     warn,
 )
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 _SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$")
 

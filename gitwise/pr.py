@@ -5,11 +5,9 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import require_root
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.i18n import t
+from gitwise.output import (
     error,
     info,
     print_blank,
@@ -21,7 +19,8 @@ from .output import (
     print_table,
     status,
 )
-from .utils.parsing import dict_list, to_int
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import dict_list, to_int
 
 _STATE_LABEL_KEYS: dict[str, str] = {
     "pass": "pr_check_state_pass",
@@ -436,9 +435,9 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
         ok_json, payload = _json_or_error(out)
         if not ok_json:
             print_json(error_envelope("pr", error="invalid_gh_json", raw=out))
-        else:
-            prs = payload if isinstance(payload, list) else []
-            print_json(ok_envelope("pr", prs=prs, count=len(prs)))
+            return 1
+        prs = payload if isinstance(payload, list) else []
+        print_json(ok_envelope("pr", prs=prs, count=len(prs)))
         return 0
 
     prs = json.loads(out) if out else []

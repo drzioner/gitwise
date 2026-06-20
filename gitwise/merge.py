@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import current_branch, require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import current_branch, require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     error,
     ok,
@@ -16,8 +14,9 @@ from .output import (
     print_json,
     warn,
 )
-from .utils.in_progress import detect_in_progress
-from .utils.parsing import to_int
+from gitwise.utils.in_progress import detect_in_progress
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import to_int
 
 
 def _has_uncommitted(root: Path) -> bool:

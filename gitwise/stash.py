@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     error,
     info,
@@ -19,7 +17,8 @@ from .output import (
     status,
     warn,
 )
-from .utils.git_output import parse_diffstat_entries
+from gitwise.utils.git_output import parse_diffstat_entries
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:

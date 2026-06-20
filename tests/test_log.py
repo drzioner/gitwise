@@ -80,8 +80,9 @@ def test_log_json_truncation_meta(tmp_git_repo: Path) -> None:
     r = run_gitwise("log", "--json", "--max-count=2", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)["data"]
-    assert data["total"] == 2
+    assert data["count"] == 2
     assert data["truncated"] is True
+    assert data["total"] > data["count"], "total must reflect pre-truncation commit count"
     assert len(data["commits"]) == 2
 
 

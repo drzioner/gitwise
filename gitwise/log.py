@@ -2,12 +2,11 @@
 
 from pathlib import Path
 
+from gitwise.git import require_root, validate_author_pattern, validate_grep_pattern
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import bat_pipe, error, info, print_json, print_table, status
 from gitwise.utils.json_envelope import ok_envelope
-
-from .git import require_root, validate_author_pattern, validate_grep_pattern
-from .git import run as git_run
-from .i18n import t
-from .output import bat_pipe, error, info, print_json, print_table, status
 
 
 def _build_log_args(
@@ -217,7 +216,8 @@ def _run_log_json(
         error(t("git_log_failed", error=result.stderr.strip()))
         return 1
     commits = _parse_log_json(result.stdout)
-    truncated = len(commits) > max_count
+    total = len(commits)
+    truncated = total > max_count
     commits = commits[:max_count]
     hints: list[str] = []
     if truncated:
@@ -227,7 +227,7 @@ def _run_log_json(
             "log",
             commits=commits,
             count=len(commits),
-            total=len(commits),
+            total=total,
             truncated=truncated,
             hints=hints or None,
         )

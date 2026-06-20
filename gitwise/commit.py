@@ -3,14 +3,13 @@
 import re
 from pathlib import Path
 
+from gitwise.git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import confirm, error, print_bracket, print_header, print_json, warn
+from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
-from .git import run as git_run
-from .i18n import t
-from .output import confirm, error, print_bracket, print_header, print_json, warn
-from .utils.in_progress import detect_in_progress, in_progress_hint
-from .utils.secret_scan import SecretScanUnavailable, scan_staged_diff
+from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"

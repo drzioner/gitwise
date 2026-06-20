@@ -71,7 +71,8 @@
       "oneOf": [
         { "required": ["files", "count"] },
         { "required": ["diff"] },
-        { "required": ["findings"] }
+        { "required": ["findings"] },
+        { "type": "object", "maxProperties": 0 }
       ]
     }
   }

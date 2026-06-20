@@ -58,6 +58,31 @@ def test_command_output_schema_path_points_to_share_catalog() -> None:
     assert path.as_posix().endswith("share/schemas/v1/output/log.json")
 
 
+def test_error_envelope_diff_validates_against_output_schema() -> None:
+    """A real error_envelope("diff", ...) payload must satisfy diff output schema.
+
+    Guards against schema/producer drift: the error path emits ``data: {}``,
+    which the schema's oneOf must accept.
+    """
+    from gitwise.utils.json_envelope import error_envelope
+    from jsonschema import Draft202012Validator
+
+    schema = load_command_output_schema(command="diff", version="v1")
+    assert schema is not None
+    payload = error_envelope("diff", error="too_many_refs", code="too_many_refs")
+    Draft202012Validator(schema).validate(payload)
+
+
+def test_ok_envelope_diff_validates_against_output_schema() -> None:
+    from gitwise.utils.json_envelope import ok_envelope
+    from jsonschema import Draft202012Validator
+
+    schema = load_command_output_schema(command="diff", version="v1")
+    assert schema is not None
+    payload = ok_envelope("diff", files=[], count=0)
+    Draft202012Validator(schema).validate(payload)
+
+
 def test_schema_catalog_checker_script_passes() -> None:
     import subprocess
     import sys

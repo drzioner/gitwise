@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
-from gitwise.utils.json_envelope import ok_envelope
-
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     HAS_DELTA,
     bat_pipe,
     error,
@@ -20,8 +18,9 @@ from .output import (
     status,
     warn,
 )
-from .utils.git_output import parse_name_status_entries, status_label
-from .utils.secret_scan import secret_scan
+from gitwise.utils.git_output import parse_name_status_entries, status_label
+from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.secret_scan import secret_scan
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]

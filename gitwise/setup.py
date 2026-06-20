@@ -5,16 +5,14 @@ import platform
 from pathlib import Path
 from typing import Literal, TypedDict
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from ._paths import share_dir as _share_dir
-from .git import config as git_config
-from .git import config_all as git_config_all
-from .git import git_dir, require_root, supports_config_hooks
-from .git import run as git_run
-from .git import version as git_version
-from .i18n import t
-from .output import (
+from gitwise._paths import share_dir as _share_dir
+from gitwise.git import config as git_config
+from gitwise.git import config_all as git_config_all
+from gitwise.git import git_dir, require_root, supports_config_hooks
+from gitwise.git import run as git_run
+from gitwise.git import version as git_version
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     info,
     ok,
@@ -25,6 +23,7 @@ from .output import (
     print_status_line,
     warn,
 )
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 HookMode = Literal["preserve", "native", "legacy", "skip"]
 

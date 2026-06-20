@@ -3,12 +3,10 @@
 import re
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import require_root, validate_branch_name
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root, validate_branch_name
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     error,
     info,
     ok,
@@ -18,6 +16,7 @@ from .output import (
     print_json,
     status,
 )
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _list_worktrees(cwd: Path) -> list[dict]:

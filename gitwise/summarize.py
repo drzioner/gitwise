@@ -2,13 +2,11 @@
 
 import subprocess
 
-from gitwise.utils.json_envelope import ok_envelope
-
-from ._runtime_config import get_runtime_config
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise._runtime_config import get_runtime_config
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     bat_pipe,
     debug,
     ok,
@@ -21,6 +19,7 @@ from .output import (
     status,
     warn,
 )
+from gitwise.utils.json_envelope import ok_envelope
 
 _MAX_STATUS_LINES = 12
 

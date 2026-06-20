@@ -7,9 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from gitwise.utils.json_envelope import ok_envelope
-
-from .git import (
+from gitwise.git import (
     gpg_status,
     has_commit_graph,
     has_remote,
@@ -17,9 +15,9 @@ from .git import (
     require_root,
     stale_branches,
 )
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     debug,
     ok,
     print_blank,
@@ -30,6 +28,7 @@ from .output import (
     print_json,
     status,
 )
+from gitwise.utils.json_envelope import ok_envelope
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB

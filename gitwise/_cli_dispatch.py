@@ -4,18 +4,17 @@ import argparse
 import sys
 from collections.abc import Callable
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from . import __version__
-from ._cli_completions import build_completions_script
-from ._cli_introspection import (
+from gitwise import __version__
+from gitwise._cli_completions import build_completions_script
+from gitwise._cli_introspection import (
     canonical_command_name,
     commands_metadata,
     resolve_command_parser,
 )
-from ._cli_parser import build_parser
-from .i18n import t
-from .output import print_json
+from gitwise._cli_parser import build_parser
+from gitwise.i18n import t
+from gitwise.output import print_json
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _run_update(args: argparse.Namespace) -> int:

@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     error,
     ok,
     print_accent,
@@ -17,7 +15,8 @@ from .output import (
     print_json,
     status,
 )
-from .utils.parsing import stripped_non_empty_lines, to_int
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import stripped_non_empty_lines, to_int
 
 
 def _find_conflict_files(root: Path) -> list[str]:

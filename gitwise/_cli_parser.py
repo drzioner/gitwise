@@ -2,9 +2,9 @@
 
 import argparse
 
-from . import __version__
-from .design import GitwiseRichHelpFormatter
-from .i18n import t
+from gitwise import __version__
+from gitwise.design import GitwiseRichHelpFormatter
+from gitwise.i18n import t
 
 
 def _root_help_epilog() -> str:

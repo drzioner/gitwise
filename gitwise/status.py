@@ -2,13 +2,10 @@
 
 from pathlib import Path
 
-from gitwise.utils.json_envelope import ok_envelope
-from gitwise.utils.types import CONFLICT_CODES, FileEntry, build_file_entry
-
-from .git import current_branch, has_upstream, require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import current_branch, has_upstream, require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     info,
     ok,
     print_blank,
@@ -19,8 +16,10 @@ from .output import (
     print_json,
     status,
 )
-from .utils.in_progress import detect_in_progress
-from .utils.parsing import parse_two_ints
+from gitwise.utils.in_progress import detect_in_progress
+from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.parsing import parse_two_ints
+from gitwise.utils.types import CONFLICT_CODES, FileEntry, build_file_entry
 
 
 def _split_rename(raw_path: str, code: str) -> tuple[str, str | None]:
