@@ -25,11 +25,6 @@
     },
     "data": {
       "type": "object",
-      "required": [
-        "branch", "has_upstream", "ahead", "behind", "ahead_commits",
-        "behind_commits", "in_progress", "staged", "unstaged", "untracked",
-        "conflicted", "files"
-      ],
       "properties": {
         "branch": { "type": "string" },
         "has_upstream": { "type": "boolean" },
@@ -92,7 +87,17 @@
             }
           }
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "branch", "has_upstream", "ahead", "behind", "ahead_commits",
+            "behind_commits", "in_progress", "staged", "unstaged", "untracked",
+            "conflicted", "files"
+          ]
+        },
+        { "type": "object", "maxProperties": 0 }
+      ]
     }
   }
 }

@@ -134,7 +134,7 @@ def run_context(*, as_json: bool = False) -> int:
         topology = _branch_topology(root)
 
     if as_json:
-        from .health import compute_health
+        from gitwise.health import compute_health
 
         h = compute_health(root)
         print_json(

@@ -19,14 +19,14 @@ from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 def _run_update(args: argparse.Namespace) -> int:
     """Dispatch to ``update`` subcommand."""
-    from .update import run_update
+    from gitwise.update import run_update
 
     return run_update(dry_run=args.dry_run, as_json=args.json)
 
 
 def _run_doctor(args: argparse.Namespace) -> int:
     """Dispatch to ``doctor`` subcommand."""
-    from .doctor import run_doctor
+    from gitwise.doctor import run_doctor
 
     return run_doctor(as_json=args.json)
 
@@ -34,14 +34,14 @@ def _run_doctor(args: argparse.Namespace) -> int:
 def _run_setup_agents(args: argparse.Namespace) -> int:
     """Dispatch to ``setup-agents`` subcommand, handling provider listing."""
     if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
-        from .i18n import t as _t
-        from .setup_agents.providers import list_providers
+        from gitwise.i18n import t as _t
+        from gitwise.setup_agents.providers import list_providers
 
         adapter_list = list_providers()
         if args.json:
             print_json({"providers": adapter_list, "adapters": adapter_list})
         else:
-            from .output import info
+            from gitwise.output import info
 
             info(_t("providers_available", list=", ".join(adapter_list)))
         return 0
@@ -52,7 +52,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
         adapters_legacy_used = True
         providers = args.adapters if providers is None else providers + args.adapters
 
-    from ._cli_setup_agents import run_setup_agents
+    from gitwise._cli_setup_agents import run_setup_agents
 
     return run_setup_agents(
         local=args.local,
@@ -73,7 +73,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
 
 def _run_setup(args: argparse.Namespace) -> int:
     """Dispatch to ``setup`` subcommand."""
-    from .setup import run_setup
+    from gitwise.setup import run_setup
 
     return run_setup(
         dry_run=args.dry_run,
@@ -85,28 +85,28 @@ def _run_setup(args: argparse.Namespace) -> int:
 
 def _run_audit(args: argparse.Namespace) -> int:
     """Dispatch to ``audit`` subcommand."""
-    from .audit import run_audit
+    from gitwise.audit import run_audit
 
     return run_audit(quick=args.quick, as_json=args.json)
 
 
 def _run_summarize(args: argparse.Namespace) -> int:
     """Dispatch to ``summarize`` subcommand."""
-    from .summarize import run_summarize
+    from gitwise.summarize import run_summarize
 
     return run_summarize(as_json=args.json, diff=args.diff, max_commits=args.max_commits)
 
 
 def _run_snapshot(args: argparse.Namespace) -> int:
     """Dispatch to ``snapshot`` subcommand."""
-    from .snapshot import run_snapshot
+    from gitwise.snapshot import run_snapshot
 
     return run_snapshot(as_json=args.json)
 
 
 def _run_clean(args: argparse.Namespace) -> int:
     """Dispatch to ``clean`` subcommand."""
-    from .clean import run_clean
+    from gitwise.clean import run_clean
 
     return run_clean(
         branches=args.branches,
@@ -119,14 +119,14 @@ def _run_clean(args: argparse.Namespace) -> int:
 
 def _run_optimize(args: argparse.Namespace) -> int:
     """Dispatch to ``optimize`` subcommand."""
-    from .optimize import run_optimize
+    from gitwise.optimize import run_optimize
 
     return run_optimize(dry_run=args.dry_run, yes=args.yes, as_json=args.json)
 
 
 def _run_worktree(args: argparse.Namespace) -> int:
     """Dispatch to ``worktree`` subcommand."""
-    from .worktree import run_worktree
+    from gitwise.worktree import run_worktree
 
     return run_worktree(
         args.action, getattr(args, "branch", None), dry_run=args.dry_run, as_json=args.json
@@ -165,8 +165,8 @@ def _recover_diff_pathspec_boundary() -> tuple[str | None, list[str] | None]:
 
 def _run_diff(args: argparse.Namespace) -> int:
     """Dispatch to ``diff`` subcommand."""
-    from .diff import run_diff
-    from .output import error as error_out
+    from gitwise.diff import run_diff
+    from gitwise.output import error as error_out
 
     refspec = args.refspec
     paths = args.paths
@@ -200,7 +200,7 @@ def _run_diff(args: argparse.Namespace) -> int:
 
 def _run_log(args: argparse.Namespace) -> int:
     """Dispatch to ``log`` subcommand."""
-    from .log import run_log
+    from gitwise.log import run_log
 
     return run_log(
         as_json=args.json,
@@ -217,14 +217,14 @@ def _run_log(args: argparse.Namespace) -> int:
 
 def _run_show(args: argparse.Namespace) -> int:
     """Dispatch to ``show`` subcommand."""
-    from .show import run_show
+    from gitwise.show import run_show
 
     return run_show(ref=args.ref, stat=args.stat, as_json=args.json)
 
 
 def _run_commit(args: argparse.Namespace) -> int:
     """Dispatch to ``commit`` subcommand."""
-    from .commit import run_commit
+    from gitwise.commit import run_commit
 
     return run_commit(
         message=args.message,
@@ -240,14 +240,14 @@ def _run_commit(args: argparse.Namespace) -> int:
 
 def _run_branches(args: argparse.Namespace) -> int:
     """Dispatch to ``branches`` subcommand."""
-    from .branches import run_branches
+    from gitwise.branches import run_branches
 
     return run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
 
 
 def _run_sync(args: argparse.Namespace) -> int:
     """Dispatch to ``sync`` subcommand."""
-    from .sync import run_sync
+    from gitwise.sync import run_sync
 
     return run_sync(
         pull=args.pull,
@@ -260,14 +260,14 @@ def _run_sync(args: argparse.Namespace) -> int:
 
 def _run_pr(args: argparse.Namespace) -> int:
     """Dispatch to ``pr`` subcommand."""
-    from .pr import run_pr
+    from gitwise.pr import run_pr
 
     return run_pr(action=args.action, selector=args.selector, as_json=args.json)
 
 
 def _run_undo(args: argparse.Namespace) -> int:
     """Dispatch to ``undo`` subcommand."""
-    from .undo import run_undo
+    from gitwise.undo import run_undo
 
     return run_undo(
         ref=args.ref,
@@ -281,21 +281,21 @@ def _run_undo(args: argparse.Namespace) -> int:
 
 def _run_context(args: argparse.Namespace) -> int:
     """Dispatch to ``context`` subcommand."""
-    from .context import run_context
+    from gitwise.context import run_context
 
     return run_context(as_json=args.json)
 
 
 def _run_health(args: argparse.Namespace) -> int:
     """Dispatch to ``health`` subcommand."""
-    from .health import run_health
+    from gitwise.health import run_health
 
     return run_health(as_json=args.json)
 
 
 def _run_stash(args: argparse.Namespace) -> int:
     """Dispatch to ``stash`` subcommand."""
-    from .stash import run_stash
+    from gitwise.stash import run_stash
 
     return run_stash(
         action=args.action,
@@ -309,7 +309,7 @@ def _run_stash(args: argparse.Namespace) -> int:
 
 def _run_tag(args: argparse.Namespace) -> int:
     """Dispatch to ``tag`` subcommand."""
-    from .tag import run_tag
+    from gitwise.tag import run_tag
 
     return run_tag(
         action=args.action,
@@ -324,7 +324,7 @@ def _run_tag(args: argparse.Namespace) -> int:
 
 def _run_merge(args: argparse.Namespace) -> int:
     """Dispatch to ``merge`` subcommand."""
-    from .merge import run_merge
+    from gitwise.merge import run_merge
 
     return run_merge(
         args.branch,
@@ -340,21 +340,21 @@ def _run_merge(args: argparse.Namespace) -> int:
 
 def _run_conflicts(args: argparse.Namespace) -> int:
     """Dispatch to ``conflicts`` subcommand."""
-    from .conflicts import run_conflicts
+    from gitwise.conflicts import run_conflicts
 
     return run_conflicts(ours=args.ours, theirs=args.theirs, as_json=args.json)
 
 
 def _run_suggest(args: argparse.Namespace) -> int:
     """Dispatch to ``suggest`` subcommand."""
-    from .suggest import run_suggest
+    from gitwise.suggest import run_suggest
 
     return run_suggest(as_json=args.json)
 
 
 def _run_pick(args: argparse.Namespace) -> int:
     """Dispatch to ``pick`` / ``cherry-pick`` subcommand."""
-    from .pick import run_pick
+    from gitwise.pick import run_pick
 
     return run_pick(
         args.refs,
@@ -368,7 +368,7 @@ def _run_pick(args: argparse.Namespace) -> int:
 
 def _run_status(args: argparse.Namespace) -> int:
     """Dispatch to ``status`` subcommand."""
-    from .status import run_status
+    from gitwise.status import run_status
 
     return run_status(as_json=args.json)
 
@@ -384,7 +384,7 @@ def _run_completions(args: argparse.Namespace) -> int:
     try:
         script = build_completions_script(shell=shell, prog=prog)
     except ModuleNotFoundError:
-        from .output import error as _error
+        from gitwise.output import error as _error
 
         hint = t("missing_dependency_hint")
         message = t("missing_dependency_completions_shtab")
@@ -400,7 +400,7 @@ def _run_completions(args: argparse.Namespace) -> int:
         if args.json:
             print_json(error_envelope("completions", error=message, code="runtime_error"))
         else:
-            from .output import error as _error
+            from gitwise.output import error as _error
 
             _error(message)
         return 1
@@ -409,7 +409,7 @@ def _run_completions(args: argparse.Namespace) -> int:
         if args.json:
             print_json(error_envelope("completions", error=message, code="unsupported_shell"))
         else:
-            from .output import error as _error
+            from gitwise.output import error as _error
 
             _error(message)
         return 1
@@ -469,7 +469,7 @@ def _run_schema(args: argparse.Namespace) -> int:
 
     Returns 1 when the command is unknown or its schema file is missing.
     """
-    from .schema import load_command_input_schema
+    from gitwise.schema import load_command_input_schema
 
     parser = build_parser()
     command_parser = resolve_command_parser(parser=parser, name=args.name)
@@ -488,7 +488,7 @@ def _run_schema(args: argparse.Namespace) -> int:
                 )
             )
         else:
-            from .output import error as _error
+            from gitwise.output import error as _error
 
             _error(message, hint=hint)
         return 1
@@ -496,7 +496,7 @@ def _run_schema(args: argparse.Namespace) -> int:
     name = canonical_command_name(command_parser)
 
     if getattr(args, "output", False):
-        from .schema import generic_output_schema, load_command_output_schema
+        from gitwise.schema import generic_output_schema, load_command_output_schema
 
         output_schema = load_command_output_schema(command=name, version=args.version)
         if output_schema is None:
@@ -533,7 +533,7 @@ def _run_schema(args: argparse.Namespace) -> int:
                 )
             )
         else:
-            from .output import error as _error
+            from gitwise.output import error as _error
 
             _error(message, hint=hint)
         return 1

@@ -14,7 +14,6 @@
     "errors": { "type": "array", "items": { "type": "object" } },
     "data": {
       "type": "object",
-      "required": ["commits", "count", "total", "truncated"],
       "properties": {
         "commits": {
           "type": "array",
@@ -48,7 +47,11 @@
         "count": { "type": "integer" },
         "total": { "type": "integer" },
         "truncated": { "type": "boolean" }
-      }
+      },
+      "oneOf": [
+        { "required": ["commits", "count", "total", "truncated"] },
+        { "type": "object", "maxProperties": 0 }
+      ]
     }
   }
 }

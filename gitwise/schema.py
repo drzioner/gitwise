@@ -12,7 +12,7 @@ SCHEMA_VERSION_DEFAULT = "v1"
 @lru_cache(maxsize=1)
 def _schema_roots() -> tuple[Path, ...]:
     """Return the ordered list of schema root directories."""
-    from ._paths import share_dir
+    from gitwise._paths import share_dir
 
     return (share_dir() / "schemas",)
 

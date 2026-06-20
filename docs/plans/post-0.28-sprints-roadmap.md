@@ -274,13 +274,13 @@ type in the sprint.
 
 Release targets are per-sprint and historical: each row shows the release that
 sprint actually generated. Sprint 1 shipped at 0.29.0 and Sprint 2 at 0.30.0, so
-their rows keep the 0.28.x/0.29.0 versions; Sprint 3 (#4) slipped to 0.32.0.
+their rows keep the 0.29.x/0.30.0 versions; Sprint 3 (#4) slipped to 0.32.0.
 
 | PR | Branch | Base | Generates release |
 |----|--------|------|-------------------|
 | #1 | `feat/loading-feedback-integration` | main | 0.28.0 (BREAKING branches + log + tag) |
-| #2 | `feat/in-progress-safety` | main (post 0.28.0) | 0.28.x or 0.29.0 |
-| #3 | `feat/diff-refs-secret-scan` | main | 0.29.0 |
+| #2 | `feat/in-progress-safety` | main (post 0.28.0) | 0.29.0 (Sprint 1) |
+| #3 | `feat/diff-refs-secret-scan` | main | 0.30.0 (Sprint 2) |
 | #4 | `feat/envelope-v3` | main | 0.32.0 (BREAKING envelope) |
 | #5 | `chore/dx-polish` | main | 0.32.x |
 

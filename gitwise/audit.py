@@ -296,7 +296,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             }
         )
 
-    from .health import compute_health
+    from gitwise.health import compute_health
 
     health = compute_health(
         cwd,

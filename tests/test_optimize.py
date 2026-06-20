@@ -78,7 +78,9 @@ def test_optimize_json_executes_steps(
     assert data["data"]["applied"] is True
     assert data["data"]["rc"] == 0
     assert data["ok"] is True
-    assert all(s.get("ok") for s in data["data"]["steps"] if s["name"] == "commit-graph")
+    cg_steps = [s for s in data["data"]["steps"] if s["name"] == "commit-graph"]
+    assert len(cg_steps) == 1, f"expected one commit-graph step, got {cg_steps}"
+    assert cg_steps[0].get("ok") is True
     assert graph_path.exists()
 
 
