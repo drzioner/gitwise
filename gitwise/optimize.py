@@ -5,6 +5,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import git_dir as get_git_dir
 from .git import require_root
 from .git import run as git_run
@@ -23,7 +25,6 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _gc_is_running(cwd: Path) -> bool:

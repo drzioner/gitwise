@@ -41,7 +41,14 @@ def test_status_json_conflicted_and_file_entries(tmp_git_repo):
     (tmp_git_repo / "README.md").write_text("main\n")
     _git(["add", "."], cwd=tmp_git_repo)
     _git(["commit", "--no-gpg-sign", "-m", "main change"], cwd=tmp_git_repo)
-    subprocess.run(["git", "merge", "topic"], cwd=tmp_git_repo, capture_output=True)
+    merge = subprocess.run(
+        ["git", "merge", "topic"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert merge.returncode == 1, merge.stderr
 
     r = run_gitwise("status", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
@@ -70,6 +77,15 @@ def test_status_json_file_entry_shape_for_modified(tmp_git_repo):
     assert staged_entry["staged"] is True
     untracked_entry = next(f for f in data["files"] if f["path"] == "new.txt")
     assert untracked_entry["status"] == "untracked"
+
+
+def test_split_rename_only_splits_for_rename_or_copy_codes():
+    from gitwise.status import _split_rename
+
+    assert _split_rename("old -> new", "R ") == ("new", "old")
+    assert _split_rename("old -> new", "C ") == ("new", "old")
+    assert _split_rename("weird -> name.txt", "M ") == ("weird -> name.txt", None)
+    assert _split_rename("plain.txt", "M ") == ("plain.txt", None)
 
 
 def test_status_not_git(tmp_path):

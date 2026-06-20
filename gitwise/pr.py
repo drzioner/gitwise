@@ -5,6 +5,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import require_root
 from .i18n import t
 from .output import (
@@ -19,7 +21,6 @@ from .output import (
     print_table,
     status,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import dict_list, to_int
 
 _STATE_LABEL_KEYS: dict[str, str] = {

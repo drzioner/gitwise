@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.types import CONFLICT_CODES, FileEntry, build_file_entry
+
 from .git import current_branch, has_upstream, require_root
 from .git import run as git_run
 from .i18n import t
@@ -17,14 +20,16 @@ from .output import (
     status,
 )
 from .utils.in_progress import detect_in_progress
-from .utils.json_envelope import ok_envelope
 from .utils.parsing import parse_two_ints
-from .utils.types import CONFLICT_CODES, FileEntry, build_file_entry
 
 
-def _split_rename(raw_path: str) -> tuple[str, str | None]:
-    """Split a porcelain rename entry ``old -> new`` into (new, old)."""
-    if " -> " in raw_path:
+def _split_rename(raw_path: str, code: str) -> tuple[str, str | None]:
+    """Split a porcelain rename/copy entry ``old -> new`` into (new, old).
+
+    Only rename (R) and copy (C) status codes carry the ``old -> new`` form; a
+    plain filename that happens to contain `` -> `` must not be misparsed.
+    """
+    if ("R" in code or "C" in code) and " -> " in raw_path:
         old, new = raw_path.split(" -> ", 1)
         return new, old
     return raw_path, None
@@ -68,14 +73,14 @@ def run_status(*, as_json: bool = False) -> int:
         files: list[FileEntry] = []
         staged_n = unstaged_n = untracked_n = conflicted_n = 0
         for ln in status_lines:
-            if not ln:
+            if len(ln) < 4:
                 continue
             code = ln[:2]
             raw_path = ln[3:]
             is_conflict = code in CONFLICT_CODES
             in_index = code[0] not in (" ", "?")
             in_wtree = code[1] not in (" ", "?")
-            path, old_path = _split_rename(raw_path)
+            path, old_path = _split_rename(raw_path, code)
             files.append(build_file_entry(path, code, staged=in_index, old_path=old_path))
             if is_conflict:
                 conflicted_n += 1

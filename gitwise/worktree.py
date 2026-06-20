@@ -3,6 +3,8 @@
 import re
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import require_root, validate_branch_name
 from .git import run as git_run
 from .i18n import t
@@ -16,7 +18,6 @@ from .output import (
     print_json,
     status,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _list_worktrees(cwd: Path) -> list[dict]:

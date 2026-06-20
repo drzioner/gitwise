@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import require_root, validate_author_pattern, validate_grep_pattern
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, info, print_json, print_table, status
-from .utils.json_envelope import ok_envelope
 
 
 def _build_log_args(
@@ -130,11 +131,16 @@ def _parse_log_json(raw: str) -> list[dict[str, object]]:
                 continue
             ins, dels, path = parts
             is_bin = ins == "-" or dels == "-"
+            try:
+                insertions = 0 if is_bin else int(ins)
+                deletions = 0 if is_bin else int(dels)
+            except ValueError:
+                continue
             stats.append(
                 {
                     "path": path,
-                    "insertions": 0 if is_bin else int(ins),
-                    "deletions": 0 if is_bin else int(dels),
+                    "insertions": insertions,
+                    "deletions": deletions,
                     "binary": is_bin,
                 }
             )
@@ -206,7 +212,7 @@ def _run_log_json(
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         if "does not have any commits yet" in result.stderr:
-            print_json(ok_envelope("log", commits=[], count=0))
+            print_json(ok_envelope("log", commits=[], count=0, total=0, truncated=False))
             return 0
         error(t("git_log_failed", error=result.stderr.strip()))
         return 1
@@ -347,5 +353,5 @@ def run_log(
         since=since,
         until=until,
         file=file,
-        max_count=max_count + 1,
+        max_count=max_count,
     )

@@ -45,7 +45,7 @@ def test_every_json_command_emits_v3_envelope(tmp_git_repo):
         assert not missing, f"{cmd} missing envelope keys: {missing}"
         assert env["v"] == 3, f"{cmd} still emits v={env['v']}"
         assert isinstance(env["ok"], bool)
-        assert isinstance(env["command"], str) and env["command"]
+        assert env["command"] == cmd[0], f"{cmd} emitted command={env['command']!r}"
         assert isinstance(env["data"], dict)
         assert isinstance(env["hints"], list)
         assert isinstance(env["errors"], list)

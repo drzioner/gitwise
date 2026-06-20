@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import (
     gpg_status,
     has_commit_graph,
@@ -28,7 +30,6 @@ from .output import (
     print_json,
     status,
 )
-from .utils.json_envelope import ok_envelope
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB

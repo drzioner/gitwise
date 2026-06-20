@@ -14,7 +14,6 @@
     "errors": { "type": "array", "items": { "type": "object" } },
     "data": {
       "type": "object",
-      "required": ["files", "count"],
       "properties": {
         "files": {
           "type": "array",
@@ -68,7 +67,12 @@
           }
         },
         "note": { "type": "string" }
-      }
+      },
+      "oneOf": [
+        { "required": ["files", "count"] },
+        { "required": ["diff"] },
+        { "required": ["findings"] }
+      ]
     }
   }
 }

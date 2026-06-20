@@ -2,6 +2,8 @@
 
 import subprocess
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from ._runtime_config import get_runtime_config
 from .git import require_root
 from .git import run as git_run
@@ -19,7 +21,6 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import ok_envelope
 
 _MAX_STATUS_LINES = 12
 

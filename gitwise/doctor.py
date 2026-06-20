@@ -4,6 +4,8 @@ import platform
 import shutil
 import sys
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from . import __version__
 from .git import gpg_status
 from .git import version as git_version
@@ -18,7 +20,6 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import ok_envelope
 
 MIN_GIT = (2, 29, 0)
 

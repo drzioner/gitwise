@@ -198,7 +198,7 @@ then migrating to v3 is wasted churn).
 
 Real, intentional, documented. The PR commit footer carries the BREAKING
 CHANGE marker listing every field rename/shape change per command. With
-`major_version_zero=true` this rotates the minor `0.29.x → 0.30.0`. The
+`major_version_zero=true` this rotates the minor `0.31.x → 0.32.0`. The
 CHANGELOG section `### Breaking Changes` lists each command's delta.
 
 ### Exit criteria
@@ -216,7 +216,7 @@ Soft: better after Sprint 2 (D1 adds new diff args that v3 absorbs cleanly).
 
 ### Release impact
 
-`feat!:` with BREAKING footer → minor bump `0.29.x → 0.30.0`.
+`feat!:` with BREAKING footer → minor bump `0.31.x → 0.32.0`.
 
 ---
 
@@ -277,8 +277,8 @@ type in the sprint.
 | #1 | `feat/loading-feedback-integration` | main | 0.28.0 (BREAKING branches + log + tag) |
 | #2 | `feat/in-progress-safety` | main (post 0.28.0) | 0.28.x or 0.29.0 |
 | #3 | `feat/diff-refs-secret-scan` | main | 0.29.0 |
-| #4 | `feat/envelope-v3` | main | 0.30.0 (BREAKING envelope) |
-| #5 | `chore/dx-polish` | main | 0.30.x |
+| #4 | `feat/envelope-v3` | main | 0.32.0 (BREAKING envelope) |
+| #5 | `chore/dx-polish` | main | 0.32.x |
 
 ### Verification discipline (applies to every sprint)
 

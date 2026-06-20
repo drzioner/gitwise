@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import TypedDict
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import (
     gpg_status,
     has_commit_graph,
@@ -13,7 +15,6 @@ from .git import (
 from .git import run as git_run
 from .i18n import t
 from .output import print_header, print_json, print_status_line, status
-from .utils.json_envelope import ok_envelope
 from .utils.parsing import non_empty_lines, to_int
 
 

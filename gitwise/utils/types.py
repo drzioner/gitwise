@@ -11,19 +11,21 @@ CONFLICT_CODES = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
 
 def status_from_code(code: str) -> str:
     """Map a porcelain v1 ``XY`` status code to a human-readable category."""
+    if len(code) < 2:
+        raise ValueError("status code must be a 2-character porcelain XY value")
     if code in CONFLICT_CODES:
         return "conflict"
-    if code.startswith("??"):
+    if "??" in code:
         return "untracked"
-    if code.startswith("!!"):
+    if "!!" in code:
         return "ignored"
-    if code[0] == "R" or code[1] == "R":
+    if "R" in code:
         return "renamed"
-    if code[0] == "C" or code[1] == "C":
+    if "C" in code:
         return "copied"
-    if code[0] == "A" or code[1] == "A":
+    if "A" in code:
         return "added"
-    if code[0] == "D" or code[1] == "D":
+    if "D" in code:
         return "deleted"
     return "modified"
 

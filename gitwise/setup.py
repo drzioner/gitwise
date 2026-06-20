@@ -5,6 +5,8 @@ import platform
 from pathlib import Path
 from typing import Literal, TypedDict
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from ._paths import share_dir as _share_dir
 from .git import config as git_config
 from .git import config_all as git_config_all
@@ -23,7 +25,6 @@ from .output import (
     print_status_line,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 
 HookMode = Literal["preserve", "native", "legacy", "skip"]
 

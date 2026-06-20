@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import (
     current_branch,
     require_root,
@@ -25,7 +27,6 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 
 _DEFAULT_PROTECTED: frozenset[str] = frozenset(
     {"main", "master", "develop", "dev", "trunk", "release"}

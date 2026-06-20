@@ -26,12 +26,14 @@ def test_doctor_json_structure():
 
 def test_doctor_json_git_version_ok():
     result = run_gitwise("doctor", "--json")
+    assert result.returncode == 0
     data = json.loads(result.stdout)["data"]
     assert data["git_version_ok"] is True, f"git version check failed: {data['git_version']}"
 
 
 def test_doctor_json_python_version_ok():
     result = run_gitwise("doctor", "--json")
+    assert result.returncode == 0
     data = json.loads(result.stdout)["data"]
     assert data["python_version_ok"] is True
 

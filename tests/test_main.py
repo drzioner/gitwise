@@ -348,4 +348,4 @@ def test_all_subcommands_accept_json(tmp_git_repo):
         # with --json and without --yes (e.g. clean --branches --json).
         assert result.returncode in (0, 1, 2), f"{cmd} --json failed: {result.stderr}"
         data = json.loads(result.stdout)
-        assert "v" in data or "ok" in data, f"{cmd} missing expected JSON key"
+        assert "v" in data and "ok" in data, f"{cmd} missing expected JSON keys"

@@ -1,11 +1,12 @@
 """gitwise show — commit inspector with stat and JSON output."""
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import bat_pipe, error, print_diffstat, print_header, print_json, status
 from .utils.git_output import parse_diffstat_entries, parse_name_status_entries
-from .utils.json_envelope import ok_envelope
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:

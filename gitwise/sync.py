@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import PROTECTED_BRANCHES, current_branch, require_root
 from .git import run as git_run
 from .i18n import t
@@ -14,7 +16,6 @@ from .output import (
     print_json,
     status,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 

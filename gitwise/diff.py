@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
@@ -19,7 +21,6 @@ from .output import (
     warn,
 )
 from .utils.git_output import parse_name_status_entries, status_label
-from .utils.json_envelope import ok_envelope
 from .utils.secret_scan import secret_scan
 
 DiffValue = str | int | bool

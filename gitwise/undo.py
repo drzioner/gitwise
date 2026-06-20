@@ -1,10 +1,11 @@
 """gitwise undo — reflog-based undo to any previous HEAD state."""
 
+from gitwise.utils.json_envelope import ok_envelope
+
 from .git import require_root, validate_ref
 from .git import run as git_run
 from .i18n import t
 from .output import confirm, error, print_bracket, print_dim, print_header, print_json
-from .utils.json_envelope import ok_envelope
 
 
 def _resolve_undo_target(

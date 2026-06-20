@@ -2,12 +2,13 @@
 
 import re
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import error, print_bracket, print_file_status, print_header, print_json, status
 from .utils.in_progress import detect_in_progress, in_progress_hint
-from .utils.json_envelope import error_envelope, ok_envelope
 from .utils.parsing import stripped_non_empty_lines
 
 _TYPE_MAP: list[tuple[str, str]] = [

@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
 from .git import current_branch, has_upstream
 from .git import run as git_run
 from .i18n import t
 from .output import error, info, print_dim, print_header, print_json, status
-from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:

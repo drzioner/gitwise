@@ -48,3 +48,12 @@ def test_status_from_code_covers_all_categories() -> None:
     assert status_from_code("!!") == "ignored"
     for cc in CONFLICT_CODES:
         assert status_from_code(cc) == "conflict"
+
+
+def test_status_from_code_raises_on_short_code() -> None:
+    import pytest
+
+    with pytest.raises(ValueError):
+        status_from_code("M")
+    with pytest.raises(ValueError):
+        status_from_code("")
