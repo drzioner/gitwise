@@ -9,6 +9,7 @@
 # design) makes the aggregate metric ~55% and misrepresents the API's actual
 # docstring health. Disable the check here; library docstrings stay enforced by
 # AGENTS.md, reviewer, and the basedpyright/type-check gate.
-pre_merge_checks:
-  docstrings:
-    mode: off
+reviews:
+  pre_merge_checks:
+    docstrings:
+      mode: off
