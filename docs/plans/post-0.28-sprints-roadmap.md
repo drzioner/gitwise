@@ -143,14 +143,18 @@ commit on in-progress + refuses on secret leak — same guard layer).
 
 ### Release impact
 
-`feat:`-typed → minor bump `0.28.x → 0.29.0`.
+`feat:`-typed → minor bump `0.29.x → 0.30.0` (Sprint 2 shipped at 0.30.0/0.31.0).
 
 ---
 
-## Sprint 3 — Envelope v3 (contract redesign)
+## Sprint 3 — Envelope v3 (contract redesign) — IMPLEMENTED (0.31.x -> 0.32.0)
 
 **Goal:** unify the `--json` envelope so consumers can parse every command
 with one schema, and publish output schemas so agents can self-discover them.
+
+**Status:** Shipped on `feat/envelope-v3`. See
+[`2026-06-19-envelope-v3.md`](./2026-06-19-envelope-v3.md) for the migration
+notes (before/after per command).
 
 **Why third, not first:** this is the largest sprint (~1500 lines, every
 command touched) and ships a real breaking change. Doing it before S1/S2
@@ -194,7 +198,7 @@ then migrating to v3 is wasted churn).
 
 Real, intentional, documented. The PR commit footer carries the BREAKING
 CHANGE marker listing every field rename/shape change per command. With
-`major_version_zero=true` this rotates the minor `0.29.x → 0.30.0`. The
+`major_version_zero=true` this rotates the minor `0.31.x → 0.32.0`. The
 CHANGELOG section `### Breaking Changes` lists each command's delta.
 
 ### Exit criteria
@@ -212,7 +216,7 @@ Soft: better after Sprint 2 (D1 adds new diff args that v3 absorbs cleanly).
 
 ### Release impact
 
-`feat!:` with BREAKING footer → minor bump `0.29.x → 0.30.0`.
+`feat!:` with BREAKING footer → minor bump `0.31.x → 0.32.0`.
 
 ---
 
@@ -268,13 +272,17 @@ type in the sprint.
 
 ### Release train (target)
 
+Release targets are per-sprint and historical: each row shows the release that
+sprint actually generated. Sprint 1 shipped at 0.29.0 and Sprint 2 at 0.30.0, so
+their rows keep the 0.29.x/0.30.0 versions; Sprint 3 (#4) slipped to 0.32.0.
+
 | PR | Branch | Base | Generates release |
 |----|--------|------|-------------------|
 | #1 | `feat/loading-feedback-integration` | main | 0.28.0 (BREAKING branches + log + tag) |
-| #2 | `feat/in-progress-safety` | main (post 0.28.0) | 0.28.x or 0.29.0 |
-| #3 | `feat/diff-refs-secret-scan` | main | 0.29.0 |
-| #4 | `feat/envelope-v3` | main | 0.30.0 (BREAKING envelope) |
-| #5 | `chore/dx-polish` | main | 0.30.x |
+| #2 | `feat/in-progress-safety` | main (post 0.28.0) | 0.29.0 (Sprint 1) |
+| #3 | `feat/diff-refs-secret-scan` | main | 0.30.0 (Sprint 2) |
+| #4 | `feat/envelope-v3` | main | 0.32.0 (BREAKING envelope) |
+| #5 | `chore/dx-polish` | main | 0.32.x |
 
 ### Verification discipline (applies to every sprint)
 

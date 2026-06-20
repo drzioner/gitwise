@@ -2,17 +2,17 @@
 
 from pathlib import Path
 
-from .git import (
+from gitwise.git import (
     current_branch,
     require_root,
     stale_branches,
     worktree_branches,
 )
-from .git import (
+from gitwise.git import (
     run as git_run,
 )
-from .i18n import t
-from .output import (
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     error,
     ok,
@@ -25,7 +25,7 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 _DEFAULT_PROTECTED: frozenset[str] = frozenset(
     {"main", "master", "develop", "dev", "trunk", "release"}
@@ -92,12 +92,13 @@ def run_clean(
         if as_json:
             print_json(
                 ok_envelope(
-                    payload={
+                    "clean",
+                    data={
                         "dry_run": True,
                         "applied": False,
                         "deletable": deletable,
                         "skipped": skipped,
-                    }
+                    },
                 )
             )
             return 0
@@ -123,6 +124,7 @@ def run_clean(
     if as_json and not yes:
         print_json(
             error_envelope(
+                "clean",
                 error=t("yes_required_with_json"),
                 code="yes_required",
                 hint=t("yes_required_hint"),
@@ -154,13 +156,14 @@ def run_clean(
     elif not deletable:
         print_json(
             ok_envelope(
-                payload={
+                "clean",
+                data={
                     "dry_run": False,
                     "applied": True,
                     "deleted": [],
                     "skipped": skipped,
                     "delete_errors": [],
-                }
+                },
             )
         )
         return 0
@@ -189,13 +192,14 @@ def run_clean(
         if delete_errors:
             print_json(
                 error_envelope(
+                    "clean",
                     error=t("clean_delete_failures", count=str(len(delete_errors))),
                     code="clean_delete_failures",
-                    payload=payload,
+                    data=payload,
                 )
             )
             return 1
-        print_json(ok_envelope(payload=payload))
+        print_json(ok_envelope("clean", data=payload))
         return 0
 
     if delete_errors:

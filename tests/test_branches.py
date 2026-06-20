@@ -51,5 +51,5 @@ def test_branches_json_has_age(tmp_git_repo: Path) -> None:
     r = run_gitwise("branches", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["count"] >= 1
-    assert "age" in data["branches"][0]
+    assert data["data"]["count"] >= 1
+    assert "age" in data["data"]["branches"][0]

@@ -1583,6 +1583,10 @@
     "es": "{count} archivo(s) en área de preparación",
     "en": "{count} file(s) staged"
   },
+  "status_conflicted_label": {
+    "es": "en conflicto",
+    "en": "conflicted"
+  },
   "status_staged_label": {
     "es": "preparados",
     "en": "staged"

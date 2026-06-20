@@ -78,10 +78,10 @@ def test_commands_json_lists_metadata():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["kind"] == "commands"
-    assert data["schema"] == "gitwise/commands/v1"
-    assert isinstance(data["commands"], list)
-    assert any(item["name"] == "status" for item in data["commands"])
+    assert data["data"]["kind"] == "commands"
+    assert data["data"]["schema"] == "gitwise/commands/v1"
+    assert isinstance(data["data"]["commands"], list)
+    assert any(item["name"] == "status" for item in data["data"]["commands"])
 
 
 def test_commands_human_output_localized_aliases_label():
@@ -95,21 +95,41 @@ def test_schema_json_for_known_command():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["kind"] == "schema"
-    assert data["schema"] == "gitwise/schema/v1"
-    assert data["schema_version"] == "v1"
-    assert data["command"] == "status"
-    assert data["schema_kind"] == "cli_input"
-    assert data["json_schema"]["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert data["json_schema"]["type"] == "object"
+    assert data["data"]["kind"] == "schema"
+    assert data["data"]["schema"] == "gitwise/schema/v1"
+    assert data["data"]["schema_version"] == "v1"
+    assert data["data"]["command"] == "status"
+    assert data["data"]["schema_kind"] == "cli_input"
+    assert data["data"]["json_schema"]["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    assert data["data"]["json_schema"]["type"] == "object"
 
 
 def test_schema_boolean_flags_are_boolean_not_array():
     result = _run("schema", "status", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["json_schema"]["properties"]["json"]["type"] == "boolean"
-    assert data["json_schema"]["properties"]["json_pretty"]["type"] == "boolean"
+    assert data["data"]["json_schema"]["properties"]["json"]["type"] == "boolean"
+    assert data["data"]["json_schema"]["properties"]["json_pretty"]["type"] == "boolean"
+
+
+def test_schema_output_flag_specific(tmp_git_repo):
+    result = _run("schema", "status", "--output", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["data"]["schema_kind"] == "cli_output"
+    js = data["data"]["json_schema"]
+    assert js["properties"]["v"]["const"] == 3
+    assert js["properties"]["command"]["const"] == "status"
+
+
+def test_schema_output_flag_generic_fallback(tmp_git_repo):
+    result = _run("schema", "stash", "--output", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["data"]["schema_kind"] == "cli_output"
+    js = data["data"]["json_schema"]
+    assert set(js["required"]) == {"v", "ok", "command", "data", "hints", "errors"}
+    assert js["properties"]["command"]["const"] == "stash"
 
 
 def test_schema_json_for_unknown_command_returns_error_envelope():
@@ -117,7 +137,7 @@ def test_schema_json_for_unknown_command_returns_error_envelope():
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
-    assert data["error"] == "unknown command: nonexistent-command-xyz"
+    assert data["errors"][0]["message"] == "unknown command: nonexistent-command-xyz"
     assert data["errors"][0]["code"] == "unknown_command"
 
 
@@ -125,7 +145,7 @@ def test_schema_unknown_command_is_localized_es():
     result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "es"})
     assert result.returncode == 1
     data = json.loads(result.stdout)
-    assert data["error"] == "comando desconocido: nonexistent-command-xyz"
+    assert data["errors"][0]["message"] == "comando desconocido: nonexistent-command-xyz"
     assert "ejecuta `gitwise commands --json`" in data["errors"][0]["hint"]
 
 
@@ -172,10 +192,10 @@ def test_completions_json_returns_envelope():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["kind"] == "completions"
-    assert data["schema"] == "gitwise/completions/v1"
-    assert data["shell"] == "bash"
-    assert "_shtab_gitwise_option_strings" in data["script"]
+    assert data["data"]["kind"] == "completions"
+    assert data["data"]["schema"] == "gitwise/completions/v1"
+    assert data["data"]["shell"] == "bash"
+    assert "_shtab_gitwise_option_strings" in data["data"]["script"]
 
 
 def test_completions_json_handles_missing_shtab(monkeypatch, capsys):
@@ -196,7 +216,7 @@ def test_completions_json_handles_missing_shtab(monkeypatch, capsys):
     data = json.loads(out)
     assert data["ok"] is False
     assert data["errors"][0]["code"] == "missing_dependency"
-    assert "shtab" in data["error"]
+    assert "shtab" in data["errors"][0]["message"]
 
 
 def test_json_compact_by_default(tmp_git_repo):
@@ -232,7 +252,7 @@ def test_doctor_command():
     result = _run("doctor", "--json")
     assert result.returncode in (0, 1)
     data = json.loads(result.stdout)
-    assert "gitwise_version" in data
+    assert "gitwise_version" in data["data"]
 
 
 def test_lang_flag_valid():
@@ -328,4 +348,4 @@ def test_all_subcommands_accept_json(tmp_git_repo):
         # with --json and without --yes (e.g. clean --branches --json).
         assert result.returncode in (0, 1, 2), f"{cmd} --json failed: {result.stderr}"
         data = json.loads(result.stdout)
-        assert "v" in data or "ok" in data or "files" in data, f"{cmd} missing expected JSON key"
+        assert "v" in data and "ok" in data, f"{cmd} missing expected JSON keys"

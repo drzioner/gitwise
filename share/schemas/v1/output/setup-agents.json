@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/setup-agents.json",
+  "title": "gitwise setup-agents cli output",
+  "description": "gitwise setup-agents uses a specialized FLAT v3+v_compat contract (NOT the canonical nested-data envelope) because it predates the unified contract and its fields are consumed directly by adapter tooling. Fields live at the top level alongside v/ok/command/hints/errors; there is no `data` object. v_compat advertises backward compatibility with envelope versions 1-3.",
+  "type": "object",
+  "required": ["v", "ok", "command", "hints", "errors", "dry_run", "root", "mode", "canonical_layout", "actions", "warnings", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 3 },
+    "v_compat": { "type": "array", "items": { "type": "integer" }, "description": "compatible envelope versions" },
+    "ok": { "type": "boolean" },
+    "command": { "const": "setup-agents" },
+    "hints": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "dry_run": { "type": "boolean" },
+    "root": { "type": "string" },
+    "mode": { "type": "string", "enum": ["global", "local"] },
+    "canonical_layout": { "type": "string", "enum": ["agents_dir", "agents_md", "claude_only", "unknown"] },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "action"],
+        "properties": {
+          "file": { "type": "string" },
+          "action": { "type": "string" }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "rules_warnings": { "type": "array", "items": { "type": "string" } },
+    "summary": {
+      "type": "object",
+      "required": ["created", "appended", "symlinked", "skipped", "errored"],
+      "properties": {
+        "created": { "type": "integer" },
+        "appended": { "type": "integer" },
+        "symlinked": { "type": "integer" },
+        "skipped": { "type": "integer" },
+        "errored": { "type": "integer" }
+      }
+    },
+    "bucket": { "type": "integer", "description": "5-bucket layout id (local mode only)" },
+    "agents_md_detected": { "type": "boolean", "description": "local mode only" },
+    "agents_dir_detected": { "type": "boolean", "description": "local mode only" },
+    "supports_symlinks": { "type": "boolean", "description": "local mode only" }
+  }
+}

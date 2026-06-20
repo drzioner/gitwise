@@ -403,6 +403,10 @@ def run_setup_agents(
             if as_json:
                 print_json(
                     {
+                        "v": 3,
+                        "v_compat": [1, 2, 3],
+                        "command": "setup-agents",
+                        "hints": ["gitwise setup-agents --local --no-symlinks"],
                         "ok": False,
                         "error": "windows_global_unsupported",
                         "message": t("setup_agents_windows_global_unsupported"),

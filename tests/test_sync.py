@@ -75,5 +75,5 @@ def test_sync_pull_diverged_json_hint(tmp_path: Path) -> None:
     err = data["errors"][0]
     assert err["code"] == "sync_pull_diverged"
     assert "rebase" in err["hint"].lower()
-    assert "git pull --rebase" in data["suggested_commands"]
-    assert "gitwise sync --dry-run --json" in data["suggested_commands"]
+    assert "git pull --rebase" in data["data"]["suggested_commands"]
+    assert "gitwise sync --dry-run --json" in data["data"]["suggested_commands"]

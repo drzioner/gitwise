@@ -3,13 +3,13 @@
 import re
 from pathlib import Path
 
-from .git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
-from .git import run as git_run
-from .i18n import t
-from .output import confirm, error, print_bracket, print_header, print_json, warn
-from .utils.in_progress import detect_in_progress, in_progress_hint
-from .utils.json_envelope import error_envelope, ok_envelope
-from .utils.secret_scan import SecretScanUnavailable, scan_staged_diff
+from gitwise.git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import confirm, error, print_bracket, print_header, print_json, warn
+from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
@@ -105,7 +105,7 @@ def _validate_gpg_ready(root: Path) -> bool:
 def _report_commit_error(*, as_json: bool, err: str) -> int:
     """Emit a commit error in JSON or human form and return 1."""
     if as_json:
-        print_json(error_envelope(error=err))
+        print_json(error_envelope("commit", error=err))
     else:
         error(err)
     return 1
@@ -125,7 +125,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
     except SecretScanUnavailable as exc:
         unavailable = t("secret_scan_unavailable", error=str(exc))
         if as_json:
-            print_json(error_envelope(error=unavailable, code="secret_scan_unavailable"))
+            print_json(error_envelope("commit", error=unavailable, code="secret_scan_unavailable"))
         else:
             error(unavailable)
         return 1
@@ -149,6 +149,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
         if as_json:
             print_json(
                 error_envelope(
+                    "commit",
                     error=t("secret_scan_blocked_high", count=str(len(high))),
                     code="secret_leak_high",
                     hint=t("secret_scan_blocked_hint"),
@@ -203,6 +204,7 @@ def run_commit(
         if as_json:
             print_json(
                 error_envelope(
+                    "commit",
                     error=blocked_msg,
                     code=f"in_progress_{in_progress['state']}",
                     hint=hint,
@@ -234,7 +236,7 @@ def run_commit(
 
     if dry_run:
         if as_json:
-            print_json(ok_envelope(message=full_msg, amend=amend, dry_run=True))
+            print_json(ok_envelope("commit", message=full_msg, amend=amend, dry_run=True))
         else:
             _print_dry_run(message=full_msg, amend=amend, root=root)
         return 0
@@ -244,5 +246,5 @@ def run_commit(
         return _report_commit_error(as_json=as_json, err=err)
 
     if as_json:
-        print_json(ok_envelope(message=full_msg, amend=amend))
+        print_json(ok_envelope("commit", message=full_msg, amend=amend))
     return 0

@@ -3,11 +3,11 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import debug, print_header, print_json, status
-from .utils.json_envelope import ok_envelope
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import debug, print_header, print_json, status
+from gitwise.utils.json_envelope import ok_envelope
 
 
 def _append_branch_section(lines: list[str], *, root: Path) -> None:
@@ -110,7 +110,7 @@ def run_snapshot(*, as_json: bool = False) -> int:
         path = generate_snapshot(root)
 
     if as_json:
-        print_json(ok_envelope(path=str(path)))
+        print_json(ok_envelope("snapshot", path=str(path)))
         return 0
 
     print_header(t("snapshot_generated", path=str(path.relative_to(root))))

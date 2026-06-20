@@ -1,10 +1,10 @@
 """gitwise pick — cherry-pick/revert helper."""
 
-from .git import require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import error, ok, print_json, warn
-from .utils.json_envelope import error_envelope, ok_envelope
+from gitwise.git import require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import error, ok, print_json, warn
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _pick_mode_args(*, revert: bool, continue_: bool, abort: bool) -> list[str] | None:
@@ -25,9 +25,9 @@ def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
         return 1
     if as_json:
         if args[-1] == "--continue":
-            print_json(ok_envelope(continued=True))
+            print_json(ok_envelope("pick", continued=True))
         else:
-            print_json(ok_envelope(aborted=True))
+            print_json(ok_envelope("pick", aborted=True))
         return 0
     if args[-1] == "--continue":
         ok(t("pick_continued"))
@@ -40,7 +40,7 @@ def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
     """Validate that refs are non-empty and all pass ``validate_ref``."""
     if not refs:
         if as_json:
-            print_json(error_envelope(error=t("pick_no_refs")))
+            print_json(error_envelope("pick", error=t("pick_no_refs")))
             return 1
         error(t("pick_no_refs"))
         return 1
@@ -54,7 +54,7 @@ def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
 def _run_pick_dry_run(*, action: str, refs: list[str], as_json: bool) -> int:
     """Print or envelope the dry-run pick plan."""
     if as_json:
-        print_json(ok_envelope(dry_run=True, action=action, refs=refs))
+        print_json(ok_envelope("pick", dry_run=True, action=action, refs=refs))
         return 0
     ok(t("pick_dry", action=action, refs=", ".join(refs)))
     return 0
@@ -70,7 +70,7 @@ def _run_pick_execute(*, root, action: str, refs: list[str], as_json: bool) -> i
             error(result.stderr.strip())
         return 1
     if as_json:
-        print_json(ok_envelope(action=action, refs=refs))
+        print_json(ok_envelope("pick", action=action, refs=refs))
         return 0
     ok(t("pick_ok", action=action, refs=", ".join(refs)))
     return 0

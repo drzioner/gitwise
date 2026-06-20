@@ -179,11 +179,11 @@ def test_json_output_structure(
 
     captured = capsys.readouterr()
     data = json.loads(captured.out)
-    assert "deletable" in data
-    assert "skipped" in data
-    assert len(data["deletable"]) == 3
-    assert data["dry_run"] is True
-    assert data["applied"] is False
+    assert "deletable" in data["data"]
+    assert "skipped" in data["data"]
+    assert len(data["data"]["deletable"]) == 3
+    assert data["data"]["dry_run"] is True
+    assert data["data"]["applied"] is False
 
 
 def test_clean_json_executes_delete(
@@ -198,11 +198,11 @@ def test_clean_json_executes_delete(
     assert rc == 0
 
     data = json.loads(capsys.readouterr().out)
-    assert data["dry_run"] is False
-    assert data["applied"] is True
+    assert data["data"]["dry_run"] is False
+    assert data["data"]["applied"] is True
     assert data["ok"] is True
-    assert "deleted" in data
-    assert len(data["deleted"]) == 3
+    assert "deleted" in data["data"]
+    assert len(data["data"]["deleted"]) == 3
 
     r = subprocess.run(
         ["git", "branch", "--list", "stale-*"],

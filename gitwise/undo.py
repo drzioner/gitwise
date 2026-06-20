@@ -1,10 +1,10 @@
 """gitwise undo — reflog-based undo to any previous HEAD state."""
 
-from .git import require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import confirm, error, print_bracket, print_dim, print_header, print_json
-from .utils.json_envelope import ok_envelope
+from gitwise.git import require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import confirm, error, print_bracket, print_dim, print_header, print_json
+from gitwise.utils.json_envelope import ok_envelope
 
 
 def _resolve_undo_target(
@@ -63,6 +63,7 @@ def _run_undo_dry_run(
     if as_json:
         print_json(
             ok_envelope(
+                "undo",
                 target=target,
                 soft=soft,
                 dry_run=True,
@@ -87,7 +88,7 @@ def _confirm_hard_reset(*, soft: bool, yes: bool, target: str) -> bool:
 def _report_undo_complete(*, as_json: bool, target: str, soft: bool) -> int:
     """Print or envelope the undo-complete message."""
     if as_json:
-        print_json(ok_envelope(target=target, soft=soft))
+        print_json(ok_envelope("undo", target=target, soft=soft))
         return 0
     print_header(t("undo_complete_title"))
     print_bracket(t("undo_reset_to"), target[:12])

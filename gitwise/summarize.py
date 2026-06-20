@@ -2,11 +2,11 @@
 
 import subprocess
 
-from ._runtime_config import get_runtime_config
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise._runtime_config import get_runtime_config
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     bat_pipe,
     debug,
     ok,
@@ -19,6 +19,7 @@ from .output import (
     status,
     warn,
 )
+from gitwise.utils.json_envelope import ok_envelope
 
 _MAX_STATUS_LINES = 12
 
@@ -133,9 +134,7 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
     if as_json:
         import json
 
-        result: dict = {
-            "v": 3,
-            "ok": True,
+        summarize_data: dict[str, object] = {
             "branch": branch,
             "status": status_map,
             "status_count": len(status_entries),
@@ -147,7 +146,8 @@ def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int
         }
         if diff:
             diff_r = git_run(["--no-pager", "diff"], cwd=cwd, check=False)
-            result["diff"] = diff_r.stdout if diff_r.returncode == 0 else ""
+            summarize_data["diff"] = diff_r.stdout if diff_r.returncode == 0 else ""
+        result = ok_envelope("summarize", data=summarize_data)
         print_json(result)
         output_size = len(json.dumps(result))
         if output_size > 8192:

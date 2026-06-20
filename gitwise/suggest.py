@@ -2,13 +2,20 @@
 
 import re
 
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import error, print_bracket, print_file_status, print_header, print_json, status
-from .utils.in_progress import detect_in_progress, in_progress_hint
-from .utils.json_envelope import error_envelope, ok_envelope
-from .utils.parsing import stripped_non_empty_lines
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
+    error,
+    print_bracket,
+    print_file_status,
+    print_header,
+    print_json,
+    status,
+)
+from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import stripped_non_empty_lines
 
 _TYPE_MAP: list[tuple[str, str]] = [
     (r"/test", "test"),
@@ -139,6 +146,7 @@ def run_suggest(*, as_json: bool = False) -> int:
         if as_json:
             print_json(
                 error_envelope(
+                    "suggest",
                     error=blocked_msg,
                     code=f"in_progress_{in_progress['state']}",
                     hint=hint,
@@ -158,7 +166,7 @@ def run_suggest(*, as_json: bool = False) -> int:
 
     if not staged_files:
         if as_json:
-            print_json(error_envelope(error=t("suggest_no_staged")))
+            print_json(error_envelope("suggest", error=t("suggest_no_staged")))
             return 1
         error(t("suggest_no_staged"))
         return 1
@@ -168,6 +176,7 @@ def run_suggest(*, as_json: bool = False) -> int:
     if as_json:
         print_json(
             ok_envelope(
+                "suggest",
                 message=message,
                 files=staged_files,
                 additions=additions,

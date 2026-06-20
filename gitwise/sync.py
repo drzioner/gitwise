@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
-from .git import PROTECTED_BRANCHES, current_branch, require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import PROTECTED_BRANCHES, current_branch, require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     debug,
     error,
     print_bracket,
@@ -14,8 +14,8 @@ from .output import (
     print_json,
     status,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
-from .utils.parsing import parse_two_ints, stripped_non_empty_lines
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
 def _ahead_behind(cwd: Path) -> dict[str, int]:
@@ -91,6 +91,7 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
     if as_json:
         print_json(
             error_envelope(
+                "sync",
                 error=t("sync_fetch_failed", error=result.stderr.strip()),
                 code="sync_fetch_failed",
                 hint=t("sync_hint"),
@@ -119,6 +120,7 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
     if as_json:
         print_json(
             error_envelope(
+                "sync",
                 error=t("sync_pull_diverged"),
                 code="sync_pull_diverged",
                 hint=hint,
@@ -136,6 +138,7 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
         if as_json:
             print_json(
                 error_envelope(
+                    "sync",
                     error=t("sync_push_protected", branch=branch),
                     code="sync_push_protected",
                     hint=t("sync_push_protected_hint"),
@@ -151,6 +154,7 @@ def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
     if as_json:
         print_json(
             error_envelope(
+                "sync",
                 error=t("sync_push_failed", error=result.stderr.strip()),
                 code="sync_push_failed",
                 hint=t("sync_hint"),
@@ -182,7 +186,7 @@ def _report_sync_final(*, as_json: bool, branch: str, root: Path) -> int:
     """Print the final sync result after fetch/pull/push."""
     payload = _sync_final_payload(branch=branch, root=root)
     if as_json:
-        print_json(ok_envelope(payload=payload))
+        print_json(ok_envelope("sync", data=payload))
         return 0
     ahead = payload["ahead"]
     behind = payload["behind"]
@@ -201,9 +205,10 @@ def _run_sync_dry_run(
     if as_json:
         print_json(
             ok_envelope(
-                payload=_sync_dry_run_payload(
+                "sync",
+                data=_sync_dry_run_payload(
                     branch=branch, pull=pull, push=push, remote=remote, root=root
-                )
+                ),
             )
         )
         return 0

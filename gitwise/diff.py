@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     HAS_DELTA,
     bat_pipe,
     error,
@@ -18,9 +18,9 @@ from .output import (
     status,
     warn,
 )
-from .utils.git_output import parse_name_status_entries, status_label
-from .utils.json_envelope import ok_envelope
-from .utils.secret_scan import secret_scan
+from gitwise.utils.git_output import parse_name_status_entries, status_label
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.secret_scan import secret_scan
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]
@@ -254,7 +254,7 @@ def _render_stat_output(
     """Render the stat-mode diff output (JSON or human diffstat table)."""
     if not files:
         if as_json:
-            print_json(ok_envelope(files=[], count=0))
+            print_json(ok_envelope("diff", files=[], count=0))
             return 0
         info(t("no_uncommitted_changes"))
         return 0
@@ -271,14 +271,14 @@ def _render_stat_output(
         for entry in merged_files:
             raw_code = str(entry.get("code", entry.get("status", "")))
             entry["status_label"] = status_label(raw_code)
-        envelope = ok_envelope(
-            files=merged_files,
-            count=len(merged_files),
-            totals=_diff_totals(merged_files),
-        )
+        stat_data: dict[str, object] = {
+            "files": merged_files,
+            "count": len(merged_files),
+            "totals": _diff_totals(merged_files),
+        }
         if binary_warnings:
-            envelope["binary_warnings"] = binary_warnings
-        print_json(envelope)
+            stat_data["binary_warnings"] = binary_warnings
+        print_json(ok_envelope("diff", data=stat_data))
         return 0
 
     styled_files = [
@@ -304,7 +304,7 @@ def _render_non_stat_output(
     """Render name-status or name-only diff output (JSON or human file list)."""
     if not lines:
         if as_json:
-            print_json(ok_envelope(files=[], count=0))
+            print_json(ok_envelope("diff", files=[], count=0))
             return 0
         if staged:
             info(t("nothing_staged"))
@@ -329,7 +329,7 @@ def _render_non_stat_output(
                 )
 
     if as_json:
-        print_json(ok_envelope(files=files, count=len(files)))
+        print_json(ok_envelope("diff", files=files, count=len(files)))
         return 0
 
     print_header(t("changed_files", count=str(len(files))))
@@ -378,7 +378,9 @@ def _render_summary_output(
     """Print the compact summary (path + insertions/deletions, no patch)."""
     if not files:
         if as_json:
-            print_json(ok_envelope(files=[], count=0, totals={"insertions": 0, "deletions": 0}))
+            print_json(
+                ok_envelope("diff", files=[], count=0, totals={"insertions": 0, "deletions": 0})
+            )
             return 0
         info(t("no_uncommitted_changes"))
         return 0
@@ -397,14 +399,14 @@ def _render_summary_output(
         )
     totals = _diff_totals(files)
     if as_json:
-        envelope = ok_envelope(
-            files=summary_files,
-            count=len(summary_files),
-            totals=totals,
-        )
+        summary_data: dict[str, object] = {
+            "files": summary_files,
+            "count": len(summary_files),
+            "totals": totals,
+        }
         if binary_warnings:
-            envelope["binary_warnings"] = binary_warnings
-        print_json(envelope)
+            summary_data["binary_warnings"] = binary_warnings
+        print_json(ok_envelope("diff", data=summary_data))
         return 0
 
     print_header(t("diff_summary_header", count=str(len(summary_files))))
@@ -438,8 +440,20 @@ def _render_secret_scan_output(
         return 1
     findings = secret_scan(result.stdout)
     if as_json:
-        print_json(ok_envelope(findings=findings, count=len(findings)))
-        return 1 if any(f["severity"] == "high" for f in findings) else 0
+        has_high = any(f["severity"] == "high" for f in findings)
+        if has_high:
+            print_json(
+                error_envelope(
+                    "diff",
+                    error="high-severity secret leak detected in diff",
+                    code="secret_leak_high",
+                    findings=findings,
+                    count=len(findings),
+                )
+            )
+        else:
+            print_json(ok_envelope("diff", findings=findings, count=len(findings)))
+        return 1 if has_high else 0
     if not findings:
         info(t("secret_scan_clean"))
         return 0
@@ -489,7 +503,7 @@ def run_diff(
 
     if not refspec and not staged and not _has_commits(cwd):
         if as_json:
-            print_json(ok_envelope(files=[], count=0, note=t("no_commits_yet")))
+            print_json(ok_envelope("diff", files=[], count=0, note=t("no_commits_yet")))
             return 0
         info(t("no_commits_yet"))
         return 0
@@ -522,7 +536,7 @@ def run_diff(
 
     if full:
         if as_json:
-            print_json(ok_envelope(diff=result.stdout))
+            print_json(ok_envelope("diff", diff=result.stdout))
         else:
             _print_diff_human_full(diff_text=result.stdout)
         return 0

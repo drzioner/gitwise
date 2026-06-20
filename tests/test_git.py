@@ -9,7 +9,7 @@ def test_is_repo_detects_git(tmp_git_repo):
     result = _run("audit", "--quick", "--json", cwd=tmp_git_repo)
     assert result.returncode in (0, 1)
     data = json.loads(result.stdout)
-    assert "summary" in data
+    assert "summary" in data["data"]
 
 
 def test_not_a_git_repo(tmp_path):
@@ -32,21 +32,21 @@ def test_git_config_read(tmp_git_repo):
     result = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert "changes" in data
+    assert "changes" in data["data"]
 
 
 def test_stale_branches_empty(tmp_git_repo):
     result = _run("clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["deletable"] == []
+    assert data["data"]["deletable"] == []
 
 
 def test_stale_branches_detected(tmp_git_repo_with_stale):
     result = _run("clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo_with_stale)
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert len(data["deletable"]) == 3
+    assert len(data["data"]["deletable"]) == 3
 
 
 def test_worktree_branches(tmp_git_repo):
@@ -58,8 +58,8 @@ def test_gpg_status_in_doctor():
     result = _run("doctor", "--json")
     assert result.returncode in (0, 1)
     data = json.loads(result.stdout)
-    assert "gpg" in data
-    gpg = data["gpg"]
+    assert "gpg" in data["data"]
+    gpg = data["data"]["gpg"]
     assert "gpg_binary" in gpg
     assert "gpgsign_enabled" in gpg
     assert "signing_key_set" in gpg

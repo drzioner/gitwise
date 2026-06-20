@@ -31,7 +31,7 @@ def test_merge_dry_run(tmp_git_repo):
     r = run_gitwise("merge", "feature-test", "--dry-run", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["dry_run"] is True
+    assert data["data"]["dry_run"] is True
 
 
 def test_merge_not_git(tmp_path):
@@ -58,6 +58,6 @@ def test_merge_feature_json(tmp_git_repo):
     _git(["checkout", "main"], cwd=tmp_git_repo)
     r = run_gitwise("merge", "feature-y", "--yes", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["ok"] is True
-    assert data["merged"] == "feature-y"
+    env = json.loads(r.stdout)
+    assert env["ok"] is True
+    assert env["data"]["merged"] == "feature-y"

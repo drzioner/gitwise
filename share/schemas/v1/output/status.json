@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/status.json",
+  "title": "gitwise status cli output",
+  "description": "v3 envelope for `gitwise status --json`. data.files are FileEntry objects; data.conflicted is a dedicated count (UU/AA/DD no longer double-counted in staged/unstaged).",
+  "type": "object",
+  "required": ["v", "ok", "command", "data", "hints", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 3 },
+    "ok": { "type": "boolean" },
+    "command": { "const": "status" },
+    "hints": { "type": "array", "items": { "type": "string" } },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "branch": { "type": "string" },
+        "has_upstream": { "type": "boolean" },
+        "ahead": { "type": "integer" },
+        "behind": { "type": "integer" },
+        "ahead_commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["hash", "short_hash", "subject"],
+            "properties": {
+              "hash": { "type": "string" },
+              "short_hash": { "type": "string" },
+              "subject": { "type": "string" }
+            }
+          }
+        },
+        "behind_commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["hash", "short_hash", "subject"],
+            "properties": {
+              "hash": { "type": "string" },
+              "short_hash": { "type": "string" },
+              "subject": { "type": "string" }
+            }
+          }
+        },
+        "in_progress": {
+          "type": "object",
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": ["none", "merge", "rebase", "cherry-pick", "revert", "bisect"]
+            },
+            "ref": { "type": ["string", "null"] }
+          }
+        },
+        "staged": { "type": "integer" },
+        "unstaged": { "type": "integer" },
+        "untracked": { "type": "integer" },
+        "conflicted": { "type": "integer" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "code", "status", "staged", "binary"],
+            "properties": {
+              "path": { "type": "string" },
+              "old_path": { "type": "string" },
+              "code": { "type": "string" },
+              "status": {
+                "type": "string",
+                "enum": ["modified", "added", "deleted", "renamed", "copied", "conflict", "untracked", "ignored"]
+              },
+              "staged": { "type": "boolean" },
+              "binary": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "branch", "has_upstream", "ahead", "behind", "ahead_commits",
+            "behind_commits", "in_progress", "staged", "unstaged", "untracked",
+            "conflicted", "files"
+          ]
+        },
+        { "type": "object", "maxProperties": 0 }
+      ]
+    }
+  }
+}

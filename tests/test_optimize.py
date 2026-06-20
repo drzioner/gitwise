@@ -49,10 +49,10 @@ def test_optimize_json_output(
 
     data = json.loads(capsys.readouterr().out)
     assert data["ok"] is True
-    assert data["dry_run"] is True
-    assert data["applied"] is False
-    assert "steps" in data
-    assert len(data["steps"]) > 0
+    assert data["data"]["dry_run"] is True
+    assert data["data"]["applied"] is False
+    assert "steps" in data["data"]
+    assert len(data["data"]["steps"]) > 0
 
 
 def test_optimize_json_executes_steps(
@@ -74,11 +74,13 @@ def test_optimize_json_executes_steps(
     assert rc == 0
 
     data = json.loads(capsys.readouterr().out)
-    assert data["dry_run"] is False
-    assert data["applied"] is True
-    assert data["rc"] == 0
+    assert data["data"]["dry_run"] is False
+    assert data["data"]["applied"] is True
+    assert data["data"]["rc"] == 0
     assert data["ok"] is True
-    assert all(s.get("ok") for s in data["steps"] if s["name"] == "commit-graph")
+    cg_steps = [s for s in data["data"]["steps"] if s["name"] == "commit-graph"]
+    assert len(cg_steps) == 1, f"expected one commit-graph step, got {cg_steps}"
+    assert cg_steps[0].get("ok") is True
     assert graph_path.exists()
 
 

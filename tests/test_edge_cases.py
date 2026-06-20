@@ -21,10 +21,13 @@ class TestDetachedHead:
         r = run_gitwise("status", "--json", cwd=tmp_git_repo)
         assert r.returncode == 0
         data = json.loads(r.stdout)
-        assert data["v"] == 2
+        assert data["v"] == 3
         assert data["ok"] is True
-        assert "detached" in data["branch"].lower() or "desacoplado" in data["branch"].lower()
-        assert data["has_upstream"] is False
+        assert (
+            "detached" in data["data"]["branch"].lower()
+            or "desacoplado" in data["data"]["branch"].lower()
+        )
+        assert data["data"]["has_upstream"] is False
 
     def test_log_detached_head(self, tmp_git_repo):
         _detach_head(tmp_git_repo)
@@ -52,7 +55,7 @@ class TestNoUpstream:
     def test_status_no_upstream_json(self, tmp_git_repo):
         r = run_gitwise("status", "--json", cwd=tmp_git_repo)
         assert r.returncode == 0
-        data = json.loads(r.stdout)
+        data = json.loads(r.stdout)["data"]
         assert data["has_upstream"] is False
         assert data["ahead"] == 0
         assert data["behind"] == 0
@@ -66,9 +69,9 @@ class TestNoUpstream:
         r = run_gitwise("branches", "--json", cwd=tmp_git_repo)
         assert r.returncode == 0
         data = json.loads(r.stdout)
-        assert data["v"] == 2
+        assert data["v"] == 3
         assert data["ok"] is True
-        assert len(data["branches"]) >= 1
+        assert len(data["data"]["branches"]) >= 1
 
 
 class TestNoRemote:
@@ -80,7 +83,7 @@ class TestNoRemote:
         r = run_gitwise("sync", "--json", cwd=tmp_git_repo)
         assert r.returncode == 0
         data = json.loads(r.stdout)
-        assert data["v"] == 2
+        assert data["v"] == 3
         assert data["ok"] is True
 
     def test_branches_no_remote(self, tmp_git_repo):

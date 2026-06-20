@@ -5,12 +5,12 @@ import subprocess
 import time
 from pathlib import Path
 
-from .git import git_dir as get_git_dir
-from .git import require_root
-from .git import run as git_run
-from .git import version as git_version
-from .i18n import t
-from .output import (
+from gitwise.git import git_dir as get_git_dir
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.git import version as git_version
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     debug,
     ok,
@@ -23,7 +23,7 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _gc_is_running(cwd: Path) -> bool:
@@ -114,11 +114,12 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         if as_json:
             print_json(
                 ok_envelope(
-                    payload={
+                    "optimize",
+                    data={
                         "dry_run": True,
                         "applied": False,
                         "steps": [{"name": n, "desc": d} for n, d in steps],
-                    }
+                    },
                 )
             )
             return 0
@@ -133,6 +134,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     if as_json and not yes:
         print_json(
             error_envelope(
+                "optimize",
                 error=t("yes_required_with_json"),
                 code="yes_required",
                 hint=t("yes_required_hint"),
@@ -205,13 +207,14 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
             "rc": rc,
         }
         if rc == 0:
-            print_json(ok_envelope(payload=payload))
+            print_json(ok_envelope("optimize", data=payload))
         else:
             print_json(
                 error_envelope(
+                    "optimize",
                     error=t("optimize_partial_failure"),
                     code="optimize_partial_failure",
-                    payload=payload,
+                    data=payload,
                 )
             )
     else:

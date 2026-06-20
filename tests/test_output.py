@@ -30,7 +30,7 @@ def test_json_output_is_valid(tmp_git_repo):
     result = _run("summarize", "--json", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
     assert data["v"] == 3
-    assert "branch" in data
+    assert "branch" in data["data"]
     assert "ok" in data
 
 
@@ -63,8 +63,8 @@ def test_bat_pipe_empty_string():
 def test_print_json_output(tmp_git_repo):
     result = _run("diff", "--json", cwd=tmp_git_repo)
     data = json.loads(result.stdout)
-    assert "files" in data
-    assert "count" in data
+    assert "files" in data["data"]
+    assert "count" in data["data"]
 
 
 def test_error_goes_to_stderr(tmp_git_repo):

@@ -1,10 +1,11 @@
 """Tests for gitwise status command."""
 
 import json
+import subprocess
 
 from gitwise import status as status_module
 
-from conftest import run_gitwise
+from conftest import _git, run_gitwise
 
 
 def test_status_clean(tmp_git_repo):
@@ -16,12 +17,75 @@ def test_status_clean(tmp_git_repo):
 def test_status_json(tmp_git_repo):
     r = run_gitwise("status", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["v"] == 2
-    assert data["ok"] is True
+    env = json.loads(r.stdout)
+    assert env["v"] == 3
+    assert env["ok"] is True
+    assert env["command"] == "status"
+    assert isinstance(env["data"], dict)
+    assert isinstance(env["hints"], list)
+    assert isinstance(env["errors"], list)
+    data = env["data"]
     assert "branch" in data
     assert "staged" in data
     assert "untracked" in data
+    assert "conflicted" in data
+    assert isinstance(data["files"], list)
+
+
+def test_status_json_conflicted_and_file_entries(tmp_git_repo):
+    _git(["checkout", "-b", "topic"], cwd=tmp_git_repo)
+    (tmp_git_repo / "README.md").write_text("topic\n")
+    _git(["add", "."], cwd=tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "topic change"], cwd=tmp_git_repo)
+    _git(["checkout", "main"], cwd=tmp_git_repo)
+    (tmp_git_repo / "README.md").write_text("main\n")
+    _git(["add", "."], cwd=tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "main change"], cwd=tmp_git_repo)
+    merge = subprocess.run(
+        ["git", "merge", "topic"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert merge.returncode == 1, merge.stderr
+
+    r = run_gitwise("status", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)["data"]
+    assert data["conflicted"] >= 1
+    conflict_entry = next(
+        f for f in data["files"] if f["code"] in ("UU", "AA", "DD", "AU", "UA", "UD", "DU")
+    )
+    assert conflict_entry["status"] == "conflict"
+    assert "path" in conflict_entry
+    assert "staged" in conflict_entry
+    assert "binary" in conflict_entry
+
+
+def test_status_json_file_entry_shape_for_modified(tmp_git_repo):
+    (tmp_git_repo / "new.txt").write_text("hello\n")
+    (tmp_git_repo / "README.md").write_text("# changed\n")
+    _git(["add", "README.md"], cwd=tmp_git_repo)
+
+    r = run_gitwise("status", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)["data"]
+    staged_entry = next(f for f in data["files"] if f["path"] == "README.md")
+    assert staged_entry["code"] == "M "
+    assert staged_entry["status"] == "modified"
+    assert staged_entry["staged"] is True
+    untracked_entry = next(f for f in data["files"] if f["path"] == "new.txt")
+    assert untracked_entry["status"] == "untracked"
+
+
+def test_split_rename_only_splits_for_rename_or_copy_codes():
+    from gitwise.status import _split_rename
+
+    assert _split_rename("old -> new", "R ") == ("new", "old")
+    assert _split_rename("old -> new", "C ") == ("new", "old")
+    assert _split_rename("weird -> name.txt", "M ") == ("weird -> name.txt", None)
+    assert _split_rename("plain.txt", "M ") == ("plain.txt", None)
 
 
 def test_status_not_git(tmp_path):

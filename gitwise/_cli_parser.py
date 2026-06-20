@@ -2,9 +2,9 @@
 
 import argparse
 
-from . import __version__
-from .design import GitwiseRichHelpFormatter
-from .i18n import t
+from gitwise import __version__
+from gitwise.design import GitwiseRichHelpFormatter
+from gitwise.i18n import t
 
 
 def _root_help_epilog() -> str:
@@ -360,6 +360,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--version",
         default="v1",
         help="schema catalog version (default: v1)",
+    )
+    p.add_argument(
+        "--output",
+        action="store_true",
+        help="show the command's --json output schema (default: input schema)",
     )
 
     p = sub.add_parser(

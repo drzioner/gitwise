@@ -3,11 +3,11 @@
 from pathlib import Path
 from typing import TypedDict
 
-from .git import require_root, stale_branches, worktree_branches
-from .git import run as git_run
-from .i18n import t
-from .output import error, info, print_dim, print_json, print_table, status
-from .utils.json_envelope import ok_envelope
+from gitwise.git import require_root, stale_branches, worktree_branches
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import error, info, print_dim, print_json, print_table, status
+from gitwise.utils.json_envelope import ok_envelope
 
 
 class BranchEntry(TypedDict):
@@ -87,7 +87,7 @@ def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
         info(t("no_stale_branches"))
         return 0
     if as_json:
-        print_json(ok_envelope(stale_branches=names, count=len(names)))
+        print_json(ok_envelope("branches", stale_branches=names, count=len(names)))
         return 0
     for branch_name in names:
         print_dim(branch_name)
@@ -205,7 +205,7 @@ def run_branches(
         return 0
 
     if as_json:
-        print_json(ok_envelope(branches=branches, count=len(branches)))
+        print_json(ok_envelope("branches", branches=branches, count=len(branches)))
         return 0
     _print_branch_table(branches)
 

@@ -3,18 +3,18 @@
 from pathlib import Path
 from typing import TypedDict
 
-from .git import (
+from gitwise.git import (
     gpg_status,
     has_commit_graph,
     has_remote,
     has_upstream,
     require_root,
 )
-from .git import run as git_run
-from .i18n import t
-from .output import print_header, print_json, print_status_line, status
-from .utils.json_envelope import ok_envelope
-from .utils.parsing import non_empty_lines, to_int
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import print_header, print_json, print_status_line, status
+from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.parsing import non_empty_lines, to_int
 
 
 class HealthDetails(TypedDict):
@@ -359,7 +359,7 @@ def run_health(*, as_json: bool = False) -> int:
         h = compute_health(root)
 
     if as_json:
-        print_json(ok_envelope(payload=h))
+        print_json(ok_envelope("health", data=h))
     else:
         print_header(t("health_label", score=str(h["score"]), grade=h["grade"]))
         if h["breakdown"]:

@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
-from .git import require_root
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     error,
     ok,
     print_accent,
@@ -15,8 +15,8 @@ from .output import (
     print_json,
     status,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
-from .utils.parsing import stripped_non_empty_lines, to_int
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.parsing import stripped_non_empty_lines, to_int
 
 
 def _find_conflict_files(root: Path) -> list[str]:
@@ -62,7 +62,7 @@ def _conflict_details(root: Path, conflicts: list[str]) -> list[dict[str, str | 
 def _report_no_conflicts(*, as_json: bool) -> int:
     """Print or envelope a clean conflicts report."""
     if as_json:
-        print_json(ok_envelope(conflicts=[], count=0))
+        print_json(ok_envelope("conflicts", conflicts=[], count=0))
         return 0
     ok(t("conflicts_none"))
     return 0
@@ -74,7 +74,7 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
     if rc != 0:
         return rc
     if as_json:
-        print_json(ok_envelope(resolved=len(conflicts), strategy=strategy))
+        print_json(ok_envelope("conflicts", resolved=len(conflicts), strategy=strategy))
         return 0
     key = "conflicts_resolved_ours" if strategy == "ours" else "conflicts_resolved_theirs"
     ok(t(key, count=str(len(conflicts))))
@@ -84,8 +84,10 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
 def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_json: bool) -> int:
     """Print or envelope the conflict report."""
     if as_json:
-        print_json(error_envelope(error=t("merge_conflicts"), conflicts=details, count=count))
-        return 0
+        print_json(
+            error_envelope("conflicts", error=t("merge_conflicts"), conflicts=details, count=count)
+        )
+        return 1
     print_header(t("conflicts_found", count=str(count)))
     for detail in details:
         print_accent(f"  {detail['file']}  ({detail['markers']} {t('markers_label')})")

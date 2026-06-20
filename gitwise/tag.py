@@ -3,10 +3,10 @@
 import re
 from pathlib import Path
 
-from .git import require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     confirm,
     error,
     ok,
@@ -17,7 +17,7 @@ from .output import (
     status,
     warn,
 )
-from .utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 _SEMVER_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$")
 
@@ -125,7 +125,7 @@ def _run_tag_list(*, root: Path, as_json: bool) -> int:
     """Execute ``tag list`` sub-action."""
     tags = _list_tags(root)
     if as_json:
-        print_json(ok_envelope(tags=tags, count=len(tags)))
+        print_json(ok_envelope("tag", tags=tags, count=len(tags)))
         return 0
     _print_tag_list(tags)
     return 0
@@ -135,7 +135,7 @@ def _run_tag_latest(*, root: Path, as_json: bool) -> int:
     """Execute ``tag latest`` sub-action."""
     latest = _latest_semver(root)
     if as_json:
-        print_json(ok_envelope(latest=latest))
+        print_json(ok_envelope("tag", latest=latest))
         return 0
     if latest:
         print_header(t("tag_latest_title"))
@@ -157,10 +157,20 @@ def _run_tag_create(
     """Execute ``tag create`` sub-action."""
     tag_name = _resolve_tag_name(root=root, bump=bump, name=name)
     if not tag_name:
-        error(t("tag_name_required"))
+        if as_json:
+            print_json(
+                error_envelope("tag", error=t("tag_name_required"), code="tag_name_required")
+            )
+        else:
+            error(t("tag_name_required"))
         return 1
     if not validate_ref(tag_name):
-        error(t("invalid_ref", ref=tag_name))
+        if as_json:
+            print_json(
+                error_envelope("tag", error=t("invalid_ref", ref=tag_name), code="invalid_ref")
+            )
+        else:
+            error(t("invalid_ref", ref=tag_name))
         return 1
 
     args = ["tag", tag_name]
@@ -168,20 +178,23 @@ def _run_tag_create(
         args = ["tag", "-a", tag_name, "-m", message]
 
     if dry_run:
-        ok(t("tag_create_dry", name=tag_name))
+        if as_json:
+            print_json(ok_envelope("tag", created=tag_name, dry_run=True))
+        else:
+            ok(t("tag_create_dry", name=tag_name))
         return 0
 
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope(error=err))
+            print_json(error_envelope("tag", error=err))
         else:
             error(err)
         return 1
 
     if as_json:
-        print_json(ok_envelope(created=tag_name))
+        print_json(ok_envelope("tag", created=tag_name))
         return 0
     ok(t("tag_created", name=tag_name))
     return 0
@@ -197,29 +210,43 @@ def _run_tag_delete(
 ) -> int:
     """Execute ``tag delete`` sub-action with optional confirmation."""
     if not name:
-        error(t("tag_name_required"))
+        if as_json:
+            print_json(
+                error_envelope("tag", error=t("tag_name_required"), code="tag_name_required")
+            )
+        else:
+            error(t("tag_name_required"))
         return 1
     if not validate_ref(name):
-        error(t("invalid_ref", ref=name))
+        if as_json:
+            print_json(error_envelope("tag", error=t("invalid_ref", ref=name), code="invalid_ref"))
+        else:
+            error(t("invalid_ref", ref=name))
         return 1
     if dry_run:
-        ok(t("tag_delete_dry", name=name))
+        if as_json:
+            print_json(ok_envelope("tag", deleted=name, dry_run=True))
+        else:
+            ok(t("tag_delete_dry", name=name))
         return 0
     if not yes and not confirm(t("confirm_tag_delete", name=name)):
-        warn(t("aborted"))
+        if as_json:
+            print_json(error_envelope("tag", error=t("aborted"), code="aborted"))
+        else:
+            warn(t("aborted"))
         return 1
 
     result = git_run(["tag", "-d", name], cwd=root, check=False)
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag -d", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope(error=err))
+            print_json(error_envelope("tag", error=err))
         else:
             error(err)
         return 1
 
     if as_json:
-        print_json(ok_envelope(deleted=name))
+        print_json(ok_envelope("tag", deleted=name))
         return 0
     ok(t("tag_deleted", name=name))
     return 0

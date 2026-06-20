@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .git import (
+from gitwise.git import (
     gpg_status,
     has_commit_graph,
     has_remote,
@@ -15,9 +15,9 @@ from .git import (
     require_root,
     stale_branches,
 )
-from .git import run as git_run
-from .i18n import t
-from .output import (
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import (
     debug,
     ok,
     print_blank,
@@ -28,6 +28,7 @@ from .output import (
     print_json,
     status,
 )
+from gitwise.utils.json_envelope import ok_envelope
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -295,7 +296,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
             }
         )
 
-    from .health import compute_health
+    from gitwise.health import compute_health
 
     health = compute_health(
         cwd,
@@ -309,8 +310,6 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
     result: dict[str, Any] = {
-        "v": 2,
-        "ok": not has_issues,
         "quick": quick,
         "findings": findings,
         "summary": {
@@ -325,7 +324,9 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     }
 
     if as_json:
-        print_json(result)
+        env = ok_envelope("audit", data=result)
+        env["ok"] = not has_issues
+        print_json(env)
         return 0 if not has_issues else 1
 
     if not findings:

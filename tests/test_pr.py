@@ -169,8 +169,8 @@ def test_pr_comments_json_output(monkeypatch, tmp_git_repo: Path, capsys) -> Non
 
     assert rc == 0
     assert data["ok"] is True
-    assert data["number"] == 99
-    assert data["count"] == 1
+    assert data["data"]["number"] == 99
+    assert data["data"]["count"] == 1
 
 
 def test_pr_view_json_uses_envelope(monkeypatch, tmp_git_repo: Path, capsys) -> None:
@@ -208,8 +208,8 @@ def test_pr_view_json_uses_envelope(monkeypatch, tmp_git_repo: Path, capsys) -> 
 
     assert rc == 0
     assert data["ok"] is True
-    assert data["v"] == 2
-    assert data["number"] == 42
+    assert data["v"] == 3
+    assert data["data"]["number"] == 42
 
 
 def test_pr_view_json_envelope_overrides_payload_reserved_keys(
@@ -251,7 +251,7 @@ def test_pr_view_json_envelope_overrides_payload_reserved_keys(
 
     assert rc == 0
     assert data["ok"] is True
-    assert data["v"] == 2
+    assert data["v"] == 3
 
 
 def test_pr_selector_invalid(monkeypatch, tmp_git_repo: Path) -> None:
@@ -322,5 +322,5 @@ def test_pr_checks_json_output(monkeypatch, tmp_git_repo: Path, capsys) -> None:
 
     assert rc == 0
     assert data["ok"] is True
-    assert data["count"] == 1
-    assert data["summary"]["pass"] == 1
+    assert data["data"]["count"] == 1
+    assert data["data"]["summary"]["pass"] == 1

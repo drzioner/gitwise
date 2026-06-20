@@ -1,11 +1,11 @@
 """gitwise show — commit inspector with stat and JSON output."""
 
-from .git import require_root, validate_ref
-from .git import run as git_run
-from .i18n import t
-from .output import bat_pipe, error, print_diffstat, print_header, print_json, status
-from .utils.git_output import parse_diffstat_entries, parse_name_status_entries
-from .utils.json_envelope import ok_envelope
+from gitwise.git import require_root, validate_ref
+from gitwise.git import run as git_run
+from gitwise.i18n import t
+from gitwise.output import bat_pipe, error, print_diffstat, print_header, print_json, status
+from gitwise.utils.git_output import parse_diffstat_entries, parse_name_status_entries
+from gitwise.utils.json_envelope import ok_envelope
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
@@ -93,7 +93,7 @@ def run_show(
             error(t("git_show_failed", error=r.stderr.strip()))
             return 1
         data = _parse_show_json(r.stdout)
-        print_json(ok_envelope(payload=data))
+        print_json(ok_envelope("show", data=data))
     else:
         if stat:
             with status(t("status_loading_commit")):
