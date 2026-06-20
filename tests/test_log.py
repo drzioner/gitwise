@@ -71,6 +71,24 @@ def test_log_json_parents_array_for_merge_commit(tmp_git_repo: Path) -> None:
     assert len(commit["parents"]) == 2
 
 
+def test_log_json_lines_streams_one_envelope_per_commit(tmp_git_repo: Path) -> None:
+    for i in range(3):
+        (tmp_git_repo / f"f{i}.txt").write_text(f"{i}\n")
+        _git(["add", "."], cwd=tmp_git_repo)
+        _git(["commit", "--no-gpg-sign", "-m", f"feat: {i}"], cwd=tmp_git_repo)
+
+    r = run_gitwise("log", "--json-lines", "--max-count=3", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 3
+    for ln in lines:
+        env = json.loads(ln)
+        assert env["v"] == 3
+        assert env["command"] == "log"
+        assert "commit" in env["data"]
+        assert "hash" in env["data"]["commit"]
+
+
 def test_log_json_truncation_meta(tmp_git_repo: Path) -> None:
     for i in range(5):
         (tmp_git_repo / f"f{i}.txt").write_text(f"{i}\n")

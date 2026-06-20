@@ -41,6 +41,11 @@
       "type": "boolean",
       "description": "resolve all conflicts using theirs",
       "default": false
+    },
+    "union": {
+      "type": "boolean",
+      "description": "resolve all conflicts keeping both sides (union)",
+      "default": false
     }
   }
 }

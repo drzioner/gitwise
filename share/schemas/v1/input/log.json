@@ -66,6 +66,11 @@
       "type": "integer",
       "description": "max commits",
       "default": 20
+    },
+    "json_lines": {
+      "type": "boolean",
+      "description": "stream one JSON envelope per commit (NDJSON; implies JSON mode)",
+      "default": false
     }
   }
 }

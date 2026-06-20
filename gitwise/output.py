@@ -279,6 +279,14 @@ def print_json(data: Any) -> None:
     print(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
 
+def print_json_line(data: Any) -> None:
+    """Print data as a single compact JSON line (NDJSON), ignoring pretty mode.
+
+    Used by ``--json-lines`` streaming so each record is one parseable line.
+    """
+    print(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+
+
 def print_blank() -> None:
     """Print an empty line to stdout."""
     if _should_use_rich():

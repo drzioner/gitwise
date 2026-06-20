@@ -485,6 +485,7 @@ def run_diff(
     summary: bool = False,
     scan_secrets: bool = False,
     as_json: bool = False,
+    json_lines: bool = False,
 ) -> int:
     """Render a diff of changed files, a refspec, or a range.
 
@@ -502,10 +503,24 @@ def run_diff(
     cwd = root
 
     if not refspec and not staged and not _has_commits(cwd):
-        if as_json:
+        if as_json or json_lines:
             print_json(ok_envelope("diff", files=[], count=0, note=t("no_commits_yet")))
             return 0
         info(t("no_commits_yet"))
+        return 0
+
+    if json_lines:
+        from gitwise.output import print_json_line
+
+        numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
+        status_details = _name_status_details(cwd, staged=staged, refspec=refspec, paths=paths)
+        for path, entry in numstat_details.items():
+            st = status_details.get(path, {})
+            code = str(st.get("code") or st.get("status") or "")
+            if code:
+                entry["code"] = code
+                entry["status_label"] = status_label(code)
+            print_json_line(ok_envelope("diff", file=entry))
         return 0
 
     if scan_secrets:

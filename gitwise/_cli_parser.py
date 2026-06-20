@@ -190,6 +190,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="scan the diff for leaked credentials (advisory, opt-in)",
     )
     p.add_argument(
+        "--json-lines",
+        action="store_true",
+        dest="json_lines",
+        help="stream one JSON envelope per changed file (NDJSON)",
+    )
+    p.add_argument(
         "refspec",
         nargs="?",
         default=None,
@@ -211,6 +217,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--until", type=str, default=None, help="show commits until date")
     p.add_argument("--file", type=str, default=None, help="show commits for file")
     p.add_argument("--max-count", type=int, default=20, dest="max_count", help="max commits")
+    p.add_argument(
+        "--json-lines",
+        action="store_true",
+        dest="json_lines",
+        help="stream one JSON envelope per commit (NDJSON; implies JSON mode)",
+    )
 
     p = sub.add_parser("show", help="commit inspector", parents=[parent])
     p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")

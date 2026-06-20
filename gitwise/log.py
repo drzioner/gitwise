@@ -195,8 +195,13 @@ def _run_log_json(
     until: str | None,
     file: str | None,
     max_count: int,
+    json_lines: bool = False,
 ) -> int:
-    """Execute git log and emit structured JSON with enriched per-commit stats."""
+    """Execute git log and emit structured JSON with enriched per-commit stats.
+
+    With ``json_lines``, stream one compact v3 envelope per commit (NDJSON) for
+    incremental processing instead of a single blob.
+    """
     try:
         args = _build_log_json_args(
             author=author,
@@ -226,6 +231,12 @@ def _run_log_json(
     total = len(commits)
     truncated = total > max_count
     commits = commits[:max_count]
+    if json_lines:
+        from gitwise.output import print_json_line
+
+        for commit in commits:
+            print_json_line(ok_envelope("log", commit=commit))
+        return 0
     hints: list[str] = []
     if truncated:
         hints.append(f"gitwise log --max-count {max_count} (more commits exist)")
@@ -324,6 +335,7 @@ def _run_log_human_plain_or_graph(*, raw: str, graph: bool, oneline: bool) -> bo
 def run_log(
     *,
     as_json: bool = False,
+    json_lines: bool = False,
     oneline: bool = False,
     graph: bool = False,
     author: str | None = None,
@@ -340,7 +352,7 @@ def run_log(
     if root is None:
         return 1
 
-    if as_json:
+    if as_json or json_lines:
         return _run_log_json(
             root=root,
             author=author,
@@ -349,6 +361,7 @@ def run_log(
             until=until,
             file=file,
             max_count=max_count,
+            json_lines=json_lines,
         )
 
     return _run_log_human(

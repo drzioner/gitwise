@@ -206,6 +206,7 @@ def _run_diff(args: argparse.Namespace) -> int:
         summary=args.summary,
         scan_secrets=args.scan_secrets,
         as_json=args.json,
+        json_lines=getattr(args, "json_lines", False),
     )
 
 
@@ -215,6 +216,7 @@ def _run_log(args: argparse.Namespace) -> int:
 
     return run_log(
         as_json=args.json,
+        json_lines=getattr(args, "json_lines", False),
         oneline=args.oneline,
         graph=args.graph,
         author=args.author,
