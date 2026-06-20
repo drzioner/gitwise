@@ -27,6 +27,27 @@ def test_diff_json_v3_envelope_shape(tmp_git_repo):
     assert isinstance(env["errors"], list)
 
 
+def test_diff_json_lines_streams_one_envelope_per_file(tmp_git_repo):
+    (tmp_git_repo / "a.txt").write_text("a\n")
+    (tmp_git_repo / "b.txt").write_text("b\n")
+    _git(["add", "."], cwd=tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "add a and b"], cwd=tmp_git_repo)
+    (tmp_git_repo / "a.txt").write_text("change a\n")
+    (tmp_git_repo / "b.txt").write_text("change b\n")
+    result = _run("diff", "--json-lines", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 2
+    seen = set()
+    for ln in lines:
+        env = json.loads(ln)
+        assert env["v"] == 3
+        assert env["command"] == "diff"
+        assert "file" in env["data"]
+        seen.add(env["data"]["file"]["path"])
+    assert seen == {"a.txt", "b.txt"}
+
+
 def test_diff_no_commits(tmp_path):
     _init_repo(tmp_path)
     result = _run("diff", cwd=tmp_path)

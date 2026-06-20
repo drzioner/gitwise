@@ -1,5 +1,7 @@
 """gitwise conflicts — conflict detection and resolution helper."""
 
+import subprocess
+import tempfile
 from pathlib import Path
 
 from gitwise.git import require_root
@@ -17,6 +19,17 @@ from gitwise.output import (
 )
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
 from gitwise.utils.parsing import stripped_non_empty_lines, to_int
+
+
+def _git_bytes(args: list[str], *, cwd: Path) -> tuple[int, bytes, bytes]:
+    """Run git capturing raw bytes (no text decoding) for binary-safe I/O."""
+    r = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        timeout=120,
+    )
+    return r.returncode, r.stdout, r.stderr
 
 
 def _find_conflict_files(root: Path) -> list[str]:
@@ -40,13 +53,67 @@ def _conflict_markers(root: Path, filepath: str) -> int:
 
 
 def _resolve_all_conflicts(*, root: Path, conflicts: list[str], strategy: str) -> int:
-    """Resolve conflicts in all files using ``--ours`` or ``--theirs``, then stage."""
+    """Resolve conflicts in all files using ``--ours``/``--theirs``, then stage."""
+    if strategy == "union":
+        return _resolve_union(root=root, conflicts=conflicts)
     checkout_flag = "--ours" if strategy == "ours" else "--theirs"
     result = git_run(["checkout", checkout_flag, "--"] + conflicts, cwd=root, check=False)
     if result.returncode != 0:
         error(result.stderr.strip())
         return 1
     git_run(["add", "--"] + conflicts, cwd=root, check=False)
+    return 0
+
+
+def _stage_blob(root: Path, stage_ref: str) -> bytes:
+    """Return the raw bytes of a staged blob (e.g. ``:2:path`` = ours).
+
+    Binary-safe (no UTF-8 round-trip). Returns b"" only for a missing base
+    (``:1:``); callers treat base absence as an empty common ancestor.
+    """
+    rc, out, _ = _git_bytes(["show", stage_ref], cwd=root)
+    return out if rc == 0 else b""
+
+
+def _resolve_union(*, root: Path, conflicts: list[str]) -> int:
+    """Resolve conflicts with ``git merge-file --union`` (keeps both sides, no markers).
+
+    For each file, materialize the base (:1:), ours (:2:), theirs (:3:) stage
+    blobs as raw bytes, union-merge them, write the result back, and stage it.
+    Uses bytes throughout so binary/non-UTF-8 conflict files keep full fidelity.
+    """
+    for filepath in conflicts:
+        ours = _stage_blob(root, f":2:{filepath}")
+        base = _stage_blob(root, f":1:{filepath}")
+        theirs = _stage_blob(root, f":3:{filepath}")
+        if not ours and not theirs:
+            error(t("conflicts_union_failed", file=filepath))
+            return 1
+        with tempfile.TemporaryDirectory() as tmp:
+            ours_p = Path(tmp) / "ours"
+            base_p = Path(tmp) / "base"
+            theirs_p = Path(tmp) / "theirs"
+            ours_p.write_bytes(ours)
+            base_p.write_bytes(base)
+            theirs_p.write_bytes(theirs)
+            rc, out, err = _git_bytes(
+                ["merge-file", "--union", "-p", str(ours_p), str(base_p), str(theirs_p)],
+                cwd=root,
+            )
+            if rc not in (0, 1):
+                error(
+                    err.decode("utf-8", errors="replace").strip()
+                    or t("conflicts_union_failed", file=filepath)
+                )
+                return 1
+            (root / filepath).write_bytes(out)
+        add_rc, _, add_err = _git_bytes(["add", "--", filepath], cwd=root)
+        if add_rc != 0:
+            error(
+                add_err.decode("utf-8", errors="replace").strip()
+                or t("conflicts_union_failed", file=filepath)
+            )
+            return 1
     return 0
 
 
@@ -76,7 +143,11 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
     if as_json:
         print_json(ok_envelope("conflicts", resolved=len(conflicts), strategy=strategy))
         return 0
-    key = "conflicts_resolved_ours" if strategy == "ours" else "conflicts_resolved_theirs"
+    key = {
+        "ours": "conflicts_resolved_ours",
+        "theirs": "conflicts_resolved_theirs",
+        "union": "conflicts_resolved_union",
+    }[strategy]
     ok(t(key, count=str(len(conflicts))))
     return 0
 
@@ -100,6 +171,7 @@ def run_conflicts(
     *,
     ours: bool = False,
     theirs: bool = False,
+    union: bool = False,
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise conflicts`` command."""
@@ -114,6 +186,11 @@ def run_conflicts(
 
     if not conflicts:
         return _report_no_conflicts(as_json=as_json)
+
+    if union:
+        return _resolve_by_strategy(
+            root=root, conflicts=conflicts, strategy="union", as_json=as_json
+        )
 
     if ours:
         return _resolve_by_strategy(

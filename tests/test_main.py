@@ -175,6 +175,22 @@ def test_completions_fish_outputs_script():
     assert "complete -c 'gitwise'" in result.stdout
 
 
+def test_completions_powershell_outputs_script():
+    result = _run("completions", "powershell")
+    assert result.returncode == 0
+    assert "Register-ArgumentCompleter" in result.stdout
+    assert "-CommandName 'gitwise'" in result.stdout
+    # a known subcommand and a known flag appear
+    assert "'status'" in result.stdout
+    assert '"--json"' in result.stdout
+
+
+def test_completions_powershell_respects_prog_name():
+    result = _run("completions", "powershell", "--prog", "gw")
+    assert result.returncode == 0
+    assert "-CommandName 'gw'" in result.stdout
+
+
 def test_completions_default_shell_is_bash():
     result = _run("completions")
     assert result.returncode == 0

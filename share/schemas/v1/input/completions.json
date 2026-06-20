@@ -37,7 +37,8 @@
       "enum": [
         "bash",
         "zsh",
-        "fish"
+        "fish",
+        "powershell"
       ],
       "description": "target shell for completion script",
       "default": "bash"

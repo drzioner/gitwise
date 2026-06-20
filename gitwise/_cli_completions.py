@@ -1,4 +1,4 @@
-"""Shell completions generation: bash, zsh, fish."""
+"""Shell completions generation: bash, zsh, fish, powershell."""
 
 import argparse
 
@@ -19,6 +19,9 @@ def build_completions_script(*, shell: str, prog: str) -> str:
 
     if shell == "fish":
         return _build_fish_completions_script(parser=parser, prog=prog)
+
+    if shell == "powershell":
+        return _build_powershell_completions_script(parser=parser, prog=prog)
 
     raise ValueError(f"unsupported shell: {shell}")
 
@@ -90,3 +93,75 @@ def _build_fish_completions_script(*, parser: argparse.ArgumentParser, prog: str
                         lines.append(line)
 
     return "\n".join(lines) + "\n"
+
+
+def _collect_flags(action: argparse.Action) -> list[str]:
+    """Return the long/short option strings for an argparse action."""
+    return [flag for flag in action.option_strings if flag.startswith("-")]
+
+
+def _build_powershell_completions_script(*, parser: argparse.ArgumentParser, prog: str) -> str:
+    """Generate a PowerShell ``Register-ArgumentCompleter`` script from the parser tree.
+
+    Completes subcommands as the first token and per-command flags thereafter.
+    Hand-built because ``shtab`` has no PowerShell backend.
+    """
+    sub_action = _subparsers_action(parser)
+    command_names = sorted(sub_action.choices.keys()) if sub_action else []
+
+    per_command_flags: dict[str, list[str]] = {}
+    global_flags: list[str] = []
+    for action in parser._actions:
+        if action.dest == "help" or isinstance(action, argparse._SubParsersAction):
+            continue
+        global_flags.extend(_collect_flags(action))
+
+    if sub_action is not None:
+        for command, command_parser in sorted(sub_action.choices.items()):
+            flags: list[str] = []
+            for action in command_parser._actions:
+                if action.dest == "help" or isinstance(action, argparse._SubParsersAction):
+                    continue
+                flags.extend(_collect_flags(action))
+            per_command_flags[command] = sorted(set(flags))
+
+    commands_ps = ",".join(f"'{c}'" for c in command_names)
+    global_flags_ps = ",".join(f"'{f}'" for f in sorted(set(global_flags)))
+    per_command_block = "\n".join(
+        "            '{}' = @({})".format(cmd, ", ".join(f'"{f}"' for f in flags))
+        for cmd, flags in per_command_flags.items()
+    )
+
+    return f"""# PowerShell completion for {prog}
+# Source it from your PowerShell profile:
+#   Add-Content $PROFILE ('. ' + ((Resolve-Path 'path/to/{prog}.ps1').Path))
+# or dot-source: . ./{prog}.ps1
+Register-ArgumentCompleter -Native -CommandName '{prog}' -ScriptBlock {{
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    $commands = @({commands_ps})
+    $globalFlags = @({global_flags_ps})
+    $perCommandFlags = @{{
+{per_command_block}
+        }}
+
+    # Only tokens fully before the cursor are "completed"; the word at the
+    # cursor is being typed and must not be mistaken for the subcommand.
+    $priorTokens = @($commandAst.CommandElements | Select-Object -Skip 1 | Where-Object {{ $_.Extent.EndOffset -lt $cursorPosition }})
+    $subcommand = ($priorTokens | Where-Object {{ $_.Value -notlike '-*' }} | Select-Object -First 1).Value
+
+    if (-not $subcommand) {{
+        $candidates = $commands + $globalFlags
+    }}
+    elseif ($perCommandFlags.ContainsKey($subcommand)) {{
+        $candidates = $perCommandFlags[$subcommand] + $globalFlags
+    }}
+    else {{
+        $candidates = @()
+    }}
+
+    $candidates | Where-Object {{ $_ -like "$wordToComplete*" }} |
+        Sort-Object -Unique |
+        ForEach-Object {{ [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }}
+}}
+"""

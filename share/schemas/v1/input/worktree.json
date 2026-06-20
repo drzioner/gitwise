@@ -36,7 +36,8 @@
       "type": "string",
       "enum": [
         "new",
-        "clean"
+        "clean",
+        "list"
       ]
     },
     "branch": {

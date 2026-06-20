@@ -62,6 +62,11 @@
       "description": "scan the diff for leaked credentials (advisory, opt-in)",
       "default": false
     },
+    "json_lines": {
+      "type": "boolean",
+      "description": "stream one JSON envelope per changed file (NDJSON)",
+      "default": false
+    },
     "refspec": {
       "type": "string",
       "description": "commit, branch, or range to diff (e.g. HEAD~3, main..feat, main...feat)"

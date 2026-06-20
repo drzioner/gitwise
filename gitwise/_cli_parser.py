@@ -163,7 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true")
 
     p = sub.add_parser("worktree", help="worktree helpers for Claude agents", parents=[parent])
-    p.add_argument("action", choices=["new", "clean"], nargs="?", metavar="new|clean")
+    p.add_argument("action", choices=["new", "clean", "list"], nargs="?", metavar="new|clean|list")
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
 
@@ -190,6 +190,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="scan the diff for leaked credentials (advisory, opt-in)",
     )
     p.add_argument(
+        "--json-lines",
+        action="store_true",
+        dest="json_lines",
+        help="stream one JSON envelope per changed file (NDJSON)",
+    )
+    p.add_argument(
         "refspec",
         nargs="?",
         default=None,
@@ -211,6 +217,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--until", type=str, default=None, help="show commits until date")
     p.add_argument("--file", type=str, default=None, help="show commits for file")
     p.add_argument("--max-count", type=int, default=20, dest="max_count", help="max commits")
+    p.add_argument(
+        "--json-lines",
+        action="store_true",
+        dest="json_lines",
+        help="stream one JSON envelope per commit (NDJSON; implies JSON mode)",
+    )
 
     p = sub.add_parser("show", help="commit inspector", parents=[parent])
     p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")
@@ -316,8 +328,16 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser(
         "conflicts", help="conflict detection and resolution helper", parents=[parent]
     )
-    p.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
-    p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
+    strategy = p.add_mutually_exclusive_group()
+    strategy.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
+    strategy.add_argument(
+        "--theirs", action="store_true", help="resolve all conflicts using theirs"
+    )
+    strategy.add_argument(
+        "--union",
+        action="store_true",
+        help="resolve all conflicts keeping both sides (union)",
+    )
 
     p = sub.add_parser(
         "suggest",
@@ -369,12 +389,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "completions",
-        help="print shell completion script (bash/zsh/fish)",
+        help="print shell completion script (bash/zsh/fish/powershell)",
         parents=[parent],
     )
     p.add_argument(
         "shell",
-        choices=["bash", "zsh", "fish"],
+        choices=["bash", "zsh", "fish", "powershell"],
         default="bash",
         nargs="?",
         help="target shell for completion script",
