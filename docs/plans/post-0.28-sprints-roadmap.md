@@ -143,7 +143,7 @@ commit on in-progress + refuses on secret leak — same guard layer).
 
 ### Release impact
 
-`feat:`-typed → minor bump `0.28.x → 0.29.0`.
+`feat:`-typed → minor bump `0.29.x → 0.30.0` (Sprint 2 shipped at 0.30.0/0.31.0).
 
 ---
 
@@ -271,6 +271,10 @@ type in the sprint.
   wiring in `commit.py`; doing G2 first gives a single guard layer to extend.
 
 ### Release train (target)
+
+Release targets are per-sprint and historical: each row shows the release that
+sprint actually generated. Sprint 1 shipped at 0.29.0 and Sprint 2 at 0.30.0, so
+their rows keep the 0.28.x/0.29.0 versions; Sprint 3 (#4) slipped to 0.32.0.
 
 | PR | Branch | Base | Generates release |
 |----|--------|------|-------------------|
