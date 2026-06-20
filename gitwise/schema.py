@@ -32,6 +32,62 @@ def command_input_schema_path(*, command: str, version: str = SCHEMA_VERSION_DEF
     return schema_root(version) / "input" / f"{command}.json"
 
 
+def command_output_schema_path(*, command: str, version: str = SCHEMA_VERSION_DEFAULT) -> Path:
+    """Return the path to the JSON schema describing *command* ``--json`` output."""
+    return schema_root(version) / "output" / f"{command}.json"
+
+
+def load_command_output_schema(
+    *, command: str, version: str = SCHEMA_VERSION_DEFAULT
+) -> dict | None:
+    """Load the output schema for *command*, or None if no specific file exists."""
+    path = command_output_schema_path(command=command, version=version)
+    if not path.exists():
+        return None
+    with path.open("r", encoding="utf-8") as f:
+        payload = json.load(f)
+    if not isinstance(payload, dict):
+        raise ValueError(f"schema file is not a JSON object: {path}")
+    return payload
+
+
+def generic_output_schema(*, command: str, version: str = SCHEMA_VERSION_DEFAULT) -> dict:
+    """Build a generic v3 envelope schema for commands lacking a specific output file.
+
+    Every ``--json`` output is the canonical envelope
+    ``{v, ok, command, data, hints, errors}``; commands without a bespoke
+    output schema still get a valid, command-scoped envelope description.
+    """
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": f"https://gitwise.dev/schemas/{version}/output/{command}.json",
+        "title": f"gitwise {command} cli output",
+        "description": "Generic v3 envelope; command-specific data fields are not enumerated.",
+        "type": "object",
+        "required": ["v", "ok", "command", "data", "hints", "errors"],
+        "additionalProperties": False,
+        "properties": {
+            "v": {"const": 3, "description": "envelope version"},
+            "ok": {"type": "boolean"},
+            "command": {"const": command},
+            "data": {"type": "object"},
+            "hints": {"type": "array", "items": {"type": "string"}},
+            "errors": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["code", "message"],
+                    "properties": {
+                        "code": {"type": "string"},
+                        "message": {"type": "string"},
+                        "hint": {"type": "string"},
+                    },
+                },
+            },
+        },
+    }
+
+
 def load_command_input_schema(
     *, command: str, version: str = SCHEMA_VERSION_DEFAULT
 ) -> dict | None:

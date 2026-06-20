@@ -40,6 +40,11 @@
       "type": "string",
       "description": "schema catalog version (default: v1)",
       "default": "v1"
+    },
+    "output": {
+      "type": "boolean",
+      "description": "show the command's --json output schema (default: input schema)",
+      "default": false
     }
   },
   "required": [

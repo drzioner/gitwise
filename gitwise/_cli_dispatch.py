@@ -494,6 +494,29 @@ def _run_schema(args: argparse.Namespace) -> int:
         return 1
 
     name = canonical_command_name(command_parser)
+
+    if getattr(args, "output", False):
+        from .schema import generic_output_schema, load_command_output_schema
+
+        output_schema = load_command_output_schema(command=name, version=args.version)
+        if output_schema is None:
+            output_schema = generic_output_schema(command=name, version=args.version)
+        print_json(
+            ok_envelope(
+                "schema",
+                data={
+                    "kind": "schema",
+                    "schema": "gitwise/schema/v1",
+                    "version": __version__,
+                    "schema_version": args.version,
+                    "command": name,
+                    "schema_kind": "cli_output",
+                    "json_schema": output_schema,
+                },
+            )
+        )
+        return 0
+
     schema = load_command_input_schema(command=name, version=args.version)
     if schema is None:
         message = t("schema_file_missing", command=name, version=args.version)

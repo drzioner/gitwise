@@ -112,6 +112,26 @@ def test_schema_boolean_flags_are_boolean_not_array():
     assert data["data"]["json_schema"]["properties"]["json_pretty"]["type"] == "boolean"
 
 
+def test_schema_output_flag_specific(tmp_git_repo):
+    result = _run("schema", "status", "--output", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["data"]["schema_kind"] == "cli_output"
+    js = data["data"]["json_schema"]
+    assert js["properties"]["v"]["const"] == 3
+    assert js["properties"]["command"]["const"] == "status"
+
+
+def test_schema_output_flag_generic_fallback(tmp_git_repo):
+    result = _run("schema", "stash", "--output", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["data"]["schema_kind"] == "cli_output"
+    js = data["data"]["json_schema"]
+    assert set(js["required"]) == {"v", "ok", "command", "data", "hints", "errors"}
+    assert js["properties"]["command"]["const"] == "stash"
+
+
 def test_schema_json_for_unknown_command_returns_error_envelope():
     result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "en"})
     assert result.returncode == 1

@@ -361,6 +361,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="v1",
         help="schema catalog version (default: v1)",
     )
+    p.add_argument(
+        "--output",
+        action="store_true",
+        help="show the command's --json output schema (default: input schema)",
+    )
 
     p = sub.add_parser(
         "completions",

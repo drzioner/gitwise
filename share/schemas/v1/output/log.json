@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/log.json",
+  "title": "gitwise log cli output",
+  "description": "v3 envelope for `gitwise log --json`. data.commits[].parents and [].stats are arrays (was space-joined string and raw --stat blob). data.truncated/total report pagination.",
+  "type": "object",
+  "required": ["v", "ok", "command", "data", "hints", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 3 },
+    "ok": { "type": "boolean" },
+    "command": { "const": "log" },
+    "hints": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "object" } },
+    "data": {
+      "type": "object",
+      "required": ["commits", "count", "total", "truncated"],
+      "properties": {
+        "commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["hash", "short_hash", "author", "email", "date", "subject", "parents", "stats"],
+            "properties": {
+              "hash": { "type": "string" },
+              "short_hash": { "type": "string" },
+              "author": { "type": "string" },
+              "email": { "type": "string" },
+              "date": { "type": "string", "description": "ISO-8601 strict (git --date=iso-strict)" },
+              "subject": { "type": "string" },
+              "parents": { "type": "array", "items": { "type": "string" } },
+              "stats": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["path", "insertions", "deletions", "binary"],
+                  "properties": {
+                    "path": { "type": "string" },
+                    "insertions": { "type": "integer" },
+                    "deletions": { "type": "integer" },
+                    "binary": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "count": { "type": "integer" },
+        "total": { "type": "integer" },
+        "truncated": { "type": "boolean" }
+      }
+    }
+  }
+}

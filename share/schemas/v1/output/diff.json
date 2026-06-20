@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/diff.json",
+  "title": "gitwise diff cli output",
+  "description": "v3 envelope for `gitwise diff --json`. data.files are rich per-file objects (path/insertions/deletions/binary/status). Mode-dependent extra fields (totals, binary_warnings, diff, findings) appear under data when relevant.",
+  "type": "object",
+  "required": ["v", "ok", "command", "data", "hints", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 3 },
+    "ok": { "type": "boolean" },
+    "command": { "const": "diff" },
+    "hints": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "object" } },
+    "data": {
+      "type": "object",
+      "required": ["files", "count"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": { "type": "string" },
+              "status": { "type": "string" },
+              "status_label": { "type": "string" },
+              "insertions": { "type": "integer" },
+              "deletions": { "type": "integer" },
+              "is_binary": { "type": "boolean" },
+              "changes": { "type": "string" },
+              "lines_changed": { "type": "integer" }
+            }
+          }
+        },
+        "count": { "type": "integer" },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "insertions": { "type": "integer" },
+            "deletions": { "type": "integer" },
+            "lines_changed": { "type": "integer" },
+            "binary_files": { "type": "integer" }
+          }
+        },
+        "binary_warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "mib"],
+            "properties": { "path": { "type": "string" }, "mib": { "type": "number" } }
+          }
+        },
+        "diff": { "type": "string", "description": "raw patch (only with --full)" },
+        "findings": {
+          "type": "array",
+          "description": "secret-scan findings (only with --scan-secrets)",
+          "items": {
+            "type": "object",
+            "required": ["rule", "path", "line", "preview", "severity"],
+            "properties": {
+              "rule": { "type": "string" },
+              "path": { "type": "string" },
+              "line": { "type": "integer" },
+              "preview": { "type": "string" },
+              "severity": { "type": "string", "enum": ["high", "medium"] }
+            }
+          }
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}
