@@ -125,7 +125,7 @@ def _run_tag_list(*, root: Path, as_json: bool) -> int:
     """Execute ``tag list`` sub-action."""
     tags = _list_tags(root)
     if as_json:
-        print_json(ok_envelope(tags=tags, count=len(tags)))
+        print_json(ok_envelope("tag", tags=tags, count=len(tags)))
         return 0
     _print_tag_list(tags)
     return 0
@@ -135,7 +135,7 @@ def _run_tag_latest(*, root: Path, as_json: bool) -> int:
     """Execute ``tag latest`` sub-action."""
     latest = _latest_semver(root)
     if as_json:
-        print_json(ok_envelope(latest=latest))
+        print_json(ok_envelope("tag", latest=latest))
         return 0
     if latest:
         print_header(t("tag_latest_title"))
@@ -175,13 +175,13 @@ def _run_tag_create(
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope(error=err))
+            print_json(error_envelope("tag", error=err))
         else:
             error(err)
         return 1
 
     if as_json:
-        print_json(ok_envelope(created=tag_name))
+        print_json(ok_envelope("tag", created=tag_name))
         return 0
     ok(t("tag_created", name=tag_name))
     return 0
@@ -213,13 +213,13 @@ def _run_tag_delete(
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag -d", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope(error=err))
+            print_json(error_envelope("tag", error=err))
         else:
             error(err)
         return 1
 
     if as_json:
-        print_json(ok_envelope(deleted=name))
+        print_json(ok_envelope("tag", deleted=name))
         return 0
     ok(t("tag_deleted", name=name))
     return 0

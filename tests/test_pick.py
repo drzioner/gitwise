@@ -15,7 +15,7 @@ def test_pick_no_refs_json(tmp_git_repo):
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
-    assert "error" in data
+    assert "errors" in data
 
 
 def test_pick_no_refs_json_pretty(tmp_git_repo):
@@ -23,7 +23,7 @@ def test_pick_no_refs_json_pretty(tmp_git_repo):
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
-    assert "error" in data
+    assert "errors" in data
 
 
 def test_pick_not_git(tmp_path):
@@ -53,7 +53,7 @@ def test_pick_dry_run_json(tmp_git_repo):
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert data["ok"] is True
-    assert data["dry_run"] is True
+    assert data["data"]["dry_run"] is True
 
 
 def test_pick_dry_run_json_pretty(tmp_git_repo):
@@ -61,7 +61,7 @@ def test_pick_dry_run_json_pretty(tmp_git_repo):
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert data["ok"] is True
-    assert data["dry_run"] is True
+    assert data["data"]["dry_run"] is True
 
 
 def test_cherry_pick_alias(tmp_git_repo):

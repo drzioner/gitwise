@@ -15,8 +15,8 @@ def test_stash_list_json(tmp_git_repo):
     r = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 2
-    assert data["count"] == 0
+    assert data["v"] == 3
+    assert data["data"]["count"] == 0
 
 
 def test_stash_show_missing(tmp_git_repo):
@@ -67,7 +67,7 @@ def test_stash_drop_non_interactive_requires_yes(tmp_git_repo):
 
     listed = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
     data = json.loads(listed.stdout)
-    assert data["count"] == 1
+    assert data["data"]["count"] == 1
 
 
 def test_stash_drop_with_yes_non_interactive_succeeds(tmp_git_repo):

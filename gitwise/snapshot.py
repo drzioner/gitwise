@@ -110,7 +110,7 @@ def run_snapshot(*, as_json: bool = False) -> int:
         path = generate_snapshot(root)
 
     if as_json:
-        print_json(ok_envelope(path=str(path)))
+        print_json(ok_envelope("snapshot", path=str(path)))
         return 0
 
     print_header(t("snapshot_generated", path=str(path.relative_to(root))))

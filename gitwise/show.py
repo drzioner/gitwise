@@ -93,7 +93,7 @@ def run_show(
             error(t("git_show_failed", error=r.stderr.strip()))
             return 1
         data = _parse_show_json(r.stdout)
-        print_json(ok_envelope(payload=data))
+        print_json(ok_envelope("show", data=data))
     else:
         if stat:
             with status(t("status_loading_commit")):

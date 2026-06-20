@@ -359,7 +359,7 @@ def run_health(*, as_json: bool = False) -> int:
         h = compute_health(root)
 
     if as_json:
-        print_json(ok_envelope(payload=h))
+        print_json(ok_envelope("health", data=h))
     else:
         print_header(t("health_label", score=str(h["score"]), grade=h["grade"]))
         if h["breakdown"]:
