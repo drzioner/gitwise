@@ -29,7 +29,7 @@ def _split_rename(raw_path: str, code: str) -> tuple[str, str | None]:
     plain filename that happens to contain `` -> `` must not be misparsed.
     """
     if ("R" in code or "C" in code) and " -> " in raw_path:
-        old, new = raw_path.split(" -> ", 1)
+        old, new = raw_path.rsplit(" -> ", 1)
         return new, old
     return raw_path, None
 

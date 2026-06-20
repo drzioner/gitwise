@@ -6,7 +6,7 @@ from gitwise.git import require_root, validate_author_pattern, validate_grep_pat
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import bat_pipe, error, info, print_json, print_table, status
-from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 def _build_log_args(
@@ -206,14 +206,21 @@ def _run_log_json(
             file=file,
             max_count=max_count + 1,
         )
-    except ValueError:
+    except ValueError as exc:
+        print_json(error_envelope("log", error=str(exc), code="invalid_argument"))
         return 1
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         if "does not have any commits yet" in result.stderr:
             print_json(ok_envelope("log", commits=[], count=0, total=0, truncated=False))
             return 0
-        error(t("git_log_failed", error=result.stderr.strip()))
+        print_json(
+            error_envelope(
+                "log",
+                error=t("git_log_failed", error=result.stderr.strip()),
+                code="git_log_failed",
+            )
+        )
         return 1
     commits = _parse_log_json(result.stdout)
     total = len(commits)

@@ -87,7 +87,7 @@ def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_jso
         print_json(
             error_envelope("conflicts", error=t("merge_conflicts"), conflicts=details, count=count)
         )
-        return 0
+        return 1
     print_header(t("conflicts_found", count=str(count)))
     for detail in details:
         print_accent(f"  {detail['file']}  ({detail['markers']} {t('markers_label')})")

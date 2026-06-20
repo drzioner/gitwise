@@ -47,6 +47,7 @@ def test_doctor_human_output():
 
 def test_doctor_detects_optional_tools():
     result = run_gitwise("doctor", "--json")
+    assert result.returncode == 0
     data = json.loads(result.stdout)["data"]
     tools = data["optional_tools"]
     assert isinstance(tools["bat"], bool)

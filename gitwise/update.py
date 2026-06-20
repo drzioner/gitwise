@@ -48,8 +48,8 @@ def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
             print_json(error_envelope("update", error=r.stderr.strip() or t("error_updating")))
             return 1
         error(r.stderr.strip() or t("error_updating"))
-        return r.returncode
+        return 1
     elif as_json:
         print_json(ok_envelope("update", updated=False, output=t("already_up_to_date")))
         return 0
-    return r.returncode
+    return 0

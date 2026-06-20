@@ -40,6 +40,6 @@ def test_conflicts_detect_markers(tmp_git_repo):
     )
 
     r = run_gitwise("conflicts", "--json", cwd=tmp_git_repo)
-    assert r.returncode == 0
+    assert r.returncode == 1
     data = json.loads(r.stdout)["data"]
     assert data["count"] >= 1
