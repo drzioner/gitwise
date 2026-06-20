@@ -77,6 +77,7 @@ def _handle_merge_dry_run(
     if as_json:
         print_json(
             ok_envelope(
+                "merge",
                 dry_run=True,
                 action="rebase" if rebase else "merge",
                 branch=branch,
@@ -134,7 +135,7 @@ def _confirm_merge_warnings(*, warnings: list[str], yes: bool) -> bool:
 def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool) -> int:
     """Print a merge/rebase success message and return 0."""
     if as_json:
-        print_json(ok_envelope(merged=branch, into=cur))
+        print_json(ok_envelope("merge", merged=branch, into=cur))
         return 0
     label = (
         t("merge_rebased", branch=branch, into=cur)
@@ -148,7 +149,7 @@ def _report_merge_success(*, as_json: bool, branch: str, cur: str, rebase: bool)
 def _report_merge_error(*, as_json: bool, err: str) -> int:
     """Print a merge error in JSON or human form and return 1."""
     if as_json:
-        print_json(error_envelope(error=err, code="merge_error", hint=t("merge_hint")))
+        print_json(error_envelope("merge", error=err, code="merge_error", hint=t("merge_hint")))
     else:
         error(err, hint=t("merge_hint"))
     return 1
@@ -184,7 +185,7 @@ def _handle_abort_or_continue(*, root: Path, abort: bool, as_json: bool) -> int:
         )
         msg = t("merge_no_in_progress", action=available, state=in_progress["state"])
         if as_json:
-            print_json(error_envelope(error=msg, code="merge_no_in_progress"))
+            print_json(error_envelope("merge", error=msg, code="merge_no_in_progress"))
         else:
             error(msg)
         return 1
@@ -195,7 +196,7 @@ def _handle_abort_or_continue(*, root: Path, abort: bool, as_json: bool) -> int:
         return _report_merge_error(as_json=as_json, err=err_msg)
     label_key = "merge_aborted" if abort else "merge_continued"
     if as_json:
-        print_json(ok_envelope(action="abort" if abort else "continue"))
+        print_json(ok_envelope("merge", action="abort" if abort else "continue"))
     else:
         ok(t(label_key))
     return 0
@@ -228,7 +229,7 @@ def run_merge(
     if abort and continue_merge:
         msg = t("merge_abort_continue_mutually_exclusive")
         if as_json:
-            print_json(error_envelope(error=msg, code="merge_invalid_args"))
+            print_json(error_envelope("merge", error=msg, code="merge_invalid_args"))
         else:
             error(msg)
         return 1
@@ -239,7 +240,7 @@ def run_merge(
     if branch is None:
         msg = t("merge_branch_required")
         if as_json:
-            print_json(error_envelope(error=msg, code="merge_branch_required"))
+            print_json(error_envelope("merge", error=msg, code="merge_branch_required"))
         else:
             error(msg)
         return 1

@@ -20,7 +20,7 @@ def test_suggest_json(tmp_git_repo):
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
-    assert "error" in data
+    assert "errors" in data
 
 
 def test_suggest_json_pretty(tmp_git_repo):
@@ -28,7 +28,7 @@ def test_suggest_json_pretty(tmp_git_repo):
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["ok"] is False
-    assert "error" in data
+    assert "errors" in data
 
 
 def test_suggest_with_staged(tmp_git_repo):
@@ -45,7 +45,7 @@ def test_suggest_with_staged_json(tmp_git_repo):
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert data["ok"] is True
-    assert "message" in data
+    assert "message" in data["data"]
 
 
 def test_suggest_with_staged_json_pretty(tmp_git_repo):
@@ -55,7 +55,7 @@ def test_suggest_with_staged_json_pretty(tmp_git_repo):
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert data["ok"] is True
-    assert "message" in data
+    assert "message" in data["data"]
 
 
 def test_suggest_numstat_binary_line_does_not_fail(tmp_git_repo):

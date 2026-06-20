@@ -139,6 +139,7 @@ def run_suggest(*, as_json: bool = False) -> int:
         if as_json:
             print_json(
                 error_envelope(
+                    "suggest",
                     error=blocked_msg,
                     code=f"in_progress_{in_progress['state']}",
                     hint=hint,
@@ -158,7 +159,7 @@ def run_suggest(*, as_json: bool = False) -> int:
 
     if not staged_files:
         if as_json:
-            print_json(error_envelope(error=t("suggest_no_staged")))
+            print_json(error_envelope("suggest", error=t("suggest_no_staged")))
             return 1
         error(t("suggest_no_staged"))
         return 1
@@ -168,6 +169,7 @@ def run_suggest(*, as_json: bool = False) -> int:
     if as_json:
         print_json(
             ok_envelope(
+                "suggest",
                 message=message,
                 files=staged_files,
                 additions=additions,

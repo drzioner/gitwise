@@ -105,7 +105,7 @@ def _validate_gpg_ready(root: Path) -> bool:
 def _report_commit_error(*, as_json: bool, err: str) -> int:
     """Emit a commit error in JSON or human form and return 1."""
     if as_json:
-        print_json(error_envelope(error=err))
+        print_json(error_envelope("commit", error=err))
     else:
         error(err)
     return 1
@@ -125,7 +125,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
     except SecretScanUnavailable as exc:
         unavailable = t("secret_scan_unavailable", error=str(exc))
         if as_json:
-            print_json(error_envelope(error=unavailable, code="secret_scan_unavailable"))
+            print_json(error_envelope("commit", error=unavailable, code="secret_scan_unavailable"))
         else:
             error(unavailable)
         return 1
@@ -149,6 +149,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
         if as_json:
             print_json(
                 error_envelope(
+                    "commit",
                     error=t("secret_scan_blocked_high", count=str(len(high))),
                     code="secret_leak_high",
                     hint=t("secret_scan_blocked_hint"),
@@ -203,6 +204,7 @@ def run_commit(
         if as_json:
             print_json(
                 error_envelope(
+                    "commit",
                     error=blocked_msg,
                     code=f"in_progress_{in_progress['state']}",
                     hint=hint,
@@ -234,7 +236,7 @@ def run_commit(
 
     if dry_run:
         if as_json:
-            print_json(ok_envelope(message=full_msg, amend=amend, dry_run=True))
+            print_json(ok_envelope("commit", message=full_msg, amend=amend, dry_run=True))
         else:
             _print_dry_run(message=full_msg, amend=amend, root=root)
         return 0
@@ -244,5 +246,5 @@ def run_commit(
         return _report_commit_error(as_json=as_json, err=err)
 
     if as_json:
-        print_json(ok_envelope(message=full_msg, amend=amend))
+        print_json(ok_envelope("commit", message=full_msg, amend=amend))
     return 0

@@ -114,11 +114,12 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         if as_json:
             print_json(
                 ok_envelope(
-                    payload={
+                    "optimize",
+                    data={
                         "dry_run": True,
                         "applied": False,
                         "steps": [{"name": n, "desc": d} for n, d in steps],
-                    }
+                    },
                 )
             )
             return 0
@@ -133,6 +134,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     if as_json and not yes:
         print_json(
             error_envelope(
+                "optimize",
                 error=t("yes_required_with_json"),
                 code="yes_required",
                 hint=t("yes_required_hint"),
@@ -205,13 +207,14 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
             "rc": rc,
         }
         if rc == 0:
-            print_json(ok_envelope(payload=payload))
+            print_json(ok_envelope("optimize", data=payload))
         else:
             print_json(
                 error_envelope(
+                    "optimize",
                     error=t("optimize_partial_failure"),
                     code="optimize_partial_failure",
-                    payload=payload,
+                    data=payload,
                 )
             )
     else:
