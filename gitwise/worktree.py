@@ -107,6 +107,28 @@ def _worktree_new_json(branch: str, root: Path) -> tuple[int, dict]:
     return rc, data
 
 
+def _worktree_list(cwd: Path, *, as_json: bool = False) -> int:
+    """List registered worktrees (human table or v3 JSON envelope)."""
+    worktrees = _list_worktrees(cwd)
+    if as_json:
+        print_json(ok_envelope("worktree", worktrees=worktrees, count=len(worktrees)))
+        return 0
+    if not worktrees:
+        info(t("worktree_list_empty"))
+        return 0
+    print_header(t("worktree_list_header", count=str(len(worktrees))))
+    for wt in worktrees:
+        branch = wt["branch"] or t("unknown_branch")
+        flags = []
+        if wt["locked"]:
+            flags.append(t("worktree_flag_locked"))
+        if wt["prunable"]:
+            flags.append(t("worktree_flag_prunable"))
+        suffix = f"  [{', '.join(flags)}]" if flags else ""
+        print_bracket(wt["path"], t("branch_label", branch=branch) + suffix)
+    return 0
+
+
 def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) -> int:
     """Prune stale worktree admin files and report orphaned worktrees."""
     # git worktree prune removes stale admin files
@@ -192,6 +214,9 @@ def run_worktree(
 
     elif action == "clean":
         return _worktree_clean(root, dry_run=dry_run, as_json=as_json)
+
+    elif action == "list":
+        return _worktree_list(root, as_json=as_json)
 
     else:
         error(t("worktree_usage_full"))

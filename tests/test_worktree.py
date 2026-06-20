@@ -89,3 +89,28 @@ def test_worktree_new_rejects_parent_traversal_branch(tmp_git_repo: Path) -> Non
 def test_worktree_new_rejects_absolute_like_branch(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "new", "/tmp/evil", cwd=tmp_git_repo)
     assert result.returncode == 1
+
+
+def test_worktree_list_includes_main_and_added(tmp_git_repo: Path) -> None:
+    wt_path = tmp_git_repo.parent / "list-wt"
+    _git(["worktree", "add", str(wt_path), "-b", "list-branch"], tmp_git_repo)
+    result = run_gitwise("worktree", "list", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert "list-wt" in result.stdout
+    assert "list-branch" in result.stdout
+
+
+def test_worktree_list_json_envelope(tmp_git_repo: Path) -> None:
+    wt_path = tmp_git_repo.parent / "json-wt"
+    _git(["worktree", "add", str(wt_path), "-b", "json-branch"], tmp_git_repo)
+    result = run_gitwise("worktree", "list", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    env = json.loads(result.stdout)
+    assert env["v"] == 3
+    assert env["command"] == "worktree"
+    worktrees = env["data"]["worktrees"]
+    assert env["data"]["count"] == len(worktrees)
+    assert len(worktrees) >= 2
+    assert any(wt["branch"] == "json-branch" for wt in worktrees)
+    sample = worktrees[0]
+    assert {"path", "branch", "locked", "prunable"} <= set(sample.keys())

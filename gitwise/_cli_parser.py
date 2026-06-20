@@ -163,7 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true")
 
     p = sub.add_parser("worktree", help="worktree helpers for Claude agents", parents=[parent])
-    p.add_argument("action", choices=["new", "clean"], nargs="?", metavar="new|clean")
+    p.add_argument("action", choices=["new", "clean", "list"], nargs="?", metavar="new|clean|list")
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
 

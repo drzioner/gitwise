@@ -2023,6 +2023,22 @@
     "es": "  rama: {branch}",
     "en": "  branch: {branch}"
   },
+  "worktree_flag_locked": {
+    "es": "bloqueado",
+    "en": "locked"
+  },
+  "worktree_flag_prunable": {
+    "es": "podable",
+    "en": "prunable"
+  },
+  "worktree_list_empty": {
+    "es": "no hay worktrees registrados",
+    "en": "no registered worktrees"
+  },
+  "worktree_list_header": {
+    "es": "worktrees ({count}):",
+    "en": "worktrees ({count}):"
+  },
   "worktree_created": {
     "es": "worktree creado: {path}",
     "en": "worktree created: {path}"
