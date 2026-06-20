@@ -131,7 +131,7 @@ def test_status_json_includes_in_progress_when_clean(tmp_git_repo: Path) -> None
     import json
 
     data = json.loads(r.stdout)
-    assert data["in_progress"] == {"state": "none", "ref": None}
+    assert data["data"]["in_progress"] == {"state": "none", "ref": None}
 
 
 def test_status_json_reports_in_progress_merge(tmp_git_repo: Path) -> None:
@@ -144,8 +144,8 @@ def test_status_json_reports_in_progress_merge(tmp_git_repo: Path) -> None:
     import json
 
     data = json.loads(r.stdout)
-    assert data["in_progress"]["state"] == "merge"
-    assert data["in_progress"]["ref"] == "abc123"
+    assert data["data"]["in_progress"]["state"] == "merge"
+    assert data["data"]["in_progress"]["ref"] == "abc123"
 
 
 def test_suggest_refuses_during_in_progress_merge(tmp_git_repo: Path) -> None:
@@ -160,7 +160,7 @@ def test_suggest_refuses_during_in_progress_merge(tmp_git_repo: Path) -> None:
     data = json.loads(r.stdout)
     assert data["ok"] is False
     assert data["errors"][0]["code"] == "in_progress_merge"
-    assert "merge" in data["error"]
+    assert "merge" in data["errors"][0]["message"]
 
 
 def test_merge_abort_without_in_progress_errors(tmp_git_repo: Path) -> None:

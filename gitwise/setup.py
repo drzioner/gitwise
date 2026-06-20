@@ -475,7 +475,8 @@ def run_setup(
         if as_json:
             print_json(
                 ok_envelope(
-                    payload=_json_report(
+                    "setup",
+                    data=_json_report(
                         dry_run=True,
                         root=cwd,
                         changes=changes,
@@ -504,6 +505,7 @@ def run_setup(
     if as_json and not yes:
         print_json(
             error_envelope(
+                "setup",
                 error=t("yes_required_with_json"),
                 code="yes_required",
                 hint=t("yes_required_hint"),
@@ -533,7 +535,8 @@ def run_setup(
         if as_json:
             print_json(
                 ok_envelope(
-                    payload=_json_report(
+                    "setup",
+                    data=_json_report(
                         dry_run=False,
                         root=cwd,
                         changes=[],
@@ -564,13 +567,14 @@ def run_setup(
         report["results"] = results
         all_ok = all(bool(r.get("applied")) for r in results)
         if all_ok:
-            print_json(ok_envelope(payload=report))
+            print_json(ok_envelope("setup", data=report))
             return 0
         print_json(
             error_envelope(
+                "setup",
                 error=t("setup_partial_failure"),
                 code="setup_partial_failure",
-                payload=report,
+                data=report,
             )
         )
         return 1

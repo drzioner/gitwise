@@ -58,6 +58,8 @@ def format_json_output_global(
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
+        "command": "setup-agents",
+        "hints": [],
         "dry_run": dry_run,
         "root": str(home / ".claude"),
         "mode": "global",
@@ -82,6 +84,8 @@ def format_json_output_global_error(
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
+        "command": "setup-agents",
+        "hints": [],
         "dry_run": dry_run,
         "root": str(home / ".claude"),
         "mode": "global",
@@ -112,6 +116,8 @@ def format_json_output_local_error(
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
+        "command": "setup-agents",
+        "hints": [],
         "dry_run": dry_run,
         "root": str(root),
         "mode": "local",
@@ -151,6 +157,8 @@ def format_json_output_local(
     return {
         "v": _SETUP_AGENTS_SCHEMA_VERSION,
         "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
+        "command": "setup-agents",
+        "hints": [],
         "dry_run": dry_run,
         "root": str(root),
         "mode": "local",

@@ -33,7 +33,7 @@ def test_json_output_locale_independent():
     data_en = json.loads(result_en.stdout)
     data_es = json.loads(result_es.stdout)
     assert data_en["v"] == data_es["v"]
-    assert len(data_en["findings"]) == len(data_es["findings"])
+    assert len(data_en["data"]["findings"]) == len(data_es["data"]["findings"])
 
 
 def test_missing_key_returns_key_itself():

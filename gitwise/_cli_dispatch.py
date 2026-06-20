@@ -14,7 +14,7 @@ from ._cli_introspection import (
 from ._cli_parser import build_parser
 from .i18n import t
 from .output import print_json
-from .utils.json_envelope import error_envelope
+from .utils.json_envelope import error_envelope, ok_envelope
 
 
 def _run_update(args: argparse.Namespace) -> int:
@@ -177,7 +177,7 @@ def _run_diff(args: argparse.Namespace) -> int:
             recovered_refspec, recovered_paths = _recover_diff_pathspec_boundary()
         except ValueError as exc:
             if args.json:
-                print_json(error_envelope(error=str(exc), code="too_many_refs"))
+                print_json(error_envelope("diff", error=str(exc), code="too_many_refs"))
             else:
                 error_out(str(exc))
             return 1
@@ -389,14 +389,16 @@ def _run_completions(args: argparse.Namespace) -> int:
         hint = t("missing_dependency_hint")
         message = t("missing_dependency_completions_shtab")
         if args.json:
-            print_json(error_envelope(error=message, code="missing_dependency", hint=hint))
+            print_json(
+                error_envelope("completions", error=message, code="missing_dependency", hint=hint)
+            )
         else:
             _error(message, hint=hint)
         return 1
     except RuntimeError as e:
         message = str(e)
         if args.json:
-            print_json(error_envelope(error=message, code="runtime_error"))
+            print_json(error_envelope("completions", error=message, code="runtime_error"))
         else:
             from .output import error as _error
 
@@ -405,7 +407,7 @@ def _run_completions(args: argparse.Namespace) -> int:
     except ValueError:
         message = t("completions_unsupported_shell", shell=shell)
         if args.json:
-            print_json(error_envelope(error=message, code="unsupported_shell"))
+            print_json(error_envelope("completions", error=message, code="unsupported_shell"))
         else:
             from .output import error as _error
 
@@ -414,16 +416,17 @@ def _run_completions(args: argparse.Namespace) -> int:
 
     if args.json:
         print_json(
-            {
-                "v": 2,
-                "ok": True,
-                "kind": "completions",
-                "schema": "gitwise/completions/v1",
-                "version": __version__,
-                "shell": shell,
-                "prog": prog,
-                "script": script,
-            }
+            ok_envelope(
+                "completions",
+                data={
+                    "kind": "completions",
+                    "schema": "gitwise/completions/v1",
+                    "version": __version__,
+                    "shell": shell,
+                    "prog": prog,
+                    "script": script,
+                },
+            )
         )
         return 0
 
@@ -435,14 +438,15 @@ def _run_commands(args: argparse.Namespace) -> int:
     """List all registered subcommands with aliases."""
     parser = build_parser()
     commands = commands_metadata(parser)
-    payload = {
-        "v": 2,
-        "ok": True,
-        "kind": "commands",
-        "schema": "gitwise/commands/v1",
-        "version": __version__,
-        "commands": commands,
-    }
+    payload = ok_envelope(
+        "commands",
+        data={
+            "kind": "commands",
+            "schema": "gitwise/commands/v1",
+            "version": __version__,
+            "commands": commands,
+        },
+    )
 
     if args.json:
         print_json(payload)
@@ -475,6 +479,7 @@ def _run_schema(args: argparse.Namespace) -> int:
         if args.json:
             print_json(
                 error_envelope(
+                    "schema",
                     error=message,
                     code="unknown_command",
                     hint=hint,
@@ -496,6 +501,7 @@ def _run_schema(args: argparse.Namespace) -> int:
         if args.json:
             print_json(
                 error_envelope(
+                    "schema",
                     error=message,
                     code="schema_not_found",
                     hint=hint,
@@ -509,17 +515,18 @@ def _run_schema(args: argparse.Namespace) -> int:
             _error(message, hint=hint)
         return 1
 
-    payload = {
-        "v": 2,
-        "ok": True,
-        "kind": "schema",
-        "schema": "gitwise/schema/v1",
-        "version": __version__,
-        "schema_version": args.version,
-        "command": name,
-        "schema_kind": "cli_input",
-        "json_schema": schema,
-    }
+    payload = ok_envelope(
+        "schema",
+        data={
+            "kind": "schema",
+            "schema": "gitwise/schema/v1",
+            "version": __version__,
+            "schema_version": args.version,
+            "command": name,
+            "schema_kind": "cli_input",
+            "json_schema": schema,
+        },
+    )
 
     print_json(payload)
     return 0

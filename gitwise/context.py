@@ -6,6 +6,7 @@ from .git import require_root
 from .git import run as git_run
 from .i18n import t
 from .output import info, print_blank, print_bracket, print_dim, print_header, print_json, status
+from .utils.json_envelope import ok_envelope
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
@@ -129,16 +130,17 @@ def run_context(*, as_json: bool = False) -> int:
 
         h = compute_health(root)
         print_json(
-            {
-                "v": 2,
-                "ok": True,
-                "tree": tree,
-                "contributors": contributors,
-                "file_types": file_types,
-                "todo_fixme": todo_fixme,
-                "branches": topology,
-                "health": {"score": h["score"], "grade": h["grade"]},
-            }
+            ok_envelope(
+                "context",
+                data={
+                    "tree": tree,
+                    "contributors": contributors,
+                    "file_types": file_types,
+                    "todo_fixme": todo_fixme,
+                    "branches": topology,
+                    "health": {"score": h["score"], "grade": h["grade"]},
+                },
+            )
         )
     else:
         print_header(t("ctx_directory_tree"))

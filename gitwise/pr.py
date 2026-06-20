@@ -418,7 +418,7 @@ def _render_pr_comments(payload: dict[str, object]) -> int:
 def _invalid_json_response(*, as_json: bool, raw: str) -> int:
     """Emit an error envelope or human message for unparseable gh JSON output."""
     if as_json:
-        print_json(error_envelope(error="invalid_gh_json", raw=raw))
+        print_json(error_envelope("pr", error="invalid_gh_json", raw=raw))
     else:
         error(t("pr_invalid_json"))
     return 1
@@ -434,11 +434,10 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
     if as_json:
         ok_json, payload = _json_or_error(out)
         if not ok_json:
-            print_json(error_envelope(error="invalid_gh_json", raw=out))
-        elif payload is None:
-            print_json([])
+            print_json(error_envelope("pr", error="invalid_gh_json", raw=out))
         else:
-            print_json(payload)
+            prs = payload if isinstance(payload, list) else []
+            print_json(ok_envelope("pr", prs=prs, count=len(prs)))
         return 0
 
     prs = json.loads(out) if out else []
@@ -475,6 +474,7 @@ def _run_action_checks(*, root: Path, selected: list[str], as_json: bool) -> int
         summary = _checks_summary(checks)
         print_json(
             ok_envelope(
+                "pr",
                 selector=_pr_label_for_selector(selected),
                 checks=checks,
                 count=len(checks),
@@ -498,7 +498,7 @@ def _run_action_view(*, root: Path, selected: list[str], as_json: bool) -> int:
         return _invalid_json_response(as_json=as_json, raw=out)
 
     if as_json:
-        print_json(ok_envelope(payload=payload))
+        print_json(ok_envelope("pr", data=payload))
         return 0
 
     _render_pr_view(payload)
@@ -522,6 +522,7 @@ def _run_action_comments(*, root: Path, selected: list[str], as_json: bool) -> i
     if as_json:
         print_json(
             ok_envelope(
+                "pr",
                 number=payload.get("number"),
                 title=payload.get("title"),
                 url=payload.get("url"),

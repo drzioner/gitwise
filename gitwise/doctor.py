@@ -18,6 +18,7 @@ from .output import (
     status,
     warn,
 )
+from .utils.json_envelope import ok_envelope
 
 MIN_GIT = (2, 29, 0)
 
@@ -53,7 +54,6 @@ def run_doctor(*, as_json: bool = False) -> int:
         gpg = gpg_status()
 
     result = {
-        "v": 2,
         "gitwise_version": __version__,
         "git_version": ".".join(str(n) for n in git_ver),
         "git_version_ok": git_ok,
@@ -64,12 +64,14 @@ def run_doctor(*, as_json: bool = False) -> int:
         "fsmonitor_supported": fsmonitor_supported,
         "optional_tools": optional,
         "gpg": gpg,
-        "ok": git_ok and python_ok,
     }
+    doctor_ok = git_ok and python_ok
 
     if as_json:
-        print_json(result)
-        return 0 if result["ok"] else 1
+        env = ok_envelope("doctor", data=result)
+        env["ok"] = doctor_ok
+        print_json(env)
+        return 0 if doctor_ok else 1
 
     print_header(f"gitwise {__version__}")
     print_blank()
@@ -120,4 +122,4 @@ def run_doctor(*, as_json: bool = False) -> int:
         print_status_line("✗", t("gpg_no_signing_key"), "", ok_flag=False)
         print_dim(t("gpg_key_instruction"))
 
-    return 0 if result["ok"] else 1
+    return 0 if doctor_ok else 1

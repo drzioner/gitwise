@@ -9,12 +9,13 @@ def test_context_json(tmp_git_repo):
     r = run_gitwise("context", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 2
-    assert isinstance(data["tree"], list)
-    assert isinstance(data["contributors"], list)
-    assert isinstance(data["file_types"], dict)
-    assert "todo_fixme" in data
-    assert "branches" in data
+    assert data["v"] == 3
+    inner = data["data"]
+    assert isinstance(inner["tree"], list)
+    assert isinstance(inner["contributors"], list)
+    assert isinstance(inner["file_types"], dict)
+    assert "todo_fixme" in inner
+    assert "branches" in inner
 
 
 def test_context_human(tmp_git_repo):

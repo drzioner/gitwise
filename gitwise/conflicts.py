@@ -62,7 +62,7 @@ def _conflict_details(root: Path, conflicts: list[str]) -> list[dict[str, str | 
 def _report_no_conflicts(*, as_json: bool) -> int:
     """Print or envelope a clean conflicts report."""
     if as_json:
-        print_json(ok_envelope(conflicts=[], count=0))
+        print_json(ok_envelope("conflicts", conflicts=[], count=0))
         return 0
     ok(t("conflicts_none"))
     return 0
@@ -74,7 +74,7 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
     if rc != 0:
         return rc
     if as_json:
-        print_json(ok_envelope(resolved=len(conflicts), strategy=strategy))
+        print_json(ok_envelope("conflicts", resolved=len(conflicts), strategy=strategy))
         return 0
     key = "conflicts_resolved_ours" if strategy == "ours" else "conflicts_resolved_theirs"
     ok(t(key, count=str(len(conflicts))))
@@ -84,7 +84,9 @@ def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_
 def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_json: bool) -> int:
     """Print or envelope the conflict report."""
     if as_json:
-        print_json(error_envelope(error=t("merge_conflicts"), conflicts=details, count=count))
+        print_json(
+            error_envelope("conflicts", error=t("merge_conflicts"), conflicts=details, count=count)
+        )
         return 0
     print_header(t("conflicts_found", count=str(count)))
     for detail in details:

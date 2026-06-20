@@ -41,8 +41,8 @@ def test_idempotent(tmp_git_repo):
     """Ejecutar setup --dry-run dos veces produce el mismo JSON."""
     r1 = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     r2 = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
-    d1 = json.loads(r1.stdout)
-    d2 = json.loads(r2.stdout)
+    d1 = json.loads(r1.stdout)["data"]
+    d2 = json.loads(r2.stdout)["data"]
     assert d1["changes"] == d2["changes"]
 
 
@@ -83,12 +83,12 @@ def test_setup_json_structure(tmp_git_repo):
     r = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["v"] == 2
-    assert "changes" in data
-    assert "warnings" in data
+    assert data["v"] == 3
+    assert "changes" in data["data"]
+    assert "warnings" in data["data"]
     assert "ok" in data
-    assert "hooks_backend" in data
-    assert "hooks_mode_requested" in data
+    assert "hooks_backend" in data["data"]
+    assert "hooks_mode_requested" in data["data"]
     assert data["ok"] is True
 
 
@@ -166,7 +166,9 @@ def test_setup_legacy_mode_reports_overwrite_warning_in_json(tmp_git_repo):
     )
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert any("legacy mode will overwrite current core.hooksPath" in w for w in data["warnings"])
+    assert any(
+        "legacy mode will overwrite current core.hooksPath" in w for w in data["data"]["warnings"]
+    )
 
 
 def test_setup_preserve_skips_when_existing_hook_scripts_present(tmp_git_repo):
@@ -183,8 +185,8 @@ def test_setup_preserve_skips_when_existing_hook_scripts_present(tmp_git_repo):
     )
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["hooks_backend"] == "skip"
-    assert any("existing hooks detected (pre-commit)" in w for w in data["warnings"])
+    assert data["data"]["hooks_backend"] == "skip"
+    assert any("existing hooks detected (pre-commit)" in w for w in data["data"]["warnings"])
 
 
 def test_setup_preserve_keeps_legacy_when_gitwise_hookspath_already_set(tmp_git_repo):
@@ -200,4 +202,4 @@ def test_setup_preserve_keeps_legacy_when_gitwise_hookspath_already_set(tmp_git_
     r = _run("setup", "--dry-run", "--json", cwd=tmp_git_repo)
     assert r.returncode == 0
     data = json.loads(r.stdout)
-    assert data["hooks_backend"] == "legacy"
+    assert data["data"]["hooks_backend"] == "legacy"

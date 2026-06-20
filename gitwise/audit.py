@@ -28,6 +28,7 @@ from .output import (
     print_json,
     status,
 )
+from .utils.json_envelope import ok_envelope
 
 _STALE_DAYS = 30
 _LARGE_BLOB_MIN_BYTES = 1_000_000  # 1MB
@@ -309,8 +310,6 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     has_issues = any(f["severity"] in ("critical", "high", "medium") for f in findings)
 
     result: dict[str, Any] = {
-        "v": 2,
-        "ok": not has_issues,
         "quick": quick,
         "findings": findings,
         "summary": {
@@ -325,7 +324,9 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     }
 
     if as_json:
-        print_json(result)
+        env = ok_envelope("audit", data=result)
+        env["ok"] = not has_issues
+        print_json(env)
         return 0 if not has_issues else 1
 
     if not findings:
