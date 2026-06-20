@@ -220,7 +220,7 @@ Soft: better after Sprint 2 (D1 adds new diff args that v3 absorbs cleanly).
 
 ---
 
-## Sprint 4 — DX polish
+## Sprint 4 — DX polish — IMPLEMENTED (0.32.x)
 
 **Goal:** fill remaining UX gaps and Windows-parity items. Lowest priority;
 ship after contracts stabilize so polish is not reworked.

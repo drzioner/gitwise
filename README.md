@@ -102,7 +102,7 @@ gitwise summarize
 | `gitwise status` | Enhanced status with staged/unstaged and ahead/behind |
 | `gitwise commands --json` | List subcommands with aliases and metadata |
 | `gitwise schema <command> --json` | Return versioned JSON Schema for command inputs |
-| `gitwise completions <shell>` | Generate shell completion scripts (bash/zsh/fish) |
+| `gitwise completions <shell>` | Generate shell completion scripts (bash/zsh/fish/powershell) |
 | `gitwise pr` | List/check/view PRs via GitHub CLI |
 
 For all commands, examples, aliases, and JSON usage, see:
@@ -154,6 +154,19 @@ gitwise completions bash > ~/.local/share/bash-completion/completions/gitwise
 gitwise completions zsh > ~/.zsh/completions/_gitwise
 gitwise completions fish > ~/.config/fish/completions/gitwise.fish
 ```
+
+**PowerShell** (Windows / PowerShell Core): generate and dot-source the
+`Register-ArgumentCompleter` script. Add it to your `$PROFILE` for persistence:
+
+```powershell
+gitwise completions powershell > gitwise.ps1
+. .\gitwise.ps1
+# or, to load on every session:
+Add-Content $PROFILE ('. ' + ((Resolve-Path 'gitwise.ps1').Path))
+```
+
+Completion covers subcommands as the first token and per-command flags
+(`--json`, `--dry-run`, `--max-count`, etc.) thereafter.
 
 ## Demo
 
