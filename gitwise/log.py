@@ -200,8 +200,17 @@ def _run_log_json(
     """Execute git log and emit structured JSON with enriched per-commit stats.
 
     With ``json_lines``, stream one compact v3 envelope per commit (NDJSON) for
-    incremental processing instead of a single blob.
+    incremental processing instead of a single blob. All output paths (including
+    errors) emit single-line envelopes to preserve the NDJSON record contract.
     """
+    from gitwise.output import print_json_line
+
+    def _emit(env: dict) -> None:
+        if json_lines:
+            print_json_line(env)
+        else:
+            print_json(env)
+
     try:
         args = _build_log_json_args(
             author=author,
@@ -212,14 +221,14 @@ def _run_log_json(
             max_count=max_count + 1,
         )
     except ValueError as exc:
-        print_json(error_envelope("log", error=str(exc), code="invalid_argument"))
+        _emit(error_envelope("log", error=str(exc), code="invalid_argument"))
         return 1
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
         if "does not have any commits yet" in result.stderr:
-            print_json(ok_envelope("log", commits=[], count=0, total=0, truncated=False))
+            _emit(ok_envelope("log", commits=[], count=0, total=0, truncated=False))
             return 0
-        print_json(
+        _emit(
             error_envelope(
                 "log",
                 error=t("git_log_failed", error=result.stderr.strip()),

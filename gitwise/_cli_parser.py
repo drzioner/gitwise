@@ -328,10 +328,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser(
         "conflicts", help="conflict detection and resolution helper", parents=[parent]
     )
-    p.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
-    p.add_argument("--theirs", action="store_true", help="resolve all conflicts using theirs")
-    p.add_argument(
-        "--union", action="store_true", help="resolve all conflicts keeping both sides (union)"
+    strategy = p.add_mutually_exclusive_group()
+    strategy.add_argument("--ours", action="store_true", help="resolve all conflicts using ours")
+    strategy.add_argument(
+        "--theirs", action="store_true", help="resolve all conflicts using theirs"
+    )
+    strategy.add_argument(
+        "--union",
+        action="store_true",
+        help="resolve all conflicts keeping both sides (union)",
     )
 
     p = sub.add_parser(

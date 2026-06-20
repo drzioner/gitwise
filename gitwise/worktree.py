@@ -38,7 +38,7 @@ def _list_worktrees(cwd: Path) -> list[dict]:
             }
         elif line.startswith("branch refs/heads/"):
             current["branch"] = line.removeprefix("branch refs/heads/")
-        elif line == "locked":
+        elif line.startswith("locked"):
             current["locked"] = True
         elif line.startswith("prunable"):
             current["prunable"] = True

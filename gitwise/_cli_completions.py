@@ -145,8 +145,10 @@ Register-ArgumentCompleter -Native -CommandName '{prog}' -ScriptBlock {{
 {per_command_block}
         }}
 
-    $tokens = $commandAst.CommandElements | Select-Object -Skip 1 | Where-Object {{ $_.Value -ne $commandAst.CommandElements[0].Value }}
-    $subcommand = ($tokens | Where-Object {{ $_.Value -notlike '-*' }} | Select-Object -First 1).Value
+    # Only tokens fully before the cursor are "completed"; the word at the
+    # cursor is being typed and must not be mistaken for the subcommand.
+    $priorTokens = @($commandAst.CommandElements | Select-Object -Skip 1 | Where-Object {{ $_.Extent.EndOffset -lt $cursorPosition }})
+    $subcommand = ($priorTokens | Where-Object {{ $_.Value -notlike '-*' }} | Select-Object -First 1).Value
 
     if (-not $subcommand) {{
         $candidates = $commands + $globalFlags
