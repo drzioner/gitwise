@@ -6,8 +6,6 @@ single consumer can parse per-file data from any of them (roadmap J3).
 
 from typing import TypedDict
 
-from typing_extensions import Required
-
 CONFLICT_CODES = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
 
 
@@ -30,14 +28,24 @@ def status_from_code(code: str) -> str:
     return "modified"
 
 
-class FileEntry(TypedDict, total=False):
-    """A per-file record shared by status/diff/summarize JSON output."""
+class _FileEntryRequired(TypedDict):
+    """Always-present FileEntry fields (inherited as required keys)."""
 
-    path: Required[str]
-    code: Required[str]
-    status: Required[str]
-    staged: Required[bool]
-    binary: Required[bool]
+    path: str
+    code: str
+    status: str
+    staged: bool
+    binary: bool
+
+
+class FileEntry(_FileEntryRequired, total=False):
+    """A per-file record shared by status/diff/summarize JSON output.
+
+    The five core keys are required (inherited); diff-only fields are optional.
+    Uses TypedDict inheritance instead of ``typing.Required`` so it works on
+    Python 3.10 without the ``typing_extensions`` dependency.
+    """
+
     insertions: int
     deletions: int
     old_path: str
