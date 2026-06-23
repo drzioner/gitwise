@@ -1,7 +1,7 @@
 # Historial de cambios
 
 Source: CHANGELOG.md
-Last sync: 2026-06-20
+Last sync: 2026-06-23
 
 [English](CHANGELOG.md) | [Español](CHANGELOG.es.md)
 
@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.33.0 (2026-06-20)
+## v0.33.1 (2026-06-23)
 
-### Feat
+### Fix
 
-- Sprint 4 DX polish -- worktree list, conflicts --union, powershell, ndjson (#71)
+- make gw a real binary for non-interactive shells (#80)
