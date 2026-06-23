@@ -1,0 +1,11 @@
+// markdownlint-cli2 config -- supports the markdownlint tool enabled in
+// .coderabbit.yaml. Disables only the rules that conflict with this repo's
+// established documentation style, so the tool emits signal instead of noise.
+{
+  "default": true,
+  // Docs intentionally use long, unwrapped lines (tables, code spans).
+  "MD013": false,
+  // Project uses real inline HTML (<sub>, <sup>, <kbd>, <details>) and
+  // <placeholder> angle-bracket syntax in prose.
+  "MD033": false
+}
