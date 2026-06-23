@@ -233,12 +233,13 @@ knowledge_base:
     enabled: true
   code_guidelines:
     enabled: true
-    # Defaults already scan AGENTS.md, CLAUDE.md, GEMINI.md, .cursorrules, etc.
-    # Add the repo's scoped rule files so they count as review criteria too.
+    # Per schema, items are glob strings (or {files, applyTo} objects) -- not
+    # {path:}. Specifying the list replaces the built-in defaults, so re-list
+    # the ones we want plus the repo's scoped rule files.
     filePatterns:
-      - path: "**/AGENTS.md"
-      - path: "**/CLAUDE.md"
-      - path: "**/.agents/rules/*.md"
+      - "**/AGENTS.md"
+      - "**/CLAUDE.md"
+      - "**/.agents/rules/*.md"
   learnings:
     scope: local            # repo-only for a public project
     approval_delay: 7       # days to reject a bad learning before auto-apply (public repo)
