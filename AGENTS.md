@@ -1,6 +1,6 @@
 # gitwise — Agent Guide
 
-gitwise is a Python CLI for optimizing git workflows and Claude Code integration. It uses `rich` for terminal rendering and applies modern git defaults, generates context files (CLAUDE.md, settings.json, skills), and manages AGENTS.md ↔ CLAUDE.md coexistence (5-bucket model).
+gitwise is a Python CLI for optimizing git workflows and Claude Code integration. It uses `rich` for terminal rendering and applies modern git defaults, generates context files (CLAUDE.md, settings.json, skills), and manages AGENTS.md <-> CLAUDE.md coexistence (5-bucket model).
 
 ## Dev Environment
 
@@ -114,7 +114,7 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
   style — use the word "section" or just the heading name), smart quotes
   (U+201C/U+201D double, U+2018/U+2019 single — use straight ASCII), smart
   apostrophes (U+2019 — use `'`), rightwards arrows (U+2192) in prose (use
-  `->` or rewrite as a sentence), `•`/`★`/`✓`/`✗`
+  `->` or rewrite as a sentence), (U+2022)/(U+2605)/(U+2713)/(U+2717)
   as bullets (use `-` or `*`), and any emoji unless the user explicitly
   asks for them. These characters are the most reliable signal of
   AI-generated text, hurt readability on monospace renderers, and break
