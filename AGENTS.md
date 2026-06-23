@@ -42,8 +42,8 @@ The installer auto-installs `uv` if missing, then runs `uv tool install --upgrad
 
 **Shell compatibility notes for AI agents:**
 - Claude Code's non-interactive shell does NOT source `~/.zshrc`. Use `python -m gitwise` (always works from repo root) or the full `gitwise` path if `~/.local/bin` is on PATH.
-- `gw` is a terminal-only alias (`alias gw='gitwise'` in `~/.zshrc`). It is NOT available in Claude Code's bash environment. Never use `gw` in tool calls — use `gitwise` or `python -m gitwise`.
-- `settings.json` allow list includes both `Bash(gitwise *)` and `Bash(python -m gitwise *)` for this reason.
+- `gw` is a real binary (not just a shell alias) — works in interactive terminals, non-interactive shells, and all AI agent Bash tools. `gitwise` and `python -m gitwise` also work.
+- `settings.json` allow list includes `Bash(gw *)`, `Bash(gitwise *)`, and `Bash(python -m gitwise *)`.
 
 ## Test Commands
 
