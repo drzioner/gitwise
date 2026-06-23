@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# gw — short wrapper for gitwise. See bin/gitwise for Python resolution logic.
+set -euo pipefail
+_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+exec "$_dir/gitwise" "$@"
