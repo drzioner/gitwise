@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(gitwise *)",
+      "Bash(gw *)",
       "Bash(python -m gitwise *)",
       "Bash(git status*)",
       "Bash(git --no-pager log*)",

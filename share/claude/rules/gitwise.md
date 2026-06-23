@@ -13,4 +13,4 @@ globs: "**/*"
 
 ## Shell note
 
-`gw` is a terminal alias only — use `gitwise` or `python -m gitwise` in Bash tool calls.
+`gw`, `gitwise`, and `python -m gitwise` all work in Bash tool calls.
