@@ -12,6 +12,11 @@ updates:
       - area/ci
     commit-message:
       prefix: "ci: "
+    groups:
+      actions:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: uv
     directory: /
@@ -23,3 +28,8 @@ updates:
       - dependencies
     commit-message:
       prefix: "build: "
+    groups:
+      python-deps:
+        update-types:
+          - minor
+          - patch
