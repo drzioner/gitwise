@@ -164,9 +164,10 @@ reviews:
       mode: error
       requirements: >-
         Title must match conventional commits:
-        type(scope)!: summary -- type is one of feat, fix, docs, refactor,
-        chore, test, ci, perf, build, style, revert. Keep the summary under
-        72 characters, lowercase, no trailing period.
+        type(scope)[!]: summary -- the optional ! marks a breaking change;
+        type is one of feat, fix, docs, refactor, chore, test, ci, perf,
+        build, style, revert. Keep the summary under 72 characters, lowercase,
+        no trailing period.
 
     description:
       mode: warning
@@ -213,6 +214,9 @@ reviews:
       enabled: false         # superseded by ruff
     pylint:
       enabled: false         # superseded by ruff
+    github-checks:
+      enabled: true
+      timeout_ms: 300000     # 5 min: the test matrix routinely exceeds the 90s default
 
 # ---------------------------------------------------------------------------
 # Chat
@@ -233,9 +237,10 @@ knowledge_base:
     enabled: true
   code_guidelines:
     enabled: true
-    # Per schema, items are glob strings (or {files, applyTo} objects) -- not
-    # {path:}. Specifying the list replaces the built-in defaults, so re-list
-    # the ones we want plus the repo's scoped rule files.
+    # Custom patterns are merged with the built-in defaults (AGENTS.md,
+    # CLAUDE.md, GEMINI.md, ...). Only .agents/rules/*.md is not covered by the
+    # default scan, so list it explicitly; AGENTS.md/CLAUDE.md are kept for
+    # clarity and are harmless if duplicated.
     filePatterns:
       - "**/AGENTS.md"
       - "**/CLAUDE.md"
