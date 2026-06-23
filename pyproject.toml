@@ -41,6 +41,7 @@ Issues = "https://github.com/drzioner/gitwise/issues"
 
 [project.scripts]
 gitwise = "gitwise.__main__:main"
+gw = "gitwise.__main__:main"
 
 [dependency-groups]
 dev = [
