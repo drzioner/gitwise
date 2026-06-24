@@ -373,6 +373,8 @@ def test_diff_scan_secrets_detects_high(tmp_git_repo):
     data = json.loads(result.stdout)["data"]
     assert data["count"] >= 1
     assert any(f["severity"] == "high" for f in data["findings"])
+    # JSON findings must not carry a credential preview (brute-force surface).
+    assert all("preview" not in f for f in data["findings"])
 
 
 def test_diff_scan_secrets_clean(tmp_git_repo):

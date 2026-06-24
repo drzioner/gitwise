@@ -199,3 +199,21 @@ def scan_staged_diff(root: Path) -> list[SecretFinding]:
 def has_high_severity(findings: list[SecretFinding]) -> bool:
     """Return True if any finding is high severity (commit-blocking)."""
     return any(finding["severity"] == "high" for finding in findings)
+
+
+def redact_findings(findings: list[SecretFinding]) -> list[dict[str, str | int]]:
+    """Return finding dicts safe for JSON emission (no credential preview).
+
+    The redacted ``preview`` kept for human display still leaks a 8+4-char
+    prefix/suffix that narrows brute-force space, so machine output omits the
+    preview entirely and keeps only rule, path, line, and severity.
+    """
+    return [
+        {
+            "rule": f["rule"],
+            "path": f["path"],
+            "line": f["line"],
+            "severity": f["severity"],
+        }
+        for f in findings
+    ]

@@ -20,7 +20,7 @@ from gitwise.output import (
 )
 from gitwise.utils.git_output import parse_name_status_entries, status_label
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
-from gitwise.utils.secret_scan import secret_scan
+from gitwise.utils.secret_scan import redact_findings, secret_scan
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]
@@ -453,6 +453,7 @@ def _render_secret_scan_output(
         return 1
     findings = secret_scan(result.stdout)
     if as_json:
+        safe_findings = redact_findings(findings)
         has_high = any(f["severity"] == "high" for f in findings)
         if has_high:
             print_json(
@@ -460,12 +461,12 @@ def _render_secret_scan_output(
                     "diff",
                     error="high-severity secret leak detected in diff",
                     code="secret_leak_high",
-                    findings=findings,
+                    findings=safe_findings,
                     count=len(findings),
                 )
             )
         else:
-            print_json(ok_envelope("diff", findings=findings, count=len(findings)))
+            print_json(ok_envelope("diff", findings=safe_findings, count=len(findings)))
         return 1 if has_high else 0
     if not findings:
         info(t("secret_scan_clean"))

@@ -7,7 +7,7 @@ guard would flag this very file. Each fragment on its own does not match a rule.
 
 from __future__ import annotations
 
-from gitwise.utils.secret_scan import _redact, has_high_severity, secret_scan
+from gitwise.utils.secret_scan import _redact, has_high_severity, redact_findings, secret_scan
 
 
 def _tok(prefix: str, body: str) -> str:
@@ -175,3 +175,14 @@ def test_scan_no_false_positive_on_regex_source():
 def test_redaction_for_short_matches():
     """Short matches collapse to '***' rather than leaking partial content."""
     assert _redact("short") == "***"
+
+
+def test_redact_findings_omits_preview():
+    """JSON-safe findings must not include the credential preview."""
+    findings = secret_scan(f"+key = '{_AWS_KEY}'\n")
+    assert findings and findings[0]["preview"]
+    safe = redact_findings(findings)
+    assert len(safe) == len(findings)
+    assert "preview" not in safe[0]
+    assert safe[0]["rule"] == findings[0]["rule"]
+    assert safe[0]["line"] == findings[0]["line"]

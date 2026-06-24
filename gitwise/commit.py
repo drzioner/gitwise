@@ -10,7 +10,7 @@ from gitwise.i18n import t
 from gitwise.output import confirm, error, print_bracket, print_header, print_json, warn
 from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
-from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
+from gitwise.utils.secret_scan import SecretScanUnavailable, redact_findings, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
@@ -173,7 +173,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
                     error=t("secret_scan_blocked_high", count=str(len(high))),
                     code="secret_leak_high",
                     hint=t("secret_scan_blocked_hint"),
-                    findings=high,
+                    findings=redact_findings(high),
                 )
             )
         else:
@@ -200,7 +200,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
                     error=t("secret_allow_requires_env"),
                     code="secret_allow_requires_env",
                     hint=t("secret_allow_requires_env_hint"),
-                    findings=high,
+                    findings=redact_findings(high),
                 )
             )
             return 1
