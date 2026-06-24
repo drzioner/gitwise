@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/summarize.json",
+  "title": "gitwise summarize cli output",
+  "description": "v3 envelope for `gitwise summarize --json`. data merges branch + status map + recent log + shortstat + changed files (the canonical Claude-Code context bundle). data is permissive (additional fields allowed).",
+  "type": "object",
+  "required": ["v", "ok", "command", "data", "hints", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 3 },
+    "ok": { "type": "boolean" },
+    "command": { "const": "summarize" },
+    "hints": { "type": "array", "items": { "type": "string" } },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "branch": { "type": "string" },
+        "status": { "type": "object", "additionalProperties": { "type": "string" } },
+        "status_count": { "type": "integer" },
+        "log": { "type": "object", "additionalProperties": { "type": "string" } },
+        "log_count": { "type": "integer" },
+        "shortstat": { "type": "string" },
+        "changed_files": { "type": "array" },
+        "changed_count": { "type": "integer" },
+        "diff": { "type": "string" }
+      }
+    }
+  }
+}
