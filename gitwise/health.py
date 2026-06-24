@@ -96,6 +96,19 @@ def _breakdown_labels() -> dict[str, str]:
 
 _GRADE_MAP = [(90, "A"), (75, "B"), (60, "C"), (40, "D"), (0, "F")]
 
+# Health-score thresholds. Centralized as named constants (review F-25) so the
+# penalties are tunable in one place rather than scattered magic numbers.
+_STALE_BRANCH_PENALTY_PER = 5
+_STALE_BRANCH_PENALTY_MAX = 15
+_TOO_MANY_BRANCHES_THRESHOLD = 15
+_TOO_MANY_BRANCHES_PENALTY_PER = 2
+_TOO_MANY_BRANCHES_PENALTY_MAX = 10
+_OLD_STASHES_THRESHOLD = 3
+_OLD_STASHES_PENALTY_PER = 2
+_OLD_STASHES_PENALTY_MAX = 10
+_UNTRACKED_CLUTTER_THRESHOLD = 20
+_UNTRACKED_CLUTTER_PENALTY_MAX = 10
+
 
 def _grade(score: int) -> str:
     """Map a 0-100 score to a letter grade (A/B/C/D/F)."""
@@ -139,11 +152,14 @@ def _apply_branch_penalties(
     """Deduct points for stale and excess branches. Returns (score, branch_count, stale_list)."""
     branch_count, stale = _branch_info(root) if stale_override is None else (0, stale_override)
     if stale:
-        penalty = min(len(stale) * 5, 15)
+        penalty = min(len(stale) * _STALE_BRANCH_PENALTY_PER, _STALE_BRANCH_PENALTY_MAX)
         score -= penalty
         breakdown["stale_branches"] = -penalty
-    if branch_count > 15:
-        penalty = min((branch_count - 15) * 2, 10)
+    if branch_count > _TOO_MANY_BRANCHES_THRESHOLD:
+        penalty = min(
+            (branch_count - _TOO_MANY_BRANCHES_THRESHOLD) * _TOO_MANY_BRANCHES_PENALTY_PER,
+            _TOO_MANY_BRANCHES_PENALTY_MAX,
+        )
         score -= penalty
         breakdown["too_many_branches"] = -penalty
     return score, branch_count, stale
@@ -169,14 +185,17 @@ def _apply_repo_size_penalties(
 ) -> tuple[int, int, int, int]:
     """Deduct points for old stashes, untracked clutter, and zero commits. Returns (score, stashes, untracked, commits)."""
     stashes = _stash_count(root)
-    if stashes > 3:
-        penalty = min((stashes - 3) * 2, 10)
+    if stashes > _OLD_STASHES_THRESHOLD:
+        penalty = min(
+            (stashes - _OLD_STASHES_THRESHOLD) * _OLD_STASHES_PENALTY_PER,
+            _OLD_STASHES_PENALTY_MAX,
+        )
         score -= penalty
         breakdown["old_stashes"] = -penalty
 
     untracked = _untracked_count(root)
-    if untracked > 20:
-        penalty = min((untracked - 20), 10)
+    if untracked > _UNTRACKED_CLUTTER_THRESHOLD:
+        penalty = min((untracked - _UNTRACKED_CLUTTER_THRESHOLD), _UNTRACKED_CLUTTER_PENALTY_MAX)
         score -= penalty
         breakdown["untracked_clutter"] = -penalty
 
