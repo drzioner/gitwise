@@ -356,16 +356,20 @@ PROTECTED_BRANCHES: frozenset[str] = frozenset(
 )
 
 
-def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, int]:
-    """Validate git repo and return (root, None) or (None, exit_code)."""
+def require_root(path: Path | None = None) -> Path | None:
+    """Return the repo root, or None after printing an error (exit code 1).
+
+    Callers check the single value instead of unpacking a (root, err) tuple:
+    ``root = require_root(); if root is None: return 1``.
+    """
     from .i18n import t
     from .output import error
 
     root = repo_root(path)
     if root is None:
         error(t("not_a_git_repo"))
-        return None, 1
-    return root, None
+        return None
+    return root
 
 
 def has_remote(cwd: Path | None = None) -> bool:

@@ -190,9 +190,7 @@ def run_branches(
     git_args: list[str] | None = None,
 ) -> int:
     """Entry point for the ``gitwise branches`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

@@ -535,9 +535,7 @@ def run_diff(
     scopes the output after ``--``. ``--summary`` prints additions/deletions per
     file with no patch (token-efficient for agents).
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
     cwd = root

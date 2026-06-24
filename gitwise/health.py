@@ -349,9 +349,7 @@ def compute_health(
 
 def run_health(*, as_json: bool = False) -> int:
     """Entry point for the ``gitwise health`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

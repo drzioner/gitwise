@@ -649,9 +649,7 @@ def run_pr(
     if not _gh_available():
         error(t("pr_gh_required"))
         return 1
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

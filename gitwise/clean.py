@@ -78,9 +78,7 @@ def run_clean(
         error(t("clean_specify_flag"))
         return 1
 
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
     cwd = root

@@ -133,9 +133,7 @@ def run_suggest(*, as_json: bool = False) -> int:
     Refuses with ``in_progress_<state>`` if a merge/rebase/cherry-pick/revert/
     bisect is paused (so an agent never commits mid-operation).
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

@@ -243,9 +243,7 @@ def run_worktree(
     force: bool = False,
 ) -> int:
     """Entry point for the ``gitwise worktree`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

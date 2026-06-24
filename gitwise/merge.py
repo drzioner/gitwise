@@ -220,9 +220,7 @@ def run_merge(
     validates the target ref, warns on divergent branches, and asks for
     confirmation before running ``git merge`` (or ``git rebase``).
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

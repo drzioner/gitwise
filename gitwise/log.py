@@ -371,9 +371,7 @@ def run_log(
     git_args: list[str] | None = None,
 ) -> int:
     """Display commit history with optional filters, graph, oneline, or JSON output."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

@@ -227,9 +227,7 @@ def run_commit(
     the project's amend policy (no amending pushed or protected branches)
     and GPG readiness before delegating to ``git commit``.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

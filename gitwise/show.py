@@ -88,9 +88,7 @@ def run_show(
     git_args: list[str] | None = None,
 ) -> int:
     """Inspect a commit with patch, stat, or structured JSON output."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

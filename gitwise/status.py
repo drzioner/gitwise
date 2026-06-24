@@ -54,9 +54,7 @@ def run_status(*, as_json: bool = False) -> int:
     untracked file counts, and an ``in_progress`` snapshot of any paused
     merge/rebase/cherry-pick/revert/bisect operation.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 

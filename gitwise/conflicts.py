@@ -212,9 +212,7 @@ def run_conflicts(
     ``--dry-run`` reports what would be resolved without touching the tree, and
     ``--files`` scopes resolution to a subset of the conflicted paths.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root()
     if root is None:
         return 1
 
