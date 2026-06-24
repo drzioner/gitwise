@@ -1,4 +1,4 @@
-# gitwise — Agent Guide
+# gitwise -- Agent Guide
 
 gitwise is a Python CLI for optimizing git workflows and Claude Code integration. It uses `rich` for terminal rendering and applies modern git defaults, generates context files (CLAUDE.md, settings.json, skills), and manages AGENTS.md <-> CLAUDE.md coexistence (5-bucket model).
 
@@ -27,18 +27,18 @@ irm https://raw.githubusercontent.com/drzioner/gitwise/main/install.ps1 | iex
 
 The installer auto-installs `uv` if missing, then runs `uv tool install --upgrade gitwise-cli`. The `gitwise` binary lands in `~/.local/bin` (macOS/Linux) or `%USERPROFILE%\.local\bin` (Windows). See `bash install.sh --help` / `Get-Help .\install.ps1` for options (`--dry-run` / `-DryRun`, `--version=X.Y.Z` / `-Version`).
 
-### Python resolution — CRITICAL
+### Python resolution -- CRITICAL
 
 `bin/gitwise` resolves the Python interpreter in this order:
 1. `.venv/bin/python` in the project root (managed by `uv`, has `rich` installed)
-2. System `python3` (fallback — may NOT have `rich`)
+2. System `python3` (fallback -- may NOT have `rich`)
 
-**Common pitfall:** Running `python -m gitwise` from the terminal may invoke the SYSTEM Python (e.g., 3.14) which does NOT have `rich` installed. The `try/except ImportError` in `output.py` silently falls back to plain `print()` with zero colors. Always verify with `python -m gitwise doctor` — if it reports the system Python version and shows no colors, the wrong interpreter is being used.
+**Common pitfall:** Running `python -m gitwise` from the terminal may invoke the SYSTEM Python (e.g., 3.14) which does NOT have `rich` installed. The `try/except ImportError` in `output.py` silently falls back to plain `print()` with zero colors. Always verify with `python -m gitwise doctor` -- if it reports the system Python version and shows no colors, the wrong interpreter is being used.
 
 **Correct invocation from repo root:**
-- `uv run python -m gitwise <cmd>` — guaranteed to use venv Python with rich
-- `bin/gitwise <cmd>` — auto-detects `.venv/bin/python`, falls back to `python3`
-- `gitwise <cmd>` (if installed) — same as `bin/gitwise` via symlink
+- `uv run python -m gitwise <cmd>` -- guaranteed to use venv Python with rich
+- `bin/gitwise <cmd>` -- auto-detects `.venv/bin/python`, falls back to `python3`
+- `gitwise <cmd>` (if installed) -- same as `bin/gitwise` via symlink
 
 **Shell compatibility notes for AI agents:**
 - Claude Code's non-interactive shell does NOT source `~/.zshrc`. Use `python -m gitwise` (always works from repo root) or the full `gitwise` path if `~/.local/bin` is on PATH.
@@ -87,10 +87,10 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 ## Code Style
 
 - Type hints on all function signatures (enforced by basedpyright)
-- `pathlib.Path` over `os.path` (use `os.path.realpath` for symlink resolution — `Path.resolve()` can fail on broken symlinks)
+- `pathlib.Path` over `os.path` (use `os.path.realpath` for symlink resolution -- `Path.resolve()` can fail on broken symlinks)
 - `Literal["absent","regular","symlink_valid","symlink_broken"]` for path states
 - Never silence exceptions; `try/except OSError` only at I/O boundaries
-- No comments describing what the code does — only WHY (non-obvious invariants)
+- No comments describing what the code does -- only WHY (non-obvious invariants)
 - No abstractions before 3+ concrete use cases (Rule of Three)
 - `T | None` over `Optional[T]` (Python 3.10+ syntax)
 - Return types always explicit; never rely on inference for public APIs
@@ -108,17 +108,17 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
   (`_foo`) may omit docstrings only when the name + body are
   self-documenting. Enforced externally: a "Docstring Coverage" check
   (reported on the PR's Pre-merge panel but NOT part of the repo CI) gates
-  at ≥80% of public symbols — every PR must keep coverage above that line.
+  at >=80% of public symbols -- every PR must keep coverage above that line.
 - **No "AI-tell" Unicode characters in docs, commit messages, or comments**.
   Forbidden: the section sign (U+00A7, the dual-S glyph used in legal-doc
-  style — use the word "section" or just the heading name), smart quotes
-  (U+201C/U+201D double, U+2018/U+2019 single — use straight ASCII), smart
-  apostrophes (U+2019 — use `'`), rightwards arrows (U+2192) in prose (use
+  style -- use the word "section" or just the heading name), smart quotes
+  (U+201C/U+201D double, U+2018/U+2019 single -- use straight ASCII), smart
+  apostrophes (U+2019 -- use `'`), rightwards arrows (U+2192) in prose (use
   `->` or rewrite as a sentence), (U+2022)/(U+2605)/(U+2713)/(U+2717)
   as bullets (use `-` or `*`), and any emoji unless the user explicitly
   asks for them. These characters are the most reliable signal of
   AI-generated text, hurt readability on monospace renderers, and break
-  copy-paste. Em dashes (`—`) are allowed only inside code comments where
+  copy-paste. Em dashes (`--`) are allowed only inside code comments where
   the project already uses them; in user-facing docs prefer `--` or a
   comma. Enforced by `ruff` (where applicable) and by reviewer.
 
@@ -154,12 +154,12 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Commits: never write the exact `BREAKING CHANGE` + colon sequence in prose
   inside a commit body unless that commit really introduces a breaking change.
   `commitizen` scans the full message for the marker and fires a minor bump
-  on any commit that contains it — including `docs:` commits that merely
-  document the convention. Backticks do NOT escape — commitizen reads raw
+  on any commit that contains it -- including `docs:` commits that merely
+  document the convention. Backticks do NOT escape -- commitizen reads raw
   text. When you need to refer to the marker descriptively, omit the colon
   (write `BREAKING CHANGE` alone) or use a placeholder like
   `BREAKING CHANGE [colon]`. Avoid invisible Unicode tricks (no-break
-  spaces, zero-width joiners) — editors silently auto-format them back to
+  spaces, zero-width joiners) -- editors silently auto-format them back to
   regular characters. See the `v0.23.0` CHANGELOG entry for an example of
   what happens when this rule is violated.
 - Branch switch: `gitwise worktree new <branch>`. Never `git stash + checkout`.
@@ -172,9 +172,9 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Run `uv run pytest` after any change to `setup_agents/` or its tests
 - Run `ruff check` and `ruff format --check` before committing
 - Use `_safe_create_symlink` for any new symlink creation (sandbox enforced)
-- Keep `_plan_actions` read-only (no write I/O) — state detection reads are acceptable; planning and execution are separate phases
+- Keep `_plan_actions` read-only (no write I/O) -- state detection reads are acceptable; planning and execution are separate phases
 - Preserve JSON schema backward compat: v1 mandatory keys must remain
-- Verify `doctor` reports the venv Python version (3.12.x) when testing colors — if it shows the system Python (3.14.x), colors will NOT work
+- Verify `doctor` reports the venv Python version (3.12.x) when testing colors -- if it shows the system Python (3.14.x), colors will NOT work
 
 **Ask first:**
 - Adding a new subcommand (touches `_cli_parser.py` + `_cli_dispatch.py` and needs its own test module)
@@ -182,17 +182,17 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Modifying `share/claude/` templates (affects all repos that run setup-agents)
 
 **Never:**
-- Create AGENTS.md in a target repo from scratch — that's the user's content decision
+- Create AGENTS.md in a target repo from scratch -- that's the user's content decision
 - Add external dependencies beyond the approved set to `gitwise/`. Approved runtime
   deps are: `rich` (rendering), `rich-argparse` (argparse integration), `shtab` (shell
   completions). Any new dependency requires explicit review.
-- Use `Path.resolve()` for symlink sandbox checks — use `os.path.realpath()` instead
+- Use `Path.resolve()` for symlink sandbox checks -- use `os.path.realpath()` instead
 - Commit without GPG (`--no-gpg-sign` is only allowed in test fixtures, never in real commits)
 - Add `--global` to `npm config set` or similar package manager globals
 - Run `python -m gitwise` without verifying it uses the venv Python (colors silently break if system Python is used)
-- Use `gh pr merge --admin` to bypass branch protection — if a check fails, rerun the failed job (`gh run rerun --job <id>`) and wait for all checks to pass before merging
-- Merge a PR that has any failing checks — all checks must be green, no exceptions
-- **Iterate superficially** when a CI step fails. Stop, read the actual traceback / failure log, identify the root cause, and apply ONE fix that addresses it. Each "ci(diag): ..." style commit that just adds another workaround is a smell — by the third iteration, pause and re-analyze the whole problem from the logs. The verify-before-implement skill documents the Consult -> Analyze -> Verify -> Decide -> Implement loop; skipping Analyze produces the loop of reactive commits.
+- Use `gh pr merge --admin` to bypass branch protection -- if a check fails, rerun the failed job (`gh run rerun --job <id>`) and wait for all checks to pass before merging
+- Merge a PR that has any failing checks -- all checks must be green, no exceptions
+- **Iterate superficially** when a CI step fails. Stop, read the actual traceback / failure log, identify the root cause, and apply ONE fix that addresses it. Each "ci(diag): ..." style commit that just adds another workaround is a smell -- by the third iteration, pause and re-analyze the whole problem from the logs. The verify-before-implement skill documents the Consult -> Analyze -> Verify -> Decide -> Implement loop; skipping Analyze produces the loop of reactive commits.
 
 ## Scoped Rules
 
