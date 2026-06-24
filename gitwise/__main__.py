@@ -1,4 +1,4 @@
-"""CLI entry point — argparse router for all gitwise subcommands."""
+"""CLI entry point -- argparse router for all gitwise subcommands."""
 
 import sys
 import time
