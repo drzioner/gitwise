@@ -130,6 +130,8 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     if as_json and not yes:
+        # See clean.py for why only the destructive multi-item verbs (clean,
+        # optimize) gate --json behind --yes; single-intent write verbs do not.
         print_json(
             error_envelope(
                 "optimize",

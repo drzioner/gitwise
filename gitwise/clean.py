@@ -120,6 +120,12 @@ def run_clean(
         return 0
 
     if as_json and not yes:
+        # Why clean/optimize gate --json behind --yes but commit/sync/merge/tag/pick
+        # do not: clean and optimize are destructive, multi-item, irreversible
+        # operations (delete branches, gc/repack) where a confirmation gate adds
+        # real safety. The single-intent write verbs have their intent fully
+        # specified by their arguments (the commit message, the push target), so
+        # a --yes gate there would add friction without safety value.
         print_json(
             error_envelope(
                 "clean",
