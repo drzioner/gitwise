@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from gitwise.git import require_root
+from gitwise.git import require_root, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import (
@@ -515,6 +515,14 @@ def run_diff(
     if root is None:
         return 1
     cwd = root
+
+    if refspec and not validate_ref(refspec):
+        msg = t("invalid_ref", ref=refspec)
+        if as_json:
+            print_json(error_envelope("diff", error=msg, code="invalid_ref"))
+        else:
+            error(msg)
+        return 1
 
     if not refspec and not staged and not _has_commits(cwd):
         if as_json or json_lines:
