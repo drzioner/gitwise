@@ -15,10 +15,12 @@ def test_no_command_json_returns_error_payload():
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
-    assert data["error"] == "missing_command"
-    assert data["kind"] == "help"
-    assert data["schema"] == "gitwise/help/v1"
-    assert data["scope"] == "root"
+    assert data["v"] == 3
+    assert data["errors"][0]["code"] == "missing_command"
+    # Help context travels nested under data (v3 shape).
+    assert data["data"]["kind"] == "help"
+    assert data["data"]["schema"] == "gitwise/help/v1"
+    assert data["data"]["scope"] == "root"
 
 
 def test_version_flag():
@@ -32,10 +34,12 @@ def test_root_help_json():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["kind"] == "help"
-    assert data["schema"] == "gitwise/help/v1"
-    assert data["scope"] == "root"
-    assert isinstance(data["commands"], list)
+    assert data["v"] == 3
+    assert data["command"] == "help"
+    assert data["data"]["kind"] == "help"
+    assert data["data"]["schema"] == "gitwise/help/v1"
+    assert data["data"]["scope"] == "root"
+    assert isinstance(data["data"]["commands"], list)
 
 
 def test_root_help_epilog_is_localized_en():
@@ -58,7 +62,7 @@ def test_root_help_json_pretty_without_json_flag():
     assert '\n  "' in result.stdout
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["scope"] == "root"
+    assert data["data"]["scope"] == "root"
 
 
 def test_command_help_json():
@@ -66,11 +70,12 @@ def test_command_help_json():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["kind"] == "help"
-    assert data["schema"] == "gitwise/help/v1"
-    assert data["scope"] == "command"
-    assert data["command"] == "diff"
-    assert isinstance(data["options"], list)
+    assert data["v"] == 3
+    assert data["data"]["kind"] == "help"
+    assert data["data"]["schema"] == "gitwise/help/v1"
+    assert data["data"]["scope"] == "command"
+    assert data["data"]["command"] == "diff"
+    assert isinstance(data["data"]["options"], list)
 
 
 def test_commands_json_lists_metadata():

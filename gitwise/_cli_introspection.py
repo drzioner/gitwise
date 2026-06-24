@@ -4,6 +4,7 @@ import argparse
 from typing import TypedDict
 
 from . import __version__
+from .utils.json_envelope import ok_envelope
 
 
 def _json_safe(value: object) -> object:
@@ -67,11 +68,13 @@ def extract_command_token(argv: list[str]) -> str | None:
     return None
 
 
-def help_payload(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
-    """Build a structured help payload for the root parser or a specific subcommand."""
+def help_data(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
+    """Build the inner data dict for a structured help payload.
+
+    Returned nested under ``data`` by :func:`help_payload` so every ``--json``
+    output -- help included -- shares the v3 envelope shape.
+    """
     payload: dict[str, object] = {
-        "v": 2,
-        "ok": True,
         "kind": "help",
         "schema": "gitwise/help/v1",
         "version": __version__,
@@ -132,6 +135,11 @@ def help_payload(parser: argparse.ArgumentParser, command: str | None = None) ->
         }
     )
     return payload
+
+
+def help_payload(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
+    """Build a v3-envelope structured help payload for the root parser or a subcommand."""
+    return ok_envelope("help", data=help_data(parser, command))
 
 
 class CommandMetadata(TypedDict):

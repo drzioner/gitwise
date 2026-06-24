@@ -4,7 +4,7 @@ import sys
 import time
 
 from ._cli_dispatch import DISPATCH
-from ._cli_introspection import extract_command_token, help_payload
+from ._cli_introspection import extract_command_token, help_data, help_payload
 from ._cli_parser import build_parser
 from .i18n import t
 from .output import print_dim, print_json, set_json_mode, set_json_pretty
@@ -88,12 +88,15 @@ def main() -> int:
 
     if args.command is None:
         if args.json:
+            from .utils.json_envelope import error_envelope
+
             print_json(
-                {
-                    **help_payload(parser),
-                    "ok": False,
-                    "error": "missing_command",
-                }
+                error_envelope(
+                    "gitwise",
+                    error="missing_command",
+                    code="missing_command",
+                    data=help_data(parser),
+                )
             )
             return 1
         parser.print_usage(sys.stderr)
