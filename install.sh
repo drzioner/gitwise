@@ -49,6 +49,9 @@ Options:
 Environment:
   UV_INSTALLER_URL  Override the uv installer URL (default: https://astral.sh/uv/install.sh).
                     Pin a version with: UV_INSTALLER_URL="https://astral.sh/uv/0.11.21/install.sh"
+  UV_INSTALLER_SHA256  Expected SHA-256 of the uv installer. When set, the
+                    installer is downloaded, checksum-verified, and executed
+                    only on match (otherwise the curl|sh TOFU default is used).
 
 Remote:
   curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
@@ -115,7 +118,31 @@ fi
 if [ "$NEED_UV_INSTALL" = "true" ]; then
     echo ""
     echo "Installing uv ($UV_INSTALLER_URL)..."
-    curl -LsSf "$UV_INSTALLER_URL" | sh
+    # Optional integrity verification: set UV_INSTALLER_SHA256 to pin the uv
+    # installer to an expected SHA-256. When set, download to a temp file,
+    # verify the checksum, and execute only on match; otherwise abort. When
+    # unset, fall back to the documented curl|sh TOFU default.
+    if [ -n "${UV_INSTALLER_SHA256:-}" ]; then
+        _uv_installer_tmp="$(mktemp)"
+        trap 'rm -f "$_uv_installer_tmp"' EXIT
+        if ! curl -LsSf "$UV_INSTALLER_URL" -o "$_uv_installer_tmp"; then
+            echo "error: failed to download uv installer." >&2
+            exit 1
+        fi
+        _actual_sha="$(sha256sum "$_uv_installer_tmp" | awk '{print $1}')"
+        # macOS shasum uses the same output format; fall back if sha256sum is absent.
+        if [ -z "$_actual_sha" ] && command -v shasum >/dev/null 2>&1; then
+            _actual_sha="$(shasum -a 256 "$_uv_installer_tmp" | awk '{print $1}')"
+        fi
+        if [ "$_actual_sha" != "$UV_INSTALLER_SHA256" ]; then
+            echo "error: uv installer SHA-256 mismatch (expected $UV_INSTALLER_SHA256, got $_actual_sha)." >&2
+            echo "       Refusing to execute an unverified installer." >&2
+            exit 1
+        fi
+        sh "$_uv_installer_tmp"
+    else
+        curl -LsSf "$UV_INSTALLER_URL" | sh
+    fi
 
     if [ -x "$HOME/.local/bin/uv" ]; then
         export PATH="$HOME/.local/bin:$PATH"
