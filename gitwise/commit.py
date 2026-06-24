@@ -1,5 +1,6 @@
 """gitwise commit — conventional format validation, GPG enforcement, --amend protection."""
 
+import os
 import re
 from pathlib import Path
 
@@ -14,6 +15,11 @@ from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
 )
+
+# Out-of-band override for --allow-secret in agent (--json) mode. An AI agent
+# cannot set environment variables via a prompt, so requiring this closes the
+# prompt-injection vector where a tricked agent silently commits leaked secrets.
+_ALLOW_SECRET_JSON_ENV = "GITWISE_ALLOW_SECRETS"
 
 
 def _is_pushed(branch: str, cwd: Path) -> bool:
@@ -169,7 +175,23 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
                 )
             error(t("secret_scan_blocked_hint"))
         return 1
-    if not as_json and not confirm(t("secret_scan_allow_confirm", count=str(len(high)))):
+    if as_json:
+        # An agent must not silence the secret confirmation via a prompt-set
+        # flag. Require an operator-controlled env var so prompt injection
+        # cannot smuggle `--allow-secret` into a forced commit.
+        if os.environ.get(_ALLOW_SECRET_JSON_ENV, "") != "1":
+            print_json(
+                error_envelope(
+                    "commit",
+                    error=t("secret_allow_requires_env"),
+                    code="secret_allow_requires_env",
+                    hint=t("secret_allow_requires_env_hint"),
+                    findings=high,
+                )
+            )
+            return 1
+        return None
+    if not confirm(t("secret_scan_allow_confirm", count=str(len(high)))):
         return 1
     return None
 

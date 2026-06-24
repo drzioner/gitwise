@@ -128,14 +128,38 @@ def test_commit_blocked_on_secret_high_json(tmp_git_repo: Path) -> None:
     assert data["errors"][0]["code"] == "secret_leak_high"
 
 
-def test_commit_allow_secret_json_proceeds(tmp_git_repo: Path) -> None:
+def test_commit_allow_secret_json_blocked_without_env(tmp_git_repo: Path) -> None:
+    """An agent cannot silence the secret guard via --allow-secret in --json mode.
+
+    Prompt injection that smuggles --allow-secret must still be blocked unless an
+    operator-controlled env var authorizes it out-of-band.
+    """
     (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
     _git(["add", "config.py"], tmp_git_repo)
     r = run_gitwise(
         "commit", "-m", "feat: add config", "--allow-secret", "--json", cwd=tmp_git_repo
     )
+    assert r.returncode == 1
+    import json
+
+    data = json.loads(r.stdout)
+    assert data["errors"][0]["code"] == "secret_allow_requires_env"
+
+
+def test_commit_allow_secret_json_proceeds_with_env(tmp_git_repo: Path) -> None:
+    """With the operator env var set, --allow-secret --json commits as before."""
+    (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise(
+        "commit",
+        "-m",
+        "feat: add config",
+        "--allow-secret",
+        "--json",
+        cwd=tmp_git_repo,
+        env={"GITWISE_ALLOW_SECRETS": "1"},
+    )
     assert r.returncode == 0
-    # The commit was actually created despite the high-severity finding.
     log = _git(["--no-pager", "log", "--oneline"], tmp_git_repo).stdout.decode()
     assert "add config" in log
 
