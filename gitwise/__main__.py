@@ -40,7 +40,7 @@ def _ensure_utf8_stdio() -> None:
 
     Windows defaults to a system codepage (often cp1252) for the Python
     embedded in console apps. That codepage cannot encode characters like
-    U+2713 (✓) used throughout gitwise's status output, causing
+    U+2713 (check mark) used throughout gitwise's status output, causing
     UnicodeEncodeError when the user is not running through a wrapper that
     sets PYTHONIOENCODING. macOS/Linux are already UTF-8 by default, so
     this reconfigure is a no-op there.

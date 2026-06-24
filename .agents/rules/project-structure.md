@@ -2,7 +2,7 @@
 
 ```
 gitwise/             # Python package — one module per subcommand
-  __main__.py        # argparse router → dispatches to run_<cmd>()
+  __main__.py        # argparse router -> dispatches to run_<cmd>()
   setup_agents/      # setup-agents sub-package (plan, state, exec, types, format)
   setup_agents/adapters/  # multi-agent adapter registry (cursor, continue, opencode, codex, aider, pi)
   _cli_setup_agents.py  # CLI adapter for setup-agents
@@ -31,6 +31,6 @@ share/pi/            # Pi adapter templates
 tests/               # pytest — mirrors gitwise/ modules
   conftest.py        # shared fixtures + run_gitwise() helper
   test_adapters.py   # adapter system tests (--adapters, --list-adapters)
-bin/gitwise          # Shell wrapper → .venv/bin/python (or python3 fallback)
+bin/gitwise          # Shell wrapper -> .venv/bin/python (or python3 fallback)
 install.sh           # Installs to ~/.local/bin
 ```

@@ -46,17 +46,17 @@ one runtime dependency (`rich>=13.0`).
 
 ## Phase 6 — Naming Cleanup & UX (MERGED, PR #12)
 
-- `stash clean` → `stash clear` (backward-compatible alias)
-- `pick` → `cherry-pick` alias (argparse aliases)
-- `diff --full` → `--patch` alias
+- `stash clean` -> `stash clear` (backward-compatible alias)
+- `pick` -> `cherry-pick` alias (argparse aliases)
+- `diff --full` -> `--patch` alias
 - `branches` — last-commit age (`committerdate:relative`)
 - `log --graph` flag for branch topology
 - `stash show --patch` for full diff output
 
 ## Phase 7 — Final Aliases & Changelog (MERGED, PR #13)
 
-- `clean` → `branch-clean` alias
-- `suggest` → `commit-suggest` alias
+- `clean` -> `branch-clean` alias
+- `suggest` -> `commit-suggest` alias
 - ROADMAP.md updated (all items marked Done)
 - CHANGELOG.md generated
 
@@ -92,7 +92,7 @@ one runtime dependency (`rich>=13.0`).
 - `design.py` — ThemeTokens (hex colors), `hex_to_ansi_fg()`, `GitwiseHelpFormatter`
 - `_runtime_config.py` — immutable RuntimeConfig with OSC 11 theme detection
 - `output.py` — Rich Console with custom Theme, color gate, force_terminal
-- Environment variable precedence: NO_COLOR → CLICOLOR_FORCE → COLORTERM → TERM → auto
+- Environment variable precedence: NO_COLOR -> CLICOLOR_FORCE -> COLORTERM -> TERM -> auto
 - `--theme` CLI flag
 
 ## Phase 12 — Multi-Agent Adapters & Coverage (v0.12.0)
