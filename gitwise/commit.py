@@ -7,7 +7,15 @@ from pathlib import Path
 from gitwise.git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import confirm, error, print_bracket, print_header, print_json, warn
+from gitwise.output import (
+    confirm,
+    error,
+    print_bracket,
+    print_header,
+    print_json,
+    report_error,
+    warn,
+)
 from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
 from gitwise.utils.secret_scan import SecretScanUnavailable, redact_findings, scan_staged_diff
@@ -61,15 +69,17 @@ def _validate_amend_policy(*, amend: bool, root: Path, as_json: bool = False) ->
         return 0
     branch = current_branch(cwd=root) or ""
     if branch in PROTECTED_BRANCHES:
-        return _report_error(
+        return report_error(
+            "commit",
             as_json=as_json,
-            err=t("commit_amend_protected", branch=branch),
+            msg=t("commit_amend_protected", branch=branch),
             code="commit_amend_protected",
         )
     if _is_pushed(branch, root):
-        return _report_error(
+        return report_error(
+            "commit",
             as_json=as_json,
-            err=t("commit_amend_pushed", branch=branch),
+            msg=t("commit_amend_pushed", branch=branch),
             code="commit_amend_pushed",
         )
     return 0
@@ -90,7 +100,9 @@ def _validate_commit_message(message: str, as_json: bool = False) -> bool:
     """Return True if the first line matches the conventional-commit pattern."""
     if _CONVENTIONAL_RE.match(message.split("\n")[0]):
         return True
-    _report_error(as_json=as_json, err=t("commit_invalid_format"), code="commit_invalid_format")
+    report_error(
+        "commit", as_json=as_json, msg=t("commit_invalid_format"), code="commit_invalid_format"
+    )
     return False
 
 
@@ -109,26 +121,14 @@ def _validate_gpg_ready(root: Path, as_json: bool = False) -> bool:
     """Return False and print an error if GPG signing is enabled but no key is available."""
     gpg = gpg_status(cwd=root)
     if gpg["gpgsign_enabled"] and not gpg["ready"]:
-        _report_error(
+        report_error(
+            "commit",
             as_json=as_json,
-            err=t("gpg_signing_active_no_key"),
+            msg=t("gpg_signing_active_no_key"),
             code="gpg_not_ready",
         )
         return False
     return True
-
-
-def _report_error(*, as_json: bool, err: str, code: str = "commit_failed") -> int:
-    """Emit a commit error in JSON or human form and return 1."""
-    if as_json:
-        print_json(error_envelope("commit", error=err, code=code))
-    else:
-        error(err)
-    return 1
-
-
-# Back-compat alias for the previous helper name.
-_report_commit_error = _report_error
 
 
 def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> int | None:
@@ -253,7 +253,9 @@ def run_commit(
         return amend_policy_rc
 
     if message is None:
-        return _report_error(as_json=as_json, err=t("commit_no_message"), code="commit_no_message")
+        return report_error(
+            "commit", as_json=as_json, msg=t("commit_no_message"), code="commit_no_message"
+        )
 
     full_msg = _compose_message(message=message, type=type, scope=scope, breaking=breaking)
 
@@ -276,7 +278,7 @@ def run_commit(
 
     success, err = _execute_commit(root=root, message=full_msg, amend=amend)
     if not success:
-        return _report_commit_error(as_json=as_json, err=err)
+        return report_error("commit", as_json=as_json, msg=err)
 
     if as_json:
         print_json(ok_envelope("commit", message=full_msg, amend=amend))

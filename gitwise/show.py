@@ -3,18 +3,17 @@
 from gitwise.git import require_root, validate_passthrough_args, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import bat_pipe, error, print_diffstat, print_header, print_json, status
+from gitwise.output import (
+    bat_pipe,
+    error,
+    print_diffstat,
+    print_header,
+    print_json,
+    report_error,
+    status,
+)
 from gitwise.utils.git_output import parse_diffstat_entries, parse_name_status_entries
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
-
-
-def _report_error(*, as_json: bool, err: str, code: str) -> int:
-    """Emit a show error as a JSON envelope or human message; return 1."""
-    if as_json:
-        print_json(error_envelope("show", error=err, code=code))
-    else:
-        error(err)
-    return 1
+from gitwise.utils.json_envelope import ok_envelope
 
 
 def _build_show_args(
@@ -93,19 +92,22 @@ def run_show(
         return 1
 
     if not validate_ref(ref):
-        return _report_error(as_json=as_json, err=t("invalid_ref", ref=ref), code="invalid_ref")
+        return report_error(
+            "show", as_json=as_json, msg=t("invalid_ref", ref=ref), code="invalid_ref"
+        )
 
     denied = validate_passthrough_args(git_args)
     if denied is not None:
-        return _report_error(as_json=as_json, err=denied, code="git_arg_denied")
+        return report_error("show", as_json=as_json, msg=denied, code="git_arg_denied")
 
     if as_json:
         args = _build_show_json_args(ref, git_args=git_args)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            return _report_error(
+            return report_error(
+                "show",
                 as_json=as_json,
-                err=t("git_show_failed", error=r.stderr.strip()),
+                msg=t("git_show_failed", error=r.stderr.strip()),
                 code="git_show_failed",
             )
         data = _parse_show_json(r.stdout)
@@ -115,9 +117,10 @@ def run_show(
             with status(t("status_loading_commit")):
                 r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
             if r.returncode != 0:
-                return _report_error(
+                return report_error(
+                    "show",
                     as_json=as_json,
-                    err=t("git_show_failed", error=r.stderr.strip()),
+                    msg=t("git_show_failed", error=r.stderr.strip()),
                     code="git_show_failed",
                 )
             entries = parse_diffstat_entries(r.stdout)

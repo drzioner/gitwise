@@ -7,14 +7,14 @@ from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import (
     debug,
-    error,
     print_bracket,
     print_dim,
     print_header,
     print_json,
+    report_error,
     status,
 )
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.json_envelope import ok_envelope
 from gitwise.utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
@@ -94,18 +94,13 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
         )
     if result.returncode == 0:
         return 0
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_fetch_failed", error=result.stderr.strip()),
-                code="sync_fetch_failed",
-                hint=t("sync_hint"),
-            )
-        )
-    else:
-        error(t("sync_fetch_failed", error=result.stderr.strip()))
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=t("sync_fetch_failed", error=result.stderr.strip()),
+        code="sync_fetch_failed",
+        hint=t("sync_hint"),
+    )
 
 
 _SYNC_PULL_DIVERGED_COMMANDS = (
@@ -122,53 +117,37 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
         result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
-    hint = t("sync_pull_diverged_hint")
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_pull_diverged"),
-                code="sync_pull_diverged",
-                hint=hint,
-                suggested_commands=list(_SYNC_PULL_DIVERGED_COMMANDS),
-            )
-        )
-    else:
-        error(t("sync_pull_diverged"), hint=hint)
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=t("sync_pull_diverged"),
+        code="sync_pull_diverged",
+        hint=t("sync_pull_diverged_hint"),
+        data={"suggested_commands": list(_SYNC_PULL_DIVERGED_COMMANDS)},
+    )
 
 
 def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
     """Push current branch; refuses to push to protected branches."""
     if branch in PROTECTED_BRANCHES:
-        if as_json:
-            print_json(
-                error_envelope(
-                    "sync",
-                    error=t("sync_push_protected", branch=branch),
-                    code="sync_push_protected",
-                    hint=t("sync_push_protected_hint"),
-                )
-            )
-        else:
-            error(t("sync_push_protected", branch=branch))
-        return 1
+        return report_error(
+            "sync",
+            as_json=as_json,
+            msg=t("sync_push_protected", branch=branch),
+            code="sync_push_protected",
+            hint=t("sync_push_protected_hint"),
+        )
     with status(t("status_sync_push")):
         result = git_run(["push"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_push_failed", error=result.stderr.strip()),
-                code="sync_push_failed",
-                hint=t("sync_hint"),
-            )
-        )
-    else:
-        error(t("sync_push_failed", error=result.stderr.strip()))
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=t("sync_push_failed", error=result.stderr.strip()),
+        code="sync_push_failed",
+        hint=t("sync_hint"),
+    )
 
 
 def _print_sync_complete_human(*, branch: str, ahead: int, behind: int) -> None:
