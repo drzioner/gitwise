@@ -138,3 +138,21 @@ def test_validate_grep_pattern_accepts_valid():
     assert validate_grep_pattern("fix.*auth") is True
     assert validate_grep_pattern("^(feat|fix):") is True
     assert validate_grep_pattern("[0-9]+\\.[0-9]+") is True
+
+
+def test_get_timeout_rejects_nonpositive(monkeypatch):
+    """GITWISE_GIT_TIMEOUT=0 must fall back to the default, not time out instantly."""
+    from gitwise.git import _DEFAULT_TIMEOUT, _get_timeout
+
+    monkeypatch.setenv("GITWISE_GIT_TIMEOUT", "0")
+    assert _get_timeout() == _DEFAULT_TIMEOUT
+    monkeypatch.setenv("GITWISE_GIT_TIMEOUT", "30")
+    assert _get_timeout() == 30
+
+
+def test_run_timeout_returns_124(tmp_git_repo):
+    """A timed-out git operation returns rc 124 (timeout coreutil convention), not raise."""
+    from gitwise.git import run
+
+    result = run(["status"], cwd=tmp_git_repo, timeout=0)
+    assert result.returncode == 124

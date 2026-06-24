@@ -51,7 +51,7 @@ def _get_timeout(cmd: str | None = None) -> int:
     table, then falls back to the default (120 s).
     """
     val = os.environ.get("GITWISE_GIT_TIMEOUT", "")
-    if val.isdigit():
+    if val.isdigit() and int(val) > 0:
         return int(val)
     if cmd and cmd in _CMD_TIMEOUTS:
         return _CMD_TIMEOUTS[cmd]
@@ -94,6 +94,24 @@ def run(
             returncode=127,
             stdout="",
             stderr="git executable not found in PATH",
+        )
+    except subprocess.TimeoutExpired as exc:
+        # Mirror the `timeout` coreutil convention (124) so callers can
+        # distinguish a timed-out git operation from a real git failure (128+)
+        # or a missing binary (127).
+        return subprocess.CompletedProcess(
+            args=["git", *args],
+            returncode=124,
+            stdout=exc.stdout.decode("utf-8", "replace")
+            if isinstance(exc.stdout, bytes)
+            else (exc.stdout or ""),
+            stderr=(
+                f"git {' '.join(args)} timed out after {actual_timeout}s"
+                if not exc.stderr
+                else exc.stderr.decode("utf-8", "replace")
+                if isinstance(exc.stderr, bytes)
+                else exc.stderr
+            ),
         )
 
 
