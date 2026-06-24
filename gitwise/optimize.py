@@ -150,6 +150,10 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         print_blank()
         if not yes:
             if not confirm(t("confirm_optimize")):
+                # Cancel returns 0 by project convention (matches setup/undo).
+                # Agent callers never reach here: --json without --yes is rejected
+                # upstream with the `yes_required` envelope, so an agent always
+                # gets an explicit, distinguishable response.
                 print_dim(t("cancelled"))
                 return 0
             print_blank()

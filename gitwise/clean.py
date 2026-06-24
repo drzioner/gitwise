@@ -150,6 +150,10 @@ def run_clean(
         print_blank()
         if not yes:
             if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
+                # Cancel returns 0 by project convention (matches setup/undo).
+                # Agent callers never reach here: --json without --yes is rejected
+                # upstream with the `yes_required` envelope, so an agent always
+                # gets an explicit, distinguishable response.
                 print_dim(t("cancelled"))
                 return 0
             print_blank()
