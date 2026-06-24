@@ -156,7 +156,13 @@ def _report_conflicts(*, details: list[dict[str, str | int]], count: int, as_jso
     """Print or envelope the conflict report."""
     if as_json:
         print_json(
-            error_envelope("conflicts", error=t("merge_conflicts"), conflicts=details, count=count)
+            error_envelope(
+                "conflicts",
+                error=t("merge_conflicts"),
+                code="merge_conflicts",
+                conflicts=details,
+                count=count,
+            )
         )
         return 1
     print_header(t("conflicts_found", count=str(count)))

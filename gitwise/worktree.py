@@ -206,6 +206,7 @@ def run_worktree(
                     error_envelope(
                         "worktree",
                         error=str(data.get("error", t("worktree_failed", error="unknown"))),
+                        code=str(data.get("code", "worktree_failed")),
                         data=data,
                     )
                 )

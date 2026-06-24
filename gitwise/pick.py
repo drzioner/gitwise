@@ -40,7 +40,7 @@ def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
     """Validate that refs are non-empty and all pass ``validate_ref``."""
     if not refs:
         if as_json:
-            print_json(error_envelope("pick", error=t("pick_no_refs")))
+            print_json(error_envelope("pick", error=t("pick_no_refs"), code="pick_no_refs"))
             return 1
         error(t("pick_no_refs"))
         return 1

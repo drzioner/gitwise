@@ -166,7 +166,9 @@ def run_suggest(*, as_json: bool = False) -> int:
 
     if not staged_files:
         if as_json:
-            print_json(error_envelope("suggest", error=t("suggest_no_staged")))
+            print_json(
+                error_envelope("suggest", error=t("suggest_no_staged"), code="suggest_no_staged")
+            )
             return 1
         error(t("suggest_no_staged"))
         return 1

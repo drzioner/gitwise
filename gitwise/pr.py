@@ -418,7 +418,7 @@ def _render_pr_comments(payload: dict[str, object]) -> int:
 def _invalid_json_response(*, as_json: bool, raw: str) -> int:
     """Emit an error envelope or human message for unparseable gh JSON output."""
     if as_json:
-        print_json(error_envelope("pr", error="invalid_gh_json", raw=raw))
+        print_json(error_envelope("pr", error="invalid_gh_json", code="invalid_gh_json", raw=raw))
     else:
         error(t("pr_invalid_json"))
     return 1
@@ -434,7 +434,9 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
     if as_json:
         ok_json, payload = _json_or_error(out)
         if not ok_json:
-            print_json(error_envelope("pr", error="invalid_gh_json", raw=out))
+            print_json(
+                error_envelope("pr", error="invalid_gh_json", code="invalid_gh_json", raw=out)
+            )
             return 1
         prs = payload if isinstance(payload, list) else []
         print_json(ok_envelope("pr", prs=prs, count=len(prs)))

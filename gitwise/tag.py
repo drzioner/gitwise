@@ -188,7 +188,7 @@ def _run_tag_create(
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope("tag", error=err))
+            print_json(error_envelope("tag", error=err, code="tag_create_failed"))
         else:
             error(err)
         return 1
@@ -240,7 +240,7 @@ def _run_tag_delete(
     if result.returncode != 0:
         err = t("git_command_failed", cmd="tag -d", error=result.stderr.strip())
         if as_json:
-            print_json(error_envelope("tag", error=err))
+            print_json(error_envelope("tag", error=err, code="tag_delete_failed"))
         else:
             error(err)
         return 1
