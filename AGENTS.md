@@ -177,13 +177,15 @@ See `.agents/rules/setup-agents.md` for `setup_agents/` package internals and JS
 - Verify `doctor` reports the venv Python version (3.12.x) when testing colors — if it shows the system Python (3.14.x), colors will NOT work
 
 **Ask first:**
-- Adding a new subcommand (touches `__main__.py` router and needs its own test module)
+- Adding a new subcommand (touches `_cli_parser.py` + `_cli_dispatch.py` and needs its own test module)
 - Changing the 5-bucket model logic in `setup_agents.plan._resolve_canonical_doc`
 - Modifying `share/claude/` templates (affects all repos that run setup-agents)
 
 **Never:**
 - Create AGENTS.md in a target repo from scratch — that's the user's content decision
-- Add external dependencies beyond `rich` to `gitwise/` (rich is the only allowed external dep)
+- Add external dependencies beyond the approved set to `gitwise/`. Approved runtime
+  deps are: `rich` (rendering), `rich-argparse` (argparse integration), `shtab` (shell
+  completions). Any new dependency requires explicit review.
 - Use `Path.resolve()` for symlink sandbox checks — use `os.path.realpath()` instead
 - Commit without GPG (`--no-gpg-sign` is only allowed in test fixtures, never in real commits)
 - Add `--global` to `npm config set` or similar package manager globals
