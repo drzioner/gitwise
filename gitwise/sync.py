@@ -117,13 +117,26 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
         result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
+    # ``git pull --ff-only`` fails for genuine fast-forward divergence ("Not
+    # possible to fast-forward") but also for missing upstream, network/auth
+    # errors, or a dirty tree. Only the divergence case gets the diverged code
+    # + suggested commands; everything else is a generic failure with stderr.
+    stderr = result.stderr.strip()
+    if "fast-forward" in stderr.lower():
+        return report_error(
+            "sync",
+            as_json=as_json,
+            msg=t("sync_pull_diverged"),
+            code="sync_pull_diverged",
+            hint=t("sync_pull_diverged_hint"),
+            data={"suggested_commands": list(_SYNC_PULL_DIVERGED_COMMANDS)},
+        )
     return report_error(
         "sync",
         as_json=as_json,
-        msg=t("sync_pull_diverged"),
-        code="sync_pull_diverged",
-        hint=t("sync_pull_diverged_hint"),
-        data={"suggested_commands": list(_SYNC_PULL_DIVERGED_COMMANDS)},
+        msg=stderr or t("sync_pull_failed"),
+        code="sync_pull_failed",
+        hint=t("sync_hint"),
     )
 
 
@@ -210,7 +223,7 @@ def run_sync(
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise sync`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="sync")
     if root is None:
         return 1
 

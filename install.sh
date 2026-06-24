@@ -129,10 +129,16 @@ if [ "$NEED_UV_INSTALL" = "true" ]; then
             echo "error: failed to download uv installer." >&2
             exit 1
         fi
-        _actual_sha="$(sha256sum "$_uv_installer_tmp" | awk '{print $1}')"
-        # macOS shasum uses the same output format; fall back if sha256sum is absent.
-        if [ -z "$_actual_sha" ] && command -v shasum >/dev/null 2>&1; then
+        # Pick the available SHA-256 tool BEFORE invoking it: under `set -e`
+        # and pipefail, `sha256sum ... | awk` aborts the script on macOS (where
+        # sha256sum is absent) before the shasum fallback could run.
+        if command -v sha256sum >/dev/null 2>&1; then
+            _actual_sha="$(sha256sum "$_uv_installer_tmp" | awk '{print $1}')"
+        elif command -v shasum >/dev/null 2>&1; then
             _actual_sha="$(shasum -a 256 "$_uv_installer_tmp" | awk '{print $1}')"
+        else
+            echo "error: neither sha256sum nor shasum is available to verify the installer." >&2
+            exit 1
         fi
         # Normalize to lowercase so an uppercase user-provided hash still matches
         # (parity with install.ps1, which lowercases both sides).

@@ -344,7 +344,7 @@
     "en": "No conflicts"
   },
   "conflicts_dry_run": {
-    "es": "Se resolverian {count} conflicto(s) con --{strategy} (dry-run):",
+    "es": "Se resolverían {count} conflicto(s) con --{strategy} (dry-run):",
     "en": "Would resolve {count} conflict(s) with --{strategy} (dry-run):"
   },
   "conflicts_resolved_ours": {
@@ -1303,6 +1303,22 @@
     "es": "pr create requiere --title (o --fill para usar el commit)",
     "en": "pr create requires --title (or --fill to use the commit message)"
   },
+  "pr_list_failed": {
+    "es": "pr list falló",
+    "en": "pr list failed"
+  },
+  "pr_checks_failed": {
+    "es": "pr checks falló",
+    "en": "pr checks failed"
+  },
+  "pr_view_failed": {
+    "es": "pr view falló",
+    "en": "pr view failed"
+  },
+  "pr_comments_failed": {
+    "es": "pr comments falló",
+    "en": "pr comments failed"
+  },
   "pr_create_failed": {
     "es": "no se pudo crear el pull request",
     "en": "failed to create pull request"
@@ -1862,6 +1878,10 @@
   "sync_pull_diverged": {
     "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
     "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)"
+  },
+  "sync_pull_failed": {
+    "es": "pull falló (¿sin upstream, error de red o árbol sucio?)",
+    "en": "pull failed (no upstream, network error, or dirty tree?)"
   },
   "sync_pull_diverged_hint": {
     "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",

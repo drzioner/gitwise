@@ -122,6 +122,10 @@ def test_worktree_remove_by_branch(tmp_git_repo: Path) -> None:
     assert wt_path.exists()
     result = run_gitwise("worktree", "remove", "remove-branch", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
+    env = json.loads(result.stdout)
+    assert env["v"] == 3
+    assert env["command"] == "worktree"
+    assert env["data"]["removed"]
     assert not wt_path.exists()
 
 

@@ -48,8 +48,11 @@
       "default": "refname"
     },
     "git_args": {
-      "type": "string",
-      "description": "forward an extra option to the underlying git for-each-ref (repeatable; code-exec/write/redirect options are refused)"
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "forward an extra option to the underlying git for-each-ref (repeatable; code-exec/write/redirect options are refused)"
+      }
     }
   }
 }

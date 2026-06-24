@@ -22,6 +22,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_success,
+    report_error,
     status,
     warn,
 )
@@ -71,14 +72,15 @@ def run_clean(
     ``--json`` is used without ``--yes``.
     """
     if refs:
-        error(t("clean_refs_not_implemented"))
-        return 1
+        return report_error(
+            "clean", as_json=as_json, msg=t("clean_refs_not_implemented"), code="not_implemented"
+        )
 
     if not branches:
         error(t("clean_specify_flag"))
         return 1
 
-    root = require_root()
+    root = require_root(as_json=as_json, command="clean")
     if root is None:
         return 1
     cwd = root

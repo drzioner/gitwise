@@ -57,7 +57,7 @@
           "type": "string"
         },
         "cleaned": {
-          "type": "string"
+          "type": "boolean"
         },
         "count": {
           "type": "integer"
@@ -69,16 +69,22 @@
           "type": "integer"
         },
         "orphaned_branches": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "pruned": {
           "type": "integer"
         },
         "removed": {
-          "type": "string"
+          "type": "boolean"
         },
         "worktrees": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       }
     }

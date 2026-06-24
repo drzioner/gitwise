@@ -220,7 +220,7 @@ def run_merge(
     validates the target ref, warns on divergent branches, and asks for
     confirmation before running ``git merge`` (or ``git rebase``).
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="merge")
     if root is None:
         return 1
 

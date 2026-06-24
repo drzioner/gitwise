@@ -54,13 +54,22 @@
       "type": "object",
       "properties": {
         "additions": {
-          "type": "integer"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "deletions": {
-          "type": "integer"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "files": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "message": {
           "type": "string"

@@ -173,7 +173,7 @@ def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     Returns 0 when no critical/high/medium findings exist, 1 otherwise.
     ``--quick`` skips large-blob scanning and git-sizer.
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="audit")
     if root is None:
         return 1
     cwd = root

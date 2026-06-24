@@ -57,7 +57,10 @@
           "type": "boolean"
         },
         "entries": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "soft": {
           "type": "string"

@@ -97,7 +97,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     2 when only prune fails.  Returns 2 when ``--json`` is used without
     ``--yes``.
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="optimize")
     if root is None:
         return 1
     cwd = root

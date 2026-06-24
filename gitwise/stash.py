@@ -242,7 +242,7 @@ def run_stash(
     paths: list[str] | None = None,
 ) -> int:
     """Entry point for the ``gitwise stash`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="stash")
     if root is None:
         return 1
 

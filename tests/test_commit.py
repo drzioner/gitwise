@@ -158,6 +158,10 @@ def test_commit_allow_secret_json_blocked_without_env(tmp_git_repo: Path) -> Non
 
     data = json.loads(r.stdout)
     assert data["errors"][0]["code"] == "secret_allow_requires_env"
+    # The security point of this path: findings must be redacted in JSON.
+    findings = data["data"].get("findings", [])
+    assert findings, "expected redacted findings in the error envelope"
+    assert all("preview" not in f for f in findings)
 
 
 def test_commit_allow_secret_json_proceeds_with_env(tmp_git_repo: Path) -> None:

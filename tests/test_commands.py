@@ -15,12 +15,20 @@ def test_commands_json_is_parseable_envelope() -> None:
     names = {c["name"] for c in data["data"]["commands"]}
     # A few stable commands must be discoverable.
     assert {"diff", "log", "commit", "status"} <= names
+    # supports_json_lines is part of the contract this branch added; assert it
+    # for the two NDJSON-streaming commands so a regression can't slip through.
+    by_name = {c["name"]: c for c in data["data"]["commands"]}
+    assert by_name["diff"]["supports_json_lines"] is True
+    assert by_name["log"]["supports_json_lines"] is True
 
 
 def test_completions_emits_script() -> None:
     r = run_gitwise("completions", "bash")
-    # shtab is an optional dependency; accept either a script or a clean error.
+    # shtab is an optional dependency; accept either a script or a clean
+    # missing-dependency error, but reject a crash/traceback in any case.
     if r.returncode == 0:
         assert "gitwise" in r.stdout
+        assert "Traceback" not in r.stderr
     else:
         assert r.returncode == 1
+        assert "Traceback" not in r.stderr

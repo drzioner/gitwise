@@ -60,7 +60,10 @@
           "type": "boolean"
         },
         "findings": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "message": {
           "type": "string"

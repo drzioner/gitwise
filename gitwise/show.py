@@ -87,7 +87,7 @@ def run_show(
     git_args: list[str] | None = None,
 ) -> int:
     """Inspect a commit with patch, stat, or structured JSON output."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="show")
     if root is None:
         return 1
 
@@ -114,8 +114,12 @@ def run_show(
         print_json(ok_envelope("show", data=data))
     else:
         if stat:
+            stat_args = ["show", "--stat", "--format="]
+            if git_args:
+                stat_args.extend(git_args)
+            stat_args.append(ref)
             with status(t("status_loading_commit")):
-                r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
+                r = git_run(stat_args, cwd=root, check=False)
             if r.returncode != 0:
                 return report_error(
                     "show",

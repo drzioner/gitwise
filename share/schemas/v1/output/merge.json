@@ -75,10 +75,13 @@
           "type": "string"
         },
         "merged": {
-          "type": "string"
+          "type": "boolean"
         },
         "warnings": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

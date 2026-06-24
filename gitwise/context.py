@@ -120,7 +120,7 @@ def _branch_topology(root: Path) -> dict[str, list[str]]:
 
 def run_context(*, as_json: bool = False) -> int:
     """Entry point for the ``gitwise context`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="context")
     if root is None:
         return 1
 

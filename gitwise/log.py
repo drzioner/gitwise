@@ -371,14 +371,17 @@ def run_log(
     git_args: list[str] | None = None,
 ) -> int:
     """Display commit history with optional filters, graph, oneline, or JSON output."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="log")
     if root is None:
         return 1
 
     denied = validate_passthrough_args(git_args)
     if denied is not None:
-        if as_json:
-            print_json(error_envelope("log", error=denied, code="git_arg_denied"))
+        if as_json or json_lines:
+            # json_lines consumers expect one envelope per line, not bare text.
+            from gitwise.output import print_json_line
+
+            print_json_line(error_envelope("log", error=denied, code="git_arg_denied"))
         else:
             error(denied)
         return 1

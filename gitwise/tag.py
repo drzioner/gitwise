@@ -263,7 +263,7 @@ def run_tag(
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise tag`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="tag")
     if root is None:
         return 1
 

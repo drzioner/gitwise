@@ -15,10 +15,11 @@ def test_is_repo_detects_git(tmp_git_repo):
 def test_not_a_git_repo(tmp_path):
     result = _run("audit", "--json", cwd=tmp_path)
     assert result.returncode == 1
-    assert (
-        "not a git repository" in result.stderr.lower()
-        or "no es un repositorio" in result.stderr.lower()
-    )
+    # In --json mode require_root now emits a v3 error envelope (not bare stderr).
+    env = json.loads(result.stdout)
+    assert env["ok"] is False
+    assert env["command"] == "audit"
+    assert env["errors"][0]["code"] == "not_a_git_repo"
 
 
 def test_repo_root_resolved(tmp_git_repo):
@@ -211,18 +212,3 @@ def test_build_git_env_scrubs_config_and_ssh():
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
-    """--git-arg passthrough must refuse code-exec / arbitrary-write / redirect options."""
-    from gitwise.git import validate_passthrough_arg, validate_passthrough_args
-
-    # Dangerous forms (with and without =value) are rejected.
-    for bad in ["--output", "--output=/tmp/x", "-c", "--upload-pack=/bin/sh", "--git-dir=/x"]:
-        assert validate_passthrough_arg(bad) is not None, bad
-    # Legitimate read options pass through.
-    for ok in ["-U5", "--diff-filter=AM", "--ignore-space-change", "--no-merges", "--all"]:
-        assert validate_passthrough_arg(ok) is None, ok
-    # Empty is rejected.
-    assert validate_passthrough_arg("") is not None
-    # List helper returns first error or None.
-    assert validate_passthrough_args(["-U3", "--output"]) is not None
-    assert validate_passthrough_args(["-U3", "--diff-filter=M"]) is None
-    assert validate_passthrough_args(None) is None

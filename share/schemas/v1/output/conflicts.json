@@ -54,7 +54,10 @@
       "type": "object",
       "properties": {
         "conflicts": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "count": {
           "type": "integer"
@@ -72,7 +75,10 @@
           "type": "string"
         },
         "would_resolve": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

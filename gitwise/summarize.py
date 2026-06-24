@@ -98,7 +98,7 @@ def _parse_changed_entries(changed_files: list[str]) -> list[dict[str, str]]:
 
 def run_summarize(*, as_json: bool = False, diff: bool = False, max_commits: int = 10) -> int:
     """Entry point for the ``gitwise summarize`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="summarize")
     if root is None:
         return 1
     cwd = root

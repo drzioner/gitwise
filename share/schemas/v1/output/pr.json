@@ -54,10 +54,16 @@
       "type": "object",
       "properties": {
         "checks": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "comments": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "count": {
           "type": "integer"
@@ -69,7 +75,10 @@
           "type": "integer"
         },
         "prs": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         },
         "raw": {
           "type": "string"

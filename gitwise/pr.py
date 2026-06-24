@@ -469,8 +469,9 @@ def _run_action_list(
     )
     rc, out, err = _gh(gh_args, cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_list_failed"), code="pr_list_failed"
+        )
 
     if as_json:
         ok_json, payload = _json_or_error(out)
@@ -550,8 +551,9 @@ def _run_action_checks(*, root: Path, selected: list[str], as_json: bool) -> int
     """Execute the ``pr checks`` sub-action."""
     rc, out, err = _gh(["pr", "checks", *selected, "--json", _PR_CHECKS_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_checks_failed"), code="pr_checks_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json:
@@ -578,8 +580,9 @@ def _run_action_view(*, root: Path, selected: list[str], as_json: bool) -> int:
     """Execute the ``pr view`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_VIEW_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_view_failed"), code="pr_view_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json or not isinstance(payload, dict):
@@ -597,8 +600,9 @@ def _run_action_comments(*, root: Path, selected: list[str], as_json: bool) -> i
     """Execute the ``pr comments`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_COMMENTS_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_comments_failed"), code="pr_comments_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json or not isinstance(payload, dict):
@@ -645,9 +649,8 @@ def run_pr(
     that ``gh`` is available and that the cwd is inside a git repo.
     """
     if not _gh_available():
-        error(t("pr_gh_required"))
-        return 1
-    root = require_root()
+        return report_error("pr", as_json=as_json, msg=t("pr_gh_required"), code="pr_gh_required")
+    root = require_root(as_json=as_json, command="pr")
     if root is None:
         return 1
 

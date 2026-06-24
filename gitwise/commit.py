@@ -227,7 +227,7 @@ def run_commit(
     the project's amend policy (no amending pushed or protected branches)
     and GPG readiness before delegating to ``git commit``.
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="commit")
     if root is None:
         return 1
 
@@ -278,7 +278,7 @@ def run_commit(
 
     success, err = _execute_commit(root=root, message=full_msg, amend=amend)
     if not success:
-        return report_error("commit", as_json=as_json, msg=err)
+        return report_error("commit", as_json=as_json, msg=err, code="commit_failed")
 
     if as_json:
         print_json(ok_envelope("commit", message=full_msg, amend=amend))

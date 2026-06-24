@@ -122,7 +122,7 @@ def run_undo(
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise undo`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="undo")
     if root is None:
         return 1
 

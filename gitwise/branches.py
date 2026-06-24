@@ -190,11 +190,22 @@ def run_branches(
     git_args: list[str] | None = None,
 ) -> int:
     """Entry point for the ``gitwise branches`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="branches")
     if root is None:
         return 1
 
+    # for-each-ref parses a fixed tabulated --format; format-changing / count
+    # flags from --git-arg would silently corrupt _fetch_branch_rows parsing.
+    _BRANCHES_FORMAT_BREAKERS = ("--format", "--shell", "--python", "--perl", "--tcl", "--count")
     denied = validate_passthrough_args(git_args)
+    if denied is None and git_args:
+        for arg in git_args:
+            token = arg.split("=", 1)[0]
+            if token in _BRANCHES_FORMAT_BREAKERS:
+                denied = (
+                    f"--git-arg refuses '{token}' on branches (would break the parsed --format)"
+                )
+                break
     if denied is not None:
         if as_json:
             print_json(error_envelope("branches", error=denied, code="git_arg_denied"))

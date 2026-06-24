@@ -94,7 +94,7 @@ def test_status_not_git(tmp_path):
 
 
 def test_status_invalid_ahead_behind_falls_back_to_zero(monkeypatch, tmp_git_repo):
-    monkeypatch.setattr(status_module, "require_root", lambda: tmp_git_repo)
+    monkeypatch.setattr(status_module, "require_root", lambda *a, **k: tmp_git_repo)
     monkeypatch.setattr(status_module, "current_branch", lambda cwd: "main")
     monkeypatch.setattr(status_module, "has_upstream", lambda cwd: True)
 

@@ -57,7 +57,10 @@
           "type": "boolean"
         },
         "results": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       }
     }

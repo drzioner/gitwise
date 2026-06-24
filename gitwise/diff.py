@@ -111,7 +111,7 @@ def _name_status_details(
     git_args: list[str] | None = None,
 ) -> dict[str, DiffFileEntry]:
     """Return per-file name-status details for staged or working-tree changes."""
-    args = ["--no-pager", "diff", "--name-status"]
+    args = ["--no-pager", "diff", "--no-ext-diff", "--name-status"]
     if git_args:
         args.extend(git_args)
     if staged:
@@ -151,7 +151,7 @@ def _numstat_details(
     git_args: list[str] | None = None,
 ) -> dict[str, DiffFileEntry]:
     """Return per-file numstat details with insertion/deletion counts and binary flag."""
-    args = ["--no-pager", "diff", "--numstat"]
+    args = ["--no-pager", "diff", "--no-ext-diff", "--numstat"]
     if git_args:
         args.extend(git_args)
     if staged:
@@ -218,7 +218,7 @@ def _diff_cmd(
     ``git_args`` (validated passthrough options) are inserted right after the
     mode flag so they apply as git options.
     """
-    cmd = ["--no-pager", "diff"]
+    cmd = ["--no-pager", "diff", "--no-ext-diff"]
     if full:
         pass
     elif use_stat:
@@ -553,7 +553,7 @@ def run_diff(
     scopes the output after ``--``. ``--summary`` prints additions/deletions per
     file with no patch (token-efficient for agents).
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="diff")
     if root is None:
         return 1
     cwd = root

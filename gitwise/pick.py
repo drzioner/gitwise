@@ -86,7 +86,7 @@ def run_pick(
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise pick`` (cherry-pick/revert) command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="pick")
     if root is None:
         return 1
 

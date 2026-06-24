@@ -266,9 +266,15 @@ def test_active_worktree_protected(
 
 
 def test_clean_refs_not_implemented(
-    monkeypatch: pytest.MonkeyPatch, tmp_git_repo_with_stale: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_git_repo_with_stale: Path, capsys
 ) -> None:
-    """--refs is advertised but not implemented; it must fail closed (rc 1)."""
+    """--refs is advertised but not implemented; it must fail closed with a v3 envelope."""
+    import json
+
     monkeypatch.chdir(tmp_git_repo_with_stale)
     rc = run_clean(branches=False, refs=True, dry_run=True, yes=True, as_json=True)
     assert rc == 1
+    data = json.loads(capsys.readouterr().out)
+    assert data["ok"] is False
+    assert data["command"] == "clean"
+    assert data["errors"][0]["code"] == "not_implemented"

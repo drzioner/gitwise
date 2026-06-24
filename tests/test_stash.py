@@ -91,6 +91,7 @@ def test_stash_push_and_apply(tmp_git_repo):
     # the newly-added file is stashed away (removed from the working tree)
     assert not (tmp_git_repo / "f.txt").exists()
     r2 = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    assert r2.returncode == 0
     data = json.loads(r2.stdout)
     assert data["data"]["count"] >= 1
     r3 = run_gitwise("stash", "apply", "--json", cwd=tmp_git_repo)

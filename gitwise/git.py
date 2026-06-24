@@ -23,7 +23,7 @@ _GREP_MAX_LEN = 200
 # legitimate path overrides, not config/exec injection vectors, and stripping them
 # would break worktree/alternate workflows.
 _GIT_ENV_SCRUB_PREFIXES: tuple[str, ...] = ("GIT_CONFIG",)
-_GIT_ENV_SCRUB_EXACT: frozenset[str] = frozenset({"GIT_SSH_COMMAND", "GIT_ASKPASS"})
+_GIT_ENV_SCRUB_EXACT: frozenset[str] = frozenset({"GIT_SSH", "GIT_SSH_COMMAND", "GIT_ASKPASS"})
 
 
 def _build_git_env() -> dict[str, str]:
@@ -365,18 +365,27 @@ PROTECTED_BRANCHES: frozenset[str] = frozenset(
 )
 
 
-def require_root(path: Path | None = None) -> Path | None:
+def require_root(
+    path: Path | None = None, *, as_json: bool = False, command: str = "gitwise"
+) -> Path | None:
     """Return the repo root, or None after printing an error (exit code 1).
 
     Callers check the single value instead of unpacking a (root, err) tuple:
-    ``root = require_root(); if root is None: return 1``.
+    ``root = require_root(as_json=as_json, command="audit"); if root is None: return 1``.
+    When ``as_json`` is set the failure is emitted as a v3 error envelope so
+    machine consumers can parse it instead of receiving bare stderr text.
     """
     from .i18n import t
-    from .output import error
+    from .output import error, print_json
+    from .utils.json_envelope import error_envelope
 
     root = repo_root(path)
     if root is None:
-        error(t("not_a_git_repo"))
+        msg = t("not_a_git_repo")
+        if as_json:
+            print_json(error_envelope(command, error=msg, code="not_a_git_repo"))
+        else:
+            error(msg)
         return None
     return root
 

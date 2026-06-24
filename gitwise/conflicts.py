@@ -212,7 +212,7 @@ def run_conflicts(
     ``--dry-run`` reports what would be resolved without touching the tree, and
     ``--files`` scopes resolution to a subset of the conflicted paths.
     """
-    root = require_root()
+    root = require_root(as_json=as_json, command="conflicts")
     if root is None:
         return 1
 

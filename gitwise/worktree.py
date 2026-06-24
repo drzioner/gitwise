@@ -193,7 +193,11 @@ def _worktree_remove(
     worktrees = _list_worktrees(root)
     match = None
     for wt in worktrees:
-        if wt["path"] == target or wt["branch"] == target or wt["path"].endswith("/" + target):
+        # Match on path equality, branch equality, or the path's basename so it
+        # works on both POSIX and Windows separators (don't concatenate "/").
+        from pathlib import PurePath
+
+        if wt["path"] == target or wt["branch"] == target or PurePath(wt["path"]).name == target:
             match = wt
             break
     if match is None:
@@ -244,7 +248,7 @@ def run_worktree(
     force: bool = False,
 ) -> int:
     """Entry point for the ``gitwise worktree`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="worktree")
     if root is None:
         return 1
 

@@ -368,7 +368,7 @@ def compute_health(
 
 def run_health(*, as_json: bool = False) -> int:
     """Entry point for the ``gitwise health`` command."""
-    root = require_root()
+    root = require_root(as_json=as_json, command="health")
     if root is None:
         return 1
 

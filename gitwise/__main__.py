@@ -93,8 +93,9 @@ def main() -> int:
             print_json(
                 error_envelope(
                     "gitwise",
-                    error="missing_command",
+                    error="no subcommand provided: run `gitwise --help` to list commands",
                     code="missing_command",
+                    hint="try `gitwise --help`",
                     data=help_data(parser),
                 )
             )

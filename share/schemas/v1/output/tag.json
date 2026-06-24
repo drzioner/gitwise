@@ -57,10 +57,10 @@
           "type": "integer"
         },
         "created": {
-          "type": "integer"
+          "type": "boolean"
         },
         "deleted": {
-          "type": "string"
+          "type": "boolean"
         },
         "dry_run": {
           "type": "boolean"
@@ -69,7 +69,10 @@
           "type": "string"
         },
         "tags": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

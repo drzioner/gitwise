@@ -239,7 +239,8 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
         value_schema["default"] = _json_safe(action.default)
 
     nargs = action.nargs
-    if nargs in ("*", "+") or (isinstance(nargs, int) and nargs > 1):
+    is_append = isinstance(action, argparse._AppendAction)
+    if is_append or nargs in ("*", "+") or (isinstance(nargs, int) and nargs > 1):
         array_schema: dict[str, object] = {
             "type": "array",
             "items": value_schema,

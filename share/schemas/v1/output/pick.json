@@ -54,19 +54,22 @@
       "type": "object",
       "properties": {
         "aborted": {
-          "type": "string"
+          "type": "boolean"
         },
         "action": {
           "type": "string"
         },
         "continued": {
-          "type": "string"
+          "type": "boolean"
         },
         "dry_run": {
           "type": "boolean"
         },
         "refs": {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

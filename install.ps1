@@ -65,7 +65,18 @@ function Invoke-UvInstaller {
         }
     }
     else {
-        & powershell -ExecutionPolicy ByPass -c "irm $url | iex"
+        # Download to a temp file and execute the file directly, instead of
+        # interpolating $url into a -c "irm $url | iex" string (which would let
+        # metacharacters in the URL execute as PowerShell). This TOFU path still
+        # runs unverified by design; set UV_INSTALLER_SHA256 to enforce a hash.
+        $tmp = [System.IO.Path]::GetTempFileName()
+        try {
+            Invoke-RestMethod -Uri $url -OutFile $tmp
+            & powershell -ExecutionPolicy ByPass -File $tmp
+        }
+        finally {
+            Remove-Item $tmp -ErrorAction SilentlyContinue
+        }
     }
 }
 
