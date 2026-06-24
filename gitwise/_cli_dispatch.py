@@ -144,7 +144,11 @@ def _run_worktree(args: argparse.Namespace) -> int:
     from gitwise.worktree import run_worktree
 
     return run_worktree(
-        args.action, getattr(args, "branch", None), dry_run=args.dry_run, as_json=args.json
+        args.action,
+        getattr(args, "branch", None),
+        dry_run=args.dry_run,
+        as_json=args.json,
+        force=getattr(args, "force", False),
     )
 
 
@@ -331,6 +335,10 @@ def _run_stash(args: argparse.Namespace) -> int:
         yes=args.yes,
         dry_run=args.dry_run,
         patch=args.patch,
+        message=getattr(args, "message", None),
+        include_untracked=getattr(args, "include_untracked", False),
+        keep_index=getattr(args, "keep_index", False),
+        paths=getattr(args, "paths", None),
     )
 
 

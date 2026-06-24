@@ -179,12 +179,68 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) 
     return 0
 
 
+def _worktree_remove(
+    target: str, root: Path, *, force: bool = False, as_json: bool = False
+) -> int:
+    """Remove a worktree identified by path or checked-out branch name."""
+    if not target:
+        msg = t("worktree_usage")
+        if as_json:
+            print_json(error_envelope("worktree", error=msg, code="worktree_target_required"))
+        else:
+            error(msg)
+        return 1
+
+    worktrees = _list_worktrees(root)
+    match = None
+    for wt in worktrees:
+        if wt["path"] == target or wt["branch"] == target or wt["path"].endswith("/" + target):
+            match = wt
+            break
+    if match is None:
+        msg = t("worktree_not_found", target=target)
+        if as_json:
+            print_json(error_envelope("worktree", error=msg, code="worktree_not_found"))
+        else:
+            error(msg)
+        return 1
+    # Never remove the primary worktree (the repo root itself).
+    if Path(match["path"]) == root:
+        msg = t("worktree_remove_primary")
+        if as_json:
+            print_json(error_envelope("worktree", error=msg, code="worktree_remove_primary"))
+        else:
+            error(msg)
+        return 1
+
+    args = ["worktree", "remove"]
+    if force:
+        args.append("--force")
+    args.append(match["path"])
+    r = git_run(args, cwd=root, check=False)
+    if r.returncode != 0:
+        msg = r.stderr.strip() or t("worktree_failed", error="remove")
+        if as_json:
+            print_json(error_envelope("worktree", error=msg, code="worktree_remove_failed"))
+        else:
+            error(msg)
+        return 1
+    if as_json:
+        print_json(
+            ok_envelope("worktree", removed=match["path"], branch=match.get("branch") or "")
+        )
+        return 0
+    ok(t("worktree_removed", path=match["path"]))
+    return 0
+
+
 def run_worktree(
     action: str | None,
     branch: str | None,
     *,
     dry_run: bool = False,
     as_json: bool = False,
+    force: bool = False,
 ) -> int:
     """Entry point for the ``gitwise worktree`` command."""
     root, err = require_root()
@@ -215,6 +271,9 @@ def run_worktree(
 
     elif action == "clean":
         return _worktree_clean(root, dry_run=dry_run, as_json=as_json)
+
+    elif action == "remove":
+        return _worktree_remove(branch or "", root, force=force, as_json=as_json)
 
     elif action == "list":
         return _worktree_list(root, as_json=as_json)

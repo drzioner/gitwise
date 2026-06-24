@@ -163,9 +163,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true")
 
     p = sub.add_parser("worktree", help="worktree helpers for Claude agents", parents=[parent])
-    p.add_argument("action", choices=["new", "clean", "list"], nargs="?", metavar="new|clean|list")
+    p.add_argument(
+        "action",
+        choices=["new", "clean", "list", "remove"],
+        nargs="?",
+        metavar="new|clean|list|remove",
+    )
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--force", action="store_true", help="force removal even with modifications (remove only)"
+    )
 
     p = sub.add_parser(
         "diff",
@@ -328,12 +336,25 @@ def build_parser() -> argparse.ArgumentParser:
         "action",
         nargs="?",
         default="list",
-        choices=["list", "show", "pop", "drop", "clear", "clean"],
+        choices=["list", "show", "pop", "apply", "push", "drop", "clear", "clean"],
     )
     p.add_argument("--index", type=int, default=0, help="stash index (default: 0)")
     p.add_argument("--dry-run", action="store_true", help="dry run (clear only)")
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--patch", action="store_true", help="show full patch (show only)")
+    p.add_argument("-m", "--message", type=str, default=None, help="stash message (push only)")
+    p.add_argument(
+        "-u",
+        "--include-untracked",
+        action="store_true",
+        help="include untracked files (push only)",
+    )
+    p.add_argument(
+        "--keep-index", action="store_true", help="keep staged changes in the index (push only)"
+    )
+    p.add_argument(
+        "paths", nargs="*", default=None, help="paths to stash (push only, use -- to separate)"
+    )
 
     p = sub.add_parser("tag", help="semver-aware tag management", parents=[parent])
     p.add_argument(

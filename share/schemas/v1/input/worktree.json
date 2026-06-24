@@ -37,7 +37,8 @@
       "enum": [
         "new",
         "clean",
-        "list"
+        "list",
+        "remove"
       ]
     },
     "branch": {
@@ -45,6 +46,11 @@
     },
     "dry_run": {
       "type": "boolean",
+      "default": false
+    },
+    "force": {
+      "type": "boolean",
+      "description": "force removal even with modifications (remove only)",
       "default": false
     }
   }

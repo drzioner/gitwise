@@ -79,3 +79,20 @@ def test_stash_drop_with_yes_non_interactive_succeeds(tmp_git_repo):
 
     r = run_gitwise("stash", "drop", "--yes", cwd=tmp_git_repo)
     assert r.returncode == 0
+
+
+def test_stash_push_and_apply(tmp_git_repo):
+    from conftest import _git
+
+    (tmp_git_repo / "f.txt").write_text("change\n")
+    _git(["add", "f.txt"], tmp_git_repo)
+    r = run_gitwise("stash", "push", "-m", "wip", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    # the newly-added file is stashed away (removed from the working tree)
+    assert not (tmp_git_repo / "f.txt").exists()
+    r2 = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    data = json.loads(r2.stdout)
+    assert data["data"]["count"] >= 1
+    r3 = run_gitwise("stash", "apply", "--json", cwd=tmp_git_repo)
+    assert r3.returncode == 0
+    assert (tmp_git_repo / "f.txt").read_text() == "change\n"

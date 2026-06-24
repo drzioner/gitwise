@@ -1571,6 +1571,18 @@
     "es": "Stash {ref} restaurado",
     "en": "Stash {ref} restored"
   },
+  "stash_applied": {
+    "es": "Stash {ref} aplicado (sin eliminar)",
+    "en": "Stash {ref} applied (not removed)"
+  },
+  "stash_pushed": {
+    "es": "Cambios guardados en un nuevo stash",
+    "en": "Changes saved to a new stash"
+  },
+  "stash_push_failed": {
+    "es": "No se pudo crear el stash (¿no hay cambios?)",
+    "en": "Failed to create stash (no changes?)"
+  },
   "stash_hint": {
     "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
     "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."
@@ -2062,6 +2074,18 @@
   "worktree_created": {
     "es": "worktree creado: {path}",
     "en": "worktree created: {path}"
+  },
+  "worktree_removed": {
+    "es": "worktree eliminado: {path}",
+    "en": "worktree removed: {path}"
+  },
+  "worktree_not_found": {
+    "es": "no se encontro un worktree para: {target}",
+    "en": "no worktree found for: {target}"
+  },
+  "worktree_remove_primary": {
+    "es": "no se puede eliminar el worktree principal",
+    "en": "cannot remove the primary worktree"
   },
   "worktree_failed": {
     "es": "no se pudo crear worktree: {error}",

@@ -114,3 +114,17 @@ def test_worktree_list_json_envelope(tmp_git_repo: Path) -> None:
     assert any(wt["branch"] == "json-branch" for wt in worktrees)
     sample = worktrees[0]
     assert {"path", "branch", "locked", "prunable"} <= set(sample.keys())
+
+
+def test_worktree_remove_by_branch(tmp_git_repo: Path) -> None:
+    wt_path = tmp_git_repo.parent / "remove-wt"
+    _git(["worktree", "add", str(wt_path), "-b", "remove-branch"], tmp_git_repo)
+    assert wt_path.exists()
+    result = run_gitwise("worktree", "remove", "remove-branch", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert not wt_path.exists()
+
+
+def test_worktree_remove_not_found(tmp_git_repo: Path) -> None:
+    result = run_gitwise("worktree", "remove", "nope", cwd=tmp_git_repo)
+    assert result.returncode == 1
