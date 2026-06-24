@@ -35,14 +35,18 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
     """Dispatch to ``setup-agents`` subcommand, handling provider listing."""
     if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
         from gitwise.i18n import t as _t
+        from gitwise.setup_agents.format import (
+            _SETUP_AGENTS_SCHEMA_COMPAT,
+            _SETUP_AGENTS_SCHEMA_VERSION,
+        )
         from gitwise.setup_agents.providers import list_providers
 
         adapter_list = list_providers()
         if args.json:
             print_json(
                 {
-                    "v": 3,
-                    "v_compat": [1, 2, 3],
+                    "v": _SETUP_AGENTS_SCHEMA_VERSION,
+                    "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
                     "command": "setup-agents",
                     "hints": [],
                     "errors": [],
