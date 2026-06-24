@@ -10,6 +10,7 @@ from gitwise.i18n import t
 from gitwise.output import (
     error,
     info,
+    ok,
     print_blank,
     print_bracket,
     print_dim,
@@ -424,9 +425,48 @@ def _invalid_json_response(*, as_json: bool, raw: str) -> int:
     return 1
 
 
-def _run_action_list(*, root: Path, as_json: bool) -> int:
-    """Execute the ``pr list`` sub-action."""
-    rc, out, err = _gh(["pr", "list", "--json", _PR_LIST_FIELDS], cwd=root)
+def _list_filter_args(
+    *,
+    state: str | None,
+    author: str | None,
+    label: str | None,
+    limit: int | None,
+    base: str | None,
+    head: str | None,
+) -> list[str]:
+    """Translate gitwise pr list filters into ``gh pr list`` flag arguments."""
+    args: list[str] = []
+    if state:
+        args += ["--state", state]
+    if author:
+        args += ["--author", author]
+    if label:
+        args += ["--label", label]
+    if base:
+        args += ["--base", base]
+    if head:
+        args += ["--head", head]
+    if limit is not None and limit > 0:
+        args += ["--limit", str(limit)]
+    return args
+
+
+def _run_action_list(
+    *,
+    root: Path,
+    as_json: bool,
+    state: str | None = None,
+    author: str | None = None,
+    label: str | None = None,
+    limit: int | None = None,
+    base: str | None = None,
+    head: str | None = None,
+) -> int:
+    """Execute the ``pr list`` sub-action with optional filters."""
+    gh_args = ["pr", "list", "--json", _PR_LIST_FIELDS] + _list_filter_args(
+        state=state, author=author, label=label, limit=limit, base=base, head=head
+    )
+    rc, out, err = _gh(gh_args, cwd=root)
     if rc != 0:
         error(err)
         return 1
@@ -451,12 +491,60 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
     for pr in prs:
         if not isinstance(pr, dict):
             continue
-        state = str(pr.get("state") or "")
+        pr_state = str(pr.get("state") or "")
         number = str(pr.get("number") or "-")
         title = str(pr.get("title") or "-")
-        head = str(pr.get("headRefName") or "-")
-        print_file_status(_pr_status_code(state), f"#{number}  {title}")
-        info(f"    ({state}) <- {head}")
+        pr_head = str(pr.get("headRefName") or "-")
+        print_file_status(_pr_status_code(pr_state), f"#{number}  {title}")
+        info(f"    ({pr_state}) <- {pr_head}")
+    return 0
+
+
+def _run_action_create(
+    *,
+    root: Path,
+    as_json: bool,
+    title: str | None = None,
+    body: str | None = None,
+    base: str | None = None,
+    head: str | None = None,
+    draft: bool = False,
+    fill: bool = False,
+) -> int:
+    """Execute the ``pr create`` sub-action by delegating to ``gh pr create``."""
+    args = ["pr", "create"]
+    if fill:
+        args.append("--fill")
+    elif title:
+        args += ["--title", title]
+        if body:
+            args += ["--body", body]
+    else:
+        msg = t("pr_create_needs_title")
+        if as_json:
+            print_json(error_envelope("pr", error=msg, code="pr_create_needs_title"))
+        else:
+            error(msg)
+        return 1
+    if base:
+        args += ["--base", base]
+    if head:
+        args += ["--head", head]
+    if draft:
+        args.append("--draft")
+    rc, out, err = _gh(args, cwd=root)
+    if rc != 0:
+        msg = err.strip() or t("pr_create_failed")
+        if as_json:
+            print_json(error_envelope("pr", error=msg, code="pr_create_failed"))
+        else:
+            error(msg)
+        return 1
+    url = out.strip().splitlines()[0] if out.strip() else ""
+    if as_json:
+        print_json(ok_envelope("pr", created=True, url=url))
+        return 0
+    ok(t("pr_created", url=url))
     return 0
 
 
@@ -542,10 +630,20 @@ def run_pr(
     action: str = "list",
     selector: str | None = None,
     as_json: bool = False,
+    state: str | None = None,
+    author: str | None = None,
+    label: str | None = None,
+    limit: int | None = None,
+    base: str | None = None,
+    head: str | None = None,
+    title: str | None = None,
+    body: str | None = None,
+    draft: bool = False,
+    fill: bool = False,
 ) -> int:
     """Entry point for the ``gitwise pr`` command.
 
-    Dispatches to list/checks/view/comments sub-actions after checking
+    Dispatches to list/checks/view/comments/create sub-actions after checking
     that ``gh`` is available and that the cwd is inside a git repo.
     """
     if not _gh_available():
@@ -558,7 +656,28 @@ def run_pr(
         return 1
 
     if action == "list":
-        return _run_action_list(root=root, as_json=as_json)
+        return _run_action_list(
+            root=root,
+            as_json=as_json,
+            state=state,
+            author=author,
+            label=label,
+            limit=limit,
+            base=base,
+            head=head,
+        )
+
+    if action == "create":
+        return _run_action_create(
+            root=root,
+            as_json=as_json,
+            title=title,
+            body=body,
+            base=base,
+            head=head,
+            draft=draft,
+            fill=fill,
+        )
 
     try:
         selected = _selector_args(selector)

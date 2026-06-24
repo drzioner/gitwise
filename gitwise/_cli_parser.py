@@ -306,7 +306,7 @@ def build_parser() -> argparse.ArgumentParser:
         "action",
         nargs="?",
         default="list",
-        choices=["list", "checks", "view", "comments"],
+        choices=["list", "checks", "view", "comments", "create"],
         help="pr action",
     )
     p.add_argument(
@@ -315,6 +315,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="PR number/url/branch (default: current branch PR)",
     )
+    # pr list filters
+    p.add_argument("--state", default=None, help="filter by state: open,closed,merged,all (list)")
+    p.add_argument("--author", default=None, help="filter by author login (list)")
+    p.add_argument("--label", default=None, help="filter by label (list)")
+    p.add_argument("--limit", type=int, default=None, help="max PRs to list")
+    p.add_argument("--base", default=None, help="base branch (list/create)")
+    p.add_argument("--head", default=None, help="head branch (list/create)")
+    # pr create
+    p.add_argument("--title", default=None, help="PR title (create)")
+    p.add_argument("--body", default=None, help="PR body (create)")
+    p.add_argument("--draft", action="store_true", help="create as draft")
+    p.add_argument("--fill", action="store_true", help="use commit info for title/body (create)")
 
     p = sub.add_parser("undo", help="reflog-based undo", parents=[parent])
     p.add_argument("ref", nargs="?", default=None, help="target ref (default: HEAD~1)")

@@ -293,7 +293,21 @@ def _run_pr(args: argparse.Namespace) -> int:
     """Dispatch to ``pr`` subcommand."""
     from gitwise.pr import run_pr
 
-    return run_pr(action=args.action, selector=args.selector, as_json=args.json)
+    return run_pr(
+        action=args.action,
+        selector=args.selector,
+        as_json=args.json,
+        state=getattr(args, "state", None),
+        author=getattr(args, "author", None),
+        label=getattr(args, "label", None),
+        limit=getattr(args, "limit", None),
+        base=getattr(args, "base", None),
+        head=getattr(args, "head", None),
+        title=getattr(args, "title", None),
+        body=getattr(args, "body", None),
+        draft=getattr(args, "draft", False),
+        fill=getattr(args, "fill", False),
+    )
 
 
 def _run_undo(args: argparse.Namespace) -> int:

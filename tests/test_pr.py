@@ -324,3 +324,61 @@ def test_pr_checks_json_output(monkeypatch, tmp_git_repo: Path, capsys) -> None:
     assert data["ok"] is True
     assert data["data"]["count"] == 1
     assert data["data"]["summary"]["pass"] == 1
+
+
+def test_pr_list_passes_filters(monkeypatch, tmp_git_repo: Path) -> None:
+    """pr list forwards --state/--author/--label/--limit to gh."""
+    monkeypatch.setattr(pr_module, "_gh_available", lambda: True)
+    monkeypatch.setattr(pr_module, "require_root", lambda: (tmp_git_repo, None))
+    captured: dict[str, list[str]] = {}
+
+    def _fake_gh(args: list[str], cwd: Path) -> tuple[int, str, str]:
+        captured["args"] = args
+        return 0, "[]", ""
+
+    monkeypatch.setattr(pr_module, "_gh", _fake_gh)
+    rc = pr_module.run_pr(
+        action="list",
+        as_json=True,
+        state="open",
+        author="alice",
+        label="bug",
+        limit=5,
+    )
+    assert rc == 0
+    args = captured["args"]
+    assert "--state" in args and "open" in args
+    assert "--author" in args and "alice" in args
+    assert "--label" in args and "bug" in args
+    assert "--limit" in args and "5" in args
+
+
+def test_pr_create_requires_title(monkeypatch, tmp_git_repo: Path) -> None:
+    """pr create without --title/--fill fails with a clear code."""
+    monkeypatch.setattr(pr_module, "_gh_available", lambda: True)
+    monkeypatch.setattr(pr_module, "require_root", lambda: (tmp_git_repo, None))
+    monkeypatch.setattr(pr_module, "_gh", lambda args, cwd: (0, "https://x", ""))
+    rc = pr_module.run_pr(action="create", as_json=True)
+    assert rc == 1
+
+
+def test_pr_create_delegates_to_gh(monkeypatch, tmp_git_repo: Path) -> None:
+    """pr create --title delegates to gh pr create and returns the URL."""
+    monkeypatch.setattr(pr_module, "_gh_available", lambda: True)
+    monkeypatch.setattr(pr_module, "require_root", lambda: (tmp_git_repo, None))
+    captured: dict[str, list[str]] = {}
+
+    def _fake_gh(args: list[str], cwd: Path) -> tuple[int, str, str]:
+        captured["args"] = args
+        return 0, "https://example.test/pr/7\n", ""
+
+    monkeypatch.setattr(pr_module, "_gh", _fake_gh)
+    rc = pr_module.run_pr(
+        action="create", as_json=True, title="feat: x", body="body", base="main", head="feat-x"
+    )
+    assert rc == 0
+    args = captured["args"]
+    assert args[0:2] == ["pr", "create"]
+    assert "--title" in args and "feat: x" in args
+    assert "--base" in args and "main" in args
+    assert "--head" in args and "feat-x" in args

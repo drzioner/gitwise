@@ -38,7 +38,8 @@
         "list",
         "checks",
         "view",
-        "comments"
+        "comments",
+        "create"
       ],
       "description": "pr action",
       "default": "list"
@@ -46,6 +47,48 @@
     "selector": {
       "type": "string",
       "description": "PR number/url/branch (default: current branch PR)"
+    },
+    "state": {
+      "type": "string",
+      "description": "filter by state: open,closed,merged,all (list)"
+    },
+    "author": {
+      "type": "string",
+      "description": "filter by author login (list)"
+    },
+    "label": {
+      "type": "string",
+      "description": "filter by label (list)"
+    },
+    "limit": {
+      "type": "integer",
+      "description": "max PRs to list"
+    },
+    "base": {
+      "type": "string",
+      "description": "base branch (list/create)"
+    },
+    "head": {
+      "type": "string",
+      "description": "head branch (list/create)"
+    },
+    "title": {
+      "type": "string",
+      "description": "PR title (create)"
+    },
+    "body": {
+      "type": "string",
+      "description": "PR body (create)"
+    },
+    "draft": {
+      "type": "boolean",
+      "description": "create as draft",
+      "default": false
+    },
+    "fill": {
+      "type": "boolean",
+      "description": "use commit info for title/body (create)",
+      "default": false
     }
   }
 }
