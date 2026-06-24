@@ -293,12 +293,30 @@ def _render_stat_output(
         info(t("no_uncommitted_changes"))
         return 0
 
-    status_details = _name_status_details(
-        cwd, staged=staged, refspec=refspec, paths=paths, git_args=git_args
-    )
-    numstat_details = _numstat_details(
-        cwd, staged=staged, refspec=refspec, paths=paths, git_args=git_args
-    )
+    # name-status and numstat are independent git invocations; run them
+    # concurrently so the diffstat renders after one subprocess round-trip
+    # instead of two (matters on large repos / network filesystems).
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_status = pool.submit(
+            _name_status_details,
+            cwd,
+            staged=staged,
+            refspec=refspec,
+            paths=paths,
+            git_args=git_args,
+        )
+        f_num = pool.submit(
+            _numstat_details,
+            cwd,
+            staged=staged,
+            refspec=refspec,
+            paths=paths,
+            git_args=git_args,
+        )
+        status_details = f_status.result()
+        numstat_details = f_num.result()
     merged_files = _merge_stat_files(
         files=files,
         status_details=status_details,

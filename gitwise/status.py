@@ -97,9 +97,19 @@ def run_status(*, as_json: bool = False) -> int:
                 parsed = parse_two_ints(ab_r.stdout)
                 if parsed is not None:
                     ahead, behind = parsed
-            if ahead:
+            if ahead and behind:
+                # Both log ranges are independent; run them concurrently so the
+                # status payload completes after one round-trip instead of two.
+                from concurrent.futures import ThreadPoolExecutor
+
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    fa = pool.submit(_range_commits, root, "@{u}..HEAD")
+                    fb = pool.submit(_range_commits, root, "HEAD..@{u}")
+                    ahead_commits = fa.result()
+                    behind_commits = fb.result()
+            elif ahead:
                 ahead_commits = _range_commits(root, "@{u}..HEAD")
-            if behind:
+            elif behind:
                 behind_commits = _range_commits(root, "HEAD..@{u}")
 
         in_progress = detect_in_progress(root)
