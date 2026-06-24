@@ -5,7 +5,16 @@ from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import bat_pipe, error, print_diffstat, print_header, print_json, status
 from gitwise.utils.git_output import parse_diffstat_entries, parse_name_status_entries
-from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
+
+
+def _report_error(*, as_json: bool, err: str, code: str) -> int:
+    """Emit a show error as a JSON envelope or human message; return 1."""
+    if as_json:
+        print_json(error_envelope("show", error=err, code=code))
+    else:
+        error(err)
+    return 1
 
 
 def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
@@ -83,15 +92,17 @@ def run_show(
         return 1
 
     if not validate_ref(ref):
-        error(t("invalid_ref", ref=ref))
-        return 1
+        return _report_error(as_json=as_json, err=t("invalid_ref", ref=ref), code="invalid_ref")
 
     if as_json:
         args = _build_show_json_args(ref)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
-            error(t("git_show_failed", error=r.stderr.strip()))
-            return 1
+            return _report_error(
+                as_json=as_json,
+                err=t("git_show_failed", error=r.stderr.strip()),
+                code="git_show_failed",
+            )
         data = _parse_show_json(r.stdout)
         print_json(ok_envelope("show", data=data))
     else:
@@ -99,8 +110,11 @@ def run_show(
             with status(t("status_loading_commit")):
                 r = git_run(["show", "--stat", "--format=", ref], cwd=root, check=False)
             if r.returncode != 0:
-                error(t("git_show_failed", error=r.stderr.strip()))
-                return 1
+                return _report_error(
+                    as_json=as_json,
+                    err=t("git_show_failed", error=r.stderr.strip()),
+                    code="git_show_failed",
+                )
             entries = _parse_diffstat_entries(r.stdout)
             if entries:
                 status_map = _show_status_map(root, ref)

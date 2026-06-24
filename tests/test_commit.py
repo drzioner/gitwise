@@ -82,6 +82,20 @@ def test_commit_amend(tmp_git_repo: Path) -> None:
     assert r.returncode == 0
 
 
+def test_commit_amend_blocked_on_protected_json(tmp_git_repo: Path) -> None:
+    """--amend on a protected branch must emit a structured error envelope in JSON mode."""
+    import json
+
+    # tmp_git_repo is on `main` (protected) with no upstream.
+    r = run_gitwise(
+        "commit", "--type", "fix", "-m", "amended", "--amend", "--json", cwd=tmp_git_repo
+    )
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "commit_amend_protected"
+
+
 def test_commit_json_output(tmp_git_repo: Path) -> None:
     (tmp_git_repo / "file.txt").write_text("hello")
     _git(["add", "."], tmp_git_repo)
