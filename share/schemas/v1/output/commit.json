@@ -54,7 +54,7 @@
       "type": "object",
       "properties": {
         "amend": {
-          "type": "string"
+          "type": "boolean"
         },
         "dry_run": {
           "type": "boolean"

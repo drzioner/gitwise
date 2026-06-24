@@ -2,7 +2,7 @@
 
 import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from gitwise.git import require_root, validate_branch_name
 from gitwise.git import run as git_run
@@ -195,8 +195,6 @@ def _worktree_remove(
     for wt in worktrees:
         # Match on path equality, branch equality, or the path's basename so it
         # works on both POSIX and Windows separators (don't concatenate "/").
-        from pathlib import PurePath
-
         if wt["path"] == target or wt["branch"] == target or PurePath(wt["path"]).name == target:
             match = wt
             break

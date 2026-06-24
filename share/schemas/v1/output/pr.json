@@ -66,13 +66,15 @@
           }
         },
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "created": {
           "type": "boolean"
         },
         "number": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "prs": {
           "type": "array",

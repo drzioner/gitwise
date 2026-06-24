@@ -60,7 +60,8 @@
           }
         },
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "stale_branches": {
           "type": "array",

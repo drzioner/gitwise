@@ -14,7 +14,6 @@ from gitwise.git import (
 from gitwise.i18n import t
 from gitwise.output import (
     confirm,
-    error,
     ok,
     print_blank,
     print_bracket,
@@ -77,8 +76,9 @@ def run_clean(
         )
 
     if not branches:
-        error(t("clean_specify_flag"))
-        return 1
+        return report_error(
+            "clean", as_json=as_json, msg=t("clean_specify_flag"), code="clean_specify_flag"
+        )
 
     root = require_root(as_json=as_json, command="clean")
     if root is None:

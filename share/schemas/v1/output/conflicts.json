@@ -60,7 +60,8 @@
           }
         },
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "dry_run": {
           "type": "boolean"
@@ -69,7 +70,8 @@
           "type": "string"
         },
         "resolved": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "strategy": {
           "type": "string"

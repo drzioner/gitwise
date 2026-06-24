@@ -54,7 +54,8 @@
       "type": "object",
       "properties": {
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "created": {
           "type": "boolean"

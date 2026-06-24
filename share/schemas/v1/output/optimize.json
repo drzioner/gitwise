@@ -2,57 +2,49 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://gitwise.dev/schemas/v1/output/optimize.json",
   "title": "gitwise optimize cli output",
-  "description": "v3 envelope for `gitwise optimize --json`. data fields enumerated; data is permissive (additional fields allowed) to stay forward-compatible.",
+  "description": "v3 envelope for `gitwise optimize --json`. data lists the applied steps with per-step ok flags and the repo size before/after in KiB. data is permissive (additional fields allowed) to stay forward-compatible.",
   "type": "object",
-  "required": [
-    "v",
-    "ok",
-    "command",
-    "data",
-    "hints",
-    "errors"
-  ],
+  "required": ["v", "ok", "command", "data", "hints", "errors"],
   "additionalProperties": false,
   "properties": {
-    "v": {
-      "const": 3
-    },
-    "ok": {
-      "type": "boolean"
-    },
-    "command": {
-      "const": "optimize"
-    },
-    "hints": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
+    "v": { "const": 3 },
+    "ok": { "type": "boolean" },
+    "command": { "const": "optimize" },
+    "hints": { "type": "array", "items": { "type": "string" } },
     "errors": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "hint": {
-            "type": "string"
-          }
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" }
         }
       }
     },
     "data": {
       "type": "object",
-      "properties": {}
+      "properties": {
+        "dry_run": { "type": "boolean" },
+        "applied": { "type": "boolean" },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "desc", "ok"],
+            "properties": {
+              "name": { "type": "string" },
+              "desc": { "type": "string" },
+              "ok": { "type": "boolean" }
+            }
+          }
+        },
+        "size_before_kb": { "type": ["number", "integer"], "minimum": 0 },
+        "size_after_kb": { "type": ["number", "integer"], "minimum": 0 },
+        "saved_kb": { "type": ["number", "integer"], "minimum": 0 },
+        "rc": { "type": "integer", "minimum": 0 }
+      }
     }
   }
 }

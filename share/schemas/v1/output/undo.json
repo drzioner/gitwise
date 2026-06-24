@@ -63,7 +63,7 @@
           }
         },
         "soft": {
-          "type": "string"
+          "type": "boolean"
         },
         "target": {
           "type": "string"

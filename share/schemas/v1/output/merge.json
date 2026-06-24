@@ -57,10 +57,12 @@
           "type": "string"
         },
         "ahead": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "behind": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "branch": {
           "type": "string"

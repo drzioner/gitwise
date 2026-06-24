@@ -60,13 +60,15 @@
           "type": "boolean"
         },
         "count": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "dry_run": {
           "type": "boolean"
         },
         "orphaned": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "orphaned_branches": {
           "type": "array",
@@ -75,7 +77,8 @@
           }
         },
         "pruned": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "removed": {
           "type": "boolean"

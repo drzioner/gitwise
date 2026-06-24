@@ -393,7 +393,9 @@ def test_diff_git_arg_denies_dangerous_option(tmp_git_repo):
     """--git-arg must refuse options that can write files or execute code."""
     (tmp_git_repo / "a.txt").write_text("hello\n")
     _git(["add", "a.txt"], tmp_git_repo)
-    denied = _run("diff", "--git-arg=--output", "/tmp/evil", "--json", cwd=tmp_git_repo)
+    # Self-contained: a single denied token, no extra positional that could be
+    # misread as a refspec if validate_ref ever changes ordering.
+    denied = _run("diff", "--git-arg=--output", "--json", cwd=tmp_git_repo)
     assert denied.returncode == 1
     data = json.loads(denied.stdout)
     assert data["errors"][0]["code"] == "git_arg_denied"

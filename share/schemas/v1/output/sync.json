@@ -52,15 +52,7 @@
     },
     "data": {
       "type": "object",
-      "properties": {
-        "branch": { "type": "string" },
-        "ahead": { "type": "integer" },
-        "behind": { "type": "integer" },
-        "upstream": { "type": "boolean" },
-        "unpushed": { "type": "array", "items": { "type": "string" } },
-        "actions": { "type": "array", "items": { "type": "string" } },
-        "dry_run": { "type": "boolean" }
-      }
+      "properties": {}
     }
   }
 }
