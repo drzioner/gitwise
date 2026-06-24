@@ -49,8 +49,10 @@
     },
     "files": {
       "type": "array",
-      "items": { "type": "string" },
-      "description": "limit resolution to these files (use -- to separate from flags)"
+      "items": {
+        "type": "string",
+        "description": "limit resolution to these files (use -- to separate from flags)"
+      }
     },
     "dry_run": {
       "type": "boolean",
