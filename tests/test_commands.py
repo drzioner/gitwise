@@ -24,11 +24,15 @@ def test_commands_json_is_parseable_envelope() -> None:
 
 def test_completions_emits_script() -> None:
     r = run_gitwise("completions", "bash")
-    # shtab is an optional dependency; accept either a script or a clean
-    # missing-dependency error, but reject a crash/traceback in any case.
+    # shtab is an optional dependency. Either it emits a completion script, or
+    # it fails with the specific missing-dependency message -- but never a
+    # crash/traceback. Pin the exact failure mode so a silent rc=1 can't pass.
     if r.returncode == 0:
         assert "gitwise" in r.stdout
         assert "Traceback" not in r.stderr
     else:
         assert r.returncode == 1
         assert "Traceback" not in r.stderr
+        from gitwise.i18n import t
+
+        assert t("missing_dependency_completions_shtab") in r.stderr

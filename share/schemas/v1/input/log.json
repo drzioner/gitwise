@@ -64,6 +64,7 @@
     },
     "max_count": {
       "type": "integer",
+      "minimum": 1,
       "description": "max commits",
       "default": 20
     },

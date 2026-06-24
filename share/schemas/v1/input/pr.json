@@ -68,6 +68,7 @@
     },
     "limit": {
       "type": "integer",
+      "minimum": 1,
       "description": "max PRs to list"
     },
     "base": {

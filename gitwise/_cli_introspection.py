@@ -231,6 +231,11 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
     if action.choices:
         value_schema["enum"] = [_json_safe(choice) for choice in action.choices]
 
+    # A "limit"/"max-count" argument is a positive-integer bound; surface that
+    # in the input schema so consumers know 0/negative are invalid.
+    if value_schema["type"] == "integer" and action.dest in {"limit", "max_count", "maxcount"}:
+        value_schema["minimum"] = 1
+
     description = "" if action.help is argparse.SUPPRESS else (action.help or "")
     if description:
         value_schema["description"] = description
