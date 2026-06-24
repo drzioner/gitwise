@@ -207,6 +207,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="limit to paths (use -- to separate from refspec)",
     )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git diff (repeatable; "
+        "code-exec/write/redirect options like --output/-c/--git-dir are refused)",
+    )
 
     p = sub.add_parser("log", help="pretty git log with filters", parents=[parent])
     p.add_argument("--oneline", action="store_true", help="one line per commit")
@@ -223,10 +232,28 @@ def build_parser() -> argparse.ArgumentParser:
         dest="json_lines",
         help="stream one JSON envelope per commit (NDJSON; implies JSON mode)",
     )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git log (repeatable; "
+        "code-exec/write/redirect options are refused)",
+    )
 
     p = sub.add_parser("show", help="commit inspector", parents=[parent])
     p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")
     p.add_argument("--stat", action="store_true", help="show diffstat")
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git show (repeatable; "
+        "code-exec/write/redirect options are refused)",
+    )
 
     p = sub.add_parser("commit", help="smart conventional commit", parents=[parent])
     p.add_argument("-m", "--message", type=str, default=None, help="commit message")
@@ -249,6 +276,15 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default="refname",
         help="sort field: refname, committerdate, -committerdate",
+    )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git for-each-ref (repeatable; "
+        "code-exec/write/redirect options are refused)",
     )
 
     p = sub.add_parser("sync", help="remote fetch, safe pull/push", parents=[parent])

@@ -71,6 +71,10 @@
       "type": "boolean",
       "description": "stream one JSON envelope per commit (NDJSON; implies JSON mode)",
       "default": false
+    },
+    "git_args": {
+      "type": "string",
+      "description": "forward an extra option to the underlying git log (repeatable; code-exec/write/redirect options are refused)"
     }
   }
 }

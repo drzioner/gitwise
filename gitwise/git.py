@@ -257,6 +257,55 @@ def validate_ref(ref: str) -> bool:
     return bool(ref) and not ref.startswith("-")
 
 
+# Git options that the --git-arg passthrough must refuse. These can write to
+# arbitrary files (--output), execute arbitrary commands (--upload-pack,
+# --receive-pack, --exec), inject config (-c/--config), or redirect which
+# repository git operates on (--git-dir/--work-tree/--namespace). Denying them
+# keeps the passthrough an escape hatch for read options (filters, -U, etc.)
+# without opening a code-execution or arbitrary-write vector.
+_GIT_PASSTHROUGH_DENY: frozenset[str] = frozenset(
+    {
+        "--output",
+        "-c",
+        "--config",
+        "--upload-pack",
+        "--receive-pack",
+        "--exec",
+        "--git-dir",
+        "--work-tree",
+        "--namespace",
+        "--bare",
+        "-C",
+    }
+)
+
+
+def validate_passthrough_arg(arg: str) -> str | None:
+    """Return an error message if *arg* is a denied passthrough option, else None.
+
+    Compares the option token (the part before ``=`` for ``--opt=value`` forms)
+    against the deny list. Empty args are rejected. Standalone values (paths,
+    numbers) are allowed -- they are positional operands, not options.
+    """
+    if not arg:
+        return "empty --git-arg value"
+    token = arg.split("=", 1)[0]
+    if token in _GIT_PASSTHROUGH_DENY:
+        return f"--git-arg refuses '{token}' (can execute code, write files, or redirect the repo)"
+    return None
+
+
+def validate_passthrough_args(args: list[str] | None) -> str | None:
+    """Validate a list of passthrough args; return the first error message or None."""
+    if not args:
+        return None
+    for arg in args:
+        err = validate_passthrough_arg(arg)
+        if err is not None:
+            return err
+    return None
+
+
 def validate_branch_name(name: str) -> bool:
     """Return True if *name* passes ``git check-ref-format``."""
     if not name or name.startswith("-"):

@@ -41,6 +41,10 @@
       "type": "boolean",
       "description": "show diffstat",
       "default": false
+    },
+    "git_args": {
+      "type": "string",
+      "description": "forward an extra option to the underlying git show (repeatable; code-exec/write/redirect options are refused)"
     }
   }
 }

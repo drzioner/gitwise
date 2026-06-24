@@ -77,6 +77,10 @@
         "type": "string",
         "description": "limit to paths (use -- to separate from refspec)"
       }
+    },
+    "git_args": {
+      "type": "string",
+      "description": "forward an extra option to the underlying git diff (repeatable; code-exec/write/redirect options like --output/-c/--git-dir are refused)"
     }
   }
 }

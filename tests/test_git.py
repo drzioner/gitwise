@@ -156,3 +156,21 @@ def test_run_timeout_returns_124(tmp_git_repo):
 
     result = run(["status"], cwd=tmp_git_repo, timeout=0)
     assert result.returncode == 124
+
+
+def test_passthrough_denies_dangerous_options():
+    """--git-arg passthrough must refuse code-exec / arbitrary-write / redirect options."""
+    from gitwise.git import validate_passthrough_arg, validate_passthrough_args
+
+    # Dangerous forms (with and without =value) are rejected.
+    for bad in ["--output", "--output=/tmp/x", "-c", "--upload-pack=/bin/sh", "--git-dir=/x"]:
+        assert validate_passthrough_arg(bad) is not None, bad
+    # Legitimate read options pass through.
+    for ok in ["-U5", "--diff-filter=AM", "--ignore-space-change", "--no-merges", "--all"]:
+        assert validate_passthrough_arg(ok) is None, ok
+    # Empty is rejected.
+    assert validate_passthrough_arg("") is not None
+    # List helper returns first error or None.
+    assert validate_passthrough_args(["-U3", "--output"]) is not None
+    assert validate_passthrough_args(["-U3", "--diff-filter=M"]) is None
+    assert validate_passthrough_args(None) is None

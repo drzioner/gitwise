@@ -211,6 +211,7 @@ def _run_diff(args: argparse.Namespace) -> int:
         scan_secrets=args.scan_secrets,
         as_json=args.json,
         json_lines=getattr(args, "json_lines", False),
+        git_args=getattr(args, "git_args", None),
     )
 
 
@@ -229,6 +230,7 @@ def _run_log(args: argparse.Namespace) -> int:
         until=args.until,
         file=args.file,
         max_count=args.max_count,
+        git_args=getattr(args, "git_args", None),
     )
 
 
@@ -236,7 +238,9 @@ def _run_show(args: argparse.Namespace) -> int:
     """Dispatch to ``show`` subcommand."""
     from gitwise.show import run_show
 
-    return run_show(ref=args.ref, stat=args.stat, as_json=args.json)
+    return run_show(
+        ref=args.ref, stat=args.stat, as_json=args.json, git_args=getattr(args, "git_args", None)
+    )
 
 
 def _run_commit(args: argparse.Namespace) -> int:
@@ -259,7 +263,13 @@ def _run_branches(args: argparse.Namespace) -> int:
     """Dispatch to ``branches`` subcommand."""
     from gitwise.branches import run_branches
 
-    return run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
+    return run_branches(
+        stale=args.stale,
+        remote=args.remote,
+        sort=args.sort,
+        as_json=args.json,
+        git_args=getattr(args, "git_args", None),
+    )
 
 
 def _run_sync(args: argparse.Namespace) -> int:

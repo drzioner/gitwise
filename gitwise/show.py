@@ -1,6 +1,6 @@
 """gitwise show — commit inspector with stat and JSON output."""
 
-from gitwise.git import require_root, validate_ref
+from gitwise.git import require_root, validate_passthrough_args, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import bat_pipe, error, print_diffstat, print_header, print_json, status
@@ -17,9 +17,13 @@ def _report_error(*, as_json: bool, err: str, code: str) -> int:
     return 1
 
 
-def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
+def _build_show_args(
+    ref: str = "HEAD", stat: bool = False, git_args: list[str] | None = None
+) -> list[str]:
     """Build the ``git show`` argv for human output (patch or stat mode)."""
     args = ["show"]
+    if git_args:
+        args.extend(git_args)
     if stat:
         args.append("--stat")
     else:
@@ -45,14 +49,17 @@ def _show_status_map(root, ref: str) -> dict[str, str]:
     return status_map
 
 
-def _build_show_json_args(ref: str = "HEAD") -> list[str]:
+def _build_show_json_args(ref: str = "HEAD", git_args: list[str] | None = None) -> list[str]:
     """Build the ``git show`` argv for structured JSON output (no patch)."""
-    return [
-        "show",
+    args = ["show"]
+    if git_args:
+        args.extend(git_args)
+    args += [
         "--format=%H%n%h%n%an%n%ae%n%ad%n%s",
         "-s",
         ref,
     ]
+    return args
 
 
 def _parse_show_json(raw: str) -> dict[str, str | list[str] | int | bool]:
@@ -78,6 +85,7 @@ def run_show(
     ref: str = "HEAD",
     stat: bool = False,
     as_json: bool = False,
+    git_args: list[str] | None = None,
 ) -> int:
     """Inspect a commit with patch, stat, or structured JSON output."""
     root, err = require_root()
@@ -89,8 +97,12 @@ def run_show(
     if not validate_ref(ref):
         return _report_error(as_json=as_json, err=t("invalid_ref", ref=ref), code="invalid_ref")
 
+    denied = validate_passthrough_args(git_args)
+    if denied is not None:
+        return _report_error(as_json=as_json, err=denied, code="git_arg_denied")
+
     if as_json:
-        args = _build_show_json_args(ref)
+        args = _build_show_json_args(ref, git_args=git_args)
         r = git_run(args, cwd=root, check=False)
         if r.returncode != 0:
             return _report_error(
@@ -126,7 +138,7 @@ def run_show(
                 print_header(t("show_header", ref=ref))
                 bat_pipe(r.stdout, language="diff")
         else:
-            args = _build_show_args(ref, stat)
+            args = _build_show_args(ref, stat, git_args=git_args)
             with status(t("status_loading_commit")):
                 r = git_run(args, cwd=root, check=False)
             if r.returncode != 0:
