@@ -18,6 +18,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_table,
+    report_error,
     status,
 )
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
@@ -520,12 +521,9 @@ def _run_action_create(
         if body:
             args += ["--body", body]
     else:
-        msg = t("pr_create_needs_title")
-        if as_json:
-            print_json(error_envelope("pr", error=msg, code="pr_create_needs_title"))
-        else:
-            error(msg)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=t("pr_create_needs_title"), code="pr_create_needs_title"
+        )
     if base:
         args += ["--base", base]
     if head:
@@ -534,12 +532,12 @@ def _run_action_create(
         args.append("--draft")
     rc, out, err = _gh(args, cwd=root)
     if rc != 0:
-        msg = err.strip() or t("pr_create_failed")
-        if as_json:
-            print_json(error_envelope("pr", error=msg, code="pr_create_failed"))
-        else:
-            error(msg)
-        return 1
+        return report_error(
+            "pr",
+            as_json=as_json,
+            msg=err.strip() or t("pr_create_failed"),
+            code="pr_create_failed",
+        )
     url = out.strip().splitlines()[0] if out.strip() else ""
     if as_json:
         print_json(ok_envelope("pr", created=True, url=url))

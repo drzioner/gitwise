@@ -181,3 +181,11 @@ def test_log_graph_oneline(tmp_git_repo: Path) -> None:
     r = run_gitwise("log", "--graph", "--oneline", cwd=tmp_git_repo)
     assert r.returncode == 0
     assert "*" in r.stdout or "chore" in r.stdout
+
+
+def test_log_git_arg_denies_dangerous_option(tmp_git_repo):
+    import json
+
+    r = run_gitwise("log", "--git-arg=--output", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    assert json.loads(r.stdout)["errors"][0]["code"] == "git_arg_denied"

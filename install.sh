@@ -134,8 +134,12 @@ if [ "$NEED_UV_INSTALL" = "true" ]; then
         if [ -z "$_actual_sha" ] && command -v shasum >/dev/null 2>&1; then
             _actual_sha="$(shasum -a 256 "$_uv_installer_tmp" | awk '{print $1}')"
         fi
-        if [ "$_actual_sha" != "$UV_INSTALLER_SHA256" ]; then
-            echo "error: uv installer SHA-256 mismatch (expected $UV_INSTALLER_SHA256, got $_actual_sha)." >&2
+        # Normalize to lowercase so an uppercase user-provided hash still matches
+        # (parity with install.ps1, which lowercases both sides).
+        _expected_sha="$(printf '%s' "$UV_INSTALLER_SHA256" | tr '[:upper:]' '[:lower:]')"
+        _actual_sha="$(printf '%s' "$_actual_sha" | tr '[:upper:]' '[:lower:]')"
+        if [ "$_actual_sha" != "$_expected_sha" ]; then
+            echo "error: uv installer SHA-256 mismatch (expected $_expected_sha, got $_actual_sha)." >&2
             echo "       Refusing to execute an unverified installer." >&2
             exit 1
         fi

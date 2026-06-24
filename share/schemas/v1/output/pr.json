@@ -63,7 +63,7 @@
           "type": "integer"
         },
         "created": {
-          "type": "integer"
+          "type": "boolean"
         },
         "number": {
           "type": "integer"

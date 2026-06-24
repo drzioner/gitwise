@@ -174,3 +174,55 @@ def test_passthrough_denies_dangerous_options():
     assert validate_passthrough_args(["-U3", "--output"]) is not None
     assert validate_passthrough_args(["-U3", "--diff-filter=M"]) is None
     assert validate_passthrough_args(None) is None
+
+
+def test_passthrough_denies_exec_path():
+    """--exec-path (code-exec via alternate git binary) must be refused too."""
+    from gitwise.git import validate_passthrough_arg
+
+    assert validate_passthrough_arg("--exec-path") is not None
+    assert validate_passthrough_arg("--exec-path=/tmp/evil") is not None
+
+
+def test_build_git_env_scrubs_config_and_ssh():
+    """_build_git_env must strip GIT_CONFIG* and GIT_SSH_COMMAND/GIT_ASKPASS."""
+    import os
+
+    from gitwise.git import _build_git_env
+
+    saved = {
+        k: os.environ.get(k)
+        for k in ("GIT_CONFIG_COUNT", "GIT_SSH_COMMAND", "GIT_ASKPASS", "GIT_DIR")
+    }
+    os.environ["GIT_CONFIG_COUNT"] = "1"
+    os.environ["GIT_SSH_COMMAND"] = "evil"
+    os.environ["GIT_ASKPASS"] = "evil"
+    os.environ["GIT_DIR"] = "/keep/me"
+    try:
+        env = _build_git_env()
+        assert "GIT_CONFIG_COUNT" not in env
+        assert "GIT_SSH_COMMAND" not in env
+        assert "GIT_ASKPASS" not in env
+        # legitimate path overrides are preserved.
+        assert env.get("GIT_DIR") == "/keep/me"
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    """--git-arg passthrough must refuse code-exec / arbitrary-write / redirect options."""
+    from gitwise.git import validate_passthrough_arg, validate_passthrough_args
+
+    # Dangerous forms (with and without =value) are rejected.
+    for bad in ["--output", "--output=/tmp/x", "-c", "--upload-pack=/bin/sh", "--git-dir=/x"]:
+        assert validate_passthrough_arg(bad) is not None, bad
+    # Legitimate read options pass through.
+    for ok in ["-U5", "--diff-filter=AM", "--ignore-space-change", "--no-merges", "--all"]:
+        assert validate_passthrough_arg(ok) is None, ok
+    # Empty is rejected.
+    assert validate_passthrough_arg("") is not None
+    # List helper returns first error or None.
+    assert validate_passthrough_args(["-U3", "--output"]) is not None
+    assert validate_passthrough_args(["-U3", "--diff-filter=M"]) is None
+    assert validate_passthrough_args(None) is None

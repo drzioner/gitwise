@@ -54,7 +54,7 @@
       "type": "object",
       "properties": {
         "branches": {
-          "type": "integer"
+          "type": "array"
         },
         "count": {
           "type": "integer"

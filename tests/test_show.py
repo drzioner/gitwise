@@ -46,3 +46,11 @@ def test_show_git_failure_json_emits_envelope(tmp_git_repo: Path) -> None:
     data = json.loads(r.stdout)
     assert data["ok"] is False
     assert data["errors"][0]["code"] == "git_show_failed"
+
+
+def test_show_git_arg_denies_dangerous_option(tmp_git_repo):
+    r = run_gitwise("show", "--git-arg=--output", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    import json
+
+    assert json.loads(r.stdout)["errors"][0]["code"] == "git_arg_denied"

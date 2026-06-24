@@ -14,6 +14,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_table,
+    report_error,
     status,
     warn,
 )
@@ -176,14 +177,13 @@ def _cmd_apply(root: Path, index: int, *, as_json: bool) -> int:
     ref = f"stash@{{{index}}}"
     r = git_run(["stash", "apply", ref], cwd=root, check=False)
     if r.returncode != 0:
-        msg = r.stderr.strip() or t("stash_not_found", index=str(index))
-        if as_json:
-            print_json(
-                error_envelope("stash", error=msg, code="stash_apply_failed", hint=t("stash_hint"))
-            )
-            return 1
-        error(msg, hint=t("stash_hint"))
-        return 1
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_not_found", index=str(index)),
+            code="stash_apply_failed",
+            hint=t("stash_hint"),
+        )
     if as_json:
         print_json(ok_envelope("stash", applied=ref))
         return 0
@@ -213,12 +213,12 @@ def _cmd_push(
         args += [p for p in paths if p]
     r = git_run(args, cwd=root, check=False)
     if r.returncode != 0:
-        msg = r.stderr.strip() or t("stash_push_failed")
-        if as_json:
-            print_json(error_envelope("stash", error=msg, code="stash_push_failed"))
-            return 1
-        error(msg)
-        return 1
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_push_failed"),
+            code="stash_push_failed",
+        )
     # git prints "Saved working directory and index state ..." on success.
     created = r.stdout.strip().splitlines()[0] if r.stdout.strip() else ""
     if as_json:

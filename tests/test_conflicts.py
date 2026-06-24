@@ -97,3 +97,26 @@ def test_conflicts_dry_run_does_not_touch_tree(tmp_git_repo):
     assert env["data"]["count"] >= 1
     # The file still holds conflict markers (nothing was resolved).
     assert "<<<<<<<" in (tmp_git_repo / "README.md").read_text()
+
+
+def test_conflicts_files_scopes_resolution(tmp_git_repo):
+    """--files limits the dry-run plan to the requested subset."""
+    _setup_text_conflict(tmp_git_repo)
+    r = run_gitwise(
+        "conflicts", "--ours", "--dry-run", "--files", "README.md", "--json", cwd=tmp_git_repo
+    )
+    assert r.returncode == 0
+    data = json.loads(r.stdout)["data"]
+    assert data["dry_run"] is True
+    assert data["strategy"] == "ours"
+    assert "README.md" in data["would_resolve"]
+
+
+def test_conflicts_files_none_match(tmp_git_repo):
+    """--files with no matching conflicted path reports none cleanly."""
+    _setup_text_conflict(tmp_git_repo)
+    r = run_gitwise(
+        "conflicts", "--ours", "--files", "does-not-exist.py", "--json", cwd=tmp_git_repo
+    )
+    assert r.returncode == 0
+    assert json.loads(r.stdout)["data"]["count"] == 0

@@ -15,21 +15,26 @@ _NESTED_QUANTIFIER_RE = re.compile(
 _GREP_MAX_LEN = 200
 
 
-# In-process git config overrides (``GIT_CONFIG`` file and the ``GIT_CONFIG_*``
-# inline family) let an attacker-controlled environment inject arbitrary config
-# (e.g. force a credential helper that exfiltrates secrets). Scrub them so the
-# subprocess only reads the real repo/global config. ``GIT_DIR``/``GIT_WORK_TREE``
-# are intentionally preserved: they are legitimate path overrides, not config
-# injection vectors, and stripping them would break worktree/alternate workflows.
+# GIT_CONFIG* overrides let an attacker-controlled environment inject arbitrary
+# config (e.g. force a credential helper that exfiltrates secrets); GIT_SSH_COMMAND
+# and GIT_ASKPASS can execute arbitrary commands on remote fetch/push/clone. Scrub
+# all three so the subprocess only reads the real repo/global config and uses the
+# default SSH/askpass. GIT_DIR/GIT_WORK_TREE are intentionally preserved: they are
+# legitimate path overrides, not config/exec injection vectors, and stripping them
+# would break worktree/alternate workflows.
 _GIT_ENV_SCRUB_PREFIXES: tuple[str, ...] = ("GIT_CONFIG",)
+_GIT_ENV_SCRUB_EXACT: frozenset[str] = frozenset({"GIT_SSH_COMMAND", "GIT_ASKPASS"})
 
 
 def _build_git_env() -> dict[str, str]:
-    """Return os.environ with locale/credential hardening and config injection scrubbed."""
+    """Return os.environ with locale/credential hardening and config/exec injection scrubbed."""
     env = {
         k: v
         for k, v in os.environ.items()
-        if not any(k == prefix or k.startswith(prefix + "_") for prefix in _GIT_ENV_SCRUB_PREFIXES)
+        if k not in _GIT_ENV_SCRUB_EXACT
+        and not any(
+            k == prefix or k.startswith(prefix + "_") for prefix in _GIT_ENV_SCRUB_PREFIXES
+        )
     }
     env["LC_ALL"] = "C"
     env["GIT_TERMINAL_PROMPT"] = "0"
@@ -119,20 +124,23 @@ def run(
     except subprocess.TimeoutExpired as exc:
         # Mirror the `timeout` coreutil convention (124) so callers can
         # distinguish a timed-out git operation from a real git failure (128+)
-        # or a missing binary (127).
+        # or a missing binary (127). Append the timeout note to whatever git
+        # already wrote so the cause is visible alongside any partial output.
+        partial = (
+            exc.stderr.decode("utf-8", "replace")
+            if isinstance(exc.stderr, bytes)
+            else (exc.stderr or "")
+        ).strip()
+        timeout_note = f"git {' '.join(args)} timed out after {actual_timeout}s"
         return subprocess.CompletedProcess(
             args=["git", *args],
             returncode=124,
-            stdout=exc.stdout.decode("utf-8", "replace")
-            if isinstance(exc.stdout, bytes)
-            else (exc.stdout or ""),
-            stderr=(
-                f"git {' '.join(args)} timed out after {actual_timeout}s"
-                if not exc.stderr
-                else exc.stderr.decode("utf-8", "replace")
-                if isinstance(exc.stderr, bytes)
-                else exc.stderr
+            stdout=(
+                exc.stdout.decode("utf-8", "replace")
+                if isinstance(exc.stdout, bytes)
+                else (exc.stdout or "")
             ),
+            stderr=f"{partial} [{timeout_note}]" if partial else timeout_note,
         )
 
 
@@ -271,6 +279,7 @@ _GIT_PASSTHROUGH_DENY: frozenset[str] = frozenset(
         "--upload-pack",
         "--receive-pack",
         "--exec",
+        "--exec-path",
         "--git-dir",
         "--work-tree",
         "--namespace",
