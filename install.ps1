@@ -50,8 +50,14 @@ function Invoke-UvInstaller {
     # fall back to the documented irm|iex TOFU default.
     $url = $env:UV_INSTALLER_URL
     if (-not $url) { $url = "https://astral.sh/uv/install.ps1" }
+    # Use a .ps1 temp path: `powershell -File` rejects files without a .ps1
+    # extension, and GetTempFileName() yields a .tmp name (which broke the
+    # Windows smoke test). Both the verified and TOFU paths write here.
+    $tmp = [System.IO.Path]::Combine(
+        [System.IO.Path]::GetTempPath(),
+        "gitwise-uv-installer-$PID.ps1"
+    )
     if ($env:UV_INSTALLER_SHA256) {
-        $tmp = [System.IO.Path]::GetTempFileName()
         try {
             Invoke-RestMethod -Uri $url -OutFile $tmp
             $actual = (Get-FileHash -Algorithm SHA256 -Path $tmp).Hash.ToLower()
@@ -65,11 +71,10 @@ function Invoke-UvInstaller {
         }
     }
     else {
-        # Download to a temp file and execute the file directly, instead of
+        # Download to a .ps1 temp file and execute it directly, instead of
         # interpolating $url into a -c "irm $url | iex" string (which would let
         # metacharacters in the URL execute as PowerShell). This TOFU path still
         # runs unverified by design; set UV_INSTALLER_SHA256 to enforce a hash.
-        $tmp = [System.IO.Path]::GetTempFileName()
         try {
             Invoke-RestMethod -Uri $url -OutFile $tmp
             & powershell -ExecutionPolicy ByPass -File $tmp

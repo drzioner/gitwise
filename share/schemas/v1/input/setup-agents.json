@@ -54,7 +54,7 @@
     },
     "no_symlinks": {
       "type": "boolean",
-      "description": "force @AGENTS.md import fallback (no symlinks) — --local only",
+      "description": "force @AGENTS.md import fallback (no symlinks)",
       "default": false
     },
     "strict": {

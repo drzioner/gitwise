@@ -32,7 +32,7 @@
         "log": { "type": "object", "additionalProperties": { "type": "string" } },
         "log_count": { "type": "integer" },
         "shortstat": { "type": "string" },
-        "changed_files": { "type": "array" },
+        "changed_files": { "type": "array", "items": { "type": "object" } },
         "changed_count": { "type": "integer" },
         "diff": { "type": "string" }
       }

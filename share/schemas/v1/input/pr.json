@@ -50,6 +50,12 @@
     },
     "state": {
       "type": "string",
+      "enum": [
+        "open",
+        "closed",
+        "merged",
+        "all"
+      ],
       "description": "filter by state: open,closed,merged,all (list)"
     },
     "author": {

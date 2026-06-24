@@ -70,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--no-symlinks",
         action="store_true",
-        help="force @AGENTS.md import fallback (no symlinks) — --local only",
+        help="force @AGENTS.md import fallback (no symlinks)",
     )
     p.add_argument(
         "--strict",
@@ -316,7 +316,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="PR number/url/branch (default: current branch PR)",
     )
     # pr list filters
-    p.add_argument("--state", default=None, help="filter by state: open,closed,merged,all (list)")
+    p.add_argument(
+        "--state",
+        default=None,
+        choices=["open", "closed", "merged", "all"],
+        help="filter by state: open,closed,merged,all (list)",
+    )
     p.add_argument("--author", default=None, help="filter by author login (list)")
     p.add_argument("--label", default=None, help="filter by label (list)")
     p.add_argument("--limit", type=int, default=None, help="max PRs to list")
