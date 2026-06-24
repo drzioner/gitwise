@@ -359,7 +359,14 @@ def _run_conflicts(args: argparse.Namespace) -> int:
     """Dispatch to ``conflicts`` subcommand."""
     from gitwise.conflicts import run_conflicts
 
-    return run_conflicts(ours=args.ours, theirs=args.theirs, union=args.union, as_json=args.json)
+    return run_conflicts(
+        ours=args.ours,
+        theirs=args.theirs,
+        union=args.union,
+        files=getattr(args, "files", None),
+        dry_run=getattr(args, "dry_run", False),
+        as_json=args.json,
+    )
 
 
 def _run_suggest(args: argparse.Namespace) -> int:

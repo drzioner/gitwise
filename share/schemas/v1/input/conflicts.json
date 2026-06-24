@@ -46,6 +46,16 @@
       "type": "boolean",
       "description": "resolve all conflicts keeping both sides (union)",
       "default": false
+    },
+    "files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "limit resolution to these files (use -- to separate from flags)"
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show what would be resolved without touching the working tree",
+      "default": false
     }
   }
 }

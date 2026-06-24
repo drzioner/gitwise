@@ -135,8 +135,32 @@ def _report_no_conflicts(*, as_json: bool) -> int:
     return 0
 
 
-def _resolve_by_strategy(*, root: Path, conflicts: list[str], strategy: str, as_json: bool) -> int:
+def _resolve_by_strategy(
+    *,
+    root: Path,
+    conflicts: list[str],
+    strategy: str,
+    as_json: bool,
+    dry_run: bool = False,
+) -> int:
     """Resolve all conflicts with the given strategy and report."""
+    if dry_run:
+        if as_json:
+            print_json(
+                ok_envelope(
+                    "conflicts",
+                    dry_run=True,
+                    strategy=strategy,
+                    would_resolve=conflicts,
+                    count=len(conflicts),
+                )
+            )
+        else:
+            print_header(t("conflicts_dry_run", strategy=strategy, count=str(len(conflicts))))
+            for file_path in conflicts:
+                print_accent(f"  {file_path}")
+            print_dim(t("dry_run_no_exec"))
+        return 0
     rc = _resolve_all_conflicts(root=root, conflicts=conflicts, strategy=strategy)
     if rc != 0:
         return rc
@@ -178,9 +202,16 @@ def run_conflicts(
     ours: bool = False,
     theirs: bool = False,
     union: bool = False,
+    files: list[str] | None = None,
+    dry_run: bool = False,
     as_json: bool = False,
 ) -> int:
-    """Entry point for the ``gitwise conflicts`` command."""
+    """Entry point for the ``gitwise conflicts`` command.
+
+    With a strategy flag (``--ours``/``--theirs``/``--union``) it resolves;
+    ``--dry-run`` reports what would be resolved without touching the tree, and
+    ``--files`` scopes resolution to a subset of the conflicted paths.
+    """
     root, err = require_root()
     if err:
         return err
@@ -193,22 +224,32 @@ def run_conflicts(
     if not conflicts:
         return _report_no_conflicts(as_json=as_json)
 
-    if union:
-        return _resolve_by_strategy(
-            root=root, conflicts=conflicts, strategy="union", as_json=as_json
-        )
+    if files:
+        wanted = set(files)
+        conflicts = [c for c in conflicts if c in wanted]
 
-    if ours:
-        return _resolve_by_strategy(
-            root=root, conflicts=conflicts, strategy="ours", as_json=as_json
-        )
+    if not conflicts:
+        if as_json:
+            print_json(
+                ok_envelope(
+                    "conflicts",
+                    conflicts=[],
+                    count=0,
+                    note="none of the requested --files are conflicted",
+                )
+            )
+            return 0
+        ok(t("conflicts_none"))
+        return 0
 
-    if theirs:
+    strategy = "union" if union else ("ours" if ours else ("theirs" if theirs else ""))
+    if strategy:
         return _resolve_by_strategy(
             root=root,
             conflicts=conflicts,
-            strategy="theirs",
+            strategy=strategy,
             as_json=as_json,
+            dry_run=dry_run,
         )
 
     details = _conflict_details(root, conflicts)

@@ -338,6 +338,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="resolve all conflicts keeping both sides (union)",
     )
+    p.add_argument(
+        "--files",
+        nargs="*",
+        default=None,
+        help="limit resolution to these files (use -- to separate from flags)",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show what would be resolved without touching the working tree",
+    )
 
     p = sub.add_parser(
         "suggest",

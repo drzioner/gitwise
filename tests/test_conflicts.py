@@ -84,3 +84,16 @@ def test_conflicts_union_json_envelope(tmp_git_repo):
     assert env["command"] == "conflicts"
     assert env["data"]["strategy"] == "union"
     assert env["data"]["resolved"] >= 1
+
+
+def test_conflicts_dry_run_does_not_touch_tree(tmp_git_repo):
+    """--dry-run reports the plan but leaves conflict markers in place."""
+    _setup_text_conflict(tmp_git_repo)
+    r = run_gitwise("conflicts", "--ours", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    env = json.loads(r.stdout)
+    assert env["data"]["dry_run"] is True
+    assert env["data"]["strategy"] == "ours"
+    assert env["data"]["count"] >= 1
+    # The file still holds conflict markers (nothing was resolved).
+    assert "<<<<<<<" in (tmp_git_repo / "README.md").read_text()

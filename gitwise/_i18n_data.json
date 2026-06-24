@@ -343,6 +343,10 @@
     "es": "No hay conflictos",
     "en": "No conflicts"
   },
+  "conflicts_dry_run": {
+    "es": "Se resolverian {count} conflicto(s) con --{strategy} (dry-run):",
+    "en": "Would resolve {count} conflict(s) with --{strategy} (dry-run):"
+  },
   "conflicts_resolved_ours": {
     "es": "{count} conflicto(s) resuelto(s) con ours",
     "en": "{count} conflict(s) resolved with ours"
