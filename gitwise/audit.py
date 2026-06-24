@@ -167,9 +167,6 @@ def _check_gpg_findings(gpg: dict) -> list[dict]:
     return []
 
 
-_SEVERITY_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵", "info": "ℹ️"}
-
-
 def run_audit(*, quick: bool = False, as_json: bool = False) -> int:
     """Run all diagnostic checks and report findings.
 

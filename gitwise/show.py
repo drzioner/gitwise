@@ -31,11 +31,6 @@ def _build_show_args(ref: str = "HEAD", stat: bool = False) -> list[str]:
     return args
 
 
-def _parse_diffstat_entries(raw: str) -> list[dict[str, str]]:
-    """Delegate to ``git_output.parse_diffstat_entries``."""
-    return parse_diffstat_entries(raw)
-
-
 def _show_status_map(root, ref: str) -> dict[str, str]:
     """Return a path-to-status-letter map from the commit's name-status diff."""
     r = git_run(["show", "--name-status", "--format=", ref], cwd=root, check=False)
@@ -115,7 +110,7 @@ def run_show(
                     err=t("git_show_failed", error=r.stderr.strip()),
                     code="git_show_failed",
                 )
-            entries = _parse_diffstat_entries(r.stdout)
+            entries = parse_diffstat_entries(r.stdout)
             if entries:
                 status_map = _show_status_map(root, ref)
                 styled_entries = [

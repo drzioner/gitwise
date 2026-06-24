@@ -60,7 +60,7 @@ def _gh_available() -> bool:
     return bool(shutil.which("gh"))
 
 
-def _gh(args: list[str], cwd) -> tuple[int, str, str]:
+def _gh(args: list[str], cwd: Path) -> tuple[int, str, str]:
     """Run a ``gh`` subprocess wrapped in a status spinner."""
     import subprocess
 
