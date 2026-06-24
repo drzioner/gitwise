@@ -18,23 +18,28 @@ from gitwise.utils.json_envelope import error_envelope, ok_envelope
 from gitwise.utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
-def _ahead_behind(cwd: Path) -> dict[str, int]:
-    """Return ``{ahead, behind}`` commit counts against the upstream branch."""
+def _ahead_behind(cwd: Path) -> dict[str, int | bool]:
+    """Return ``{ahead, behind, upstream}`` vs the upstream branch.
+
+    ``upstream`` is False when the branch has no upstream or the count could not
+    be obtained, so callers can distinguish "no upstream" from "up to date"
+    (both report 0/0 counts) instead of silently treating them as identical.
+    """
     branch = current_branch(cwd=cwd)
     if not branch:
-        return {"ahead": 0, "behind": 0}
+        return {"ahead": 0, "behind": 0, "upstream": False}
     r = git_run(
         ["rev-list", "--left-right", "--count", branch + "@{u}...HEAD"], cwd=cwd, check=False
     )
     if r.returncode != 0:
         debug(f"ahead_behind failed: {r.stderr.strip()}")
-        return {"ahead": 0, "behind": 0}
+        return {"ahead": 0, "behind": 0, "upstream": False}
     parsed = parse_two_ints(r.stdout)
     if parsed is not None:
         behind, ahead = parsed
-        return {"behind": behind, "ahead": ahead}
+        return {"behind": behind, "ahead": ahead, "upstream": True}
     debug(f"ahead_behind parse failed: {r.stdout.strip()!r}")
-    return {"ahead": 0, "behind": 0}
+    return {"ahead": 0, "behind": 0, "upstream": False}
 
 
 def _unpushed_commits(cwd) -> list[str]:
@@ -64,6 +69,7 @@ def _sync_dry_run_payload(
         "branch": branch,
         "ahead": ab["ahead"],
         "behind": ab["behind"],
+        "upstream": ab["upstream"],
         "unpushed": unpushed,
         "actions": _planned_actions(pull, push, ab, unpushed, remote),
         "dry_run": True,

@@ -15,7 +15,28 @@ _NESTED_QUANTIFIER_RE = re.compile(
 _GREP_MAX_LEN = 200
 
 
-_GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
+# In-process git config overrides (``GIT_CONFIG`` file and the ``GIT_CONFIG_*``
+# inline family) let an attacker-controlled environment inject arbitrary config
+# (e.g. force a credential helper that exfiltrates secrets). Scrub them so the
+# subprocess only reads the real repo/global config. ``GIT_DIR``/``GIT_WORK_TREE``
+# are intentionally preserved: they are legitimate path overrides, not config
+# injection vectors, and stripping them would break worktree/alternate workflows.
+_GIT_ENV_SCRUB_PREFIXES: tuple[str, ...] = ("GIT_CONFIG",)
+
+
+def _build_git_env() -> dict[str, str]:
+    """Return os.environ with locale/credential hardening and config injection scrubbed."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not any(k == prefix or k.startswith(prefix + "_") for prefix in _GIT_ENV_SCRUB_PREFIXES)
+    }
+    env["LC_ALL"] = "C"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+_GIT_ENV = _build_git_env()
 
 _DEFAULT_TIMEOUT = 120
 

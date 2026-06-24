@@ -149,6 +149,11 @@ class CommandMetadata(TypedDict):
     help: str
     aliases: list[str]
     supports_json: bool
+    supports_json_lines: bool
+
+
+# Subcommands that stream one JSON envelope per record (NDJSON) via --json-lines.
+_JSON_LINES_COMMANDS: frozenset[str] = frozenset({"diff", "log"})
 
 
 def canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
@@ -199,6 +204,7 @@ def commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
                 "help": help_by_parser_id.get(parser_id, command_parser.description or ""),
                 "aliases": aliases,
                 "supports_json": True,
+                "supports_json_lines": name in _JSON_LINES_COMMANDS,
             }
         )
 
