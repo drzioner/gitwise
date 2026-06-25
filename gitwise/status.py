@@ -54,9 +54,7 @@ def run_status(*, as_json: bool = False) -> int:
     untracked file counts, and an ``in_progress`` snapshot of any paused
     merge/rebase/cherry-pick/revert/bisect operation.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="status")
     if root is None:
         return 1
 
@@ -99,9 +97,19 @@ def run_status(*, as_json: bool = False) -> int:
                 parsed = parse_two_ints(ab_r.stdout)
                 if parsed is not None:
                     ahead, behind = parsed
-            if ahead:
+            if ahead and behind:
+                # Both log ranges are independent; run them concurrently so the
+                # status payload completes after one round-trip instead of two.
+                from concurrent.futures import ThreadPoolExecutor
+
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    fa = pool.submit(_range_commits, root, "@{u}..HEAD")
+                    fb = pool.submit(_range_commits, root, "HEAD..@{u}")
+                    ahead_commits = fa.result()
+                    behind_commits = fb.result()
+            elif ahead:
                 ahead_commits = _range_commits(root, "@{u}..HEAD")
-            if behind:
+            elif behind:
                 behind_commits = _range_commits(root, "HEAD..@{u}")
 
         in_progress = detect_in_progress(root)

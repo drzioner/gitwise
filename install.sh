@@ -49,6 +49,9 @@ Options:
 Environment:
   UV_INSTALLER_URL  Override the uv installer URL (default: https://astral.sh/uv/install.sh).
                     Pin a version with: UV_INSTALLER_URL="https://astral.sh/uv/0.11.21/install.sh"
+  UV_INSTALLER_SHA256  Expected SHA-256 of the uv installer. When set, the
+                    installer is downloaded, checksum-verified, and executed
+                    only on match (otherwise the curl|sh TOFU default is used).
 
 Remote:
   curl -fsSL https://raw.githubusercontent.com/drzioner/gitwise/main/install.sh | bash
@@ -115,7 +118,41 @@ fi
 if [ "$NEED_UV_INSTALL" = "true" ]; then
     echo ""
     echo "Installing uv ($UV_INSTALLER_URL)..."
-    curl -LsSf "$UV_INSTALLER_URL" | sh
+    # Optional integrity verification: set UV_INSTALLER_SHA256 to pin the uv
+    # installer to an expected SHA-256. When set, download to a temp file,
+    # verify the checksum, and execute only on match; otherwise abort. When
+    # unset, fall back to the documented curl|sh TOFU default.
+    if [ -n "${UV_INSTALLER_SHA256:-}" ]; then
+        _uv_installer_tmp="$(mktemp)"
+        trap 'rm -f "$_uv_installer_tmp"' EXIT
+        if ! curl -LsSf "$UV_INSTALLER_URL" -o "$_uv_installer_tmp"; then
+            echo "error: failed to download uv installer." >&2
+            exit 1
+        fi
+        # Pick the available SHA-256 tool BEFORE invoking it: under `set -e`
+        # and pipefail, `sha256sum ... | awk` aborts the script on macOS (where
+        # sha256sum is absent) before the shasum fallback could run.
+        if command -v sha256sum >/dev/null 2>&1; then
+            _actual_sha="$(sha256sum "$_uv_installer_tmp" | awk '{print $1}')"
+        elif command -v shasum >/dev/null 2>&1; then
+            _actual_sha="$(shasum -a 256 "$_uv_installer_tmp" | awk '{print $1}')"
+        else
+            echo "error: neither sha256sum nor shasum is available to verify the installer." >&2
+            exit 1
+        fi
+        # Normalize to lowercase so an uppercase user-provided hash still matches
+        # (parity with install.ps1, which lowercases both sides).
+        _expected_sha="$(printf '%s' "$UV_INSTALLER_SHA256" | tr '[:upper:]' '[:lower:]')"
+        _actual_sha="$(printf '%s' "$_actual_sha" | tr '[:upper:]' '[:lower:]')"
+        if [ "$_actual_sha" != "$_expected_sha" ]; then
+            echo "error: uv installer SHA-256 mismatch (expected $_expected_sha, got $_actual_sha)." >&2
+            echo "       Refusing to execute an unverified installer." >&2
+            exit 1
+        fi
+        sh "$_uv_installer_tmp"
+    else
+        curl -LsSf "$UV_INSTALLER_URL" | sh
+    fi
 
     if [ -x "$HOME/.local/bin/uv" ]; then
         export PATH="$HOME/.local/bin:$PATH"

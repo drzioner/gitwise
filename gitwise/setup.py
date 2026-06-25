@@ -458,9 +458,7 @@ def run_setup(
     Returns 0 on success, 1 on partial failure, 2 when ``--json`` is used
     without ``--yes``.  In dry-run mode returns 0 without modifying config.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="setup")
     if root is None:
         return 1
     cwd = root

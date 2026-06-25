@@ -70,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--no-symlinks",
         action="store_true",
-        help="force @AGENTS.md import fallback (no symlinks) — --local only",
+        help="force @AGENTS.md import fallback (no symlinks)",
     )
     p.add_argument(
         "--strict",
@@ -163,9 +163,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true")
 
     p = sub.add_parser("worktree", help="worktree helpers for Claude agents", parents=[parent])
-    p.add_argument("action", choices=["new", "clean", "list"], nargs="?", metavar="new|clean|list")
+    p.add_argument(
+        "action",
+        choices=["new", "clean", "list", "remove"],
+        nargs="?",
+        metavar="new|clean|list|remove",
+    )
     p.add_argument("branch", nargs="?")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--force", action="store_true", help="force removal even with modifications (remove only)"
+    )
 
     p = sub.add_parser(
         "diff",
@@ -207,6 +215,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="limit to paths (use -- to separate from refspec)",
     )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git diff (repeatable; "
+        "code-exec/write/redirect options like --output/-c/--git-dir are refused)",
+    )
 
     p = sub.add_parser("log", help="pretty git log with filters", parents=[parent])
     p.add_argument("--oneline", action="store_true", help="one line per commit")
@@ -223,10 +240,28 @@ def build_parser() -> argparse.ArgumentParser:
         dest="json_lines",
         help="stream one JSON envelope per commit (NDJSON; implies JSON mode)",
     )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git log (repeatable; "
+        "code-exec/write/redirect options are refused)",
+    )
 
     p = sub.add_parser("show", help="commit inspector", parents=[parent])
     p.add_argument("ref", nargs="?", default="HEAD", help="commit ref (default: HEAD)")
     p.add_argument("--stat", action="store_true", help="show diffstat")
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git show (repeatable; "
+        "code-exec/write/redirect options are refused)",
+    )
 
     p = sub.add_parser("commit", help="smart conventional commit", parents=[parent])
     p.add_argument("-m", "--message", type=str, default=None, help="commit message")
@@ -250,6 +285,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="refname",
         help="sort field: refname, committerdate, -committerdate",
     )
+    p.add_argument(
+        "--git-arg",
+        action="append",
+        dest="git_args",
+        default=None,
+        metavar="OPT",
+        help="forward an extra option to the underlying git for-each-ref (repeatable; "
+        "code-exec/write/redirect options are refused)",
+    )
 
     p = sub.add_parser("sync", help="remote fetch, safe pull/push", parents=[parent])
     p.add_argument("--pull", action="store_true", help="pull --ff-only after fetch")
@@ -262,7 +306,7 @@ def build_parser() -> argparse.ArgumentParser:
         "action",
         nargs="?",
         default="list",
-        choices=["list", "checks", "view", "comments"],
+        choices=["list", "checks", "view", "comments", "create"],
         help="pr action",
     )
     p.add_argument(
@@ -271,6 +315,23 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="PR number/url/branch (default: current branch PR)",
     )
+    # pr list filters
+    p.add_argument(
+        "--state",
+        default=None,
+        choices=["open", "closed", "merged", "all"],
+        help="filter by state: open,closed,merged,all (list)",
+    )
+    p.add_argument("--author", default=None, help="filter by author login (list)")
+    p.add_argument("--label", default=None, help="filter by label (list)")
+    p.add_argument("--limit", type=int, default=None, help="max PRs to list")
+    p.add_argument("--base", default=None, help="base branch (list/create)")
+    p.add_argument("--head", default=None, help="head branch (list/create)")
+    # pr create
+    p.add_argument("--title", default=None, help="PR title (create)")
+    p.add_argument("--body", default=None, help="PR body (create)")
+    p.add_argument("--draft", action="store_true", help="create as draft")
+    p.add_argument("--fill", action="store_true", help="use commit info for title/body (create)")
 
     p = sub.add_parser("undo", help="reflog-based undo", parents=[parent])
     p.add_argument("ref", nargs="?", default=None, help="target ref (default: HEAD~1)")
@@ -292,12 +353,25 @@ def build_parser() -> argparse.ArgumentParser:
         "action",
         nargs="?",
         default="list",
-        choices=["list", "show", "pop", "drop", "clear", "clean"],
+        choices=["list", "show", "pop", "apply", "push", "drop", "clear", "clean"],
     )
     p.add_argument("--index", type=int, default=0, help="stash index (default: 0)")
     p.add_argument("--dry-run", action="store_true", help="dry run (clear only)")
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
     p.add_argument("--patch", action="store_true", help="show full patch (show only)")
+    p.add_argument("-m", "--message", type=str, default=None, help="stash message (push only)")
+    p.add_argument(
+        "-u",
+        "--include-untracked",
+        action="store_true",
+        help="include untracked files (push only)",
+    )
+    p.add_argument(
+        "--keep-index", action="store_true", help="keep staged changes in the index (push only)"
+    )
+    p.add_argument(
+        "paths", nargs="*", default=None, help="paths to stash (push only, use -- to separate)"
+    )
 
     p = sub.add_parser("tag", help="semver-aware tag management", parents=[parent])
     p.add_argument(
@@ -337,6 +411,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--union",
         action="store_true",
         help="resolve all conflicts keeping both sides (union)",
+    )
+    p.add_argument(
+        "--files",
+        nargs="*",
+        default=None,
+        help="limit resolution to these files (use -- to separate from flags)",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show what would be resolved without touching the working tree",
     )
 
     p = sub.add_parser(

@@ -343,6 +343,10 @@
     "es": "No hay conflictos",
     "en": "No conflicts"
   },
+  "conflicts_dry_run": {
+    "es": "Se resolverían {count} conflicto(s) con --{strategy} (dry-run):",
+    "en": "Would resolve {count} conflict(s) with --{strategy} (dry-run):"
+  },
   "conflicts_resolved_ours": {
     "es": "{count} conflicto(s) resuelto(s) con ours",
     "en": "{count} conflict(s) resolved with ours"
@@ -494,6 +498,14 @@
   "secret_scan_allow_confirm": {
     "es": "Se detectaron {count} secreto(s) de alta severidad. ¿Commitear de todos modos?",
     "en": "{count} high-severity secret(s) detected. Commit anyway?"
+  },
+  "secret_allow_requires_env": {
+    "es": "--allow-secret está bloqueado en modo --json: un agente no puede silenciar la confirmación humana de un secreto sin autorización fuera de banda",
+    "en": "--allow-secret is blocked in --json mode: an agent cannot silence the human confirmation of a secret without out-of-band authorization"
+  },
+  "secret_allow_requires_env_hint": {
+    "es": "para forzarlo en modo agente, exporte GITWISE_ALLOW_SECRETS=1 (controlado por el operador/CI, no por el prompt)",
+    "en": "to force it in agent mode, export GITWISE_ALLOW_SECRETS=1 (operator/CI-controlled, not prompt-settable)"
   },
   "secret_scan_medium_warning": {
     "es": "advertencia: {rule} en {path}:{line} ({preview})",
@@ -1287,6 +1299,34 @@
     "es": "no hay pull requests abiertos",
     "en": "no open pull requests"
   },
+  "pr_create_needs_title": {
+    "es": "pr create requiere --title (o --fill para usar el commit)",
+    "en": "pr create requires --title (or --fill to use the commit message)"
+  },
+  "pr_list_failed": {
+    "es": "pr list falló",
+    "en": "pr list failed"
+  },
+  "pr_checks_failed": {
+    "es": "pr checks falló",
+    "en": "pr checks failed"
+  },
+  "pr_view_failed": {
+    "es": "pr view falló",
+    "en": "pr view failed"
+  },
+  "pr_comments_failed": {
+    "es": "pr comments falló",
+    "en": "pr comments failed"
+  },
+  "pr_create_failed": {
+    "es": "no se pudo crear el pull request",
+    "en": "failed to create pull request"
+  },
+  "pr_created": {
+    "es": "pull request creado: {url}",
+    "en": "pull request created: {url}"
+  },
   "pr_unknown_action": {
     "es": "acción desconocida: {action}. Usa: list, checks, view, comments",
     "en": "unknown action: {action}. Use: list, checks, view, comments"
@@ -1559,6 +1599,18 @@
     "es": "Stash {ref} restaurado",
     "en": "Stash {ref} restored"
   },
+  "stash_applied": {
+    "es": "Stash {ref} aplicado (sin eliminar)",
+    "en": "Stash {ref} applied (not removed)"
+  },
+  "stash_pushed": {
+    "es": "Cambios guardados en un nuevo stash",
+    "en": "Changes saved to a new stash"
+  },
+  "stash_push_failed": {
+    "es": "No se pudo crear el stash (¿no hay cambios?)",
+    "en": "Failed to create stash (no changes?)"
+  },
   "stash_hint": {
     "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
     "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."
@@ -1827,6 +1879,10 @@
     "es": "pull falló: el branch local y el remoto han divergido (gitwise sync usa --ff-only por seguridad)",
     "en": "pull failed: local and remote have diverged (gitwise sync uses --ff-only for safety)"
   },
+  "sync_pull_failed": {
+    "es": "pull falló (¿sin upstream, error de red o árbol sucio?)",
+    "en": "pull failed (no upstream, network error, or dirty tree?)"
+  },
   "sync_pull_diverged_hint": {
     "es": "Inspecciona el estado con: gitwise sync --dry-run --json. Reconcilia con: git pull --rebase (recomendado) o git pull --no-rebase. Luego: gitwise sync --push.",
     "en": "Inspect state with: gitwise sync --dry-run --json. Reconcile with: git pull --rebase (recommended) or git pull --no-rebase. Then: gitwise sync --push."
@@ -2050,6 +2106,18 @@
   "worktree_created": {
     "es": "worktree creado: {path}",
     "en": "worktree created: {path}"
+  },
+  "worktree_removed": {
+    "es": "worktree eliminado: {path}",
+    "en": "worktree removed: {path}"
+  },
+  "worktree_not_found": {
+    "es": "no se encontro un worktree para: {target}",
+    "en": "no worktree found for: {target}"
+  },
+  "worktree_remove_primary": {
+    "es": "no se puede eliminar el worktree principal",
+    "en": "cannot remove the primary worktree"
   },
   "worktree_failed": {
     "es": "no se pudo crear worktree: {error}",

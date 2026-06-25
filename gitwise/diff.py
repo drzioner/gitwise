@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from gitwise.git import require_root
+from gitwise.git import require_root, validate_passthrough_args, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import (
@@ -20,7 +20,7 @@ from gitwise.output import (
 )
 from gitwise.utils.git_output import parse_name_status_entries, status_label
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
-from gitwise.utils.secret_scan import secret_scan
+from gitwise.utils.secret_scan import redact_findings, secret_scan
 
 DiffValue = str | int | bool
 DiffFileEntry = dict[str, DiffValue]
@@ -103,10 +103,17 @@ def _diff_totals(files: list[DiffFileEntry]) -> DiffFileEntry:
 
 
 def _name_status_details(
-    cwd: Path, *, staged: bool, refspec: str | None, paths: list[str] | None
+    cwd: Path,
+    *,
+    staged: bool,
+    refspec: str | None,
+    paths: list[str] | None,
+    git_args: list[str] | None = None,
 ) -> dict[str, DiffFileEntry]:
     """Return per-file name-status details for staged or working-tree changes."""
-    args = ["--no-pager", "diff", "--name-status"]
+    args = ["--no-pager", "diff", "--no-ext-diff", "--no-textconv", "--name-status"]
+    if git_args:
+        args.extend(git_args)
     if staged:
         args.append("--staged")
     if refspec:
@@ -136,10 +143,17 @@ def _normalize_rename_path(path: str) -> str:
 
 
 def _numstat_details(
-    cwd: Path, *, staged: bool, refspec: str | None, paths: list[str] | None
+    cwd: Path,
+    *,
+    staged: bool,
+    refspec: str | None,
+    paths: list[str] | None,
+    git_args: list[str] | None = None,
 ) -> dict[str, DiffFileEntry]:
     """Return per-file numstat details with insertion/deletion counts and binary flag."""
-    args = ["--no-pager", "diff", "--numstat"]
+    args = ["--no-pager", "diff", "--no-ext-diff", "--no-textconv", "--numstat"]
+    if git_args:
+        args.extend(git_args)
     if staged:
         args.append("--staged")
     if refspec:
@@ -193,6 +207,7 @@ def _diff_cmd(
     full: bool,
     refspec: str | None,
     paths: list[str] | None,
+    git_args: list[str] | None = None,
 ) -> list[str]:
     """Build the git diff argv for the requested mode.
 
@@ -200,8 +215,10 @@ def _diff_cmd(
     caller can diff against a commit, branch, or range (``a..b`` / ``a...b``).
     Diff compares endpoints rather than revision ranges, so the refspec is
     forwarded verbatim. ``paths`` is appended after ``--`` to scope the output.
+    ``git_args`` (validated passthrough options) are inserted right after the
+    mode flag so they apply as git options.
     """
-    cmd = ["--no-pager", "diff"]
+    cmd = ["--no-pager", "diff", "--no-ext-diff", "--no-textconv"]
     if full:
         pass
     elif use_stat:
@@ -210,6 +227,9 @@ def _diff_cmd(
         cmd.append("--name-only")
     else:
         cmd.append("--name-status")
+
+    if git_args:
+        cmd.extend(git_args)
 
     if staged:
         cmd.append("--staged")
@@ -263,6 +283,7 @@ def _render_stat_output(
     refspec: str | None,
     paths: list[str] | None,
     as_json: bool,
+    git_args: list[str] | None = None,
 ) -> int:
     """Render the stat-mode diff output (JSON or human diffstat table)."""
     if not files:
@@ -272,8 +293,30 @@ def _render_stat_output(
         info(t("no_uncommitted_changes"))
         return 0
 
-    status_details = _name_status_details(cwd, staged=staged, refspec=refspec, paths=paths)
-    numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
+    # name-status and numstat are independent git invocations; run them
+    # concurrently so the diffstat renders after one subprocess round-trip
+    # instead of two (matters on large repos / network filesystems).
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_status = pool.submit(
+            _name_status_details,
+            cwd,
+            staged=staged,
+            refspec=refspec,
+            paths=paths,
+            git_args=git_args,
+        )
+        f_num = pool.submit(
+            _numstat_details,
+            cwd,
+            staged=staged,
+            refspec=refspec,
+            paths=paths,
+            git_args=git_args,
+        )
+        status_details = f_status.result()
+        numstat_details = f_num.result()
     merged_files = _merge_stat_files(
         files=files,
         status_details=status_details,
@@ -453,6 +496,7 @@ def _render_secret_scan_output(
         return 1
     findings = secret_scan(result.stdout)
     if as_json:
+        safe_findings = redact_findings(findings)
         has_high = any(f["severity"] == "high" for f in findings)
         if has_high:
             print_json(
@@ -460,12 +504,12 @@ def _render_secret_scan_output(
                     "diff",
                     error="high-severity secret leak detected in diff",
                     code="secret_leak_high",
-                    findings=findings,
+                    findings=safe_findings,
                     count=len(findings),
                 )
             )
         else:
-            print_json(ok_envelope("diff", findings=findings, count=len(findings)))
+            print_json(ok_envelope("diff", findings=safe_findings, count=len(findings)))
         return 1 if has_high else 0
     if not findings:
         info(t("secret_scan_clean"))
@@ -499,6 +543,7 @@ def run_diff(
     scan_secrets: bool = False,
     as_json: bool = False,
     json_lines: bool = False,
+    git_args: list[str] | None = None,
 ) -> int:
     """Render a diff of changed files, a refspec, or a range.
 
@@ -508,12 +553,26 @@ def run_diff(
     scopes the output after ``--``. ``--summary`` prints additions/deletions per
     file with no patch (token-efficient for agents).
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="diff")
     if root is None:
         return 1
     cwd = root
+
+    if refspec and not validate_ref(refspec):
+        msg = t("invalid_ref", ref=refspec)
+        if as_json:
+            print_json(error_envelope("diff", error=msg, code="invalid_ref"))
+        else:
+            error(msg)
+        return 1
+
+    denied = validate_passthrough_args(git_args)
+    if denied is not None:
+        if as_json:
+            print_json(error_envelope("diff", error=denied, code="git_arg_denied"))
+        else:
+            error(denied)
+        return 1
 
     if not refspec and not staged and not _has_commits(cwd):
         if as_json or json_lines:
@@ -531,8 +590,12 @@ def run_diff(
     if json_lines:
         from gitwise.output import print_json_line
 
-        numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
-        status_details = _name_status_details(cwd, staged=staged, refspec=refspec, paths=paths)
+        numstat_details = _numstat_details(
+            cwd, staged=staged, refspec=refspec, paths=paths, git_args=git_args
+        )
+        status_details = _name_status_details(
+            cwd, staged=staged, refspec=refspec, paths=paths, git_args=git_args
+        )
         for path, entry in numstat_details.items():
             st = status_details.get(path, {})
             code = str(st.get("code") or st.get("status") or "")
@@ -546,7 +609,9 @@ def run_diff(
         return _render_secret_scan_output(root=cwd, refspec=refspec, paths=paths, as_json=as_json)
 
     if summary:
-        numstat_details = _numstat_details(cwd, staged=staged, refspec=refspec, paths=paths)
+        numstat_details = _numstat_details(
+            cwd, staged=staged, refspec=refspec, paths=paths, git_args=git_args
+        )
         summary_files = list(numstat_details.values())
         binary_warnings = _warn_large_binaries(cwd=cwd, files=summary_files, as_json=as_json)
         return _render_summary_output(
@@ -561,6 +626,7 @@ def run_diff(
         full=full,
         refspec=refspec,
         paths=paths,
+        git_args=git_args,
     )
     with status(t("status_reading_diff")):
         result = git_run(cmd, cwd=cwd, check=False)
@@ -585,6 +651,7 @@ def run_diff(
             refspec=refspec,
             paths=paths,
             as_json=as_json,
+            git_args=git_args,
         )
 
     return _render_non_stat_output(

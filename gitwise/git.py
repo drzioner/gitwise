@@ -15,7 +15,33 @@ _NESTED_QUANTIFIER_RE = re.compile(
 _GREP_MAX_LEN = 200
 
 
-_GIT_ENV = {**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"}
+# GIT_CONFIG* overrides let an attacker-controlled environment inject arbitrary
+# config (e.g. force a credential helper that exfiltrates secrets); GIT_SSH_COMMAND
+# and GIT_ASKPASS can execute arbitrary commands on remote fetch/push/clone. Scrub
+# all three so the subprocess only reads the real repo/global config and uses the
+# default SSH/askpass. GIT_DIR/GIT_WORK_TREE are intentionally preserved: they are
+# legitimate path overrides, not config/exec injection vectors, and stripping them
+# would break worktree/alternate workflows.
+_GIT_ENV_SCRUB_PREFIXES: tuple[str, ...] = ("GIT_CONFIG",)
+_GIT_ENV_SCRUB_EXACT: frozenset[str] = frozenset({"GIT_SSH", "GIT_SSH_COMMAND", "GIT_ASKPASS"})
+
+
+def _build_git_env() -> dict[str, str]:
+    """Return os.environ with locale/credential hardening and config/exec injection scrubbed."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in _GIT_ENV_SCRUB_EXACT
+        and not any(
+            k == prefix or k.startswith(prefix + "_") for prefix in _GIT_ENV_SCRUB_PREFIXES
+        )
+    }
+    env["LC_ALL"] = "C"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+_GIT_ENV = _build_git_env()
 
 _DEFAULT_TIMEOUT = 120
 
@@ -51,7 +77,7 @@ def _get_timeout(cmd: str | None = None) -> int:
     table, then falls back to the default (120 s).
     """
     val = os.environ.get("GITWISE_GIT_TIMEOUT", "")
-    if val.isdigit():
+    if val.isdigit() and int(val) > 0:
         return int(val)
     if cmd and cmd in _CMD_TIMEOUTS:
         return _CMD_TIMEOUTS[cmd]
@@ -94,6 +120,27 @@ def run(
             returncode=127,
             stdout="",
             stderr="git executable not found in PATH",
+        )
+    except subprocess.TimeoutExpired as exc:
+        # Mirror the `timeout` coreutil convention (124) so callers can
+        # distinguish a timed-out git operation from a real git failure (128+)
+        # or a missing binary (127). Append the timeout note to whatever git
+        # already wrote so the cause is visible alongside any partial output.
+        partial = (
+            exc.stderr.decode("utf-8", "replace")
+            if isinstance(exc.stderr, bytes)
+            else (exc.stderr or "")
+        ).strip()
+        timeout_note = f"git {' '.join(args)} timed out after {actual_timeout}s"
+        return subprocess.CompletedProcess(
+            args=["git", *args],
+            returncode=124,
+            stdout=(
+                exc.stdout.decode("utf-8", "replace")
+                if isinstance(exc.stdout, bytes)
+                else (exc.stdout or "")
+            ),
+            stderr=f"{partial} [{timeout_note}]" if partial else timeout_note,
         )
 
 
@@ -218,6 +265,56 @@ def validate_ref(ref: str) -> bool:
     return bool(ref) and not ref.startswith("-")
 
 
+# Git options that the --git-arg passthrough must refuse. These can write to
+# arbitrary files (--output), execute arbitrary commands (--upload-pack,
+# --receive-pack, --exec), inject config (-c/--config), or redirect which
+# repository git operates on (--git-dir/--work-tree/--namespace). Denying them
+# keeps the passthrough an escape hatch for read options (filters, -U, etc.)
+# without opening a code-execution or arbitrary-write vector.
+_GIT_PASSTHROUGH_DENY: frozenset[str] = frozenset(
+    {
+        "--output",
+        "-c",
+        "--config",
+        "--upload-pack",
+        "--receive-pack",
+        "--exec",
+        "--exec-path",
+        "--git-dir",
+        "--work-tree",
+        "--namespace",
+        "--bare",
+        "-C",
+    }
+)
+
+
+def validate_passthrough_arg(arg: str) -> str | None:
+    """Return an error message if *arg* is a denied passthrough option, else None.
+
+    Compares the option token (the part before ``=`` for ``--opt=value`` forms)
+    against the deny list. Empty args are rejected. Standalone values (paths,
+    numbers) are allowed -- they are positional operands, not options.
+    """
+    if not arg:
+        return "empty --git-arg value"
+    token = arg.split("=", 1)[0]
+    if token in _GIT_PASSTHROUGH_DENY:
+        return f"--git-arg refuses '{token}' (can execute code, write files, or redirect the repo)"
+    return None
+
+
+def validate_passthrough_args(args: list[str] | None) -> str | None:
+    """Validate a list of passthrough args; return the first error message or None."""
+    if not args:
+        return None
+    for arg in args:
+        err = validate_passthrough_arg(arg)
+        if err is not None:
+            return err
+    return None
+
+
 def validate_branch_name(name: str) -> bool:
     """Return True if *name* passes ``git check-ref-format``."""
     if not name or name.startswith("-"):
@@ -268,16 +365,29 @@ PROTECTED_BRANCHES: frozenset[str] = frozenset(
 )
 
 
-def require_root(path: Path | None = None) -> tuple[Path, None] | tuple[None, int]:
-    """Validate git repo and return (root, None) or (None, exit_code)."""
+def require_root(
+    path: Path | None = None, *, as_json: bool = False, command: str = "gitwise"
+) -> Path | None:
+    """Return the repo root, or None after printing an error (exit code 1).
+
+    Callers check the single value instead of unpacking a (root, err) tuple:
+    ``root = require_root(as_json=as_json, command="audit"); if root is None: return 1``.
+    When ``as_json`` is set the failure is emitted as a v3 error envelope so
+    machine consumers can parse it instead of receiving bare stderr text.
+    """
     from .i18n import t
-    from .output import error
+    from .output import error, print_json
+    from .utils.json_envelope import error_envelope
 
     root = repo_root(path)
     if root is None:
-        error(t("not_a_git_repo"))
-        return None, 1
-    return root, None
+        msg = t("not_a_git_repo")
+        if as_json:
+            print_json(error_envelope(command, error=msg, code="not_a_git_repo"))
+        else:
+            error(msg)
+        return None
+    return root
 
 
 def has_remote(cwd: Path | None = None) -> bool:

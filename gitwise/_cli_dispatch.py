@@ -35,14 +35,18 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
     """Dispatch to ``setup-agents`` subcommand, handling provider listing."""
     if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
         from gitwise.i18n import t as _t
+        from gitwise.setup_agents.format import (
+            _SETUP_AGENTS_SCHEMA_COMPAT,
+            _SETUP_AGENTS_SCHEMA_VERSION,
+        )
         from gitwise.setup_agents.providers import list_providers
 
         adapter_list = list_providers()
         if args.json:
             print_json(
                 {
-                    "v": 3,
-                    "v_compat": [1, 2, 3],
+                    "v": _SETUP_AGENTS_SCHEMA_VERSION,
+                    "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
                     "command": "setup-agents",
                     "hints": [],
                     "errors": [],
@@ -140,7 +144,11 @@ def _run_worktree(args: argparse.Namespace) -> int:
     from gitwise.worktree import run_worktree
 
     return run_worktree(
-        args.action, getattr(args, "branch", None), dry_run=args.dry_run, as_json=args.json
+        args.action,
+        getattr(args, "branch", None),
+        dry_run=args.dry_run,
+        as_json=args.json,
+        force=getattr(args, "force", False),
     )
 
 
@@ -207,6 +215,7 @@ def _run_diff(args: argparse.Namespace) -> int:
         scan_secrets=args.scan_secrets,
         as_json=args.json,
         json_lines=getattr(args, "json_lines", False),
+        git_args=getattr(args, "git_args", None),
     )
 
 
@@ -225,6 +234,7 @@ def _run_log(args: argparse.Namespace) -> int:
         until=args.until,
         file=args.file,
         max_count=args.max_count,
+        git_args=getattr(args, "git_args", None),
     )
 
 
@@ -232,7 +242,9 @@ def _run_show(args: argparse.Namespace) -> int:
     """Dispatch to ``show`` subcommand."""
     from gitwise.show import run_show
 
-    return run_show(ref=args.ref, stat=args.stat, as_json=args.json)
+    return run_show(
+        ref=args.ref, stat=args.stat, as_json=args.json, git_args=getattr(args, "git_args", None)
+    )
 
 
 def _run_commit(args: argparse.Namespace) -> int:
@@ -255,7 +267,13 @@ def _run_branches(args: argparse.Namespace) -> int:
     """Dispatch to ``branches`` subcommand."""
     from gitwise.branches import run_branches
 
-    return run_branches(stale=args.stale, remote=args.remote, sort=args.sort, as_json=args.json)
+    return run_branches(
+        stale=args.stale,
+        remote=args.remote,
+        sort=args.sort,
+        as_json=args.json,
+        git_args=getattr(args, "git_args", None),
+    )
 
 
 def _run_sync(args: argparse.Namespace) -> int:
@@ -275,7 +293,21 @@ def _run_pr(args: argparse.Namespace) -> int:
     """Dispatch to ``pr`` subcommand."""
     from gitwise.pr import run_pr
 
-    return run_pr(action=args.action, selector=args.selector, as_json=args.json)
+    return run_pr(
+        action=args.action,
+        selector=args.selector,
+        as_json=args.json,
+        state=getattr(args, "state", None),
+        author=getattr(args, "author", None),
+        label=getattr(args, "label", None),
+        limit=getattr(args, "limit", None),
+        base=getattr(args, "base", None),
+        head=getattr(args, "head", None),
+        title=getattr(args, "title", None),
+        body=getattr(args, "body", None),
+        draft=getattr(args, "draft", False),
+        fill=getattr(args, "fill", False),
+    )
 
 
 def _run_undo(args: argparse.Namespace) -> int:
@@ -317,6 +349,10 @@ def _run_stash(args: argparse.Namespace) -> int:
         yes=args.yes,
         dry_run=args.dry_run,
         patch=args.patch,
+        message=getattr(args, "message", None),
+        include_untracked=getattr(args, "include_untracked", False),
+        keep_index=getattr(args, "keep_index", False),
+        paths=getattr(args, "paths", None),
     )
 
 
@@ -355,7 +391,14 @@ def _run_conflicts(args: argparse.Namespace) -> int:
     """Dispatch to ``conflicts`` subcommand."""
     from gitwise.conflicts import run_conflicts
 
-    return run_conflicts(ours=args.ours, theirs=args.theirs, union=args.union, as_json=args.json)
+    return run_conflicts(
+        ours=args.ours,
+        theirs=args.theirs,
+        union=args.union,
+        files=getattr(args, "files", None),
+        dry_run=getattr(args, "dry_run", False),
+        as_json=args.json,
+    )
 
 
 def _run_suggest(args: argparse.Namespace) -> int:

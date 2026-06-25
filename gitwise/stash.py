@@ -14,6 +14,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_table,
+    report_error,
     status,
     warn,
 )
@@ -171,6 +172,62 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
     return 0
 
 
+def _cmd_apply(root: Path, index: int, *, as_json: bool) -> int:
+    """Execute ``stash apply`` sub-action (restore without dropping the stash)."""
+    ref = f"stash@{{{index}}}"
+    r = git_run(["stash", "apply", ref], cwd=root, check=False)
+    if r.returncode != 0:
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_not_found", index=str(index)),
+            code="stash_apply_failed",
+            hint=t("stash_hint"),
+        )
+    if as_json:
+        print_json(ok_envelope("stash", applied=ref))
+        return 0
+    ok(t("stash_applied", ref=ref))
+    return 0
+
+
+def _cmd_push(
+    root: Path,
+    *,
+    message: str | None = None,
+    include_untracked: bool = False,
+    keep_index: bool = False,
+    paths: list[str] | None = None,
+    as_json: bool = False,
+) -> int:
+    """Execute ``stash push`` sub-action (create a new stash)."""
+    args = ["stash", "push"]
+    if message:
+        args += ["-m", message]
+    if include_untracked:
+        args.append("-u")
+    if keep_index:
+        args.append("--keep-index")
+    if paths:
+        args.append("--")
+        args += [p for p in paths if p]
+    r = git_run(args, cwd=root, check=False)
+    if r.returncode != 0:
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_push_failed"),
+            code="stash_push_failed",
+        )
+    # git prints "Saved working directory and index state ..." on success.
+    created = r.stdout.strip().splitlines()[0] if r.stdout.strip() else ""
+    if as_json:
+        print_json(ok_envelope("stash", pushed=True, message=created))
+        return 0
+    ok(t("stash_pushed"))
+    return 0
+
+
 def run_stash(
     action: str = "list",
     index: int = 0,
@@ -179,11 +236,13 @@ def run_stash(
     yes: bool = False,
     dry_run: bool = False,
     patch: bool = False,
+    message: str | None = None,
+    include_untracked: bool = False,
+    keep_index: bool = False,
+    paths: list[str] | None = None,
 ) -> int:
     """Entry point for the ``gitwise stash`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="stash")
     if root is None:
         return 1
 
@@ -191,8 +250,19 @@ def run_stash(
         return _cmd_list(root, as_json=as_json)
     if action == "show":
         return _cmd_show(root, index, as_json=as_json, patch=patch)
+    if action == "apply":
+        return _cmd_apply(root, index, as_json=as_json)
     if action == "pop":
         return _cmd_pop(root, index, as_json=as_json)
+    if action == "push":
+        return _cmd_push(
+            root,
+            message=message,
+            include_untracked=include_untracked,
+            keep_index=keep_index,
+            paths=paths,
+            as_json=as_json,
+        )
     if action == "drop":
         return _cmd_drop(root, index, as_json=as_json, yes=yes)
     if action in ("clean", "clear"):

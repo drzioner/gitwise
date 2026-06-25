@@ -159,14 +159,16 @@ reviews:
 
     # Enforce conventional-commit titles: they feed commitizen semver bumps and
     # the auto-release CHANGELOG. Blocking (error) because a bad title breaks
-    # the release pipeline.
+    # the release pipeline. PR titles may be slightly more descriptive than a
+    # raw git subject, so the summary limit is 80 (vs the 72 commit-subject
+    # convention); if squash-merged the title still reads cleanly.
     title:
       mode: error
       requirements: >-
         Title must match conventional commits:
         type(scope)[!]: summary -- the optional ! marks a breaking change;
         type is one of feat, fix, docs, refactor, chore, test, ci, perf,
-        build, style, revert. Keep the summary under 72 characters, lowercase,
+        build, style, revert. Keep the summary under 80 characters, lowercase,
         no trailing period.
 
     description:

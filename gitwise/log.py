@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from gitwise.git import require_root, validate_author_pattern, validate_grep_pattern
+from gitwise.git import (
+    require_root,
+    validate_author_pattern,
+    validate_grep_pattern,
+    validate_passthrough_args,
+)
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import bat_pipe, error, info, print_json, print_table, status
@@ -19,12 +24,15 @@ def _build_log_args(
     oneline: bool = False,
     graph: bool = False,
     max_count: int = 20,
+    git_args: list[str] | None = None,
 ) -> list[str]:
     """Build the ``git log`` argv for human output (table, oneline, or graph).
 
     Raises ValueError if author or grep patterns fail validation.
     """
     args = ["log", f"--max-count={max_count}"]
+    if git_args:
+        args.extend(git_args)
     if graph:
         args.append("--graph")
     if oneline:
@@ -60,6 +68,7 @@ def _build_log_json_args(
     until: str | None = None,
     file: str | None = None,
     max_count: int = 20,
+    git_args: list[str] | None = None,
 ) -> list[str]:
     """Build the ``git log`` argv for structured JSON output.
 
@@ -73,6 +82,8 @@ def _build_log_json_args(
         "--date=iso-strict",
         "--numstat",
     ]
+    if git_args:
+        args.extend(git_args)
     if author:
         if not validate_author_pattern(author):
             error(t("invalid_author_pattern", pattern=author[:50]))
@@ -196,6 +207,7 @@ def _run_log_json(
     file: str | None,
     max_count: int,
     json_lines: bool = False,
+    git_args: list[str] | None = None,
 ) -> int:
     """Execute git log and emit structured JSON with enriched per-commit stats.
 
@@ -219,6 +231,7 @@ def _run_log_json(
             until=until,
             file=file,
             max_count=max_count + 1,
+            git_args=git_args,
         )
     except ValueError as exc:
         _emit(error_envelope("log", error=str(exc), code="invalid_argument"))
@@ -273,6 +286,7 @@ def _run_log_human(
     until: str | None,
     file: str | None,
     max_count: int,
+    git_args: list[str] | None = None,
 ) -> int:
     """Execute git log and render as a table, oneline, or graph via bat."""
     try:
@@ -285,6 +299,7 @@ def _run_log_human(
             until=until,
             file=file,
             max_count=max_count,
+            git_args=git_args,
         )
     except ValueError:
         return 1
@@ -353,12 +368,22 @@ def run_log(
     until: str | None = None,
     file: str | None = None,
     max_count: int = 20,
+    git_args: list[str] | None = None,
 ) -> int:
     """Display commit history with optional filters, graph, oneline, or JSON output."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json or json_lines, command="log")
     if root is None:
+        return 1
+
+    denied = validate_passthrough_args(git_args)
+    if denied is not None:
+        if as_json or json_lines:
+            # json_lines consumers expect one envelope per line, not bare text.
+            from gitwise.output import print_json_line
+
+            print_json_line(error_envelope("log", error=denied, code="git_arg_denied"))
+        else:
+            error(denied)
         return 1
 
     if as_json or json_lines:
@@ -371,6 +396,7 @@ def run_log(
             file=file,
             max_count=max_count,
             json_lines=json_lines,
+            git_args=git_args,
         )
 
     return _run_log_human(
@@ -383,4 +409,5 @@ def run_log(
         until=until,
         file=file,
         max_count=max_count,
+        git_args=git_args,
     )

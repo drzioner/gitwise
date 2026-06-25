@@ -1,7 +1,8 @@
 """Worktree helpers for multi-agent Claude Code workflows."""
 
+import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from gitwise.git import require_root, validate_branch_name
 from gitwise.git import run as git_run
@@ -14,6 +15,7 @@ from gitwise.output import (
     print_dim,
     print_header,
     print_json,
+    report_error,
     status,
 )
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
@@ -179,17 +181,72 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) 
     return 0
 
 
+def _worktree_remove(
+    target: str, root: Path, *, force: bool = False, as_json: bool = False
+) -> int:
+    """Remove a worktree identified by path or checked-out branch name."""
+    if not target:
+        return report_error(
+            "worktree", as_json=as_json, msg=t("worktree_usage"), code="worktree_target_required"
+        )
+
+    worktrees = _list_worktrees(root)
+    match = None
+    for wt in worktrees:
+        # Match on path equality, branch equality, or the path's basename so it
+        # works on both POSIX and Windows separators (don't concatenate "/").
+        if wt["path"] == target or wt["branch"] == target or PurePath(wt["path"]).name == target:
+            match = wt
+            break
+    if match is None:
+        return report_error(
+            "worktree",
+            as_json=as_json,
+            msg=t("worktree_not_found", target=target),
+            code="worktree_not_found",
+        )
+    # Never remove the primary worktree (the repo root itself). Resolve symlinks
+    # so a worktree path that differs from root only by symlink expansion is
+    # still recognized as the primary (os.path.realpath per AGENTS.md).
+    if os.path.realpath(match["path"]) == os.path.realpath(str(root)):
+        return report_error(
+            "worktree",
+            as_json=as_json,
+            msg=t("worktree_remove_primary"),
+            code="worktree_remove_primary",
+        )
+
+    args = ["worktree", "remove"]
+    if force:
+        args.append("--force")
+    args.append(match["path"])
+    r = git_run(args, cwd=root, check=False)
+    if r.returncode != 0:
+        return report_error(
+            "worktree",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("worktree_failed", error="remove"),
+            code="worktree_remove_failed",
+        )
+    if as_json:
+        print_json(
+            ok_envelope("worktree", removed=match["path"], branch=match.get("branch") or "")
+        )
+        return 0
+    ok(t("worktree_removed", path=match["path"]))
+    return 0
+
+
 def run_worktree(
     action: str | None,
     branch: str | None,
     *,
     dry_run: bool = False,
     as_json: bool = False,
+    force: bool = False,
 ) -> int:
     """Entry point for the ``gitwise worktree`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="worktree")
     if root is None:
         return 1
 
@@ -206,6 +263,7 @@ def run_worktree(
                     error_envelope(
                         "worktree",
                         error=str(data.get("error", t("worktree_failed", error="unknown"))),
+                        code=str(data.get("code", "worktree_failed")),
                         data=data,
                     )
                 )
@@ -214,6 +272,9 @@ def run_worktree(
 
     elif action == "clean":
         return _worktree_clean(root, dry_run=dry_run, as_json=as_json)
+
+    elif action == "remove":
+        return _worktree_remove(branch or "", root, force=force, as_json=as_json)
 
     elif action == "list":
         return _worktree_list(root, as_json=as_json)

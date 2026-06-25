@@ -14,7 +14,13 @@ def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
     install_dir = Path(__file__).parent.parent
     if not (install_dir / ".git").is_dir():
         if as_json:
-            print_json(error_envelope("update", error=t("update_requires_git_clone")))
+            print_json(
+                error_envelope(
+                    "update",
+                    error=t("update_requires_git_clone"),
+                    code="update_requires_git_clone",
+                )
+            )
         else:
             error(t("update_requires_git_clone"))
         return 1
@@ -45,7 +51,11 @@ def run_update(*, dry_run: bool = False, as_json: bool = False) -> int:
             info(line)
     elif r.returncode != 0:
         if as_json:
-            print_json(error_envelope("update", error=r.stderr.strip() or t("error_updating")))
+            print_json(
+                error_envelope(
+                    "update", error=r.stderr.strip() or t("error_updating"), code="update_failed"
+                )
+            )
             return 1
         error(r.stderr.strip() or t("error_updating"))
         return 1

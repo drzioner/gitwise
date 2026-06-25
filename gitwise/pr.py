@@ -10,6 +10,7 @@ from gitwise.i18n import t
 from gitwise.output import (
     error,
     info,
+    ok,
     print_blank,
     print_bracket,
     print_dim,
@@ -17,6 +18,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_table,
+    report_error,
     status,
 )
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
@@ -60,7 +62,7 @@ def _gh_available() -> bool:
     return bool(shutil.which("gh"))
 
 
-def _gh(args: list[str], cwd) -> tuple[int, str, str]:
+def _gh(args: list[str], cwd: Path) -> tuple[int, str, str]:
     """Run a ``gh`` subprocess wrapped in a status spinner."""
     import subprocess
 
@@ -418,23 +420,65 @@ def _render_pr_comments(payload: dict[str, object]) -> int:
 def _invalid_json_response(*, as_json: bool, raw: str) -> int:
     """Emit an error envelope or human message for unparseable gh JSON output."""
     if as_json:
-        print_json(error_envelope("pr", error="invalid_gh_json", raw=raw))
+        print_json(error_envelope("pr", error="invalid_gh_json", code="invalid_gh_json", raw=raw))
     else:
         error(t("pr_invalid_json"))
     return 1
 
 
-def _run_action_list(*, root: Path, as_json: bool) -> int:
-    """Execute the ``pr list`` sub-action."""
-    rc, out, err = _gh(["pr", "list", "--json", _PR_LIST_FIELDS], cwd=root)
+def _list_filter_args(
+    *,
+    state: str | None,
+    author: str | None,
+    label: str | None,
+    limit: int | None,
+    base: str | None,
+    head: str | None,
+) -> list[str]:
+    """Translate gitwise pr list filters into ``gh pr list`` flag arguments."""
+    args: list[str] = []
+    if state:
+        args += ["--state", state]
+    if author:
+        args += ["--author", author]
+    if label:
+        args += ["--label", label]
+    if base:
+        args += ["--base", base]
+    if head:
+        args += ["--head", head]
+    if limit is not None and limit > 0:
+        args += ["--limit", str(limit)]
+    return args
+
+
+def _run_action_list(
+    *,
+    root: Path,
+    as_json: bool,
+    state: str | None = None,
+    author: str | None = None,
+    label: str | None = None,
+    limit: int | None = None,
+    base: str | None = None,
+    head: str | None = None,
+) -> int:
+    """Execute the ``pr list`` sub-action with optional filters."""
+    gh_args = ["pr", "list", "--json", _PR_LIST_FIELDS] + _list_filter_args(
+        state=state, author=author, label=label, limit=limit, base=base, head=head
+    )
+    rc, out, err = _gh(gh_args, cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_list_failed"), code="pr_list_failed"
+        )
 
     if as_json:
         ok_json, payload = _json_or_error(out)
         if not ok_json:
-            print_json(error_envelope("pr", error="invalid_gh_json", raw=out))
+            print_json(
+                error_envelope("pr", error="invalid_gh_json", code="invalid_gh_json", raw=out)
+            )
             return 1
         prs = payload if isinstance(payload, list) else []
         print_json(ok_envelope("pr", prs=prs, count=len(prs)))
@@ -449,12 +493,57 @@ def _run_action_list(*, root: Path, as_json: bool) -> int:
     for pr in prs:
         if not isinstance(pr, dict):
             continue
-        state = str(pr.get("state") or "")
+        pr_state = str(pr.get("state") or "")
         number = str(pr.get("number") or "-")
         title = str(pr.get("title") or "-")
-        head = str(pr.get("headRefName") or "-")
-        print_file_status(_pr_status_code(state), f"#{number}  {title}")
-        info(f"    ({state}) <- {head}")
+        pr_head = str(pr.get("headRefName") or "-")
+        print_file_status(_pr_status_code(pr_state), f"#{number}  {title}")
+        info(f"    ({pr_state}) <- {pr_head}")
+    return 0
+
+
+def _run_action_create(
+    *,
+    root: Path,
+    as_json: bool,
+    title: str | None = None,
+    body: str | None = None,
+    base: str | None = None,
+    head: str | None = None,
+    draft: bool = False,
+    fill: bool = False,
+) -> int:
+    """Execute the ``pr create`` sub-action by delegating to ``gh pr create``."""
+    args = ["pr", "create"]
+    if fill:
+        args.append("--fill")
+    elif title:
+        args += ["--title", title]
+        if body:
+            args += ["--body", body]
+    else:
+        return report_error(
+            "pr", as_json=as_json, msg=t("pr_create_needs_title"), code="pr_create_needs_title"
+        )
+    if base:
+        args += ["--base", base]
+    if head:
+        args += ["--head", head]
+    if draft:
+        args.append("--draft")
+    rc, out, err = _gh(args, cwd=root)
+    if rc != 0:
+        return report_error(
+            "pr",
+            as_json=as_json,
+            msg=err.strip() or t("pr_create_failed"),
+            code="pr_create_failed",
+        )
+    url = out.strip().splitlines()[0] if out.strip() else ""
+    if as_json:
+        print_json(ok_envelope("pr", created=True, url=url))
+        return 0
+    ok(t("pr_created", url=url))
     return 0
 
 
@@ -462,8 +551,9 @@ def _run_action_checks(*, root: Path, selected: list[str], as_json: bool) -> int
     """Execute the ``pr checks`` sub-action."""
     rc, out, err = _gh(["pr", "checks", *selected, "--json", _PR_CHECKS_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_checks_failed"), code="pr_checks_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json:
@@ -490,8 +580,9 @@ def _run_action_view(*, root: Path, selected: list[str], as_json: bool) -> int:
     """Execute the ``pr view`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_VIEW_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_view_failed"), code="pr_view_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json or not isinstance(payload, dict):
@@ -509,8 +600,9 @@ def _run_action_comments(*, root: Path, selected: list[str], as_json: bool) -> i
     """Execute the ``pr comments`` sub-action."""
     rc, out, err = _gh(["pr", "view", *selected, "--json", _PR_COMMENTS_FIELDS], cwd=root)
     if rc != 0:
-        error(err)
-        return 1
+        return report_error(
+            "pr", as_json=as_json, msg=err or t("pr_comments_failed"), code="pr_comments_failed"
+        )
 
     ok_json, payload = _json_or_error(out)
     if not ok_json or not isinstance(payload, dict):
@@ -540,23 +632,51 @@ def run_pr(
     action: str = "list",
     selector: str | None = None,
     as_json: bool = False,
+    state: str | None = None,
+    author: str | None = None,
+    label: str | None = None,
+    limit: int | None = None,
+    base: str | None = None,
+    head: str | None = None,
+    title: str | None = None,
+    body: str | None = None,
+    draft: bool = False,
+    fill: bool = False,
 ) -> int:
     """Entry point for the ``gitwise pr`` command.
 
-    Dispatches to list/checks/view/comments sub-actions after checking
+    Dispatches to list/checks/view/comments/create sub-actions after checking
     that ``gh`` is available and that the cwd is inside a git repo.
     """
     if not _gh_available():
-        error(t("pr_gh_required"))
-        return 1
-    root, err = require_root()
-    if err:
-        return err
+        return report_error("pr", as_json=as_json, msg=t("pr_gh_required"), code="pr_gh_required")
+    root = require_root(as_json=as_json, command="pr")
     if root is None:
         return 1
 
     if action == "list":
-        return _run_action_list(root=root, as_json=as_json)
+        return _run_action_list(
+            root=root,
+            as_json=as_json,
+            state=state,
+            author=author,
+            label=label,
+            limit=limit,
+            base=base,
+            head=head,
+        )
+
+    if action == "create":
+        return _run_action_create(
+            root=root,
+            as_json=as_json,
+            title=title,
+            body=body,
+            base=base,
+            head=head,
+            draft=draft,
+            fill=fill,
+        )
 
     try:
         selected = _selector_args(selector)

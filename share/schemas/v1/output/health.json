@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/health.json",
+  "title": "gitwise health cli output",
+  "description": "v3 envelope for `gitwise health --json`. data is a HealthResult with a 0-100 score, letter grade, per-category breakdown, and a details object of booleans/counts. data is permissive (additional fields allowed).",
+  "type": "object",
+  "required": [
+    "v",
+    "ok",
+    "command",
+    "data",
+    "hints",
+    "errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 3
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "command": {
+      "const": "health"
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "grade": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "F"
+          ]
+        },
+        "breakdown": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "details": {
+          "type": "object",
+          "properties": {
+            "has_remote": {
+              "type": "boolean"
+            },
+            "has_upstream": {
+              "type": "boolean"
+            },
+            "gpg_ready": {
+              "type": "boolean"
+            },
+            "stale_branches": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stashes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "untracked": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "commits": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "branches": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "commit_graph": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

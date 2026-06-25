@@ -97,9 +97,7 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
     2 when only prune fails.  Returns 2 when ``--json`` is used without
     ``--yes``.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="optimize")
     if root is None:
         return 1
     cwd = root
@@ -132,6 +130,8 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         return 0
 
     if as_json and not yes:
+        # See clean.py for why only the destructive multi-item verbs (clean,
+        # optimize) gate --json behind --yes; single-intent write verbs do not.
         print_json(
             error_envelope(
                 "optimize",
@@ -150,6 +150,10 @@ def run_optimize(*, dry_run: bool = False, yes: bool = False, as_json: bool = Fa
         print_blank()
         if not yes:
             if not confirm(t("confirm_optimize")):
+                # Cancel returns 0 by project convention (matches setup/undo).
+                # Agent callers never reach here: --json without --yes is rejected
+                # upstream with the `yes_required` envelope, so an agent always
+                # gets an explicit, distinguishable response.
                 print_dim(t("cancelled"))
                 return 0
             print_blank()

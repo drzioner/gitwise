@@ -54,32 +54,32 @@
     },
     "no_symlinks": {
       "type": "boolean",
-      "description": "force @AGENTS.md import fallback (no symlinks) \u2014 --local only",
+      "description": "force @AGENTS.md import fallback (no symlinks)",
       "default": false
     },
     "strict": {
       "type": "boolean",
-      "description": "treat warnings as errors (CI) \u2014 --local only",
+      "description": "treat warnings as errors (CI) — --local only",
       "default": false
     },
     "replace_claude_with_symlink": {
       "type": "boolean",
-      "description": "bucket 4: replace CLAUDE.md with symlink to AGENTS.md \u2014 --local only",
+      "description": "bucket 4: replace CLAUDE.md with symlink to AGENTS.md — --local only",
       "default": false
     },
     "migrate_legacy_claude": {
       "type": "boolean",
-      "description": "migrate legacy Claude-only layout to canonical AGENTS/.agents \u2014 --local only",
+      "description": "migrate legacy Claude-only layout to canonical AGENTS/.agents — --local only",
       "default": false
     },
     "frozen_time": {
       "type": "boolean",
-      "description": "freeze snapshot timestamp \u2014 --local only",
+      "description": "freeze snapshot timestamp — --local only",
       "default": false
     },
     "no_git_files": {
       "type": "boolean",
-      "description": "don't touch .gitignore or .gitattributes \u2014 --local only",
+      "description": "don't touch .gitignore or .gitattributes — --local only",
       "default": false
     },
     "providers": {

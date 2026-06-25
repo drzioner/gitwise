@@ -3,11 +3,11 @@
 from pathlib import Path
 from typing import TypedDict
 
-from gitwise.git import require_root, stale_branches, worktree_branches
+from gitwise.git import require_root, stale_branches, validate_passthrough_args, worktree_branches
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import error, info, print_dim, print_json, print_table, status
-from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 
 
 class BranchEntry(TypedDict):
@@ -94,16 +94,22 @@ def _print_stale_branches(*, names: list[str], as_json: bool) -> int:
     return 0
 
 
-def _fetch_branch_rows(*, root: Path, remote: bool, sort: str) -> list[BranchEntry] | None:
+def _fetch_branch_rows(
+    *,
+    root: Path,
+    remote: bool,
+    sort: str,
+    git_args: list[str] | None = None,
+) -> list[BranchEntry] | None:
     """Run ``for-each-ref`` and return parsed branches, or None on git error."""
     wt_branches = worktree_branches(cwd=root)
     ref_pattern = "refs/remotes/" if remote else "refs/heads/"
     fmt = "%(HEAD)\t%(refname:short)\t%(objectname:short)\t%(subject)\t%(committerdate:relative)\t%(upstream:track)\t%(upstream:short)"
-    result = git_run(
-        ["for-each-ref", f"--sort={sort}", f"--format={fmt}", ref_pattern],
-        cwd=root,
-        check=False,
-    )
+    cmd = ["for-each-ref", f"--sort={sort}", f"--format={fmt}"]
+    if git_args:
+        cmd.extend(git_args)
+    cmd.append(ref_pattern)
+    result = git_run(cmd, cwd=root, check=False)
     if result.returncode != 0:
         error(t("git_ref_failed", error=result.stderr.strip()))
         return None
@@ -181,12 +187,30 @@ def run_branches(
     remote: bool = False,
     sort: str = "refname",
     as_json: bool = False,
+    git_args: list[str] | None = None,
 ) -> int:
     """Entry point for the ``gitwise branches`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="branches")
     if root is None:
+        return 1
+
+    # for-each-ref parses a fixed tabulated --format; format-changing / count
+    # flags from --git-arg would silently corrupt _fetch_branch_rows parsing.
+    _BRANCHES_FORMAT_BREAKERS = ("--format", "--shell", "--python", "--perl", "--tcl", "--count")
+    denied = validate_passthrough_args(git_args)
+    if denied is None and git_args:
+        for arg in git_args:
+            token = arg.split("=", 1)[0]
+            if token in _BRANCHES_FORMAT_BREAKERS:
+                denied = (
+                    f"--git-arg refuses '{token}' on branches (would break the parsed --format)"
+                )
+                break
+    if denied is not None:
+        if as_json:
+            print_json(error_envelope("branches", error=denied, code="git_arg_denied"))
+        else:
+            error(denied)
         return 1
 
     if stale:
@@ -198,7 +222,7 @@ def run_branches(
         return 1
 
     with status(t("status_analyzing_branches")):
-        branches = _fetch_branch_rows(root=root, remote=remote, sort=sort)
+        branches = _fetch_branch_rows(root=root, remote=remote, sort=sort, git_args=git_args)
     if branches is None:
         return 1
     if not branches:

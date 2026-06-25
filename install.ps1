@@ -44,7 +44,45 @@ $ErrorActionPreference = "Stop"
 function Invoke-UvInstaller {
     # Download and run the official uv standalone installer for Windows.
     # Verified: https://docs.astral.sh/uv/getting-started/installation/
-    & powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    # Optional integrity verification: set $env:UV_INSTALLER_SHA256 to pin the
+    # expected SHA-256 of the uv installer. When set, download to a temp file,
+    # verify the hash, and execute only on match; otherwise abort. When unset,
+    # fall back to the documented irm|iex TOFU default.
+    $url = $env:UV_INSTALLER_URL
+    if (-not $url) { $url = "https://astral.sh/uv/install.ps1" }
+    # Use a .ps1 temp path: `powershell -File` rejects files without a .ps1
+    # extension, and GetTempFileName() yields a .tmp name (which broke the
+    # Windows smoke test). Both the verified and TOFU paths write here.
+    $tmp = [System.IO.Path]::Combine(
+        [System.IO.Path]::GetTempPath(),
+        "gitwise-uv-installer-$PID.ps1"
+    )
+    if ($env:UV_INSTALLER_SHA256) {
+        try {
+            Invoke-RestMethod -Uri $url -OutFile $tmp
+            $actual = (Get-FileHash -Algorithm SHA256 -Path $tmp).Hash.ToLower()
+            if ($actual -ne $env:UV_INSTALLER_SHA256.ToLower()) {
+                throw "uv installer SHA-256 mismatch (expected $($env:UV_INSTALLER_SHA256), got $actual)"
+            }
+            & powershell -ExecutionPolicy ByPass -File $tmp
+        }
+        finally {
+            Remove-Item $tmp -ErrorAction SilentlyContinue
+        }
+    }
+    else {
+        # Download to a .ps1 temp file and execute it directly, instead of
+        # interpolating $url into a -c "irm $url | iex" string (which would let
+        # metacharacters in the URL execute as PowerShell). This TOFU path still
+        # runs unverified by design; set UV_INSTALLER_SHA256 to enforce a hash.
+        try {
+            Invoke-RestMethod -Uri $url -OutFile $tmp
+            & powershell -ExecutionPolicy ByPass -File $tmp
+        }
+        finally {
+            Remove-Item $tmp -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Refresh-SessionPath {

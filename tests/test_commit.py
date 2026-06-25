@@ -82,6 +82,20 @@ def test_commit_amend(tmp_git_repo: Path) -> None:
     assert r.returncode == 0
 
 
+def test_commit_amend_blocked_on_protected_json(tmp_git_repo: Path) -> None:
+    """--amend on a protected branch must emit a structured error envelope in JSON mode."""
+    import json
+
+    # tmp_git_repo is on `main` (protected) with no upstream.
+    r = run_gitwise(
+        "commit", "--type", "fix", "-m", "amended", "--amend", "--json", cwd=tmp_git_repo
+    )
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "commit_amend_protected"
+
+
 def test_commit_json_output(tmp_git_repo: Path) -> None:
     (tmp_git_repo / "file.txt").write_text("hello")
     _git(["add", "."], tmp_git_repo)
@@ -128,14 +142,42 @@ def test_commit_blocked_on_secret_high_json(tmp_git_repo: Path) -> None:
     assert data["errors"][0]["code"] == "secret_leak_high"
 
 
-def test_commit_allow_secret_json_proceeds(tmp_git_repo: Path) -> None:
+def test_commit_allow_secret_json_blocked_without_env(tmp_git_repo: Path) -> None:
+    """An agent cannot silence the secret guard via --allow-secret in --json mode.
+
+    Prompt injection that smuggles --allow-secret must still be blocked unless an
+    operator-controlled env var authorizes it out-of-band.
+    """
     (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
     _git(["add", "config.py"], tmp_git_repo)
     r = run_gitwise(
         "commit", "-m", "feat: add config", "--allow-secret", "--json", cwd=tmp_git_repo
     )
+    assert r.returncode == 1
+    import json
+
+    data = json.loads(r.stdout)
+    assert data["errors"][0]["code"] == "secret_allow_requires_env"
+    # The security point of this path: findings must be redacted in JSON.
+    findings = data["data"].get("findings", [])
+    assert findings, "expected redacted findings in the error envelope"
+    assert all("preview" not in f for f in findings)
+
+
+def test_commit_allow_secret_json_proceeds_with_env(tmp_git_repo: Path) -> None:
+    """With the operator env var set, --allow-secret --json commits as before."""
+    (tmp_git_repo / "config.py").write_text(f"key = '{_aws_key()}'\n")
+    _git(["add", "config.py"], tmp_git_repo)
+    r = run_gitwise(
+        "commit",
+        "-m",
+        "feat: add config",
+        "--allow-secret",
+        "--json",
+        cwd=tmp_git_repo,
+        env={"GITWISE_ALLOW_SECRETS": "1"},
+    )
     assert r.returncode == 0
-    # The commit was actually created despite the high-severity finding.
     log = _git(["--no-pager", "log", "--oneline"], tmp_git_repo).stdout.decode()
     assert "add config" in log
 

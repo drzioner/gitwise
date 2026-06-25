@@ -133,9 +133,7 @@ def run_suggest(*, as_json: bool = False) -> int:
     Refuses with ``in_progress_<state>`` if a merge/rebase/cherry-pick/revert/
     bisect is paused (so an agent never commits mid-operation).
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="suggest")
     if root is None:
         return 1
 
@@ -166,7 +164,9 @@ def run_suggest(*, as_json: bool = False) -> int:
 
     if not staged_files:
         if as_json:
-            print_json(error_envelope("suggest", error=t("suggest_no_staged")))
+            print_json(
+                error_envelope("suggest", error=t("suggest_no_staged"), code="suggest_no_staged")
+            )
             return 1
         error(t("suggest_no_staged"))
         return 1

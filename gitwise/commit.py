@@ -1,19 +1,33 @@
 """gitwise commit — conventional format validation, GPG enforcement, --amend protection."""
 
+import os
 import re
 from pathlib import Path
 
 from gitwise.git import PROTECTED_BRANCHES, current_branch, gpg_status, require_root
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import confirm, error, print_bracket, print_header, print_json, warn
+from gitwise.output import (
+    confirm,
+    error,
+    print_bracket,
+    print_header,
+    print_json,
+    report_error,
+    warn,
+)
 from gitwise.utils.in_progress import detect_in_progress, in_progress_hint
 from gitwise.utils.json_envelope import error_envelope, ok_envelope
-from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
+from gitwise.utils.secret_scan import SecretScanUnavailable, redact_findings, scan_staged_diff
 
 _CONVENTIONAL_RE = re.compile(
     r"^(feat|fix|refactor|docs|chore|test|style|perf|ci|build|revert)(\(.+\))?!?: .{1,72}"
 )
+
+# Out-of-band override for --allow-secret in agent (--json) mode. An AI agent
+# cannot set environment variables via a prompt, so requiring this closes the
+# prompt-injection vector where a tricked agent silently commits leaked secrets.
+_ALLOW_SECRET_JSON_ENV = "GITWISE_ALLOW_SECRETS"
 
 
 def _is_pushed(branch: str, cwd: Path) -> bool:
@@ -46,7 +60,7 @@ def _compose_message(
     return f"{prefix}: {message}"
 
 
-def _validate_amend_policy(*, amend: bool, root: Path) -> int:
+def _validate_amend_policy(*, amend: bool, root: Path, as_json: bool = False) -> int:
     """Refuse amending on protected branches or branches with a pushed upstream.
 
     Returns 0 when amend is allowed, 1 when blocked.
@@ -55,11 +69,19 @@ def _validate_amend_policy(*, amend: bool, root: Path) -> int:
         return 0
     branch = current_branch(cwd=root) or ""
     if branch in PROTECTED_BRANCHES:
-        error(t("commit_amend_protected", branch=branch))
-        return 1
+        return report_error(
+            "commit",
+            as_json=as_json,
+            msg=t("commit_amend_protected", branch=branch),
+            code="commit_amend_protected",
+        )
     if _is_pushed(branch, root):
-        error(t("commit_amend_pushed", branch=branch))
-        return 1
+        return report_error(
+            "commit",
+            as_json=as_json,
+            msg=t("commit_amend_pushed", branch=branch),
+            code="commit_amend_pushed",
+        )
     return 0
 
 
@@ -74,11 +96,13 @@ def _print_dry_run(*, message: str, amend: bool, root: Path) -> None:
         print_bracket(t("commit_branch_label"), branch)
 
 
-def _validate_commit_message(message: str) -> bool:
+def _validate_commit_message(message: str, as_json: bool = False) -> bool:
     """Return True if the first line matches the conventional-commit pattern."""
     if _CONVENTIONAL_RE.match(message.split("\n")[0]):
         return True
-    error(t("commit_invalid_format"))
+    report_error(
+        "commit", as_json=as_json, msg=t("commit_invalid_format"), code="commit_invalid_format"
+    )
     return False
 
 
@@ -93,22 +117,18 @@ def _execute_commit(*, root: Path, message: str, amend: bool) -> tuple[bool, str
     return False, t("git_command_failed", cmd="commit", error=result.stderr.strip())
 
 
-def _validate_gpg_ready(root: Path) -> bool:
+def _validate_gpg_ready(root: Path, as_json: bool = False) -> bool:
     """Return False and print an error if GPG signing is enabled but no key is available."""
     gpg = gpg_status(cwd=root)
     if gpg["gpgsign_enabled"] and not gpg["ready"]:
-        error(t("gpg_signing_active_no_key"))
+        report_error(
+            "commit",
+            as_json=as_json,
+            msg=t("gpg_signing_active_no_key"),
+            code="gpg_not_ready",
+        )
         return False
     return True
-
-
-def _report_commit_error(*, as_json: bool, err: str) -> int:
-    """Emit a commit error in JSON or human form and return 1."""
-    if as_json:
-        print_json(error_envelope("commit", error=err))
-    else:
-        error(err)
-    return 1
 
 
 def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> int | None:
@@ -153,7 +173,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
                     error=t("secret_scan_blocked_high", count=str(len(high))),
                     code="secret_leak_high",
                     hint=t("secret_scan_blocked_hint"),
-                    findings=high,
+                    findings=redact_findings(high),
                 )
             )
         else:
@@ -169,7 +189,23 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
                 )
             error(t("secret_scan_blocked_hint"))
         return 1
-    if not as_json and not confirm(t("secret_scan_allow_confirm", count=str(len(high)))):
+    if as_json:
+        # An agent must not silence the secret confirmation via a prompt-set
+        # flag. Require an operator-controlled env var so prompt injection
+        # cannot smuggle `--allow-secret` into a forced commit.
+        if os.environ.get(_ALLOW_SECRET_JSON_ENV, "") != "1":
+            print_json(
+                error_envelope(
+                    "commit",
+                    error=t("secret_allow_requires_env"),
+                    code="secret_allow_requires_env",
+                    hint=t("secret_allow_requires_env_hint"),
+                    findings=redact_findings(high),
+                )
+            )
+            return 1
+        return None
+    if not confirm(t("secret_scan_allow_confirm", count=str(len(high)))):
         return 1
     return None
 
@@ -191,9 +227,7 @@ def run_commit(
     the project's amend policy (no amending pushed or protected branches)
     and GPG readiness before delegating to ``git commit``.
     """
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="commit")
     if root is None:
         return 1
 
@@ -214,20 +248,21 @@ def run_commit(
         error(blocked_msg, hint=hint)
         return 1
 
-    amend_policy_rc = _validate_amend_policy(amend=amend, root=root)
+    amend_policy_rc = _validate_amend_policy(amend=amend, root=root, as_json=as_json)
     if amend_policy_rc != 0:
         return amend_policy_rc
 
     if message is None:
-        error(t("commit_no_message"))
-        return 1
+        return report_error(
+            "commit", as_json=as_json, msg=t("commit_no_message"), code="commit_no_message"
+        )
 
     full_msg = _compose_message(message=message, type=type, scope=scope, breaking=breaking)
 
-    if not _validate_commit_message(full_msg):
+    if not _validate_commit_message(full_msg, as_json=as_json):
         return 1
 
-    if not _validate_gpg_ready(root):
+    if not _validate_gpg_ready(root, as_json=as_json):
         return 1
 
     secret_rc = _enforce_secret_guard(root=root, allow_secret=allow_secret, as_json=as_json)
@@ -243,7 +278,7 @@ def run_commit(
 
     success, err = _execute_commit(root=root, message=full_msg, amend=amend)
     if not success:
-        return _report_commit_error(as_json=as_json, err=err)
+        return report_error("commit", as_json=as_json, msg=err, code="commit_failed")
 
     if as_json:
         print_json(ok_envelope("commit", message=full_msg, amend=amend))

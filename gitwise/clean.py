@@ -14,7 +14,6 @@ from gitwise.git import (
 from gitwise.i18n import t
 from gitwise.output import (
     confirm,
-    error,
     ok,
     print_blank,
     print_bracket,
@@ -22,6 +21,7 @@ from gitwise.output import (
     print_header,
     print_json,
     print_success,
+    report_error,
     status,
     warn,
 )
@@ -71,16 +71,16 @@ def run_clean(
     ``--json`` is used without ``--yes``.
     """
     if refs:
-        error(t("clean_refs_not_implemented"))
-        return 1
+        return report_error(
+            "clean", as_json=as_json, msg=t("clean_refs_not_implemented"), code="not_implemented"
+        )
 
     if not branches:
-        error(t("clean_specify_flag"))
-        return 1
+        return report_error(
+            "clean", as_json=as_json, msg=t("clean_specify_flag"), code="clean_specify_flag"
+        )
 
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="clean")
     if root is None:
         return 1
     cwd = root
@@ -122,6 +122,12 @@ def run_clean(
         return 0
 
     if as_json and not yes:
+        # Why clean/optimize gate --json behind --yes but commit/sync/merge/tag/pick
+        # do not: clean and optimize are destructive, multi-item, irreversible
+        # operations (delete branches, gc/repack) where a confirmation gate adds
+        # real safety. The single-intent write verbs have their intent fully
+        # specified by their arguments (the commit message, the push target), so
+        # a --yes gate there would add friction without safety value.
         print_json(
             error_envelope(
                 "clean",
@@ -150,6 +156,10 @@ def run_clean(
         print_blank()
         if not yes:
             if not confirm(t("confirm_delete_branches", count=str(len(deletable)))):
+                # Cancel returns 0 by project convention (matches setup/undo).
+                # Agent callers never reach here: --json without --yes is rejected
+                # upstream with the `yes_required` envelope, so an agent always
+                # gets an explicit, distinguishable response.
                 print_dim(t("cancelled"))
                 return 0
             print_blank()

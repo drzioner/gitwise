@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/stash.json",
+  "title": "gitwise stash cli output",
+  "description": "v3 envelope for `gitwise stash --json`. data fields enumerated; data is permissive (additional fields allowed) to stay forward-compatible.",
+  "type": "object",
+  "required": [
+    "v",
+    "ok",
+    "command",
+    "data",
+    "hints",
+    "errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 3
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "command": {
+      "const": "stash"
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "cleared": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dropped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "popped": {
+          "type": "boolean"
+        },
+        "pushed": {
+          "type": "boolean"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "stashes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stat": {
+          "type": "string"
+        },
+        "would_drop": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

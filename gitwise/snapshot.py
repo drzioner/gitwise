@@ -100,9 +100,7 @@ def generate_snapshot(
 
 def run_snapshot(*, as_json: bool = False) -> int:
     """Entry point for the ``gitwise snapshot`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="snapshot")
     if root is None:
         return 1
 

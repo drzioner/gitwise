@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/sync.json",
+  "title": "gitwise sync cli output",
+  "description": "v3 envelope for `gitwise sync --json`. data fields enumerated; data is permissive (additional fields allowed) to stay forward-compatible.",
+  "type": "object",
+  "required": [
+    "v",
+    "ok",
+    "command",
+    "data",
+    "hints",
+    "errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 3
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "command": {
+      "const": "sync"
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {}
+    }
+  }
+}

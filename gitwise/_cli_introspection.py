@@ -4,6 +4,7 @@ import argparse
 from typing import TypedDict
 
 from . import __version__
+from .utils.json_envelope import ok_envelope
 
 
 def _json_safe(value: object) -> object:
@@ -67,11 +68,13 @@ def extract_command_token(argv: list[str]) -> str | None:
     return None
 
 
-def help_payload(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
-    """Build a structured help payload for the root parser or a specific subcommand."""
+def help_data(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
+    """Build the inner data dict for a structured help payload.
+
+    Returned nested under ``data`` by :func:`help_payload` so every ``--json``
+    output -- help included -- shares the v3 envelope shape.
+    """
     payload: dict[str, object] = {
-        "v": 2,
-        "ok": True,
         "kind": "help",
         "schema": "gitwise/help/v1",
         "version": __version__,
@@ -134,6 +137,11 @@ def help_payload(parser: argparse.ArgumentParser, command: str | None = None) ->
     return payload
 
 
+def help_payload(parser: argparse.ArgumentParser, command: str | None = None) -> dict[str, object]:
+    """Build a v3-envelope structured help payload for the root parser or a subcommand."""
+    return ok_envelope("help", data=help_data(parser, command))
+
+
 class CommandMetadata(TypedDict):
     """Minimal metadata for a single subcommand."""
 
@@ -141,6 +149,11 @@ class CommandMetadata(TypedDict):
     help: str
     aliases: list[str]
     supports_json: bool
+    supports_json_lines: bool
+
+
+# Subcommands that stream one JSON envelope per record (NDJSON) via --json-lines.
+_JSON_LINES_COMMANDS: frozenset[str] = frozenset({"diff", "log"})
 
 
 def canonical_command_name(command_parser: argparse.ArgumentParser) -> str:
@@ -191,6 +204,7 @@ def commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
                 "help": help_by_parser_id.get(parser_id, command_parser.description or ""),
                 "aliases": aliases,
                 "supports_json": True,
+                "supports_json_lines": name in _JSON_LINES_COMMANDS,
             }
         )
 
@@ -217,6 +231,11 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
     if action.choices:
         value_schema["enum"] = [_json_safe(choice) for choice in action.choices]
 
+    # A "limit"/"max-count" argument is a positive-integer bound; surface that
+    # in the input schema so consumers know 0/negative are invalid.
+    if value_schema["type"] == "integer" and action.dest in {"limit", "max_count", "maxcount"}:
+        value_schema["minimum"] = 1
+
     description = "" if action.help is argparse.SUPPRESS else (action.help or "")
     if description:
         value_schema["description"] = description
@@ -225,7 +244,8 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
         value_schema["default"] = _json_safe(action.default)
 
     nargs = action.nargs
-    if nargs in ("*", "+") or (isinstance(nargs, int) and nargs > 1):
+    is_append = isinstance(action, argparse._AppendAction)
+    if is_append or nargs in ("*", "+") or (isinstance(nargs, int) and nargs > 1):
         array_schema: dict[str, object] = {
             "type": "array",
             "items": value_schema,

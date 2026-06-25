@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -31,6 +31,7 @@ except ImportError:
 from ._runtime_config import get_runtime_config
 from .design import ColorDepth, pad_right, truncate, visible_length
 from .i18n import confirm_responses, t
+from .utils.json_envelope import error_envelope
 
 _COLOR_SYSTEM_MAP: dict[ColorDepth, str] = {
     "truecolor": "truecolor",
@@ -244,6 +245,28 @@ def error(msg: str, *, hint: str | None = None) -> None:
         print(f"{prefix}: {msg}", file=sys.stderr)
         if hint:
             print(f"{t('hint_prefix')}: {hint}", file=sys.stderr)
+
+
+def report_error(
+    command: str,
+    *,
+    as_json: bool,
+    msg: str,
+    code: str = "error",
+    hint: str | None = None,
+    data: Mapping[str, object] | None = None,
+) -> int:
+    """Emit an error as a v3 JSON envelope or a human message; always return 1.
+
+    Centralizes the repeated ``if as_json: print_json(error_envelope(...)) else:
+    error(...)`` branch so command modules report errors through one contract.
+    ``data`` carries structured context (e.g. suggested_commands) in the envelope.
+    """
+    if as_json:
+        print_json(error_envelope(command, error=msg, code=code, hint=hint, data=data))
+    else:
+        error(msg, hint=hint)
+    return 1
 
 
 def ok(msg: str) -> None:

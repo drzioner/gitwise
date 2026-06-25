@@ -7,34 +7,39 @@ from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import (
     debug,
-    error,
     print_bracket,
     print_dim,
     print_header,
     print_json,
+    report_error,
     status,
 )
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.utils.json_envelope import ok_envelope
 from gitwise.utils.parsing import parse_two_ints, stripped_non_empty_lines
 
 
-def _ahead_behind(cwd: Path) -> dict[str, int]:
-    """Return ``{ahead, behind}`` commit counts against the upstream branch."""
+def _ahead_behind(cwd: Path) -> dict[str, int | bool]:
+    """Return ``{ahead, behind, upstream}`` vs the upstream branch.
+
+    ``upstream`` is False when the branch has no upstream or the count could not
+    be obtained, so callers can distinguish "no upstream" from "up to date"
+    (both report 0/0 counts) instead of silently treating them as identical.
+    """
     branch = current_branch(cwd=cwd)
     if not branch:
-        return {"ahead": 0, "behind": 0}
+        return {"ahead": 0, "behind": 0, "upstream": False}
     r = git_run(
         ["rev-list", "--left-right", "--count", branch + "@{u}...HEAD"], cwd=cwd, check=False
     )
     if r.returncode != 0:
         debug(f"ahead_behind failed: {r.stderr.strip()}")
-        return {"ahead": 0, "behind": 0}
+        return {"ahead": 0, "behind": 0, "upstream": False}
     parsed = parse_two_ints(r.stdout)
     if parsed is not None:
         behind, ahead = parsed
-        return {"behind": behind, "ahead": ahead}
+        return {"behind": behind, "ahead": ahead, "upstream": True}
     debug(f"ahead_behind parse failed: {r.stdout.strip()!r}")
-    return {"ahead": 0, "behind": 0}
+    return {"ahead": 0, "behind": 0, "upstream": False}
 
 
 def _unpushed_commits(cwd) -> list[str]:
@@ -64,6 +69,7 @@ def _sync_dry_run_payload(
         "branch": branch,
         "ahead": ab["ahead"],
         "behind": ab["behind"],
+        "upstream": ab["upstream"],
         "unpushed": unpushed,
         "actions": _planned_actions(pull, push, ab, unpushed, remote),
         "dry_run": True,
@@ -88,18 +94,13 @@ def _sync_fetch(*, root: Path, remote: str | None, as_json: bool) -> int:
         )
     if result.returncode == 0:
         return 0
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_fetch_failed", error=result.stderr.strip()),
-                code="sync_fetch_failed",
-                hint=t("sync_hint"),
-            )
-        )
-    else:
-        error(t("sync_fetch_failed", error=result.stderr.strip()))
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=t("sync_fetch_failed", error=result.stderr.strip()),
+        code="sync_fetch_failed",
+        hint=t("sync_hint"),
+    )
 
 
 _SYNC_PULL_DIVERGED_COMMANDS = (
@@ -116,53 +117,50 @@ def _sync_pull(*, root: Path, as_json: bool) -> int:
         result = git_run(["pull", "--ff-only"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
-    hint = t("sync_pull_diverged_hint")
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_pull_diverged"),
-                code="sync_pull_diverged",
-                hint=hint,
-                suggested_commands=list(_SYNC_PULL_DIVERGED_COMMANDS),
-            )
+    # ``git pull --ff-only`` fails for genuine fast-forward divergence ("Not
+    # possible to fast-forward") but also for missing upstream, network/auth
+    # errors, or a dirty tree. Only the divergence case gets the diverged code
+    # + suggested commands; everything else is a generic failure with stderr.
+    stderr = result.stderr.strip()
+    if "fast-forward" in stderr.lower():
+        return report_error(
+            "sync",
+            as_json=as_json,
+            msg=t("sync_pull_diverged"),
+            code="sync_pull_diverged",
+            hint=t("sync_pull_diverged_hint"),
+            data={"suggested_commands": list(_SYNC_PULL_DIVERGED_COMMANDS)},
         )
-    else:
-        error(t("sync_pull_diverged"), hint=hint)
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=stderr or t("sync_pull_failed"),
+        code="sync_pull_failed",
+        hint=t("sync_hint"),
+    )
 
 
 def _sync_push(*, root: Path, branch: str, as_json: bool) -> int:
     """Push current branch; refuses to push to protected branches."""
     if branch in PROTECTED_BRANCHES:
-        if as_json:
-            print_json(
-                error_envelope(
-                    "sync",
-                    error=t("sync_push_protected", branch=branch),
-                    code="sync_push_protected",
-                    hint=t("sync_push_protected_hint"),
-                )
-            )
-        else:
-            error(t("sync_push_protected", branch=branch))
-        return 1
+        return report_error(
+            "sync",
+            as_json=as_json,
+            msg=t("sync_push_protected", branch=branch),
+            code="sync_push_protected",
+            hint=t("sync_push_protected_hint"),
+        )
     with status(t("status_sync_push")):
         result = git_run(["push"], cwd=root, check=False)
     if result.returncode == 0:
         return 0
-    if as_json:
-        print_json(
-            error_envelope(
-                "sync",
-                error=t("sync_push_failed", error=result.stderr.strip()),
-                code="sync_push_failed",
-                hint=t("sync_hint"),
-            )
-        )
-    else:
-        error(t("sync_push_failed", error=result.stderr.strip()))
-    return 1
+    return report_error(
+        "sync",
+        as_json=as_json,
+        msg=t("sync_push_failed", error=result.stderr.strip()),
+        code="sync_push_failed",
+        hint=t("sync_hint"),
+    )
 
 
 def _print_sync_complete_human(*, branch: str, ahead: int, behind: int) -> None:
@@ -225,9 +223,7 @@ def run_sync(
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise sync`` command."""
-    root, err = require_root()
-    if err:
-        return err
+    root = require_root(as_json=as_json, command="sync")
     if root is None:
         return 1
 

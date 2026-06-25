@@ -53,3 +53,11 @@ def test_branches_json_has_age(tmp_git_repo: Path) -> None:
     data = json.loads(r.stdout)
     assert data["data"]["count"] >= 1
     assert "age" in data["data"]["branches"][0]
+
+
+def test_branches_git_arg_denies_dangerous_option(tmp_git_repo):
+    r = run_gitwise("branches", "--git-arg=--output", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    import json
+
+    assert json.loads(r.stdout)["errors"][0]["code"] == "git_arg_denied"

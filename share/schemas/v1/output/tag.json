@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/tag.json",
+  "title": "gitwise tag cli output",
+  "description": "v3 envelope for `gitwise tag --json`. data fields enumerated; data is permissive (additional fields allowed) to stay forward-compatible.",
+  "type": "object",
+  "required": [
+    "v",
+    "ok",
+    "command",
+    "data",
+    "hints",
+    "errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 3
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "command": {
+      "const": "tag"
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created": {
+          "type": "boolean"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "latest": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

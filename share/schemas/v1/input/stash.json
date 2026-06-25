@@ -38,6 +38,8 @@
         "list",
         "show",
         "pop",
+        "apply",
+        "push",
         "drop",
         "clear",
         "clean"
@@ -63,6 +65,27 @@
       "type": "boolean",
       "description": "show full patch (show only)",
       "default": false
+    },
+    "message": {
+      "type": "string",
+      "description": "stash message (push only)"
+    },
+    "include_untracked": {
+      "type": "boolean",
+      "description": "include untracked files (push only)",
+      "default": false
+    },
+    "keep_index": {
+      "type": "boolean",
+      "description": "keep staged changes in the index (push only)",
+      "default": false
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "paths to stash (push only, use -- to separate)"
+      }
     }
   }
 }

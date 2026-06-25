@@ -64,6 +64,7 @@
     },
     "max_count": {
       "type": "integer",
+      "minimum": 1,
       "description": "max commits",
       "default": 20
     },
@@ -71,6 +72,13 @@
       "type": "boolean",
       "description": "stream one JSON envelope per commit (NDJSON; implies JSON mode)",
       "default": false
+    },
+    "git_args": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "forward an extra option to the underlying git log (repeatable; code-exec/write/redirect options are refused)"
+      }
     }
   }
 }
