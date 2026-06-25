@@ -92,7 +92,7 @@ one runtime dependency (`rich>=13.0`).
 - `design.py` -- ThemeTokens (hex colors), `hex_to_ansi_fg()`, `GitwiseHelpFormatter`
 - `_runtime_config.py` -- immutable RuntimeConfig with OSC 11 theme detection
 - `output.py` -- Rich Console with custom Theme, color gate, force_terminal
-- Environment variable precedence: NO_COLOR -> CLICOLOR_FORCE -> COLORTERM -> TERM -> auto
+- Environment variable precedence: NO_COLOR/GITWISE_NO_COLOR -> CLICOLOR_FORCE/FORCE_COLOR -> COLORTERM -> TERM -> auto
 - `--theme` CLI flag
 
 ## Phase 12 -- Multi-Agent Adapters & Coverage (v0.12.0)
