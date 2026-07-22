@@ -171,7 +171,10 @@ gitwise optimize --yes
 
 ### `gitwise snapshot`
 
-Generate `.claude/git-snapshot.md` for session context.
+Generate `.agents/git-snapshot.md` when the canonical agent layout exists;
+otherwise fall back to `.claude/git-snapshot.md`. For a manually created
+`.agents/` layout, run `gitwise setup-agents --local` to install the matching
+`merge=ours` attribute.
 
 ```bash
 gitwise snapshot
