@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.36.0 (2026-07-22)
+## v0.36.1 (2026-07-22)
 
 ### Fix
 
-- remove unimplemented clean refs contract
+- **schema**: align output contracts after review
