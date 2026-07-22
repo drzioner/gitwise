@@ -14,11 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.34.1 (2026-07-22)
+## v0.34.2 (2026-07-22)
 
 ### Fix
 
-- **stash**: require --yes for pop in JSON mode and use run_gitwise helper in tests
-- **worktree**: make remove dry-run non-destructive
-- **hooks**: isolate pre-push from repository environment
-- **cli**: make agent JSON contract position-independent
+- **security**: enforce subprocess safety invariants
