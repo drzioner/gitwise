@@ -3,16 +3,16 @@
 import json
 from pathlib import Path
 
-from conftest import run_gitwise as _run
+from conftest import run_gitwise
 
 
 def test_no_command_shows_usage():
-    result = _run()
+    result = run_gitwise()
     assert result.returncode == 1
 
 
 def test_no_command_json_returns_error_payload():
-    result = _run("--json")
+    result = run_gitwise("--json")
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
@@ -25,13 +25,13 @@ def test_no_command_json_returns_error_payload():
 
 
 def test_version_flag():
-    result = _run("--version")
+    result = run_gitwise("--version")
     assert result.returncode == 0
     assert "gitwise" in result.stdout
 
 
 def test_root_help_json():
-    result = _run("--help", "--json")
+    result = run_gitwise("--help", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
@@ -44,21 +44,21 @@ def test_root_help_json():
 
 
 def test_root_help_epilog_is_localized_en():
-    result = _run("--help", env={"GITWISE_LANG": "en"})
+    result = run_gitwise("--help", env={"GITWISE_LANG": "en"})
     assert result.returncode == 0
     assert "Environment:" in result.stdout
     assert "GITWISE_DEBUG=1" in result.stdout
 
 
 def test_root_help_epilog_is_localized_es():
-    result = _run("--help", env={"GITWISE_LANG": "es"})
+    result = run_gitwise("--help", env={"GITWISE_LANG": "es"})
     assert result.returncode == 0
     assert "Entorno:" in result.stdout
     assert "GITWISE_DEBUG=1" in result.stdout
 
 
 def test_root_help_json_pretty_without_json_flag():
-    result = _run("--help", "--json-pretty")
+    result = run_gitwise("--help", "--json-pretty")
     assert result.returncode == 0
     assert '\n  "' in result.stdout
     data = json.loads(result.stdout)
@@ -67,7 +67,7 @@ def test_root_help_json_pretty_without_json_flag():
 
 
 def test_command_help_json():
-    result = _run("diff", "--help", "--json")
+    result = run_gitwise("diff", "--help", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
@@ -80,7 +80,7 @@ def test_command_help_json():
 
 
 def test_commands_json_lists_metadata():
-    result = _run("commands", "--json")
+    result = run_gitwise("commands", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
@@ -91,13 +91,13 @@ def test_commands_json_lists_metadata():
 
 
 def test_commands_human_output_localized_aliases_label():
-    result = _run("commands", env={"GITWISE_LANG": "en"})
+    result = run_gitwise("commands", env={"GITWISE_LANG": "en"})
     assert result.returncode == 0
     assert "(aliases:" in result.stdout
 
 
 def test_schema_json_for_known_command():
-    result = _run("schema", "status", "--json")
+    result = run_gitwise("schema", "status", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
@@ -111,7 +111,7 @@ def test_schema_json_for_known_command():
 
 
 def test_schema_boolean_flags_are_boolean_not_array():
-    result = _run("schema", "status", "--json")
+    result = run_gitwise("schema", "status", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["data"]["json_schema"]["properties"]["json"]["type"] == "boolean"
@@ -119,7 +119,7 @@ def test_schema_boolean_flags_are_boolean_not_array():
 
 
 def test_schema_output_flag_specific(tmp_git_repo):
-    result = _run("schema", "status", "--output", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("schema", "status", "--output", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["data"]["schema_kind"] == "cli_output"
@@ -129,7 +129,7 @@ def test_schema_output_flag_specific(tmp_git_repo):
 
 
 def test_schema_output_flag_generic_fallback(tmp_git_repo):
-    result = _run("schema", "stash", "--output", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("schema", "stash", "--output", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["data"]["schema_kind"] == "cli_output"
@@ -139,7 +139,7 @@ def test_schema_output_flag_generic_fallback(tmp_git_repo):
 
 
 def test_schema_json_for_unknown_command_returns_error_envelope():
-    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "en"})
+    result = run_gitwise("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "en"})
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
@@ -148,7 +148,7 @@ def test_schema_json_for_unknown_command_returns_error_envelope():
 
 
 def test_schema_unknown_command_is_localized_es():
-    result = _run("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "es"})
+    result = run_gitwise("schema", "nonexistent-command-xyz", "--json", env={"GITWISE_LANG": "es"})
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["errors"][0]["message"] == "comando desconocido: nonexistent-command-xyz"
@@ -156,7 +156,9 @@ def test_schema_unknown_command_is_localized_es():
 
 
 def test_schema_unknown_version_returns_schema_not_found():
-    result = _run("schema", "status", "--version", "v999", "--json", env={"GITWISE_LANG": "en"})
+    result = run_gitwise(
+        "schema", "status", "--version", "v999", "--json", env={"GITWISE_LANG": "en"}
+    )
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["ok"] is False
@@ -164,25 +166,25 @@ def test_schema_unknown_version_returns_schema_not_found():
 
 
 def test_completions_bash_outputs_script():
-    result = _run("completions", "bash")
+    result = run_gitwise("completions", "bash")
     assert result.returncode == 0
     assert "_shtab_gitwise_option_strings" in result.stdout
 
 
 def test_completions_zsh_outputs_script():
-    result = _run("completions", "zsh")
+    result = run_gitwise("completions", "zsh")
     assert result.returncode == 0
     assert "#compdef gitwise" in result.stdout
 
 
 def test_completions_fish_outputs_script():
-    result = _run("completions", "fish")
+    result = run_gitwise("completions", "fish")
     assert result.returncode == 0
     assert "complete -c 'gitwise'" in result.stdout
 
 
 def test_completions_powershell_outputs_script():
-    result = _run("completions", "powershell")
+    result = run_gitwise("completions", "powershell")
     assert result.returncode == 0
     assert "Register-ArgumentCompleter" in result.stdout
     assert "-CommandName 'gitwise'" in result.stdout
@@ -192,25 +194,25 @@ def test_completions_powershell_outputs_script():
 
 
 def test_completions_powershell_respects_prog_name():
-    result = _run("completions", "powershell", "--prog", "gw")
+    result = run_gitwise("completions", "powershell", "--prog", "gw")
     assert result.returncode == 0
     assert "-CommandName 'gw'" in result.stdout
 
 
 def test_completions_default_shell_is_bash():
-    result = _run("completions")
+    result = run_gitwise("completions")
     assert result.returncode == 0
     assert "_shtab_gitwise_option_strings" in result.stdout
 
 
 def test_completions_respects_prog_name():
-    result = _run("completions", "bash", "--prog", "gw")
+    result = run_gitwise("completions", "bash", "--prog", "gw")
     assert result.returncode == 0
     assert "_shtab_gw_option_strings" in result.stdout
 
 
 def test_completions_json_returns_envelope():
-    result = _run("completions", "bash", "--json")
+    result = run_gitwise("completions", "bash", "--json")
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
@@ -242,7 +244,7 @@ def test_completions_json_handles_missing_shtab(monkeypatch, capsys):
 
 
 def test_json_compact_by_default(tmp_git_repo):
-    result = _run("summarize", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("summarize", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert '\n  "' not in result.stdout
     data = json.loads(result.stdout)
@@ -250,7 +252,7 @@ def test_json_compact_by_default(tmp_git_repo):
 
 
 def test_json_pretty_flag(tmp_git_repo):
-    result = _run("summarize", "--json-pretty", cwd=tmp_git_repo)
+    result = run_gitwise("summarize", "--json-pretty", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert '\n  "' in result.stdout
     data = json.loads(result.stdout)
@@ -258,7 +260,7 @@ def test_json_pretty_flag(tmp_git_repo):
 
 
 def test_json_pretty_alias_flag(tmp_git_repo):
-    result = _run("summarize", "--pretty", cwd=tmp_git_repo)
+    result = run_gitwise("summarize", "--pretty", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert '\n  "' in result.stdout
     data = json.loads(result.stdout)
@@ -266,29 +268,29 @@ def test_json_pretty_alias_flag(tmp_git_repo):
 
 
 def test_unknown_command():
-    result = _run("nonexistent-command-xyz")
+    result = run_gitwise("nonexistent-command-xyz")
     assert result.returncode != 0
 
 
 def test_doctor_command():
-    result = _run("doctor", "--json")
+    result = run_gitwise("doctor", "--json")
     assert result.returncode in (0, 1)
     data = json.loads(result.stdout)
     assert "gitwise_version" in data["data"]
 
 
 def test_lang_flag_valid():
-    result = _run("--lang", "en", "doctor", "--json")
+    result = run_gitwise("--lang", "en", "doctor", "--json")
     assert result.returncode in (0, 1)
 
 
 def test_lang_flag_invalid():
-    result = _run("--lang", "fr", "doctor", "--json")
+    result = run_gitwise("--lang", "fr", "doctor", "--json")
     assert result.returncode != 0
 
 
-def test_update_dry_run_matches_installation_mode():
-    result = _run("update", "--dry-run")
+def test_update_dryrun_gitwise_matches_installation_mode():
+    result = run_gitwise("update", "--dry-run")
     if (Path(__file__).parents[1] / ".git").is_dir():
         assert result.returncode == 0
     else:
@@ -296,13 +298,13 @@ def test_update_dry_run_matches_installation_mode():
         assert "requires a git clone installation" in result.stderr
 
 
-def test_setup_agents_dry_run(tmp_git_repo):
-    result = _run("setup-agents", "--local", "--dry-run", "--yes", cwd=tmp_git_repo)
+def test_setup_agents_dryrun_gitwise(tmp_git_repo):
+    result = run_gitwise("setup-agents", "--local", "--dry-run", "--yes", cwd=tmp_git_repo)
     assert result.returncode == 0
 
 
 def test_setup_agents_json(tmp_git_repo):
-    result = _run("setup-agents", "--local", "--yes", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("setup-agents", "--local", "--yes", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["v"] == 3
@@ -311,7 +313,7 @@ def test_setup_agents_json(tmp_git_repo):
 
 
 def test_setup_agents_list_providers_json(tmp_git_repo):
-    result = _run("setup-agents", "--list-providers", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("setup-agents", "--list-providers", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert "providers" in data
@@ -321,7 +323,7 @@ def test_setup_agents_list_providers_json(tmp_git_repo):
 
 
 def test_setup_agents_list_adapters_alias_json(tmp_git_repo):
-    result = _run("setup-agents", "--list-adapters", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("setup-agents", "--list-adapters", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert "providers" in data
@@ -331,7 +333,7 @@ def test_setup_agents_list_adapters_alias_json(tmp_git_repo):
 
 
 def test_setup_agents_migrate_legacy_flag(tmp_git_repo):
-    result = _run(
+    result = run_gitwise(
         "setup-agents",
         "--local",
         "--dry-run",
@@ -346,22 +348,22 @@ def test_setup_agents_migrate_legacy_flag(tmp_git_repo):
 
 
 def test_timing_shown_for_slow_commands(tmp_git_repo):
-    result = _run("summarize", cwd=tmp_git_repo, env={"GITWISE_LANG": "en"})
+    result = run_gitwise("summarize", cwd=tmp_git_repo, env={"GITWISE_LANG": "en"})
     assert result.returncode == 0
 
 
-def test_global_json_before_subcommand(tmp_git_repo):
+def test_status_json_before_subcommand_emits_json(tmp_git_repo):
     """--json placed before the subcommand activates JSON mode."""
-    result = _run("--json", "status", cwd=tmp_git_repo)
+    result = run_gitwise("--json", "status", cwd=tmp_git_repo)
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["v"] == 3
     assert data["command"] == "status"
 
 
-def test_global_pretty_before_subcommand(tmp_git_repo):
+def test_status_pretty_before_subcommand_emits_pretty_json(tmp_git_repo):
     """--pretty placed before the subcommand produces pretty JSON."""
-    result = _run("--pretty", "status", cwd=tmp_git_repo)
+    result = run_gitwise("--pretty", "status", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert '\n  "' in result.stdout
     assert json.loads(result.stdout)["command"] == "status"
@@ -369,7 +371,7 @@ def test_global_pretty_before_subcommand(tmp_git_repo):
 
 def test_global_lang_before_subcommand_overrides_environment(tmp_git_repo):
     """--lang placed before the subcommand overrides the locale environment."""
-    result = _run(
+    result = run_gitwise(
         "--lang",
         "es",
         "stash",
@@ -400,7 +402,7 @@ def test_all_subcommands_accept_json(tmp_git_repo):
         ("context",),
     ]
     for cmd in commands:
-        result = _run(*cmd, "--json", cwd=tmp_git_repo)
+        result = run_gitwise(*cmd, "--json", cwd=tmp_git_repo)
         # rc=2 is legitimate "yes_required" envelope for write commands invoked
         # with --json and without --yes (e.g. clean --branches --json).
         assert result.returncode in (0, 1, 2), f"{cmd} --json failed: {result.stderr}"
