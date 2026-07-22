@@ -1,6 +1,6 @@
 """gitwise -- CLI for optimizing git workflows and coding-agent integration."""
 
-__version__ = "0.35.0"
+__version__ = "0.35.1"
 
 
 def get_version() -> str:
