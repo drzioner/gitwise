@@ -252,8 +252,12 @@ def run_worktree(
 
     if action == "new":
         if not branch:
-            error(t("worktree_usage"))
-            return 1
+            return report_error(
+                "worktree",
+                as_json=as_json,
+                msg=t("worktree_usage"),
+                code="worktree_branch_required",
+            )
         if as_json:
             rc, data = _worktree_new_json(branch, root)
             if rc == 0:

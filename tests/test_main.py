@@ -345,6 +345,37 @@ def test_timing_shown_for_slow_commands(tmp_git_repo):
     assert result.returncode == 0
 
 
+def test_global_json_before_subcommand(tmp_git_repo):
+    """--json placed before the subcommand activates JSON mode."""
+    result = _run("--json", "status", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["v"] == 3
+    assert data["command"] == "status"
+
+
+def test_global_pretty_before_subcommand(tmp_git_repo):
+    """--pretty placed before the subcommand produces pretty JSON."""
+    result = _run("--pretty", "status", cwd=tmp_git_repo)
+    assert result.returncode == 0
+    assert '\n  "' in result.stdout
+    assert json.loads(result.stdout)["command"] == "status"
+
+
+def test_global_lang_before_subcommand_overrides_environment(tmp_git_repo):
+    """--lang placed before the subcommand overrides the locale environment."""
+    result = _run(
+        "--lang",
+        "es",
+        "stash",
+        "list",
+        cwd=tmp_git_repo,
+        env={"GITWISE_LANG": "en"},
+    )
+    assert result.returncode == 0
+    assert "No hay stashes" in result.stdout
+
+
 def test_all_subcommands_accept_json(tmp_git_repo):
     commands = [
         ("doctor",),

@@ -97,3 +97,63 @@ def test_stash_push_and_apply(tmp_git_repo):
     r3 = run_gitwise("stash", "apply", "--json", cwd=tmp_git_repo)
     assert r3.returncode == 0
     assert (tmp_git_repo / "f.txt").read_text() == "change\n"
+
+
+def test_stash_pop_failure_json_emits_envelope(tmp_git_repo):
+    """stash pop on nonexistent stash in JSON mode must emit stash_pop_failed envelope."""
+    r = run_gitwise("stash", "pop", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 1
+    data = json.loads(r.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "stash_pop_failed"
+
+
+def test_stash_drop_json_without_yes_emits_envelope(tmp_git_repo):
+    """stash drop --json without --yes must emit yes_required envelope, exit 2."""
+    from conftest import _git
+
+    (tmp_git_repo / "d.txt").write_text("drop\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+
+    r = run_gitwise("stash", "drop", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 2
+    data = json.loads(r.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    # stash must NOT have been dropped
+    listed = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    ldata = json.loads(listed.stdout)
+    assert ldata["data"]["count"] == 1
+
+
+def test_stash_clear_json_without_yes_emits_envelope(tmp_git_repo):
+    """stash clear --json without --yes must emit yes_required envelope, exit 2."""
+    from conftest import _git
+
+    (tmp_git_repo / "c.txt").write_text("clear\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+
+    r = run_gitwise("stash", "clear", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 2
+    data = json.loads(r.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    # stash must NOT have been cleared
+    listed = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    ldata = json.loads(listed.stdout)
+    assert ldata["data"]["count"] == 1
+
+
+def test_stash_clear_empty_json_emits_ok(tmp_git_repo):
+    """stash clear --json on empty stash list must emit ok envelope."""
+    r = run_gitwise("stash", "clear", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is True
+    assert data["command"] == "stash"

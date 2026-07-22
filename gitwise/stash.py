@@ -120,8 +120,13 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
     ref = f"stash@{{{index}}}"
     r = git_run(["stash", "pop", ref], cwd=root, check=False)
     if r.returncode != 0:
-        error(r.stderr.strip())
-        return 1
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_not_found", index=str(index)),
+            code="stash_pop_failed",
+            hint=t("stash_hint"),
+        )
     if as_json:
         print_json(ok_envelope("stash", popped=ref))
         return 0
@@ -132,13 +137,28 @@ def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
 def _cmd_drop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> int:
     """Execute ``stash drop`` sub-action with optional confirmation."""
     ref = f"stash@{{{index}}}"
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                "stash",
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
     if not yes and not confirm(t("confirm_stash_drop", ref=ref)):
         warn(t("aborted"))
         return 1
     r = git_run(["stash", "drop", ref], cwd=root, check=False)
     if r.returncode != 0:
-        error(r.stderr.strip())
-        return 1
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_not_found", index=str(index)),
+            code="stash_drop_failed",
+            hint=t("stash_hint"),
+        )
     if as_json:
         print_json(ok_envelope("stash", dropped=ref))
         return 0
@@ -150,6 +170,9 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
     """Execute ``stash clear`` sub-action with optional dry-run and confirmation."""
     stashes = _stash_list(root)
     if not stashes:
+        if as_json:
+            print_json(ok_envelope("stash", cleared=0))
+            return 0
         ok(t("stash_empty"))
         return 0
     if dry_run:
@@ -158,13 +181,27 @@ def _cmd_clean(root: Path, *, as_json: bool, yes: bool = False, dry_run: bool = 
             return 0
         ok(t("stash_clean_dry", count=str(len(stashes))))
         return 0
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                "stash",
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
     if not yes and not confirm(t("confirm_stash_clean", count=str(len(stashes)))):
         warn(t("aborted"))
         return 1
     r = git_run(["stash", "clear"], cwd=root, check=False)
     if r.returncode != 0:
-        error(r.stderr.strip())
-        return 1
+        return report_error(
+            "stash",
+            as_json=as_json,
+            msg=r.stderr.strip() or t("stash_clear_failed"),
+            code="stash_clear_failed",
+        )
     if as_json:
         print_json(ok_envelope("stash", cleared=len(stashes)))
         return 0

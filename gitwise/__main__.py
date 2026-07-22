@@ -5,7 +5,7 @@ import time
 
 from ._cli_dispatch import DISPATCH
 from ._cli_introspection import extract_command_token, help_data, help_payload
-from ._cli_parser import build_parser
+from ._cli_parser import _parse_global_options, build_parser
 from .i18n import t
 from .output import print_dim, print_json, set_json_mode, set_json_pretty
 
@@ -70,6 +70,7 @@ def main() -> int:
 
     parser = build_parser()
     raw_argv = sys.argv[1:]
+    global_options = _parse_global_options(raw_argv)
     wants_json_pretty = "--json-pretty" in raw_argv or "--pretty" in raw_argv
     if wants_json_pretty:
         set_json_pretty(True)
@@ -83,6 +84,10 @@ def main() -> int:
         return 0
 
     args = parser.parse_args()
+    for dest in ("lang", "theme", "json", "json_pretty"):
+        value = getattr(global_options, dest)
+        if value is not None and value is not False:
+            setattr(args, dest, value)
     if args.json_pretty:
         args.json = True
 

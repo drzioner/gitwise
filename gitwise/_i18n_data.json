@@ -1611,6 +1611,10 @@
     "es": "No se pudo crear el stash (¿no hay cambios?)",
     "en": "Failed to create stash (no changes?)"
   },
+  "stash_clear_failed": {
+    "es": "No se pudieron limpiar los stashes",
+    "en": "Failed to clear stashes"
+  },
   "stash_hint": {
     "es": "Usa 'gitwise stash list' para ver índices válidos antes de show/drop/pop.",
     "en": "Use 'gitwise stash list' to inspect valid indexes before show/drop/pop."

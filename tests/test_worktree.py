@@ -81,6 +81,17 @@ def test_worktree_new_no_branch(tmp_git_repo: Path) -> None:
     assert result.returncode == 1
 
 
+def test_worktree_new_json_no_branch_emits_envelope(tmp_git_repo: Path) -> None:
+    """worktree new --json without branch must emit worktree_branch_required envelope, exit 1."""
+    result = run_gitwise("worktree", "new", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["command"] == "worktree"
+    assert data["errors"][0]["code"] == "worktree_branch_required"
+
+
 def test_worktree_new_rejects_parent_traversal_branch(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "new", "../evil", cwd=tmp_git_repo)
     assert result.returncode == 1
