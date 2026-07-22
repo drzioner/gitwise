@@ -1,7 +1,7 @@
 # Referencia de comandos
 
 Source: docs/reference/commands.md
-Last sync: 2026-05-22
+Last sync: 2026-07-21
 
 [English](../../reference/commands.md) | [Español](commands.md)
 
@@ -230,7 +230,8 @@ gitwise sync --json
 
 ### `gitwise pr`
 
-Wrapper de PRs con GitHub CLI (`gh` requerido).
+Wrapper de PRs con GitHub CLI (`gh` requerido). Permite leer PRs existentes o
+delegar la creacion a `gh pr create` desde el mismo comando.
 
 ```bash
 gitwise pr list
@@ -238,6 +239,8 @@ gitwise pr checks 123
 gitwise pr view 123
 gitwise pr comments 123
 gitwise pr view 123 --json
+gitwise pr create --fill
+gitwise pr create --title "Document agent workflow" --base main
 ```
 
 ### `gitwise undo`

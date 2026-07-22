@@ -1,22 +1,23 @@
 # gitwise - Hoja de ruta de producto
 
 Source: ROADMAP.md
-Last sync: 2026-05-22
+Last sync: 2026-07-21
 
 [English](ROADMAP.md) | [Español](ROADMAP.es.md)
 
 Roadmap vivo para consolidar gitwise como hub practico de Git para humanos y agentes de codigo.
 
-## Estado actual (v0.15.0)
+## Estado actual
 
-gitwise actualmente incluye 27 comandos (con aliases): `doctor`, `setup-agents`, `setup`,
+gitwise actualmente incluye 30 comandos (con aliases): `doctor`, `setup-agents`, `setup`,
 `audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
 `diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`,
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
-`pick` (`cherry-pick`), `status`, `update`.
+`pick` (`cherry-pick`), `status`, `update`, `commands`, `schema`, `completions`.
 
-Completado hasta la Phase 12. Baseline actual: 736 tests recolectados, 550 keys i18n (es/en),
-una dependencia runtime (`rich>=13.0`).
+Completado hasta la Phase 12. Baseline actual: 30 comandos, 744 tests recolectados,
+550 keys i18n (es/en), 3 dependencias runtime
+(rich, rich-argparse, shtab).
 
 ---
 
@@ -140,8 +141,8 @@ una dependencia runtime (`rich>=13.0`).
 
 ## Principios de diseno
 
-1. **Dependencias minimas**: `rich>=13.0` + stdlib + subprocess de git.
-2. **`--json` en todos los comandos**: salida util para agentes (envelope v2; `setup-agents` ahora v3).
+1. **Dependencias minimas**: `rich`, `rich-argparse`, `shtab` + stdlib + subprocess de git.
+2. **`--json` en todos los comandos**: salida util para agentes con envelope v3.
 3. **`--dry-run` para operaciones destructivas**.
 4. **Delta automatico** cuando hay TTY.
 5. **i18n centralizado** con `t()` y `_i18n_data.json`.
@@ -158,6 +159,5 @@ una dependencia runtime (`rich>=13.0`).
 | `gitwise init` | mayormente cubierto por `setup` |
 | `gitwise remote` | baja frecuencia, `git remote` suficiente |
 | `gitwise ignore` | baja frecuencia, edicion manual suficiente |
-| Streaming JSON | complejidad alta, beneficio bajo |
 | Manpage | `--help` suficiente por ahora |
 | Modo interactivo con fzf | complejidad alta y dependencia opcional |

@@ -1,7 +1,7 @@
 # Politica de Seguridad
 
 Source: SECURITY.md
-Last sync: 2026-05-22
+Last sync: 2026-07-21
 
 [English](SECURITY.md) | [Español](SECURITY.es.md)
 
@@ -9,8 +9,8 @@ Last sync: 2026-05-22
 
 | Version | Soporte |
 |---|---|
-| >= 0.1.0 | Si |
-| < 0.1.0 | No |
+| Ultimo release | Si |
+| Releases anteriores | No |
 
 ## Reportar una vulnerabilidad
 
@@ -42,11 +42,12 @@ Tambien puedes enviar email a **drzioner@gmail.com** con asunto `gitwise securit
 
 gitwise incluye estas medidas:
 
-- **Dependencias runtime minimas** — una dependencia runtime (`rich>=13.0`) y el resto stdlib + subprocess de git
-- **Enforcement de firma GPG** — hook pre-commit valida disponibilidad de clave
-- **Symlinks con sandbox** — `_safe_create_symlink` con proteccion TOCTOU y prevencion de path traversal
-- **Sin secretos en codigo** — credenciales, tokens y claves no se almacenan ni loguean
-- **Actions pineadas** — las acciones core de terceros en CI usan SHA, no tags mutables
-- **pip-audit en CI** — escaneo continuo de vulnerabilidades en dependencias
-- **shellcheck** — analisis estatico de scripts shell
-- **Proteccion de rama** — `main` requiere CI y review para contribuciones externas
+- **Dependencias runtime minimas**: `rich`, `rich-argparse` y `shtab`; Git se ejecuta mediante subprocess.
+- **Preservacion de firma**: `setup` y `setup-agents` no modifican `commit.gpgsign`, `user.signingkey` ni credenciales.
+- **Guardas para agentes**: las reglas generadas bloquean flags conocidos para omitir firma y hooks.
+- **Subprocess endurecidos**: se limpian variables de inyeccion de config/comandos Git y los procesos externos usan timeouts explicitos.
+- **Escaneo de secretos**: `diff --scan-secrets` y `commit` detectan patrones de credenciales y redactan previews.
+- **Symlinks con sandbox**: `_safe_create_symlink` protege contra TOCTOU y path traversal.
+- **Actions pineadas**: las acciones core de terceros usan SHA inmutables.
+- **Auditoria de dependencias y shell**: CI ejecuta pip-audit y shellcheck.
+- **Proteccion de rama**: `main` requiere CI y review para contribuciones externas.

@@ -23,25 +23,25 @@ Index of development standards for the project.
 ## Quick reference stack
 
 ```
-gitwise/                # Python package — one module per subcommand
-  __main__.py           # argparse router → dispatches to run_<cmd>()
+gitwise/                # Python package; one module per subcommand
+  __main__.py           # argparse router -> dispatches to run_<cmd>()
   setup_agents/         # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
   _cli_setup_agents.py  # CLI adapter for setup-agents
   _runtime_config.py    # immutable runtime settings (theme, color, TTY)
   git.py                # git subprocess helpers (run, config, is_repo, etc.)
   output.py             # ok/warn/error/info/debug/print_json
-  _i18n_data.json       # es/en string catalog (434 keys)
+  _i18n_data.json       # es/en string catalog (550 keys)
   i18n.py               # translation helper + locale detection
-  snapshot.py           # .claude/git-snapshot.md generator
+  snapshot.py           # .agents snapshot with .claude fallback
   doctor.py             # Environment checks
-  audit.py              # Repo diagnostics (7 finding types)
+  audit.py              # Repo diagnostics
   setup.py              # Modern git defaults
   clean.py              # Stale branch cleanup
   optimize.py           # gc, pack-refs, commit-graph
   summarize.py          # Compact status + log
   diff.py               # Changed file list
   worktree.py           # Worktree helpers
-tests/                  # pytest — mirrors gitwise/ modules
+tests/                  # pytest; mirrors gitwise/ modules
   conftest.py           # run_gitwise() subprocess helper + fixtures
 share/claude/           # Templates copied/merged into target repos
 ```
