@@ -31,6 +31,12 @@
       "type": "boolean",
       "description": "pretty-print JSON output",
       "default": false
+    },
+    "max_entries": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "maximum directory tree entries (default: 100)",
+      "default": 100
     }
   }
 }

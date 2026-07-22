@@ -353,6 +353,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", "-y", action="store_true", help="skip confirmation for --hard")
 
     p = sub.add_parser("context", help="enriched repo snapshot for LLMs", parents=[parent])
+    p.add_argument(
+        "--max-entries",
+        type=int,
+        default=100,
+        help="maximum directory tree entries (default: 100)",
+    )
 
     p = sub.add_parser("health", help="repo health score (0-100)", parents=[parent])
 

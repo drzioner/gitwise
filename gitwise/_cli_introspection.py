@@ -233,7 +233,12 @@ def _action_property_schema(action: argparse.Action) -> dict[str, object]:
 
     # A "limit"/"max-count" argument is a positive-integer bound; surface that
     # in the input schema so consumers know 0/negative are invalid.
-    if value_schema["type"] == "integer" and action.dest in {"limit", "max_count", "maxcount"}:
+    if value_schema["type"] == "integer" and action.dest in {
+        "limit",
+        "max_count",
+        "max_entries",
+        "maxcount",
+    }:
         value_schema["minimum"] = 1
 
     description = "" if action.help is argparse.SUPPRESS else (action.help or "")

@@ -119,11 +119,14 @@ gitwise show --json
 
 ### `gitwise context`
 
-Enriched repo snapshot for LLM workflows.
+Enriched repo snapshot for LLM workflows. The directory tree defaults to 100
+entries; JSON output reports `tree_total` and `tree_truncated` when entries are
+omitted.
 
 ```bash
 gitwise context
 gitwise context --json
+gitwise context --max-entries 50 --json
 ```
 
 ### `gitwise health`

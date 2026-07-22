@@ -52,7 +52,21 @@
     },
     "data": {
       "type": "object",
-      "properties": {}
+      "properties": {
+        "tree": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tree_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tree_truncated": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

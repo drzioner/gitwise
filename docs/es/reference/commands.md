@@ -122,11 +122,14 @@ gitwise show --json
 
 ### `gitwise context`
 
-Snapshot enriquecido de repo para flujos LLM.
+Snapshot enriquecido de repo para flujos LLM. El arbol de directorios usa un
+maximo predeterminado de 100 entradas; el JSON reporta `tree_total` y
+`tree_truncated` cuando omite entradas.
 
 ```bash
 gitwise context
 gitwise context --json
+gitwise context --max-entries 50 --json
 ```
 
 ### `gitwise health`
