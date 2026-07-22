@@ -100,13 +100,32 @@ def test_stash_push_and_apply(tmp_git_repo):
 
 
 def test_stash_pop_failure_json_emits_envelope(tmp_git_repo):
-    """stash pop on nonexistent stash in JSON mode must emit stash_pop_failed envelope."""
-    r = run_gitwise("stash", "pop", "--json", cwd=tmp_git_repo)
+    """stash pop on nonexistent stash with --json --yes must emit stash_pop_failed envelope."""
+    r = run_gitwise("stash", "pop", "--json", "--yes", cwd=tmp_git_repo)
     assert r.returncode == 1
     data = json.loads(r.stdout)
     assert data["v"] == 3
     assert data["ok"] is False
     assert data["errors"][0]["code"] == "stash_pop_failed"
+
+
+def test_stash_pop_json_without_yes_emits_envelope(tmp_git_repo):
+    """stash pop --json without --yes must emit yes_required envelope, exit 2."""
+    from conftest import _git
+
+    (tmp_git_repo / "p.txt").write_text("pop me\n")
+    _git(["add", "."], tmp_git_repo)
+    _git(["stash"], tmp_git_repo)
+
+    r = run_gitwise("stash", "pop", "--json", cwd=tmp_git_repo)
+    assert r.returncode == 2
+    data = json.loads(r.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["errors"][0]["code"] == "yes_required"
+    listed = run_gitwise("stash", "list", "--json", cwd=tmp_git_repo)
+    ldata = json.loads(listed.stdout)
+    assert ldata["data"]["count"] == 1
 
 
 def test_stash_drop_json_without_yes_emits_envelope(tmp_git_repo):
