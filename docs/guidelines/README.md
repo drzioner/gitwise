@@ -30,7 +30,7 @@ gitwise/                # Python package; one module per subcommand
   _runtime_config.py    # immutable runtime settings (theme, color, TTY)
   git.py                # git subprocess helpers (run, config, is_repo, etc.)
   output.py             # ok/warn/error/info/debug/print_json
-  _i18n_data.json       # es/en string catalog (550 keys)
+  _i18n_data.json       # es/en string catalog
   i18n.py               # translation helper + locale detection
   snapshot.py           # .agents snapshot with .claude fallback
   doctor.py             # Environment checks

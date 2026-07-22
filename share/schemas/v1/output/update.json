@@ -63,7 +63,7 @@
           "type": "string"
         },
         "updated": {
-          "type": "string"
+          "type": "boolean"
         }
       }
     }

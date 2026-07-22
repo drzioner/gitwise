@@ -8,7 +8,7 @@ gitwise/             # Python package -- one module per subcommand
   _cli_setup_agents.py  # CLI adapter for setup-agents
   _runtime_config.py  # immutable runtime settings (theme, color, TTY, bat/delta)
   i18n.py            # t(), confirm_responses(), reset_cache() -- loads from _i18n_data.json
-  _i18n_data.json    # i18n string catalog (es/en, 550 keys)
+  _i18n_data.json    # i18n string catalog (es/en)
   git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
   output.py          # Rich Console engine: ok/warn/error/info/debug/print_json/bat_pipe
   design.py          # ThemeTokens (hex), GitwiseHelpFormatter (raw ANSI), text utilities

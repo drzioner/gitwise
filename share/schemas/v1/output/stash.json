@@ -54,7 +54,7 @@
       "type": "object",
       "properties": {
         "applied": {
-          "type": "boolean"
+          "type": "string"
         },
         "cleared": {
           "type": "integer",
@@ -65,8 +65,7 @@
           "minimum": 0
         },
         "dropped": {
-          "type": "integer",
-          "minimum": 0
+          "type": "string"
         },
         "dry_run": {
           "type": "boolean"
@@ -75,7 +74,7 @@
           "type": "string"
         },
         "popped": {
-          "type": "boolean"
+          "type": "string"
         },
         "pushed": {
           "type": "boolean"
@@ -86,14 +85,29 @@
         "stashes": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "required": [
+              "ref"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "branch": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
           }
         },
         "stat": {
           "type": "string"
         },
         "would_drop": {
-          "type": "string"
+          "type": "integer",
+          "minimum": 0
         }
       }
     }

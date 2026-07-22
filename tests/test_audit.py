@@ -108,7 +108,14 @@ def test_audit_git_sizer_timeout_returns_json(tmp_git_repo, tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     script = bin_dir / "slow_git_sizer.py"
-    script.write_text('import time\ntime.sleep(8)\nprint("{}")\n')
+    completed = tmp_path / "git-sizer-completed"
+    script.write_text(
+        "import time\n"
+        "from pathlib import Path\n"
+        "time.sleep(8)\n"
+        f"Path({str(completed)!r}).write_text('completed')\n"
+        'print("{}")\n'
+    )
 
     if os.name == "nt":
         executable = bin_dir / "git-sizer.cmd"
@@ -118,7 +125,6 @@ def test_audit_git_sizer_timeout_returns_json(tmp_git_repo, tmp_path):
         executable.write_text(f"#!{sys.executable}\n{script.read_text()}")
         executable.chmod(0o755)
 
-    start = time.monotonic()
     result = _run(
         "audit",
         "--json",
@@ -128,8 +134,6 @@ def test_audit_git_sizer_timeout_returns_json(tmp_git_repo, tmp_path):
             "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
         },
     )
-    elapsed = time.monotonic() - start
-
     assert result.returncode in (0, 1)
     assert json.loads(result.stdout)["command"] == "audit"
-    assert elapsed < 6
+    assert not completed.exists()

@@ -19,7 +19,7 @@ uv run pytest                      # corre toda la suite
 uv run pytest -k test_worktree     # corre tests especificos
 ```
 
-No hay paso de instalacion durante desarrollo. Ejecuta desde la raiz del repo:
+No hay paso de instalación durante desarrollo. Ejecuta desde la raíz del repo:
 
 ```bash
 uv run python -m gitwise <command>
@@ -50,7 +50,7 @@ lefthook run pre-push
 Cada subcomando sigue el mismo patron:
 
 ```python
-def run_<command>(...) -> int:   # retorna codigo de salida
+def run_<command>(...) -> int:   # retorna código de salida
     # 1. Validate (is_repo, repo_root)
     # 2. Plan (_plan_actions -> list[dict], warnings, errors)
     # 3. Dry-run: print plan, return 0
@@ -63,7 +63,7 @@ Un módulo por subcomando en `gitwise/`. En `tests/`, la estructura refleja los
 módulos. Las pruebas invocan gitwise como subprocess vía `run_gitwise()`
 en `conftest.py`; no se usan mocks.
 
-## Estilo de codigo
+## Estilo de código
 
 - Type hints en todas las firmas
 - `pathlib.Path` sobre `os.path` (usar `os.path.realpath` para symlinks)
@@ -104,7 +104,7 @@ install.sh           # instalador end-user (curl | bash -> uv tool install gitwi
 - PRs de externos requieren al menos una review
 - Se prefiere squash merge para mantener historia limpia
 - Mantener PRs enfocados (una feature o fix por PR)
-- Si cambias docs, actualiza ingles canonico y espejo en espanol
+- Si cambias docs, actualiza inglés canónico y espejo en español
 
 ## Reporte de issues
 

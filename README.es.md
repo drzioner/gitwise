@@ -14,9 +14,9 @@ CLI de Python para optimizar flujos de Git e integración con agentes de código
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Docs: EN/ES](https://img.shields.io/badge/docs-EN%20%7C%20ES-0A7EA4)](docs/es/README.md)
 
-gitwise ofrece a los agentes de codigo contexto acotado del repositorio, trabajo
+gitwise ofrece a los agentes de código contexto acotado del repositorio, trabajo
 aislado por rama y commits seguros sin ocultar las operaciones Git subyacentes.
-Todos los comandos soportan JSON para maquinas y las operaciones destructivas
+Todos los comandos soportan JSON para máquinas y las operaciones destructivas
 exponen dry-run o confirmacion.
 
 ## Requisitos
@@ -89,14 +89,14 @@ gitwise summarize
 ```
 
 Los tres primeros comandos inspeccionan o planifican cambios. Agrega `--yes` solo
-despues de revisar el plan.
+después de revisar el plan.
 
 ## Cinco flujos
 
 ### 1. Preparar un repositorio
 
 Verifica el entorno, previsualiza defaults modernos de Git e instala el layout
-canonico para agentes:
+canónico para agentes:
 
 ```bash
 gitwise doctor --json
@@ -164,7 +164,7 @@ gitwise pr create --fill
 
 | Comando | Propósito |
 |---|---|
-| `setup-agents` | Instala el layout multi-agente canonico y templates de providers |
+| `setup-agents` | Instala el layout multi-agente canónico y templates de providers |
 | `worktree` | Aisla trabajo por rama en directorios hermanos |
 | `summarize` | Produce contexto compacto de status, log y diff opcional |
 | `context` | Produce contexto acotado con metadata de truncacion |
@@ -181,7 +181,7 @@ y ejemplos:
 
 ## Contrato JSON para agentes
 
-Los flags globales de maquina funcionan antes o despues del subcomando:
+Los flags globales de máquina funcionan antes o después del subcomando:
 
 ```bash
 gitwise --json status

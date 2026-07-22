@@ -83,6 +83,29 @@ def test_ok_envelope_diff_validates_against_output_schema() -> None:
     Draft202012Validator(schema).validate(payload)
 
 
+def test_runtime_field_types_validate_against_output_schemas() -> None:
+    from gitwise.utils.json_envelope import ok_envelope
+    from jsonschema import Draft202012Validator
+
+    payloads = {
+        "stash": ok_envelope(
+            "stash",
+            applied="stash@{0}",
+            dropped="stash@{0}",
+            popped="stash@{0}",
+            stashes=[{"ref": "stash@{0}", "branch": "main", "message": "work"}],
+            would_drop=1,
+        ),
+        "worktree": ok_envelope("worktree", cleaned=0, removed="/tmp/example"),
+        "update": ok_envelope("update", updated=True),
+    }
+
+    for command, payload in payloads.items():
+        schema = load_command_output_schema(command=command, version="v1")
+        assert schema is not None
+        Draft202012Validator(schema).validate(payload)
+
+
 def test_schema_catalog_checker_script_passes() -> None:
     import subprocess
     import sys
