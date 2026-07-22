@@ -115,9 +115,19 @@ def _cmd_show(root: Path, index: int, *, as_json: bool, patch: bool = False) -> 
     return 0
 
 
-def _cmd_pop(root: Path, index: int, *, as_json: bool) -> int:
-    """Execute ``stash pop`` sub-action."""
+def _cmd_pop(root: Path, index: int, *, as_json: bool, yes: bool = False) -> int:
+    """Execute ``stash pop`` sub-action with optional confirmation."""
     ref = f"stash@{{{index}}}"
+    if as_json and not yes:
+        print_json(
+            error_envelope(
+                "stash",
+                error=t("yes_required_with_json"),
+                code="yes_required",
+                hint=t("yes_required_hint"),
+            )
+        )
+        return 2
     r = git_run(["stash", "pop", ref], cwd=root, check=False)
     if r.returncode != 0:
         return report_error(
@@ -290,7 +300,7 @@ def run_stash(
     if action == "apply":
         return _cmd_apply(root, index, as_json=as_json)
     if action == "pop":
-        return _cmd_pop(root, index, as_json=as_json)
+        return _cmd_pop(root, index, as_json=as_json, yes=yes)
     if action == "push":
         return _cmd_push(
             root,
