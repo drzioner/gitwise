@@ -81,6 +81,17 @@ def test_worktree_new_no_branch(tmp_git_repo: Path) -> None:
     assert result.returncode == 1
 
 
+def test_worktree_new_json_no_branch_emits_envelope(tmp_git_repo: Path) -> None:
+    """worktree new --json without branch must emit worktree_branch_required envelope, exit 1."""
+    result = run_gitwise("worktree", "new", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["v"] == 3
+    assert data["ok"] is False
+    assert data["command"] == "worktree"
+    assert data["errors"][0]["code"] == "worktree_branch_required"
+
+
 def test_worktree_new_rejects_parent_traversal_branch(tmp_git_repo: Path) -> None:
     result = run_gitwise("worktree", "new", "../evil", cwd=tmp_git_repo)
     assert result.returncode == 1
@@ -127,6 +138,21 @@ def test_worktree_remove_by_branch(tmp_git_repo: Path) -> None:
     assert env["command"] == "worktree"
     assert env["data"]["removed"]
     assert not wt_path.exists()
+
+
+def test_worktree_remove_dry_run_preserves_worktree(tmp_git_repo: Path) -> None:
+    wt_path = tmp_git_repo.parent / "remove-dry-run-wt"
+    _git(["worktree", "add", str(wt_path), "-b", "remove-dry-run-branch"], tmp_git_repo)
+
+    result = run_gitwise(
+        "worktree", "remove", "remove-dry-run-branch", "--dry-run", "--json", cwd=tmp_git_repo
+    )
+
+    assert result.returncode == 0
+    env = json.loads(result.stdout)
+    assert env["data"]["dry_run"] is True
+    assert env["data"]["would_remove"] == str(wt_path)
+    assert wt_path.exists()
 
 
 def test_worktree_remove_not_found(tmp_git_repo: Path) -> None:

@@ -12,8 +12,8 @@ def _root_help_epilog() -> str:
     return t("help_root_environment_epilog")
 
 
-def build_parser() -> argparse.ArgumentParser:
-    """Build and return the top-level argparse parser with all subcommands registered."""
+def _build_common_parser() -> argparse.ArgumentParser:
+    """Build the parser shared by the root command and every subcommand."""
     parent = argparse.ArgumentParser(add_help=False)
     parent.add_argument(
         "--lang",
@@ -35,6 +35,18 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="pretty-print JSON output",
     )
+    return parent
+
+
+def _parse_global_options(argv: list[str]) -> argparse.Namespace:
+    """Parse common options independently of their position in *argv*."""
+    options, _ = _build_common_parser().parse_known_args(argv)
+    return options
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build and return the top-level argparse parser with all subcommands registered."""
+    parent = _build_common_parser()
 
     parser = argparse.ArgumentParser(
         prog="gitwise",

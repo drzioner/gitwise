@@ -182,7 +182,12 @@ def _worktree_clean(cwd: Path, *, dry_run: bool = False, as_json: bool = False) 
 
 
 def _worktree_remove(
-    target: str, root: Path, *, force: bool = False, as_json: bool = False
+    target: str,
+    root: Path,
+    *,
+    force: bool = False,
+    dry_run: bool = False,
+    as_json: bool = False,
 ) -> int:
     """Remove a worktree identified by path or checked-out branch name."""
     if not target:
@@ -215,6 +220,21 @@ def _worktree_remove(
             msg=t("worktree_remove_primary"),
             code="worktree_remove_primary",
         )
+
+    if dry_run:
+        if as_json:
+            print_json(
+                ok_envelope(
+                    "worktree",
+                    would_remove=match["path"],
+                    branch=match.get("branch") or "",
+                    dry_run=True,
+                )
+            )
+            return 0
+        print_dim(match["path"])
+        print_dim(t("dry_run_no_exec"))
+        return 0
 
     args = ["worktree", "remove"]
     if force:
@@ -252,8 +272,12 @@ def run_worktree(
 
     if action == "new":
         if not branch:
-            error(t("worktree_usage"))
-            return 1
+            return report_error(
+                "worktree",
+                as_json=as_json,
+                msg=t("worktree_usage"),
+                code="worktree_branch_required",
+            )
         if as_json:
             rc, data = _worktree_new_json(branch, root)
             if rc == 0:
@@ -274,7 +298,7 @@ def run_worktree(
         return _worktree_clean(root, dry_run=dry_run, as_json=as_json)
 
     elif action == "remove":
-        return _worktree_remove(branch or "", root, force=force, as_json=as_json)
+        return _worktree_remove(branch or "", root, force=force, dry_run=dry_run, as_json=as_json)
 
     elif action == "list":
         return _worktree_list(root, as_json=as_json)
