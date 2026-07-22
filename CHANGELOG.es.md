@@ -14,8 +14,12 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.34.2 (2026-07-22)
+## v0.35.0 (2026-07-22)
+
+### Feat
+
+- **context**: bound agent output with truncation metadata
 
 ### Fix
 
-- **security**: enforce subprocess safety invariants
+- **cli**: keep JSON Lines free of human timing
