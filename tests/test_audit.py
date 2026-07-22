@@ -4,6 +4,7 @@ import json
 import os
 import platform
 import subprocess
+import sys
 import time
 
 from conftest import run_gitwise as _run
@@ -101,3 +102,34 @@ def test_audit_quick_skips_large_blobs(tmp_git_repo_with_large_blob):
     large = [f for f in data["data"]["findings"] if f["type"] == "large_blobs"]
     assert len(large) == 0  # --quick skips blob search
     assert data["data"]["summary"]["large_blobs"] == 0
+
+
+def test_audit_git_sizer_timeout_returns_json(tmp_git_repo, tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    script = bin_dir / "slow_git_sizer.py"
+    script.write_text('import time\ntime.sleep(8)\nprint("{}")\n')
+
+    if os.name == "nt":
+        executable = bin_dir / "git-sizer.cmd"
+        executable.write_text(f'@"{sys.executable}" "{script}" %*\n')
+    else:
+        executable = bin_dir / "git-sizer"
+        executable.write_text(f"#!{sys.executable}\n{script.read_text()}")
+        executable.chmod(0o755)
+
+    start = time.monotonic()
+    result = _run(
+        "audit",
+        "--json",
+        cwd=tmp_git_repo,
+        env={
+            "GITWISE_GIT_TIMEOUT": "1",
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        },
+    )
+    elapsed = time.monotonic() - start
+
+    assert result.returncode in (0, 1)
+    assert json.loads(result.stdout)["command"] == "audit"
+    assert elapsed < 6

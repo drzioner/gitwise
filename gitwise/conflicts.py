@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from gitwise.git import require_root
+from gitwise.git import _GIT_ENV, require_root
 from gitwise.git import run as git_run
 from gitwise.i18n import t
 from gitwise.output import (
@@ -27,6 +27,7 @@ def _git_bytes(args: list[str], *, cwd: Path) -> tuple[int, bytes, bytes]:
         ["git", *args],
         cwd=cwd,
         capture_output=True,
+        env=_GIT_ENV,
         timeout=120,
     )
     return r.returncode, r.stdout, r.stderr

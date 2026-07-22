@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from gitwise.git import (
+    _get_timeout,
     gpg_status,
     has_commit_graph,
     has_remote,
@@ -112,13 +113,18 @@ def _run_git_sizer(cwd: Path) -> dict | None:
     """Run ``git-sizer`` if available and return its JSON output, or None."""
     if not shutil.which("git-sizer"):
         return None
-    r = subprocess.run(
-        ["git-sizer", "--threshold=2", "--json"],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        r = subprocess.run(
+            ["git-sizer", "--threshold=2", "--json"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_get_timeout("git-sizer"),
+        )
+    except subprocess.TimeoutExpired:
+        debug("git-sizer timed out")
+        return None
     if r.returncode not in (0, 1):
         return None
     import json

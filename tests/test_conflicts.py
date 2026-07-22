@@ -86,6 +86,22 @@ def test_conflicts_union_json_envelope(tmp_git_repo):
     assert env["data"]["resolved"] >= 1
 
 
+def test_conflicts_union_scrubs_injected_git_config(tmp_git_repo):
+    _setup_text_conflict(tmp_git_repo)
+
+    r = run_gitwise(
+        "conflicts",
+        "--union",
+        "--json",
+        cwd=tmp_git_repo,
+        env={"GIT_CONFIG_COUNT": "invalid"},
+    )
+
+    assert r.returncode == 0
+    env = json.loads(r.stdout)
+    assert env["data"]["resolved"] >= 1
+
+
 def test_conflicts_dry_run_does_not_touch_tree(tmp_git_repo):
     """--dry-run reports the plan but leaves conflict markers in place."""
     _setup_text_conflict(tmp_git_repo)
