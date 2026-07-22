@@ -15,7 +15,7 @@ gitwise actualmente incluye 30 comandos (con aliases): `doctor`, `setup-agents`,
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
 `pick` (`cherry-pick`), `status`, `update`, `commands`, `schema`, `completions`.
 
-Completado hasta la Phase 12. Baseline actual: 30 comandos, 745 tests recolectados,
+Completado hasta la Phase 12. Baseline actual: 30 comandos, 746 tests recolectados,
 550 keys i18n (es/en), 3 dependencias runtime
 (rich, rich-argparse, shtab).
 
