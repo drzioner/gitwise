@@ -113,7 +113,8 @@ def main() -> int:
         reset_runtime_config()
 
     set_json_pretty(args.json_pretty)
-    set_json_mode(args.json)
+    machine_output = args.json or getattr(args, "json_lines", False)
+    set_json_mode(machine_output)
 
     if args.lang:
         set_locale(args.lang)
@@ -147,8 +148,7 @@ def main() -> int:
         ret = 1
 
     elapsed = time.monotonic() - start
-    as_json = getattr(args, "json", False)
-    if not as_json and elapsed > 0.2 and args.command not in ("doctor",):
+    if not machine_output and elapsed > 0.2 and args.command not in ("doctor",):
         print_dim(t("completed_in", elapsed=f"{elapsed:.1f}"))
 
     return ret

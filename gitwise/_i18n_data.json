@@ -395,6 +395,10 @@
     "es": "## Tipos de archivo",
     "en": "## File Types"
   },
+  "ctx_invalid_max_entries": {
+    "es": "--max-entries debe ser mayor que cero",
+    "en": "--max-entries must be greater than zero"
+  },
   "ctx_more_entries": {
     "es": "  ... ({count} entradas más)",
     "en": "  ... ({count} more entries)"

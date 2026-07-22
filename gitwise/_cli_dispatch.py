@@ -328,7 +328,7 @@ def _run_context(args: argparse.Namespace) -> int:
     """Dispatch to ``context`` subcommand."""
     from gitwise.context import run_context
 
-    return run_context(as_json=args.json)
+    return run_context(max_entries=args.max_entries, as_json=args.json)
 
 
 def _run_health(args: argparse.Namespace) -> int:

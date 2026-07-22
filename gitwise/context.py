@@ -12,9 +12,12 @@ from gitwise.output import (
     print_dim,
     print_header,
     print_json,
+    report_error,
     status,
 )
 from gitwise.utils.json_envelope import ok_envelope
+
+DEFAULT_MAX_ENTRIES = 100
 
 
 def _directory_tree(root: Path, max_depth: int = 3) -> list[str]:
@@ -118,14 +121,24 @@ def _branch_topology(root: Path) -> dict[str, list[str]]:
     return {"local": local, "remote": remote}
 
 
-def run_context(*, as_json: bool = False) -> int:
+def run_context(*, max_entries: int = DEFAULT_MAX_ENTRIES, as_json: bool = False) -> int:
     """Entry point for the ``gitwise context`` command."""
     root = require_root(as_json=as_json, command="context")
     if root is None:
         return 1
+    if max_entries <= 0:
+        return report_error(
+            "context",
+            as_json=as_json,
+            msg=t("ctx_invalid_max_entries"),
+            code="invalid_max_entries",
+        )
 
     with status(t("status_context_scan")):
-        tree = _directory_tree(root)
+        full_tree = _directory_tree(root)
+        tree = full_tree[:max_entries]
+        tree_total = len(full_tree)
+        tree_truncated = tree_total > len(tree)
         contributors = _top_contributors(root)
         file_types = _file_type_breakdown(root)
         todo_fixme = _todo_fixme_counts(root)
@@ -140,6 +153,8 @@ def run_context(*, as_json: bool = False) -> int:
                 "context",
                 data={
                     "tree": tree,
+                    "tree_total": tree_total,
+                    "tree_truncated": tree_truncated,
                     "contributors": contributors,
                     "file_types": file_types,
                     "todo_fixme": todo_fixme,
@@ -150,10 +165,10 @@ def run_context(*, as_json: bool = False) -> int:
         )
     else:
         print_header(t("ctx_directory_tree"))
-        for ln in tree[:50]:
+        for ln in tree:
             info(f"  {ln}")
-        if len(tree) > 50:
-            print_dim(t("ctx_more_entries", count=str(len(tree) - 50)))
+        if tree_truncated:
+            print_dim(t("ctx_more_entries", count=str(tree_total - len(tree))))
         print_blank()
         if contributors:
             print_bracket(t("ctx_top_contributors"))
