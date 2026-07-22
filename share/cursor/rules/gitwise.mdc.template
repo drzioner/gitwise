@@ -10,7 +10,7 @@ alwaysApply: true
 - Changed files: `gitwise diff` — never raw `git diff`
 - Status + log: `gitwise summarize` — never raw `git status` or `git log`
 - Branch switch: `gitwise worktree new <branch>` — never `git stash + checkout`
-- Snapshot: `gitwise snapshot` — regenerates `.claude/git-snapshot.md`
+- Snapshot: `gitwise snapshot`; writes `.agents/git-snapshot.md` when `.agents/` exists, otherwise `.claude/git-snapshot.md`
 - Audit: `gitwise audit --quick` — before large commits
 - Clean: `gitwise clean --branches` — remove stale branches
 - Optimize: `gitwise optimize` — gc, pack-refs, commit-graph

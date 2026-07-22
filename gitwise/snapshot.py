@@ -10,6 +10,13 @@ from gitwise.output import debug, print_header, print_json, status
 from gitwise.utils.json_envelope import ok_envelope
 
 
+def _snapshot_relative_path(root: Path) -> str:
+    """Return the snapshot path for the repository's active agent layout."""
+    if (root / ".agents").is_dir():
+        return ".agents/git-snapshot.md"
+    return ".claude/git-snapshot.md"
+
+
 def _append_branch_section(lines: list[str], *, root: Path) -> None:
     """Append the current branch section to *lines*."""
     branch = git_run(["branch", "--show-current"], cwd=root, check=False)
@@ -105,7 +112,7 @@ def run_snapshot(*, as_json: bool = False) -> int:
         return 1
 
     with status(t("status_snapshot_gen")):
-        path = generate_snapshot(root)
+        path = generate_snapshot(root, relative_path=_snapshot_relative_path(root))
 
     if as_json:
         print_json(ok_envelope("snapshot", path=str(path)))

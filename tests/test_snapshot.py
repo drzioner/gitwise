@@ -1,5 +1,6 @@
 """Tests for gitwise snapshot."""
 
+import json
 import time
 
 from conftest import run_gitwise as _run
@@ -10,6 +11,18 @@ def test_snapshot_creates_file(tmp_git_repo):
     assert result.returncode == 0
     snapshot = tmp_git_repo / ".claude" / "git-snapshot.md"
     assert snapshot.exists()
+
+
+def test_snapshot_uses_agents_layout_when_present(tmp_git_repo):
+    (tmp_git_repo / ".agents").mkdir()
+
+    result = _run("snapshot", "--json", cwd=tmp_git_repo)
+
+    assert result.returncode == 0
+    data = json.loads(result.stdout)["data"]
+    assert data["path"].endswith(".agents/git-snapshot.md")
+    assert (tmp_git_repo / ".agents" / "git-snapshot.md").exists()
+    assert not (tmp_git_repo / ".claude" / "git-snapshot.md").exists()
 
 
 def test_snapshot_has_generated_at(tmp_git_repo):
