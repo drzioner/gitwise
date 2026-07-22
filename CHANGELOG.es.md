@@ -14,8 +14,8 @@ Consulta la version canonica aqui:
 
 ## Ultimo release (resumen canonico)
 
-## v0.35.1 (2026-07-22)
+## v0.36.0 (2026-07-22)
 
 ### Fix
 
-- **snapshot**: honor canonical agents layout
+- remove unimplemented clean refs contract
