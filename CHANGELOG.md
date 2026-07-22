@@ -3,6 +3,15 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.34.1 (2026-07-22)
+
+### Fix
+
+- **stash**: require --yes for pop in JSON mode and use run_gitwise helper in tests
+- **worktree**: make remove dry-run non-destructive
+- **hooks**: isolate pre-push from repository environment
+- **cli**: make agent JSON contract position-independent
+
 ## v0.34.0 (2026-06-25)
 
 ### BREAKING CHANGE
