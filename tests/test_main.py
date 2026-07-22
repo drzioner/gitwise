@@ -1,6 +1,7 @@
 """Tests for gitwise __main__ — CLI router, flags, exit codes."""
 
 import json
+from pathlib import Path
 
 from conftest import run_gitwise as _run
 
@@ -286,9 +287,13 @@ def test_lang_flag_invalid():
     assert result.returncode != 0
 
 
-def test_update_dry_run():
+def test_update_dry_run_matches_installation_mode():
     result = _run("update", "--dry-run")
-    assert result.returncode == 0
+    if (Path(__file__).parents[1] / ".git").is_dir():
+        assert result.returncode == 0
+    else:
+        assert result.returncode == 1
+        assert "requires a git clone installation" in result.stderr
 
 
 def test_setup_agents_dry_run(tmp_git_repo):
