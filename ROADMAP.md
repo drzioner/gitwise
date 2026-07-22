@@ -4,16 +4,16 @@
 
 Living roadmap for turning gitwise into a practical Git hub for humans and coding agents.
 
-## Current state (v0.15.0)
+## Current state
 
-gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `setup`,
+gitwise currently ships 30 commands (with aliases): `doctor`, `setup-agents`, `setup`,
 `audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
 `diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`,
 `health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
-`pick` (`cherry-pick`), `status`, `update`.
+`pick` (`cherry-pick`), `status`, `update`, `commands`, `schema`, `completions`.
 
-Completed through Phase 12. Current baseline: 737 tests collected, 550 i18n keys (es/en),
-one runtime dependency (`rich>=13.0`).
+Completed through Phase 12. Current baseline: 30 commands, 746 tests collected,
+550 i18n keys (es/en), 3 runtime dependencies (rich, rich-argparse, shtab).
 
 ---
 
@@ -42,7 +42,7 @@ one runtime dependency (`rich>=13.0`).
 - `log --json` enriched with per-commit file stats
 - `update --json` support
 - Phase 4 integration tests (10 new)
-- README updated with all 27 commands
+- README updated with the complete command set at that release
 
 ## Phase 6 -- Naming Cleanup & UX (MERGED, PR #12)
 
@@ -137,8 +137,8 @@ one runtime dependency (`rich>=13.0`).
 
 ## Design principles
 
-1. **Minimal deps**: `rich>=13.0` + stdlib + git subprocess. Optional tools via `shutil.which()`.
-2. **`--json` everywhere**: machine-friendly output for coding agents (v2 envelope; `setup-agents` now v3).
+1. **Minimal deps**: `rich`, `rich-argparse`, `shtab` + stdlib + git subprocess. Optional tools via `shutil.which()`.
+2. **`--json` everywhere**: machine-friendly output for coding agents using the v3 envelope.
 3. **`--dry-run` for destructive paths**: commit, sync, clean, stash drop, merge, tag delete.
 4. **Automatic delta rendering**: when `HAS_DELTA` and `IS_TTY`.
 5. **i18n model**: strings resolved through `t()` with keys in `_i18n_data.json`.
@@ -155,6 +155,5 @@ one runtime dependency (`rich>=13.0`).
 | `gitwise init` | mostly covered by `setup` |
 | `gitwise remote` | low-frequency workflow, `git remote` already sufficient |
 | `gitwise ignore` | low-frequency workflow, manual editing is usually enough |
-| Streaming JSON | high complexity, low practical gain |
 | Manpage | `--help` is enough for now |
 | fzf interactive mode | high complexity and optional dependency overhead |

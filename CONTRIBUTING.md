@@ -16,15 +16,15 @@ uv run pytest                      # run all tests
 uv run pytest -k test_worktree     # run specific tests
 ```
 
-No install step needed during development — run directly from repo root:
+No install step is needed during development. Run from the repository root:
 
 ```bash
-python -m gitwise <command>
+uv run python -m gitwise <command>
 ```
 
 ## Development workflow
 
-1. Create a branch: `gitwise worktree new feature/my-thing` (or `git checkout -b`)
+1. Create a branch in the current checkout: `git switch -c feature/my-thing`. Use `gitwise worktree new feature/my-thing` when an isolated sibling checkout is useful.
 2. Make changes
 3. Hooks run automatically via lefthook:
    - **pre-commit**: ruff check + ruff format + shellcheck
@@ -40,7 +40,7 @@ lefthook run pre-push
 ```
 
 4. Commit with [conventional format](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
-5. Open a pull request
+5. Push the branch and open a pull request with `gitwise pr create --fill` or `gh pr create`.
 
 ## Architecture
 
@@ -49,7 +49,7 @@ Each subcommand follows the same pattern:
 ```python
 def run_<command>(...) -> int:   # returns exit code
     # 1. Validate (is_repo, repo_root)
-    # 2. Plan (_plan_actions → list[dict], warnings, errors)
+    # 2. Plan (_plan_actions -> list[dict], warnings, errors)
     # 3. Dry-run: print plan, return 0
     # 4. Confirm (unless --yes)
     # 5. Execute (_execute_actions)
@@ -58,14 +58,14 @@ def run_<command>(...) -> int:   # returns exit code
 
 One module per subcommand in `gitwise/`. Tests in `tests/` mirror the module
 structure. Tests invoke gitwise as a subprocess via `run_gitwise()` in
-`conftest.py` — no mocks, all git operations run on synthetic temp repos.
+`conftest.py`; no mocks, all git operations run on synthetic temp repos.
 
 ## Code style
 
 - Type hints on all function signatures
 - `pathlib.Path` over `os.path` (use `os.path.realpath` for symlink resolution)
-- No comments describing what code does — only WHY (non-obvious invariants)
-- Minimal dependencies — `rich` is the only allowed external dependency
+- No comments describing what code does; explain only non-obvious reasons or invariants
+- Runtime dependencies are limited to `rich`, `rich-argparse`, and `shtab`
 - `ruff` handles linting and formatting; config is in `pyproject.toml`
 - `lefthook` manages git hooks; config is in `lefthook.yml`
 - `commitizen` validates commit messages; config is in `pyproject.toml`
@@ -73,34 +73,34 @@ structure. Tests invoke gitwise as a subprocess via `run_gitwise()` in
 ## Key files
 
 ```
-gitwise/             # Python package — one module per subcommand
-  __main__.py        # argparse router → dispatches to run_<cmd>()
+gitwise/             # Python package; one module per subcommand
+  __main__.py        # argparse router -> dispatches to run_<cmd>()
   setup_agents/      # AGENTS.md/CLAUDE.md coexistence (5-bucket model)
   _cli_setup_agents.py  # CLI adapter for setup-agents
   git.py             # git subprocess helpers
   output.py          # output functions + confirm()
-  snapshot.py        # generates .claude/git-snapshot.md
+  snapshot.py        # generates .agents/git-snapshot.md or the .claude fallback
   doctor.py          # environment checks
   audit.py           # repo diagnostics
   setup.py           # modern git defaults
-  clean.py           # stale branch/ref cleanup
+  clean.py           # stale branch cleanup
   optimize.py        # gc, pack-refs, commit-graph
   summarize.py       # compact status + log
   diff.py            # focused changed-file list
   worktree.py        # worktree helpers for Claude agents
-share/claude/        # Templates copied/merged into target repos
+share/*/             # Provider templates copied/merged into target repos
 share/hooks/         # Git hooks (pre-commit, commit-msg)
-tests/               # pytest — mirrors gitwise/ modules
-bin/gitwise          # Shell shebang wrapper → python -m gitwise
-install.sh           # End-user installer (curl | bash → uv tool install gitwise-cli)
+tests/               # pytest; mirrors gitwise/ modules
+bin/gitwise          # Shell shebang wrapper -> python -m gitwise
+install.sh           # End-user installer (curl | bash -> uv tool install gitwise-cli)
 ```
 
 ## Pull request process
 
-- PRs require CI to pass (ruff, pytest, basedpyright, shellcheck)
+- PRs require CI to pass (ruff, pytest with 75% coverage floor, basedpyright, pip-audit, shellcheck)
 - PRs require at least one review (for external contributors)
 - Squash merge is preferred for clean history
-- Keep PRs focused — one feature or fix per PR
+- Keep PRs focused: one feature or fix per PR
 - If docs are changed, update both English canonical docs and Spanish mirrors
 
 ## Reporting issues

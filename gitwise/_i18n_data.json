@@ -872,7 +872,7 @@
     "en": ".claude/commands/{skill}.md is legacy format — now using .claude/skills/{skill}/SKILL.md. Delete the old .md manually."
   },
   "legacy_migration_mode": {
-    "es": "modo migracion legacy activo: se prioriza layout canonico (AGENTS.md + .agents/skills)",
+    "es": "modo migración legacy activo: se prioriza layout canónico (AGENTS.md + .agents/skills)",
     "en": "legacy migration mode enabled: canonical layout (AGENTS.md + .agents/skills) is enforced"
   },
   "log_no_commits": {
@@ -2068,7 +2068,7 @@
     "en": "would run: git pull --ff-only in {dir}"
   },
   "update_deprecation_hint": {
-    "es": "update esta deprecado; usa `brew upgrade gitwise` para Homebrew o `uv tool upgrade gitwise-cli` para instalaciones con uv tool",
+    "es": "update está deprecado; usa `brew upgrade gitwise` para Homebrew o `uv tool upgrade gitwise-cli` para instalaciones con uv tool",
     "en": "update is deprecated; use `brew upgrade gitwise` for Homebrew or `uv tool upgrade gitwise-cli` for uv tool installations"
   },
   "updated_git_conventions": {

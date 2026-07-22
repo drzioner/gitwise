@@ -6,8 +6,8 @@
 
 | Version | Supported |
 |---|---|
-| >= 0.1.0 | Yes |
-| < 0.1.0 | No |
+| Latest release | Yes |
+| Older releases | No |
 
 ## Reporting a vulnerability
 
@@ -39,11 +39,12 @@ You can also email **drzioner@gmail.com** with the subject `gitwise security: <b
 
 gitwise includes these security measures:
 
-- **Minimal runtime dependencies** — one runtime dependency (`rich>=13.0`) and otherwise stdlib + git subprocess
-- **GPG signing enforcement** — pre-commit hook validates key availability
-- **Sandboxed symlinks** — `_safe_create_symlink` with TOCTOU protection and path traversal prevention
-- **No secrets in code** — credentials, tokens, and keys are never logged or stored
-- **Pinned CI actions** — core third-party GitHub Actions are pinned by SHA, not mutable tags
-- **pip-audit in CI** — continuous dependency vulnerability scanning
-- **shellcheck** — static analysis on all shell scripts
-- **Branch protection** — main branch requires passing CI and review for external contributions
+- **Minimal runtime dependencies**: `rich`, `rich-argparse`, and `shtab`; Git operations use subprocesses.
+- **Signing configuration preservation**: `setup` and `setup-agents` do not modify `commit.gpgsign`, `user.signingkey`, or credentials.
+- **Agent bypass guards**: generated rules deny known signing and hook bypass flags.
+- **Hardened subprocesses**: Git config/command injection variables are scrubbed and external processes use explicit timeouts.
+- **Secret scanning**: `diff --scan-secrets` and `commit` detect high-confidence credential patterns and redact previews.
+- **Sandboxed symlinks**: `_safe_create_symlink` applies TOCTOU and path traversal protections.
+- **Pinned CI actions**: core third-party GitHub Actions use immutable SHAs.
+- **Dependency and shell audits**: CI runs pip-audit and shellcheck.
+- **Branch protection**: `main` requires passing CI and review for external contributions.

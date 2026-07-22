@@ -227,7 +227,8 @@ gitwise sync --json
 
 ### `gitwise pr`
 
-GitHub PR wrapper (`gh` required).
+GitHub PR wrapper (`gh` required). Read existing PRs or delegate creation to
+`gh pr create` through the same command.
 
 ```bash
 gitwise pr list
@@ -235,6 +236,8 @@ gitwise pr checks 123
 gitwise pr view 123
 gitwise pr comments 123
 gitwise pr view 123 --json
+gitwise pr create --fill
+gitwise pr create --title "Document agent workflow" --base main
 ```
 
 ### `gitwise undo`

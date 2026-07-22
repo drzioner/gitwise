@@ -8,15 +8,15 @@ gitwise/             # Python package -- one module per subcommand
   _cli_setup_agents.py  # CLI adapter for setup-agents
   _runtime_config.py  # immutable runtime settings (theme, color, TTY, bat/delta)
   i18n.py            # t(), confirm_responses(), reset_cache() -- loads from _i18n_data.json
-  _i18n_data.json    # i18n string catalog (es/en, 548 keys)
+  _i18n_data.json    # i18n string catalog (es/en)
   git.py             # git subprocess helpers (is_repo, repo_root, config, run, _get_timeout)
   output.py          # Rich Console engine: ok/warn/error/info/debug/print_json/bat_pipe
   design.py          # ThemeTokens (hex), GitwiseHelpFormatter (raw ANSI), text utilities
-  snapshot.py        # generates .claude/git-snapshot.md
+  snapshot.py        # generates .agents/git-snapshot.md with .claude fallback
   doctor.py          # environment checks
   audit.py           # repo diagnostics
   setup.py           # modern git defaults
-  clean.py           # stale branch/ref cleanup
+  clean.py           # stale branch cleanup
   optimize.py        # gc, pack-refs, commit-graph
   summarize.py       # compact status + log
   diff.py            # focused changed-file list (gitwise diff)
