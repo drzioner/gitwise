@@ -151,13 +151,9 @@
     "es": "gitwise clean --branches --dry-run",
     "en": "gitwise clean --branches --dry-run"
   },
-  "clean_refs_not_implemented": {
-    "es": "'clean --refs' no está implementado",
-    "en": "'clean --refs' is not implemented"
-  },
   "clean_specify_flag": {
-    "es": "especifica --branches  (o --refs)",
-    "en": "specify --branches  (or --refs)"
+    "es": "especifica --branches",
+    "en": "specify --branches"
   },
   "clean_to_delete": {
     "es": "para eliminar: gitwise clean --branches --yes",
@@ -2070,6 +2066,10 @@
   "update_dry_run": {
     "es": "ejecutaría: git pull --ff-only en {dir}",
     "en": "would run: git pull --ff-only in {dir}"
+  },
+  "update_deprecation_hint": {
+    "es": "update esta deprecado; usa `brew upgrade gitwise` para Homebrew o `uv tool upgrade gitwise-cli` para instalaciones con uv tool",
+    "en": "update is deprecated; use `brew upgrade gitwise` for Homebrew or `uv tool upgrade gitwise-cli` for uv tool installations"
   },
   "updated_git_conventions": {
     "es": "actualizado: {file} (convenciones git agregadas)",

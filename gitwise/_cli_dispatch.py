@@ -125,7 +125,6 @@ def _run_clean(args: argparse.Namespace) -> int:
 
     return run_clean(
         branches=args.branches,
-        refs=args.refs,
         dry_run=args.dry_run,
         yes=args.yes,
         as_json=args.json,
