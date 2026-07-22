@@ -157,16 +157,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--diff", action="store_true")
     p.add_argument("--max-commits", type=int, default=10, dest="max_commits")
 
-    p = sub.add_parser("snapshot", help="generate .claude/git-snapshot.md", parents=[parent])
+    p = sub.add_parser("snapshot", help="generate agent git snapshot", parents=[parent])
 
     p = sub.add_parser(
         "clean",
-        help="clean up stale branches and refs",
+        help="clean up stale branches",
         aliases=["branch-clean"],
         parents=[parent],
     )
     p.add_argument("--branches", action="store_true")
-    p.add_argument("--refs", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--yes", "-y", action="store_true")
 

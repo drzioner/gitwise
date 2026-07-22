@@ -155,7 +155,7 @@ gitwise audit --json
 
 ### `gitwise clean`
 
-Limpia ramas/refs stale.
+Limpia ramas locales stale cuyo upstream fue eliminado.
 
 ```bash
 gitwise clean --branches --dry-run
@@ -322,7 +322,9 @@ gitwise pick --dry-run
 
 ### `gitwise update`
 
-Actualiza gitwise desde su directorio de instalacion.
+Deprecado para clones source. Prefiere el comando del canal de instalacion:
+`brew upgrade gitwise` para Homebrew o `uv tool upgrade gitwise-cli` para uv.
+Los updates de clones source siguen funcionando durante el periodo de deprecacion.
 
 ```bash
 gitwise update

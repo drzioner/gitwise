@@ -36,10 +36,6 @@
       "type": "boolean",
       "default": false
     },
-    "refs": {
-      "type": "boolean",
-      "default": false
-    },
     "dry_run": {
       "type": "boolean",
       "default": false

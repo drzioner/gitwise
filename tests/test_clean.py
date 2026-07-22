@@ -8,6 +8,8 @@ import pytest
 from gitwise.clean import run_clean
 from gitwise.git import stale_branches
 
+from conftest import run_gitwise
+
 
 def test_dry_run_does_not_delete(
     monkeypatch: pytest.MonkeyPatch, tmp_git_repo_with_stale: Path
@@ -16,7 +18,7 @@ def test_dry_run_does_not_delete(
     before = stale_branches(tmp_git_repo_with_stale)
     assert len(before) == 3
 
-    rc = run_clean(branches=True, refs=False, dry_run=True, yes=True, as_json=False)
+    rc = run_clean(branches=True, dry_run=True, yes=True, as_json=False)
     assert rc == 0
 
     assert stale_branches(tmp_git_repo_with_stale) == before
@@ -28,7 +30,7 @@ def test_dry_run_lists_stale_branches(
     capsys: pytest.CaptureFixture,
 ) -> None:
     monkeypatch.chdir(tmp_git_repo_with_stale)
-    run_clean(branches=True, refs=False, dry_run=True, yes=True, as_json=False)
+    run_clean(branches=True, dry_run=True, yes=True, as_json=False)
     captured = capsys.readouterr()
     output = captured.out + captured.err
     for i in range(1, 4):
@@ -41,7 +43,7 @@ def test_apply_deletes_only_stale(
     monkeypatch.chdir(tmp_git_repo_with_stale)
     assert len(stale_branches(tmp_git_repo_with_stale)) == 3
 
-    rc = run_clean(branches=True, refs=False, dry_run=False, yes=True, as_json=False)
+    rc = run_clean(branches=True, dry_run=False, yes=True, as_json=False)
     assert rc == 0
 
     assert stale_branches(tmp_git_repo_with_stale) == []
@@ -157,7 +159,7 @@ def test_protected_branch_not_deleted(monkeypatch: pytest.MonkeyPatch, tmp_path:
 
     assert "develop" in stale_branches(local)
 
-    rc = run_clean(branches=True, refs=False, dry_run=False, yes=True, as_json=False)
+    rc = run_clean(branches=True, dry_run=False, yes=True, as_json=False)
     assert rc == 0
 
     r = subprocess.run(
@@ -174,7 +176,7 @@ def test_json_output_structure(
     """as_json=True outputs parseable JSON with deletable/skipped keys."""
     monkeypatch.chdir(tmp_git_repo_with_stale)
 
-    rc = run_clean(branches=True, refs=False, dry_run=True, yes=True, as_json=True)
+    rc = run_clean(branches=True, dry_run=True, yes=True, as_json=True)
     assert rc == 0
 
     captured = capsys.readouterr()
@@ -194,7 +196,7 @@ def test_clean_json_executes_delete(
     """Regression for Issue #45: --json without --dry-run must actually delete stale branches."""
     monkeypatch.chdir(tmp_git_repo_with_stale)
 
-    rc = run_clean(branches=True, refs=False, dry_run=False, yes=True, as_json=True)
+    rc = run_clean(branches=True, dry_run=False, yes=True, as_json=True)
     assert rc == 0
 
     data = json.loads(capsys.readouterr().out)
@@ -220,7 +222,7 @@ def test_clean_json_requires_yes(
 ) -> None:
     """Q1: clean --json without --yes must return yes_required envelope."""
     monkeypatch.chdir(tmp_git_repo_with_stale)
-    rc = run_clean(branches=True, refs=False, dry_run=False, yes=False, as_json=True)
+    rc = run_clean(branches=True, dry_run=False, yes=False, as_json=True)
     assert rc == 2
     data = json.loads(capsys.readouterr().out)
     assert data["ok"] is False
@@ -246,7 +248,7 @@ def test_active_worktree_protected(
     monkeypatch.chdir(repo)
 
     try:
-        rc = run_clean(branches=True, refs=False, dry_run=False, yes=True, as_json=False)
+        rc = run_clean(branches=True, dry_run=False, yes=True, as_json=False)
         assert rc == 0
 
         r = subprocess.run(
@@ -265,16 +267,13 @@ def test_active_worktree_protected(
         )
 
 
-def test_clean_refs_not_implemented(
-    monkeypatch: pytest.MonkeyPatch, tmp_git_repo_with_stale: Path, capsys
-) -> None:
-    """--refs is advertised but not implemented; it must fail closed with a v3 envelope."""
-    import json
+def test_clean_refs_absent_from_public_contract(tmp_git_repo: Path) -> None:
+    help_result = run_gitwise("clean", "--help", "--json", cwd=tmp_git_repo)
+    assert help_result.returncode == 0
+    options = json.loads(help_result.stdout)["data"]["options"]
+    assert all(option["name"] != "refs" for option in options)
 
-    monkeypatch.chdir(tmp_git_repo_with_stale)
-    rc = run_clean(branches=False, refs=True, dry_run=True, yes=True, as_json=True)
-    assert rc == 1
-    data = json.loads(capsys.readouterr().out)
-    assert data["ok"] is False
-    assert data["command"] == "clean"
-    assert data["errors"][0]["code"] == "not_implemented"
+    schema_result = run_gitwise("schema", "clean", "--json", cwd=tmp_git_repo)
+    assert schema_result.returncode == 0
+    properties = json.loads(schema_result.stdout)["data"]["json_schema"]["properties"]
+    assert "refs" not in properties

@@ -59,7 +59,6 @@ def _categorize(
 def run_clean(
     *,
     branches: bool = False,
-    refs: bool = False,
     dry_run: bool = False,
     yes: bool = False,
     as_json: bool = False,
@@ -70,11 +69,6 @@ def run_clean(
     user-cancelled), 1 on delete failures or missing flag, 2 when
     ``--json`` is used without ``--yes``.
     """
-    if refs:
-        return report_error(
-            "clean", as_json=as_json, msg=t("clean_refs_not_implemented"), code="not_implemented"
-        )
-
     if not branches:
         return report_error(
             "clean", as_json=as_json, msg=t("clean_specify_flag"), code="clean_specify_flag"

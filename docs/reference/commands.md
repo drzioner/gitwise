@@ -152,7 +152,7 @@ gitwise audit --json
 
 ### `gitwise clean`
 
-Clean stale branches/refs.
+Clean stale local branches whose upstream was removed.
 
 ```bash
 gitwise clean --branches --dry-run
@@ -319,7 +319,9 @@ gitwise pick --dry-run
 
 ### `gitwise update`
 
-Update gitwise from its install directory.
+Deprecated for source clones. Prefer the installation channel command:
+`brew upgrade gitwise` for Homebrew or `uv tool upgrade gitwise-cli` for uv.
+Source-clone updates continue to work during the deprecation period.
 
 ```bash
 gitwise update
