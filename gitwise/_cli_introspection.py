@@ -4,6 +4,7 @@ import argparse
 from typing import TypedDict
 
 from . import __version__
+from ._cli_parser import DEPRECATED_COMMANDS
 from .utils.json_envelope import ok_envelope
 
 
@@ -150,6 +151,8 @@ class CommandMetadata(TypedDict):
     aliases: list[str]
     supports_json: bool
     supports_json_lines: bool
+    deprecated: bool
+    replacement: str | None
 
 
 # Subcommands that stream one JSON envelope per record (NDJSON) via --json-lines.
@@ -198,13 +201,16 @@ def commands_metadata(parser: argparse.ArgumentParser) -> list[CommandMetadata]:
             ]
         )
 
+        replacement = DEPRECATED_COMMANDS.get(name)
         entries.append(
             {
                 "name": name,
-                "help": help_by_parser_id.get(parser_id, command_parser.description or ""),
+                "help": help_by_parser_id.get(parser_id) or command_parser.description or "",
                 "aliases": aliases,
                 "supports_json": True,
                 "supports_json_lines": name in _JSON_LINES_COMMANDS,
+                "deprecated": replacement is not None,
+                "replacement": replacement,
             }
         )
 
