@@ -156,7 +156,7 @@ def evaluate_commit(policy: Policy, context: CommitContext) -> list[Violation]:
         )
 
     branch = context["branch"]
-    if branch and branch in policy["protected_branches"]:
+    if policy["block_direct_commits"] and branch and branch in policy["protected_branches"]:
         violations.append(
             _violation(
                 "protected_branch",

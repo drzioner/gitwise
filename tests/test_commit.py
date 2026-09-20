@@ -198,3 +198,80 @@ def test_commit_blocked_on_secret_despite_color_always(tmp_git_repo: Path) -> No
     _git(["add", "config.py"], tmp_git_repo)
     r = run_gitwise("commit", "-m", "feat: add config", cwd=tmp_git_repo)
     assert r.returncode == 1
+
+
+def _write_policy(repo, payload):
+    """Write a repository policy file for the commit policy tests."""
+    import json
+
+    (repo / ".gitwise").mkdir(exist_ok=True)
+    (repo / ".gitwise" / "policy.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_commit_blocked_by_forbidden_path(tmp_git_repo):
+    """The policy reaches `gitwise commit`, not only the hooks."""
+    import json
+
+    _write_policy(tmp_git_repo, {"version": 1, "forbidden_paths": ["*.pem"]})
+    (tmp_git_repo / "key.pem").write_text("-----BEGIN-----\n", encoding="utf-8")
+    _git(["add", "key.pem"], tmp_git_repo)
+
+    result = run_gitwise("commit", "-m", "feat: add key", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["errors"][0]["code"] == "policy_violation"
+    assert payload["data"]["violations"][0]["rule"] == "forbidden_path"
+
+
+def test_commit_blocked_by_disallowed_type(tmp_git_repo):
+    import json
+
+    _write_policy(tmp_git_repo, {"version": 1, "commit_types": ["feat", "fix"]})
+    (tmp_git_repo / "a.txt").write_text("a\n", encoding="utf-8")
+    _git(["add", "a.txt"], tmp_git_repo)
+
+    result = run_gitwise("commit", "-m", "chore: tidy", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["data"]["violations"][0]["rule"] == "commit_type"
+
+
+def test_commit_blocked_on_protected_branch_when_opted_in(tmp_git_repo):
+    import json
+
+    _write_policy(
+        tmp_git_repo,
+        {"version": 1, "protected_branches": ["main"], "block_direct_commits": True},
+    )
+    (tmp_git_repo / "a.txt").write_text("a\n", encoding="utf-8")
+    _git(["add", "a.txt"], tmp_git_repo)
+
+    result = run_gitwise("commit", "-m", "feat: direct", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["data"]["violations"][0]["rule"] == "protected_branch"
+
+
+def test_commit_on_main_allowed_without_opt_in(tmp_git_repo):
+    """Default policy must not change today's behaviour on main."""
+    import json
+
+    _write_policy(tmp_git_repo, {"version": 1, "protected_branches": ["main"]})
+    (tmp_git_repo / "a.txt").write_text("a\n", encoding="utf-8")
+    _git(["add", "a.txt"], tmp_git_repo)
+
+    result = run_gitwise("commit", "-m", "feat: direct", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0, result.stdout
+    assert json.loads(result.stdout)["ok"] is True
+
+
+def test_commit_reports_invalid_policy(tmp_git_repo):
+    import json
+
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text("{bad", encoding="utf-8")
+    (tmp_git_repo / "a.txt").write_text("a\n", encoding="utf-8")
+    _git(["add", "a.txt"], tmp_git_repo)
+
+    result = run_gitwise("commit", "-m", "feat: x", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["errors"][0]["code"] == "policy_invalid"

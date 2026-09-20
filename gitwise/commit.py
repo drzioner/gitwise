@@ -210,6 +210,61 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
     return None
 
 
+# Rules commit enforces itself, with interactive confirmation and the
+# out-of-band override above. The engine reports them too; taking both would
+# double every message, so the engine's copies are dropped here.
+_RULES_OWNED_BY_COMMIT = frozenset({"secret", "secret_scan_unavailable", "in_progress"})
+
+
+def _enforce_policy(*, root: Path, full_msg: str, as_json: bool) -> int | None:
+    """Apply the repository policy rules; return 1 to block, None to proceed.
+
+    Delegates to the shared engine so `gitwise commit` and the installed hooks
+    reach the same verdict from the same rules, instead of drifting apart.
+    """
+    from gitwise.guard import blocking, collect_commit_context, evaluate_commit, evaluate_message
+    from gitwise.policy import PolicyError, load_policy
+
+    try:
+        policy = load_policy(root)
+    except PolicyError as exc:
+        return report_error(
+            "commit",
+            as_json=as_json,
+            msg=t("guard_policy_invalid", error=str(exc)),
+            code="policy_invalid",
+            hint=t("guard_policy_invalid_hint"),
+        )
+
+    violations = [
+        violation
+        for violation in evaluate_commit(policy, collect_commit_context(root))
+        if violation["rule"] not in _RULES_OWNED_BY_COMMIT
+    ]
+    violations.extend(evaluate_message(policy, full_msg))
+
+    blockers = blocking(violations)
+    for violation in violations:
+        if violation["severity"] == "warn":
+            warn(t("guard_violation", rule=violation["rule"], message=violation["message"]))
+    if not blockers:
+        return None
+
+    if as_json:
+        print_json(
+            error_envelope(
+                "commit",
+                error=t("guard_blocked", count=str(len(blockers))),
+                code="policy_violation",
+                violations=[dict(violation) for violation in blockers],
+            )
+        )
+    else:
+        for violation in blockers:
+            error(t("guard_violation", rule=violation["rule"], message=violation["message"]))
+    return 1
+
+
 def run_commit(
     *,
     message: str | None = None,
@@ -268,6 +323,10 @@ def run_commit(
     secret_rc = _enforce_secret_guard(root=root, allow_secret=allow_secret, as_json=as_json)
     if secret_rc is not None:
         return secret_rc
+
+    policy_rc = _enforce_policy(root=root, full_msg=full_msg, as_json=as_json)
+    if policy_rc is not None:
+        return policy_rc
 
     if dry_run:
         if as_json:
