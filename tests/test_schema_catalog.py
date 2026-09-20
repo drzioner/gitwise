@@ -97,3 +97,31 @@ def test_schema_catalog_checker_script_passes() -> None:
     )
     assert result.returncode == 0, result.stderr
     assert "schema-catalog-check: catalog aligned" in result.stdout
+
+
+def test_policy_schema_matches_default_policy() -> None:
+    """The published policy schema and the loader's defaults must not drift."""
+    import json
+
+    from gitwise.policy import DEFAULT_POLICY
+    from gitwise.schema import schema_root
+    from jsonschema import Draft202012Validator
+
+    path = schema_root("v1") / "policy.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(payload)
+    assert set(payload["properties"]) == set(DEFAULT_POLICY)
+    assert payload["additionalProperties"] is False
+    Draft202012Validator(payload).validate(DEFAULT_POLICY)
+
+
+def test_policy_schema_rejects_unknown_key() -> None:
+    import json
+
+    import pytest
+    from gitwise.schema import schema_root
+    from jsonschema import Draft202012Validator, ValidationError
+
+    payload = json.loads((schema_root("v1") / "policy.json").read_text(encoding="utf-8"))
+    with pytest.raises(ValidationError):
+        Draft202012Validator(payload).validate({"version": 1, "blok_secrets": True})
