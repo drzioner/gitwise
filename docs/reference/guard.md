@@ -58,6 +58,7 @@ gitwise guard check                       # staged changes
 gitwise guard check --json                # machine-readable verdict
 gitwise guard check --push                # ref updates read from stdin
 gitwise guard check --commit-msg .git/COMMIT_EDITMSG
+gitwise guard check --quiet                # silent unless something is wrong
 ```
 
 Exit codes separate policy from failure:
@@ -98,10 +99,15 @@ to do next must be able to tell them apart.
 }
 ```
 
-Rules: `in_progress`, `protected_branch`, `forbidden_path`, `secret`,
+Rules: `protected_branch`, `forbidden_path`, `secret`,
 `secret_scan_unavailable`, `gpg`, `commit_type`, `force_push`,
 `protected_branch_delete`. A violation never carries the credential itself,
 only the rule that matched and where.
+
+A paused merge, rebase or cherry-pick is deliberately not a violation. The
+commit that closes a conflicted merge is the one git runs the hook for, so
+refusing it would leave you unable to finish or abort without `--no-verify`.
+`gitwise commit` still refuses on its own, where the check belongs.
 
 ## `gitwise guard install`
 
@@ -109,7 +115,7 @@ Registers three hooks that call `guard check`:
 
 | Hook | What it refuses |
 |---|---|
-| `pre-commit` | Forbidden paths, leaked credentials, a paused merge or rebase, missing GPG |
+| `pre-commit` | Forbidden paths, leaked credentials, missing GPG |
 | `commit-msg` | A subject whose type the policy does not allow |
 | `pre-push` | Force pushes and deletions of protected branches |
 

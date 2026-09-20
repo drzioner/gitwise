@@ -243,3 +243,41 @@ def test_supports_config_hooks_probes_from_254(monkeypatch):
         lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "", ""),
     )
     assert git_mod.supports_config_hooks() is True
+
+
+def test_run_forces_quote_path_off():
+    """Non-ASCII paths must come back raw, not quoted and octal-escaped."""
+    import subprocess
+
+    import gitwise.git as git_mod
+
+    captured: dict[str, list[str]] = {}
+
+    def _fake_subprocess_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    original = subprocess.run
+    subprocess.run = _fake_subprocess_run  # type: ignore[assignment]
+    try:
+        git_mod.run(["status", "--short"])
+    finally:
+        subprocess.run = original  # type: ignore[assignment]
+
+    assert captured["cmd"][:4] == ["git", "-c", "core.quotePath=false", "status"]
+
+
+def test_non_ascii_path_round_trips_through_run(tmp_git_repo):
+    """End to end: the raw name reaches the caller, not a quoted escape."""
+    from gitwise.git import run as git_run
+
+    from conftest import _git
+
+    folder = tmp_git_repo / "configuración"
+    folder.mkdir()
+    (folder / "app.py").write_text("x\n", encoding="utf-8")
+    _git(["add", "--", "configuración/app.py"], tmp_git_repo)
+
+    out = git_run(["diff", "--cached", "--name-only"], cwd=tmp_git_repo).stdout
+    assert out.strip() == "configuración/app.py"
+    assert "\\303" not in out

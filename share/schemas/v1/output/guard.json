@@ -96,7 +96,6 @@
               "rule": {
                 "type": "string",
                 "enum": [
-                  "in_progress",
                   "protected_branch",
                   "forbidden_path",
                   "secret",

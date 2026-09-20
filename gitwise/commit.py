@@ -213,7 +213,7 @@ def _enforce_secret_guard(*, root: Path, allow_secret: bool, as_json: bool) -> i
 # Rules commit enforces itself, with interactive confirmation and the
 # out-of-band override above. The engine reports them too; taking both would
 # double every message, so the engine's copies are dropped here.
-_RULES_OWNED_BY_COMMIT = frozenset({"secret", "secret_scan_unavailable", "in_progress"})
+_RULES_OWNED_BY_COMMIT = frozenset({"secret", "secret_scan_unavailable"})
 
 
 def _enforce_policy(*, root: Path, full_msg: str, as_json: bool) -> int | None:

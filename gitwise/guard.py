@@ -92,11 +92,18 @@ def _violation(
 
 
 def staged_paths(root: Path) -> list[str]:
-    """Return the repository-relative paths currently staged in *root*."""
-    result = git_run(["diff", "--cached", "--name-only"], cwd=root, check=False)
+    """Return the repository-relative paths currently staged in *root*.
+
+    Uses ``-z`` so git emits raw NUL-separated names. Without it, git applies
+    ``core.quotePath`` (on by default) and returns a non-ASCII path as a quoted,
+    octal-escaped string such as ``"configuraci\303\263n/.env"`` -- which no
+    glob in the policy can match, so putting a secret under an accented
+    directory walked straight past `forbidden_paths`.
+    """
+    result = git_run(["diff", "--cached", "--name-only", "-z"], cwd=root, check=False)
     if result.returncode != 0:
         return []
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return [name for name in result.stdout.split("\0") if name]
 
 
 def path_is_forbidden(path: str, patterns: list[str]) -> bool:
@@ -151,16 +158,13 @@ def evaluate_commit(policy: Policy, context: CommitContext) -> list[Violation]:
     """Return every policy violation the staged commit would commit."""
     violations: list[Violation] = []
 
-    state = context["in_progress"]["state"]
-    if state != "none":
-        violations.append(
-            _violation(
-                "in_progress",
-                "block",
-                f"a {state} is in progress; finish or abort it before committing",
-                detail=state,
-            )
-        )
+    # A paused merge, rebase or cherry-pick is deliberately NOT a violation
+    # here. This function backs the pre-commit hook, and the commit that
+    # closes a conflicted merge is exactly the commit git runs the hook for:
+    # refusing it leaves the user unable to finish or abort without
+    # --no-verify. `gitwise commit` still refuses on its own, where the check
+    # belongs -- there it stops an agent from committing without noticing the
+    # repository is mid-operation.
 
     branch = context["branch"]
     if policy["block_direct_commits"] and branch and branch in policy["protected_branches"]:
@@ -363,6 +367,7 @@ def run_guard_check(
     push: bool = False,
     commit_msg: str | None = None,
     stdin_text: str | None = None,
+    quiet: bool = False,
     as_json: bool = False,
 ) -> int:
     """Evaluate the repository policy and report the verdict without side effects.
@@ -445,7 +450,7 @@ def run_guard_check(
             error(t("guard_blocked", count=str(len(blockers))))
         elif warnings:
             warn(t("guard_warnings", count=str(len(warnings))))
-        else:
+        elif not quiet:
             ok(t("guard_allowed"))
 
     return 2 if blockers else 0
@@ -456,6 +461,7 @@ def run_guard(
     *,
     push: bool = False,
     commit_msg: str | None = None,
+    quiet: bool = False,
     hooks_mode: str = "preserve",
     uninstall: bool = False,
     dry_run: bool = False,
@@ -471,7 +477,7 @@ def run_guard(
             code="action_required",
         )
     if action == "check":
-        return run_guard_check(push=push, commit_msg=commit_msg, as_json=as_json)
+        return run_guard_check(push=push, commit_msg=commit_msg, quiet=quiet, as_json=as_json)
     if action == "install":
         return run_guard_install(
             hooks_mode=hooks_mode,
