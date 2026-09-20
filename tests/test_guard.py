@@ -667,3 +667,73 @@ def test_shipped_hook_scripts_are_executable() -> None:
     from gitwise.guard import guard_hooks_dir, hook_scripts_executable
 
     assert hook_scripts_executable(guard_hooks_dir()) == []
+
+
+# --- regressions from the review gate ------------------------------------
+
+
+def test_forbidden_path_matching_is_case_insensitive() -> None:
+    """A policy forbidding .env means the secret, not the spelling."""
+    from gitwise.guard import path_is_forbidden
+
+    assert path_is_forbidden(".ENV", [".env"])
+    assert path_is_forbidden("deploy/KEY.PEM", ["*.pem"])
+    assert path_is_forbidden("Secrets/Prod.Key", ["secrets/**"])
+    assert not path_is_forbidden("src/app.py", [".env"])
+
+
+def test_object_names_from_stdin_never_reach_git_as_options(tmp_git_repo: Path) -> None:
+    """A ref update carrying `--help` must not be handed to the subprocess."""
+    from gitwise.guard import collect_push_context
+
+    ctx = collect_push_context(
+        tmp_git_repo, "refs/heads/main --help refs/heads/main --upload-pack=evil\n"
+    )
+    # Unusable names are reported as a rewrite, so the push is refused, not run.
+    assert ctx["refs"][0]["non_fast_forward"] is True
+
+
+def test_long_subject_is_not_reported_as_a_type_violation() -> None:
+    """Length is not a policy rule; reporting it as `commit_type` would mislead."""
+    from gitwise.guard import evaluate_message
+
+    assert evaluate_message(_policy(), "feat: " + "x" * 80) == []
+
+
+def test_install_in_json_mode_requires_yes(tmp_git_repo: Path) -> None:
+    """A machine caller gets no prompt, so silence must not mean consent."""
+    import json
+
+    from gitwise.git import config as git_config
+
+    from conftest import run_gitwise
+
+    result = run_gitwise("guard", "install", "--hooks-mode", "legacy", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 2
+    payload = json.loads(result.stdout)
+    assert payload["errors"][0]["code"] == "confirmation_required"
+    assert git_config("core.hooksPath", cwd=tmp_git_repo) is None
+
+
+def test_push_check_without_stdin_reports_instead_of_hanging(tmp_git_repo: Path) -> None:
+    """Reading a tty would block the caller forever."""
+    import json
+    import os
+    import subprocess as sp
+    import sys
+
+    from conftest import PROJECT_ROOT
+
+    result = sp.run(
+        [sys.executable, "-m", "gitwise", "guard", "check", "--push", "--json"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        stdin=sp.DEVNULL,
+        env={**os.environ, "PYTHONPATH": str(PROJECT_ROOT)},
+        timeout=30,
+        check=False,
+    )
+    # DEVNULL is not a tty, so this path reads an empty stdin and finds no refs.
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["data"]["violations"] == []

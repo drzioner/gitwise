@@ -95,3 +95,11 @@ def test_alias_of_a_deprecated_command_still_works(tmp_git_repo: Path) -> None:
     result = run_gitwise("branch-clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
     assert json.loads(result.stdout)["command"] == "clean"
+
+
+def test_alias_of_a_deprecated_command_also_warns(tmp_git_repo: Path) -> None:
+    """Invoking by alias must not silently skip the notice."""
+    result = run_gitwise("branch-clean", "--branches", "--dry-run", "--json", cwd=tmp_git_repo)
+    assert "deprecated" in result.stderr
+    assert "clean" in result.stderr
+    json.loads(result.stdout)

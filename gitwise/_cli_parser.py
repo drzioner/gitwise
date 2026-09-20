@@ -575,6 +575,25 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def canonical_name(parser: argparse.ArgumentParser, invoked: str) -> str:
+    """Resolve an invoked subcommand token to its canonical name.
+
+    Aliases (`branch-clean`, `commit-suggest`, `cherry-pick`) share a parser
+    with their canonical command; without this a deprecated command invoked by
+    its alias would emit no notice at all.
+    """
+    for action in parser._actions:
+        if not isinstance(action, argparse._SubParsersAction):
+            continue
+        target = action.choices.get(invoked)
+        if target is None:
+            continue
+        for name, candidate in action.choices.items():
+            if candidate is target and name in DEPRECATED_COMMANDS:
+                return name
+    return invoked
+
+
 def _hide_deprecated_from_help(sub: argparse._SubParsersAction) -> None:
     """Drop deprecated commands from the human help listing.
 

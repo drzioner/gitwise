@@ -2274,5 +2274,13 @@
   "guard_hooks_not_executable_hint": {
     "es": "ejecuta: chmod +x {path}/*",
     "en": "run: chmod +x {path}/*"
+  },
+  "guard_push_needs_stdin": {
+    "es": "--push lee las actualizaciones de refs desde stdin; no hay nada que leer",
+    "en": "--push reads ref updates from stdin; there is nothing to read"
+  },
+  "guard_install_needs_yes": {
+    "es": "guard install en modo JSON requiere --yes",
+    "en": "guard install in JSON mode requires --yes"
   }
 }

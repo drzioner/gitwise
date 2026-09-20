@@ -26,7 +26,7 @@ from gitwise.i18n import t
 from gitwise.output import confirm, error, info, ok, print_json, report_error, status, warn
 from gitwise.policy import Policy, PolicyError, load_policy, policy_source
 from gitwise.utils.in_progress import InProgressInfo, detect_in_progress
-from gitwise.utils.json_envelope import ok_envelope
+from gitwise.utils.json_envelope import error_envelope, ok_envelope
 from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 ZERO_OBJECT_NAME = "0" * 40
@@ -107,10 +107,17 @@ def path_is_forbidden(path: str, patterns: list[str]) -> bool:
     and against the basename (so ``*.pem`` catches a key at any depth), because
     fnmatch does not treat ``/`` as a separator and a pattern without one would
     otherwise only ever match files at the repository root.
+
+    Matching is case-insensitive. A policy that forbids ``.env`` means the
+    secret, not the spelling: on a case-insensitive filesystem ``.ENV`` is the
+    same file, and on a case-sensitive one it is still the thing the policy
+    exists to keep out. Erring toward blocking is the safe direction here.
     """
-    basename = path.rsplit("/", 1)[-1]
+    lowered = path.lower()
+    basename = lowered.rsplit("/", 1)[-1]
     return any(
-        fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(basename, pattern)
+        fnmatch.fnmatchcase(lowered, pattern.lower())
+        or fnmatch.fnmatchcase(basename, pattern.lower())
         for pattern in patterns
     )
 
@@ -239,7 +246,7 @@ def evaluate_message(policy: Policy, message: str) -> list[Violation]:
     if subject.lower().startswith(_GENERATED_MESSAGE_PREFIXES):
         return []
     types = "|".join(re.escape(commit_type) for commit_type in policy["commit_types"])
-    if types and re.match(rf"^({types})(\(.+\))?!?: .{{1,72}}$", subject):
+    if types and re.match(rf"^({types})(\(.+\))?!?: .{{1,72}}", subject):
         return []
     return [
         _violation(
@@ -267,8 +274,19 @@ def parse_push_stdin(text: str) -> list[tuple[str, str, str, str]]:
     return updates
 
 
+_OBJECT_NAME_RE = re.compile(r"^[0-9a-fA-F]{4,64}$")
+
+
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
-    """Return True if *ancestor* is reachable from *descendant*."""
+    """Return True if *ancestor* is reachable from *descendant*.
+
+    The object names arrive on the hook's stdin. They are checked against the
+    hex-name shape before reaching git, so a value like ``--help`` can never be
+    handed to the subprocess as an option. An unusable name is reported as "not
+    an ancestor", which makes the caller treat the update as a rewrite.
+    """
+    if not _OBJECT_NAME_RE.match(ancestor) or not _OBJECT_NAME_RE.match(descendant):
+        return False
     result = git_run(["merge-base", "--is-ancestor", ancestor, descendant], cwd=root, check=False)
     return result.returncode == 0
 
@@ -384,6 +402,13 @@ def run_guard_check(
     else:
         with status(t("status_guard_check")):
             if push:
+                if stdin_text is None and sys.stdin.isatty():
+                    return report_error(
+                        "guard",
+                        as_json=as_json,
+                        msg=t("guard_push_needs_stdin"),
+                        code="push_needs_stdin",
+                    )
                 text = stdin_text if stdin_text is not None else sys.stdin.read()
                 violations = evaluate_push(policy, collect_push_context(root, text))
                 scope = "push"
@@ -602,9 +627,23 @@ def run_guard_install(
             ok(t("guard_hooks_plan", count=str(len(changes)), backend=backend))
         return 0
 
-    if not yes and not as_json and not confirm(t("guard_confirm_install")):
-        info(t("aborted"))
-        return 0
+    if not yes:
+        if as_json:
+            # A machine caller gets no prompt, so silence would mean applying
+            # config changes nobody confirmed. Exit 2 marks "needs --yes",
+            # distinct from an operational failure.
+            print_json(
+                error_envelope(
+                    "guard",
+                    error=t("guard_install_needs_yes"),
+                    code="confirmation_required",
+                    data={"action": "install", "backend": backend, "changes": changes},
+                )
+            )
+            return 2
+        if not confirm(t("guard_confirm_install")):
+            info(t("aborted"))
+            return 0
 
     failed = [change for change in changes if not _apply_change(change, root)]  # type: ignore[arg-type]
     if failed:
