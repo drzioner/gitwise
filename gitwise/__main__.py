@@ -5,7 +5,12 @@ import time
 
 from ._cli_dispatch import DISPATCH
 from ._cli_introspection import extract_command_token, help_data, help_payload
-from ._cli_parser import DEPRECATED_COMMANDS, _parse_global_options, build_parser
+from ._cli_parser import (
+    DEPRECATED_COMMANDS,
+    _parse_global_options,
+    build_parser,
+    canonical_name,
+)
 from .i18n import t
 from .output import print_dim, print_json, set_json_mode, set_json_pretty
 
@@ -138,7 +143,7 @@ def main() -> int:
 
     start = time.monotonic()
 
-    _warn_if_deprecated(args.command)
+    _warn_if_deprecated(canonical_name(parser, args.command))
 
     handler = DISPATCH.get(args.command)
     if handler is not None:
