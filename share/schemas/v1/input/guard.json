@@ -35,12 +35,43 @@
     "action": {
       "type": "string",
       "enum": [
-        "check"
+        "check",
+        "install"
       ]
     },
     "push": {
       "type": "boolean",
       "description": "evaluate a push, reading pre-push ref updates from stdin",
+      "default": false
+    },
+    "commit_msg": {
+      "type": "string",
+      "description": "evaluate the commit message in PATH against the policy"
+    },
+    "hooks_mode": {
+      "type": "string",
+      "enum": [
+        "preserve",
+        "native",
+        "legacy",
+        "skip"
+      ],
+      "description": "hooks strategy for install: preserve (default), native, legacy, or skip",
+      "default": "preserve"
+    },
+    "uninstall": {
+      "type": "boolean",
+      "description": "remove the policy hooks instead of installing them (install only)",
+      "default": false
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "show actions without executing",
+      "default": false
+    },
+    "yes": {
+      "type": "boolean",
+      "description": "skip confirmation",
       "default": false
     }
   }

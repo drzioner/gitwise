@@ -1,0 +1,13 @@
+#!/bin/sh
+# gitwise guard pre-commit hook: evaluates .gitwise/policy.json before the
+# commit reaches the object database.
+# Installed by: gitwise guard install
+set -eu
+
+if ! command -v gitwise > /dev/null 2>&1; then
+    printf 'gitwise guard: the gitwise binary is not on PATH; refusing the commit\n' >&2
+    printf '  install it, or run: gitwise guard install --uninstall\n' >&2
+    exit 1
+fi
+
+exec gitwise guard check

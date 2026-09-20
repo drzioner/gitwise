@@ -1,0 +1,22 @@
+#!/bin/sh
+# gitwise guard commit-msg hook: checks the message against the policy's
+# allowed conventional-commit types.
+# Installed by: gitwise guard install
+set -eu
+
+# git writes merge/revert/squash messages itself; they are not authored
+# commits and must not be held to the conventional-commit contract.
+GIT_DIR_PATH="$(git rev-parse --git-dir 2> /dev/null || true)"
+if [ -n "${GIT_DIR_PATH}" ]; then
+    [ -f "${GIT_DIR_PATH}/MERGE_HEAD" ] && exit 0
+    [ -f "${GIT_DIR_PATH}/REVERT_HEAD" ] && exit 0
+    [ -f "${GIT_DIR_PATH}/CHERRY_PICK_HEAD" ] && exit 0
+    [ -f "${GIT_DIR_PATH}/SQUASH_MSG" ] && exit 0
+fi
+
+if ! command -v gitwise > /dev/null 2>&1; then
+    printf 'gitwise guard: the gitwise binary is not on PATH; refusing the commit\n' >&2
+    exit 1
+fi
+
+exec gitwise guard check --commit-msg "$1"

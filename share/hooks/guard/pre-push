@@ -1,0 +1,12 @@
+#!/bin/sh
+# gitwise guard pre-push hook: refuses force pushes and deletions of
+# protected branches. Ref updates arrive on stdin, per githooks(5).
+# Installed by: gitwise guard install
+set -eu
+
+if ! command -v gitwise > /dev/null 2>&1; then
+    printf 'gitwise guard: the gitwise binary is not on PATH; refusing the push\n' >&2
+    exit 1
+fi
+
+exec gitwise guard check --push

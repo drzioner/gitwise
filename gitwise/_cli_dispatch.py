@@ -269,6 +269,11 @@ def _run_guard(args: argparse.Namespace) -> int:
     return run_guard(
         getattr(args, "action", None),
         push=getattr(args, "push", False),
+        commit_msg=getattr(args, "commit_msg", None),
+        hooks_mode=getattr(args, "hooks_mode", "preserve"),
+        uninstall=getattr(args, "uninstall", False),
+        dry_run=getattr(args, "dry_run", False),
+        yes=getattr(args, "yes", False),
         as_json=args.json,
     )
 

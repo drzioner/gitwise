@@ -2254,5 +2254,25 @@
   "status_guard_check": {
     "es": "evaluando política",
     "en": "evaluating policy"
+  },
+  "guard_message_unreadable": {
+    "es": "no se puede leer el mensaje de commit en {path}: {error}",
+    "en": "cannot read the commit message at {path}: {error}"
+  },
+  "guard_hooks_conflict": {
+    "es": "core.hooksPath ya apunta a {current}; resuelve el conflicto antes de instalar",
+    "en": "core.hooksPath already points at {current}; resolve the conflict before installing"
+  },
+  "guard_confirm_install": {
+    "es": "¿instalar los hooks de política de gitwise?",
+    "en": "install the gitwise policy hooks?"
+  },
+  "guard_hooks_not_executable": {
+    "es": "los scripts de hook no son ejecutables: {hooks}",
+    "en": "hook scripts are not executable: {hooks}"
+  },
+  "guard_hooks_not_executable_hint": {
+    "es": "ejecuta: chmod +x {path}/*",
+    "en": "run: chmod +x {path}/*"
   }
 }
