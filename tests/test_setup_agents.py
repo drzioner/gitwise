@@ -8,6 +8,26 @@ from pathlib import Path
 from conftest import run_gitwise as _run
 
 
+def _envelope(result: subprocess.CompletedProcess) -> dict:
+    """Return the v3 envelope of *result* flattened for domain assertions.
+
+    setup-agents emits the canonical envelope like every other command, so the
+    payload lives under ``data``. These tests assert on domain fields (bucket,
+    actions, warnings), not on the envelope shape -- that is pinned by
+    ``test_setup_agents_uses_the_canonical_envelope``. Flattening here keeps the
+    assertions about what they were always about. ``errors`` is flattened to its
+    messages, which is what the assertions match on.
+    """
+    payload = json.loads(result.stdout)
+    merged = dict(payload["data"])
+    merged["ok"] = payload["ok"]
+    merged["v"] = payload["v"]
+    merged["command"] = payload["command"]
+    merged["hints"] = payload["hints"]
+    merged["errors"] = [e["message"] for e in payload["errors"]]
+    return merged
+
+
 def _run_local(*args: str, cwd: Path, env: dict | None = None) -> subprocess.CompletedProcess:
     """Run setup-agents in per-repo (--local) mode.
 
@@ -74,13 +94,11 @@ def test_setup_agents_without_yes_non_interactive_cancels(tmp_git_repo):
 def test_setup_agents_json_output_v3(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["v"] == 3
     assert data["mode"] == "local"
     assert data["canonical_layout"] in ("agents_md", "agents_dir")
-    assert 3 in data["v_compat"]
-    assert 2 in data["v_compat"]
-    assert 1 in data["v_compat"]
+    assert "v_compat" not in data, "setup-agents no longer declares its own schema"
     assert data["ok"] is True
     assert "actions" in data
     assert "root" in data
@@ -92,7 +110,7 @@ def test_setup_agents_json_output_v3(tmp_git_repo):
 def test_setup_agents_json_output_v3_migrate_legacy(tmp_git_repo):
     result = _run_local("--json", "--dry-run", "--migrate-legacy-claude", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["canonical_layout"] == "agents_dir"
     assert any("migr" in w.lower() for w in data["warnings"])
 
@@ -102,7 +120,7 @@ def test_setup_agents_json_strict_warnings_returns_error(tmp_git_repo):
     (tmp_git_repo / "AGENTS.md").write_text("# agents\n")
     result = _run_local("--json", "--dry-run", "--strict", cwd=tmp_git_repo)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert any("strict" in e.lower() for e in data["errors"])
 
@@ -111,7 +129,7 @@ def test_migrate_legacy_warning_not_duplicated(tmp_git_repo):
     (tmp_git_repo / "CLAUDE.md").write_text("# legacy\n")
     result = _run_local("--json", "--dry-run", "--migrate-legacy-claude", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     migration_warnings = [w for w in data["warnings"] if "migr" in w.lower()]
     assert len(migration_warnings) == 1
 
@@ -215,7 +233,7 @@ def test_setup_agents_warns_on_legacy_commands(tmp_git_repo):
     legacy.mkdir(parents=True)
     (legacy / "git-audit.md").write_text("# legacy\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert any("legacy" in w.lower() or "antiguo" in w.lower() for w in data["warnings"])
 
 
@@ -278,7 +296,7 @@ def test_marker_regex_no_false_positive():
 def test_bucket1_json_schema_v2_shape(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["bucket"] == 1
     assert data["agents_md_detected"] is False
     assert data["agents_dir_detected"] is False
@@ -315,7 +333,7 @@ def test_bucket2_agents_md_creates_symlink_pointer(tmp_git_repo):
 def test_bucket2_json_reports_correct_bucket(tmp_git_repo):
     (tmp_git_repo / "AGENTS.md").write_text("# project agents\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["mode"] == "local"
     assert data["canonical_layout"] == "agents_md"
     assert data["bucket"] == 2
@@ -373,7 +391,7 @@ def test_bucket4_warns_no_overwrite_distinct_files(tmp_git_repo):
 
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["bucket"] == 4
     assert any(
         "contenido distinto" in w or "replace-claude-with-symlink" in w for w in data["warnings"]
@@ -422,7 +440,7 @@ def test_bucket5_broken_symlink_aborts_with_errors(tmp_git_repo):
 
     result = _run_local("--json", cwd=tmp_git_repo)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert data["bucket"] == 5
     assert len(data["errors"]) >= 1
@@ -439,7 +457,7 @@ def test_bucket5_broken_skills_symlink_aborts(tmp_git_repo):
 
     result = _run_local("--json", cwd=tmp_git_repo)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert len(data["errors"]) >= 1
 
@@ -452,7 +470,7 @@ def test_bucket5_invalid_skills_symlink_reports_read_error(tmp_git_repo):
 
     result = _run_local("--json", cwd=tmp_git_repo)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert any("roto" in e.lower() and "skills" in e.lower() for e in data["errors"])
 
@@ -477,7 +495,7 @@ def test_skills_symlink_created_when_agents_dir_exists(tmp_git_repo):
 def test_local_json_reports_agents_dir_layout(tmp_git_repo):
     (tmp_git_repo / ".agents").mkdir()
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["mode"] == "local"
     assert data["canonical_layout"] in ("agents_md", "agents_dir")
 
@@ -623,7 +641,7 @@ def test_no_git_files_skips_gitignore(tmp_git_repo):
 
 def test_gitattributes_no_conflict_fresh_repo(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert not any(".gitattributes" in w and "conflict" in w for w in data["warnings"])
 
 
@@ -631,7 +649,7 @@ def test_gitattributes_warns_on_conflicting_rule(tmp_git_repo):
     # User has CLAUDE.md with eol=crlf; gitwise wants eol=lf
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md text=auto eol=crlf\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert any(
         "CLAUDE.md" in w and ("conflict" in w or "conflicto" in w) for w in data["warnings"]
     )
@@ -641,7 +659,7 @@ def test_gitattributes_no_warning_when_same_rule(tmp_git_repo):
     # User already has the exact same rule gitwise would write
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md text=auto eol=lf\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert not any("CLAUDE.md" in w and "conflict" in w for w in data["warnings"])
 
 
@@ -649,7 +667,7 @@ def test_gitattributes_no_false_positive_on_second_run(tmp_git_repo):
     # After setup, second run must not generate false conflict warnings
     _run_local("--yes", cwd=tmp_git_repo)
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert not any("conflict" in w for w in data["warnings"])
 
 
@@ -657,7 +675,7 @@ def test_gitattributes_no_warning_for_bare_path_entry(tmp_git_repo):
     # A bare path without attributes in user's file should not trigger a warning
     (tmp_git_repo / ".gitattributes").write_text("CLAUDE.md\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert not any("CLAUDE.md" in w and "conflict" in w for w in data["warnings"])
 
 
@@ -681,7 +699,7 @@ def test_gitwise_rule_skipped_if_exists(tmp_git_repo):
 def test_gitwise_rule_no_warning_from_detector(tmp_git_repo):
     _run_local("--yes", cwd=tmp_git_repo)
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert not any("gitwise.md" in w for w in data["rules_warnings"])
 
 
@@ -690,7 +708,7 @@ def test_gitwise_rule_no_warning_from_detector(tmp_git_repo):
 
 def test_rules_no_dir_no_warnings(tmp_git_repo):
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["rules_warnings"] == []
 
 
@@ -701,7 +719,7 @@ def test_rules_valid_globs_no_warning(tmp_git_repo):
         "---\nname: my-rule\nglobs: src/**/*.py\n---\n# My rule\n"
     )
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["rules_warnings"] == []
 
 
@@ -710,7 +728,7 @@ def test_rules_broken_no_globs_warns(tmp_git_repo):
     rules_dir.mkdir(parents=True)
     (rules_dir / "bad-rule.md").write_text("# No frontmatter at all\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert any("bad-rule.md" in w and "globs" in w for w in data["rules_warnings"])
 
 
@@ -721,7 +739,7 @@ def test_rules_symlink_escape_ignored(tmp_git_repo):
     outside.write_text("# outside\n")
     os.symlink(str(outside), rules_dir / "escape.md")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert any("escape.md" in w and "symlink" in w for w in data["rules_warnings"])
 
 
@@ -730,7 +748,7 @@ def test_rules_warnings_subset_of_warnings(tmp_git_repo):
     rules_dir.mkdir(parents=True)
     (rules_dir / "missing-globs.md").write_text("---\nname: test\n---\n# no globs\n")
     result = _run_local("--json", "--dry-run", cwd=tmp_git_repo)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert len(data["rules_warnings"]) > 0
     assert all(w in data["warnings"] for w in data["rules_warnings"])
 
@@ -766,7 +784,7 @@ def test_global_mode_works_outside_git_repo(tmp_path):
 def test_global_mode_rejects_migrate_legacy_flag(tmp_path):
     result = _run_global("--json", "--dry-run", "--migrate-legacy-claude", fake_home=tmp_path)
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert any("local" in e.lower() for e in data["errors"])
 
@@ -781,7 +799,7 @@ def test_global_mode_strict_warnings_fails_with_deprecated_alias(tmp_path):
         fake_home=tmp_path,
     )
     assert result.returncode == 1
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["ok"] is False
     assert any("strict" in e.lower() for e in data["errors"])
 
@@ -789,34 +807,45 @@ def test_global_mode_strict_warnings_fails_with_deprecated_alias(tmp_path):
 def test_global_mode_json_output(tmp_path):
     result = _run_global("--json", "--dry-run", fake_home=tmp_path)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["v"] == 3
     assert data["mode"] == "global"
     assert data["canonical_layout"] == "claude_only"
-    assert 3 in data["v_compat"]
+    assert "v_compat" not in data
     assert data["ok"] is True
     assert "actions" in data
     assert "summary" in data
 
 
-def test_global_mode_json_compat_adapters_key(tmp_path):
-    result = _run(
+def test_legacy_adapters_surface_was_removed(tmp_path):
+    """--list-adapters and the duplicated `adapters` key are gone."""
+    legacy = _run(
         "setup-agents",
         "--list-adapters",
         "--json",
         cwd=tmp_path,
         env={"HOME": str(tmp_path), "GITWISE_LANG": "es"},
     )
-    assert result.returncode == 0
-    data = json.loads(result.stdout)
+    assert legacy.returncode == 2
+    assert json.loads(legacy.stdout)["errors"][0]["code"] == "invalid_arguments"
+
+    current = _run(
+        "setup-agents",
+        "--list-providers",
+        "--json",
+        cwd=tmp_path,
+        env={"HOME": str(tmp_path), "GITWISE_LANG": "es"},
+    )
+    assert current.returncode == 0
+    data = _envelope(current)
     assert "providers" in data
-    assert "adapters" in data
+    assert "adapters" not in data
 
 
 def test_global_mode_adapters_json_output(tmp_path):
     result = _run_global("--json", "--dry-run", "--providers", "cursor", fake_home=tmp_path)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["mode"] == "global"
     assert any(a.get("file") == ".cursor/rules/gitwise.mdc" for a in data.get("actions", []))
 
@@ -824,7 +853,7 @@ def test_global_mode_adapters_json_output(tmp_path):
 def test_global_mode_json_reports_agents_layout_when_present(tmp_path):
     (tmp_path / ".agents").mkdir()
     result = _run_global("--json", "--dry-run", fake_home=tmp_path)
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert data["mode"] == "global"
     assert data["canonical_layout"] == "agents_dir"
 
@@ -842,7 +871,7 @@ def test_global_mode_idempotent(tmp_path):
 def test_global_mode_with_claude_only_warns_alias(tmp_path):
     result = _run_global("--json", "--dry-run", "--providers", "claude-only", fake_home=tmp_path)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     assert any("alias" in w.lower() for w in data["warnings"])
 
 
@@ -884,7 +913,7 @@ def test_global_skills_shadow_local_warn(tmp_path):
 
     # Local setup should warn that skills are shadowed by global
     result = _run_local("--json", "--dry-run", cwd=repo, env={"HOME": str(fake_home)})
-    data = json.loads(result.stdout)
+    data = _envelope(result)
     shadow_warnings = [w for w in data["warnings"] if "globalmente" in w]
     assert len(shadow_warnings) >= 1
 

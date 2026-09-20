@@ -3,9 +3,13 @@
 from pathlib import Path
 
 from gitwise.setup_agents.types import ActionDict, StateDict, build_action_summary
+from gitwise.utils.json_envelope import ENVELOPE_VERSION, error_envelope, ok_envelope
 
-_SETUP_AGENTS_SCHEMA_VERSION = 3
-_SETUP_AGENTS_SCHEMA_COMPAT = [1, 2, 3]
+# Kept as aliases so callers that imported these keep working; setup-agents now
+# emits the same v3 envelope as every other command, so there is no separate
+# schema version to track.
+_SETUP_AGENTS_SCHEMA_VERSION = ENVELOPE_VERSION
+_SETUP_AGENTS_SCHEMA_COMPAT = [ENVELOPE_VERSION]
 
 
 def _action_summaries(actions: list[ActionDict]) -> list[dict[str, str]]:
@@ -54,22 +58,18 @@ def format_json_output_global(
     dry_run: bool = False,
 ) -> dict[str, object]:
     """Build the JSON output dict for a successful global setup-agents run."""
-    summary = build_action_summary(actions)
-    return {
-        "v": _SETUP_AGENTS_SCHEMA_VERSION,
-        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
-        "command": "setup-agents",
-        "hints": [],
-        "dry_run": dry_run,
-        "root": str(home / ".claude"),
-        "mode": "global",
-        "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
-        "actions": _action_summaries(actions),
-        "warnings": warnings,
-        "errors": [],
-        "summary": summary,
-        "ok": True,
-    }
+    return ok_envelope(
+        "setup-agents",
+        data={
+            "dry_run": dry_run,
+            "root": str(home / ".claude"),
+            "mode": "global",
+            "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
+            "actions": _action_summaries(actions),
+            "warnings": warnings,
+            "summary": build_action_summary(actions),
+        },
+    )
 
 
 def format_json_output_global_error(
@@ -81,27 +81,29 @@ def format_json_output_global_error(
     dry_run: bool = False,
 ) -> dict[str, object]:
     """Build the JSON output dict for a failed global setup-agents run."""
-    return {
-        "v": _SETUP_AGENTS_SCHEMA_VERSION,
-        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
-        "command": "setup-agents",
-        "hints": [],
-        "dry_run": dry_run,
-        "root": str(home / ".claude"),
-        "mode": "global",
-        "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
-        "actions": [],
-        "warnings": warnings,
-        "errors": errors,
-        "summary": {
-            "created": 0,
-            "appended": 0,
-            "symlinked": 0,
-            "skipped": 0,
-            "errored": len(errors),
+    return error_envelope(
+        "setup-agents",
+        error=errors[0] if errors else "setup-agents failed",
+        code="setup_agents_failed",
+        extra_errors=[
+            {"code": "setup_agents_failed", "message": message} for message in errors[1:]
+        ],
+        data={
+            "dry_run": dry_run,
+            "root": str(home / ".claude"),
+            "mode": "global",
+            "canonical_layout": _canonical_layout_global(has_agents_dir=has_agents_dir),
+            "actions": [],
+            "warnings": warnings,
+            "summary": {
+                "created": 0,
+                "appended": 0,
+                "symlinked": 0,
+                "skipped": 0,
+                "errored": len(errors),
+            },
         },
-        "ok": False,
-    }
+    )
 
 
 def format_json_output_local_error(
@@ -113,32 +115,35 @@ def format_json_output_local_error(
     migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
     """Build the JSON output dict for a failed local setup-agents run."""
-    return {
-        "v": _SETUP_AGENTS_SCHEMA_VERSION,
-        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
-        "command": "setup-agents",
-        "hints": [],
-        "dry_run": dry_run,
-        "root": str(root),
-        "mode": "local",
-        "canonical_layout": "agents_dir" if migrate_legacy_claude else "unknown",
-        "bucket": 5,
-        "agents_md_detected": False,
-        "agents_dir_detected": False,
-        "supports_symlinks": False,
-        "actions": [],
-        "warnings": all_warnings,
-        "rules_warnings": [],
-        "errors": [e["reason"] for e in plan_errors],
-        "summary": {
-            "created": 0,
-            "appended": 0,
-            "symlinked": 0,
-            "skipped": 0,
-            "errored": len(plan_errors),
+    reasons = [e["reason"] for e in plan_errors]
+    return error_envelope(
+        "setup-agents",
+        error=reasons[0] if reasons else "setup-agents failed",
+        code="setup_agents_plan_failed",
+        extra_errors=[
+            {"code": "setup_agents_plan_failed", "message": reason} for reason in reasons[1:]
+        ],
+        data={
+            "dry_run": dry_run,
+            "root": str(root),
+            "mode": "local",
+            "canonical_layout": "agents_dir" if migrate_legacy_claude else "unknown",
+            "bucket": 5,
+            "agents_md_detected": False,
+            "agents_dir_detected": False,
+            "supports_symlinks": False,
+            "actions": [],
+            "warnings": all_warnings,
+            "rules_warnings": [],
+            "summary": {
+                "created": 0,
+                "appended": 0,
+                "symlinked": 0,
+                "skipped": 0,
+                "errored": len(plan_errors),
+            },
         },
-        "ok": False,
-    }
+    )
 
 
 def format_json_output_local(
@@ -153,28 +158,24 @@ def format_json_output_local(
     migrate_legacy_claude: bool = False,
 ) -> dict[str, object]:
     """Build the JSON output dict for a successful local setup-agents run."""
-    summary = build_action_summary(actions)
-    return {
-        "v": _SETUP_AGENTS_SCHEMA_VERSION,
-        "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
-        "command": "setup-agents",
-        "hints": [],
-        "dry_run": dry_run,
-        "root": str(root),
-        "mode": "local",
-        "canonical_layout": _canonical_layout_local_with_actions(
-            state=state,
-            actions=actions,
-            migrate_legacy_claude=migrate_legacy_claude,
-        ),
-        "bucket": bucket,
-        "agents_md_detected": state["a_state"] != "absent",
-        "agents_dir_detected": state["agents_dir"],
-        "supports_symlinks": state["supports_symlinks"],
-        "actions": _action_summaries(actions),
-        "warnings": all_warnings,
-        "rules_warnings": rules_warnings,
-        "errors": [],
-        "summary": summary,
-        "ok": True,
-    }
+    return ok_envelope(
+        "setup-agents",
+        data={
+            "dry_run": dry_run,
+            "root": str(root),
+            "mode": "local",
+            "canonical_layout": _canonical_layout_local_with_actions(
+                state=state,
+                actions=actions,
+                migrate_legacy_claude=migrate_legacy_claude,
+            ),
+            "bucket": bucket,
+            "agents_md_detected": state["a_state"] != "absent",
+            "agents_dir_detected": state["agents_dir"],
+            "supports_symlinks": state["supports_symlinks"],
+            "actions": _action_summaries(actions),
+            "warnings": all_warnings,
+            "rules_warnings": rules_warnings,
+            "summary": build_action_summary(actions),
+        },
+    )

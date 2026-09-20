@@ -192,7 +192,6 @@ def _run_setup_local(
     frozen_time: bool = False,
     no_git_files: bool = False,
     providers: list[str] | None = None,
-    adapters_legacy_used: bool = False,
 ) -> int:
     """Install per-repo setup-agents artifacts (CLAUDE.md, settings, skills).
 
@@ -240,11 +239,6 @@ def _run_setup_local(
     has_errors = bool(plan_errors)
     all_warnings = gpg_warnings + warnings
     global_skills = detect_global_skills()
-
-    if adapters_legacy_used:
-        all_warnings.append(
-            t("adapter_alias_deprecated", alias="--adapters", target="--providers")
-        )
 
     if providers:
         from gitwise.setup_agents.providers import plan_adapter_actions
@@ -387,7 +381,6 @@ def run_setup_agents(
     frozen_time: bool = False,
     no_git_files: bool = False,
     providers: list[str] | None = None,
-    adapters_legacy_used: bool = False,
 ) -> int:
     """Dispatcher: global mode (default) or per-repo mode (--local)."""
     import platform
@@ -401,17 +394,16 @@ def run_setup_agents(
             # code produces broken links. Fail fast with a clear workaround
             # instead of letting the user hit a confusing traceback.
             if as_json:
+                from gitwise.utils.json_envelope import error_envelope
+
                 print_json(
-                    {
-                        "v": 3,
-                        "v_compat": [1, 2, 3],
-                        "command": "setup-agents",
-                        "hints": ["gitwise setup-agents --local --no-symlinks"],
-                        "ok": False,
-                        "error": "windows_global_unsupported",
-                        "message": t("setup_agents_windows_global_unsupported"),
-                        "workaround": "gitwise setup-agents --local --no-symlinks",
-                    }
+                    error_envelope(
+                        "setup-agents",
+                        error=t("setup_agents_windows_global_unsupported"),
+                        code="windows_global_unsupported",
+                        hint="gitwise setup-agents --local --no-symlinks",
+                        data={"workaround": "gitwise setup-agents --local --no-symlinks"},
+                    )
                 )
             else:
                 error(t("setup_agents_windows_global_unsupported"))
@@ -438,7 +430,6 @@ def run_setup_agents(
             frozen_time=frozen_time,
             no_git_files=no_git_files,
             providers=providers,
-            adapters_legacy_used=adapters_legacy_used,
         )
     if migrate_legacy_claude:
         if as_json:

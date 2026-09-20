@@ -49,14 +49,19 @@ def error_envelope(
     hint: str | None = None,
     data: Mapping[str, object] | None = None,
     hints: list[str] | None = None,
+    extra_errors: list[Mapping[str, object]] | None = None,
     **data_fields: object,
 ) -> dict[str, object]:
-    """Build an error v3 envelope with one structured ``errors`` entry.
+    """Build an error v3 envelope with one or more structured ``errors`` entries.
 
     ``code`` defaults to ``"error"``; pass a stable machine-readable code so
     agents can branch on it. ``hint`` is surfaced both in ``errors[0].hint`` and
     appended to ``hints``. Extra keyword fields (e.g. ``findings=``) merge into
     ``data`` so structured context travels with the error.
+
+    ``extra_errors`` appends further ``{code, message}`` entries after the first,
+    for operations that legitimately fail in several places at once (a plan
+    whose steps each failed, for instance) rather than at a single point.
     """
     payload: dict[str, object] = dict(data) if data else {}
     payload.update(data_fields)
@@ -66,11 +71,14 @@ def error_envelope(
         err_item["hint"] = hint
         if hint not in hints_list:
             hints_list.append(hint)
+    errors: list[dict[str, object]] = [err_item]
+    if extra_errors:
+        errors.extend(dict(item) for item in extra_errors)
     return {
         "v": ENVELOPE_VERSION,
         "ok": False,
         "command": command,
         "data": payload,
         "hints": hints_list,
-        "errors": [err_item],
+        "errors": errors,
     }

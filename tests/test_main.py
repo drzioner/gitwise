@@ -306,30 +306,26 @@ def test_setup_agents_dryrun_gitwise(tmp_git_repo):
 def test_setup_agents_json(tmp_git_repo):
     result = run_gitwise("setup-agents", "--local", "--yes", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
-    assert data["v"] == 3
-    assert "bucket" in data
-    assert "actions" in data
+    payload = json.loads(result.stdout)
+    assert payload["v"] == 3
+    assert "bucket" in payload["data"]
+    assert "actions" in payload["data"]
 
 
 def test_setup_agents_list_providers_json(tmp_git_repo):
     result = run_gitwise("setup-agents", "--list-providers", "--json", cwd=tmp_git_repo)
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert "providers" in data
-    assert "adapters" in data
+    assert "adapters" not in data, "the legacy alias was removed"
     assert "claude" in data["providers"]
-    assert "claude" in data["adapters"]
 
 
 def test_setup_agents_list_adapters_alias_json(tmp_git_repo):
+    """The legacy --list-adapters alias was retired; --list-providers replaces it."""
     result = run_gitwise("setup-agents", "--list-adapters", "--json", cwd=tmp_git_repo)
-    assert result.returncode == 0
-    data = json.loads(result.stdout)
-    assert "providers" in data
-    assert "adapters" in data
-    assert "claude" in data["providers"]
-    assert "claude" in data["adapters"]
+    assert result.returncode == 2
+    assert json.loads(result.stdout)["errors"][0]["code"] == "invalid_arguments"
 
 
 def test_setup_agents_migrate_legacy_flag(tmp_git_repo):
@@ -343,7 +339,7 @@ def test_setup_agents_migrate_legacy_flag(tmp_git_repo):
         cwd=tmp_git_repo,
     )
     assert result.returncode == 0
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert data["canonical_layout"] == "agents_dir"
 
 

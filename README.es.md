@@ -106,6 +106,10 @@ sostienen el producto; el resto es soporte.
 Comandos de soporte: `doctor`, `setup`, `audit`, `summarize`, `context`,
 `diff`, `conflicts`, `commands`, `schema`, `completions`.
 
+Todos los comandos responden a `--json` con el mismo envelope v3
+(`{v, ok, command, data, hints, errors}`), incluidas sus rutas de error y los
+fallos por argumento inválido. Un solo parser lee los 31.
+
 Diecisiete wrappers finos sobre `git` y `gh` (`log`, `show`, `status`, `stash`,
 `tag`, `pick`, `undo`, `branches`, `sync`, `merge`, `pr`, `clean`, `optimize`,
 `health`, `suggest`, `snapshot`, `update`) están deprecados. Siguen
@@ -118,6 +122,7 @@ Para todos los comandos, ejemplos, aliases y uso JSON:
 - [Referencia de comandos (Español)](docs/es/reference/commands.md)
 - [Policy guard (English)](docs/reference/guard.md)
 - [Cortafuegos de políticas (Español)](docs/es/reference/guard.md)
+- [Guía de migración (0.36)](docs/es/MIGRATION-0.36.md)
 
 ## Documentación
 

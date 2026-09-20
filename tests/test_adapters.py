@@ -1,11 +1,32 @@
 """Tests for the adapter registry and planning system."""
 
 import json
+import subprocess
 import sys
 
 import pytest
 
 from conftest import run_gitwise
+
+
+def _envelope(result: subprocess.CompletedProcess) -> dict:
+    """Return the v3 envelope of *result* flattened for domain assertions.
+
+    setup-agents emits the canonical envelope like every other command, so the
+    payload lives under ``data``. These tests assert on domain fields (bucket,
+    actions, warnings), not on the envelope shape -- that is pinned by
+    ``test_setup_agents_uses_the_canonical_envelope``. Flattening here keeps the
+    assertions about what they were always about. ``errors`` is flattened to its
+    messages, which is what the assertions match on.
+    """
+    payload = json.loads(result.stdout)
+    merged = dict(payload["data"])
+    merged["ok"] = payload["ok"]
+    merged["v"] = payload["v"]
+    merged["command"] = payload["command"]
+    merged["hints"] = payload["hints"]
+    merged["errors"] = [e["message"] for e in payload["errors"]]
+    return merged
 
 
 class TestListAdapters:
@@ -18,19 +39,18 @@ class TestListAdapters:
     def test_list_adapters_in_json_mode(self):
         result = run_gitwise("setup-agents", "--list-providers", "--json")
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = _envelope(result)
         assert "providers" in data
-        assert "adapters" in data
+        assert "adapters" not in data, "the legacy alias was removed"
         for name in ("claude", "cursor", "continue", "opencode", "codex", "aider", "pi"):
             assert name in data["providers"]
-            assert name in data["adapters"]
 
-    def test_list_adapters_alias_still_works(self):
+    def test_list_adapters_alias_was_removed(self):
+        """--list-adapters was retired in favour of --list-providers."""
         result = run_gitwise("setup-agents", "--list-adapters", "--json")
-        assert result.returncode == 0
-        data = json.loads(result.stdout)
-        assert "providers" in data
-        assert "adapters" in data
+        assert result.returncode == 2
+        payload = json.loads(result.stdout)
+        assert payload["errors"][0]["code"] == "invalid_arguments"
 
     def test_single_adapter_claude_no_extra_adapter_actions(self, tmp_git_repo):
         result = run_gitwise(
@@ -195,7 +215,7 @@ class TestAdapterDryRun:
             cwd=tmp_git_repo,
         )
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = _envelope(result)
         assert any(a.get("file") == ".claude/settings.json" for a in data.get("actions", []))
         assert any("deprecated alias" in w for w in data.get("warnings", []))
 
@@ -216,7 +236,7 @@ class TestAdapterDryRun:
             env={"HOME": str(tmp_path), "GITWISE_LANG": "en"},
         )
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = _envelope(result)
         assert data["mode"] == "global"
         assert any("deprecated alias" in w for w in data.get("warnings", []))
 
@@ -237,7 +257,7 @@ class TestAdapterDryRun:
             env={"HOME": str(tmp_path), "GITWISE_LANG": "en"},
         )
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = _envelope(result)
         assert data["mode"] == "global"
         assert any(a.get("file") == ".cursor/rules/gitwise.mdc" for a in data.get("actions", []))
 
@@ -454,7 +474,7 @@ class TestAdapterContent:
             cwd=tmp_git_repo,
         )
         assert result.returncode == 0
-        data = json.loads(result.stdout)
+        data = _envelope(result)
         adapter_actions = [
             a for a in data.get("actions", []) if a.get("action") == "adapter-create"
         ]
