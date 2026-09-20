@@ -59,6 +59,24 @@ gitwise setup-agents --dry-run --providers cursor
 gitwise setup-agents --local --yes --providers cursor aider
 ```
 
+## Policy enforcement
+
+### `gitwise guard`
+
+Evaluate the repository policy and install the hooks that enforce it.
+
+```bash
+gitwise guard check                 # staged changes
+gitwise guard check --json          # machine-readable verdict
+gitwise guard check --push          # ref updates from stdin (pre-push)
+gitwise guard install --dry-run
+gitwise guard install --yes
+```
+
+Exit codes: `0` allowed, `2` blocked by policy, `1` operational error.
+
+Full documentation: [Policy guard](guard.md).
+
 ## Daily context and review
 
 ### `gitwise summarize`

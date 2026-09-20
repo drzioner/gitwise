@@ -83,32 +83,38 @@ uv tool uninstall gitwise-cli          # if installed via uv (any OS)
 
 ```bash
 gitwise doctor
-gitwise setup --dry-run
 gitwise setup-agents --local --dry-run
-gitwise summarize
+gitwise guard install --dry-run
+gitwise guard check --json
 ```
 
-## Most Used Commands
+## The four pillars
 
-| Command | Purpose |
+gitwise is a policy layer, not a Git front end. Four commands carry the
+product; everything else is support.
+
+| Command | What it is for |
 |---|---|
-| `gitwise doctor` | Check Python, git, platform, optional tools |
-| `gitwise setup` | Apply modern Git defaults safely |
-| `gitwise setup-agents` | Install canonical agents layout + optional provider config |
-| `gitwise audit` | Detect stale branches, graph/cache gaps, large blobs |
-| `gitwise summarize` | Compact context for humans and AI |
-| `gitwise diff` | Focused changed-file view (`--stat`, `--staged`, `--patch`) |
-| `gitwise worktree` | Create and clean worktree-based branch setups |
-| `gitwise status` | Enhanced status with staged/unstaged and ahead/behind |
-| `gitwise commands --json` | List subcommands with aliases and metadata |
-| `gitwise schema <command> --json` | Return versioned JSON Schema for command inputs |
-| `gitwise completions <shell>` | Generate shell completion scripts (bash/zsh/fish/powershell) |
-| `gitwise pr` | List/check/view PRs via GitHub CLI |
+| `gitwise guard` | Evaluate the repository policy and install the hooks that enforce it, so protection does not depend on the agent choosing to ask |
+| `gitwise commit` | The safe write path: conventional format, GPG readiness, secret scan, amend protection |
+| `gitwise worktree` | Isolate parallel agents on their own worktrees, and clean up orphans |
+| `gitwise setup-agents` | Install the canonical agents layout and per-provider configuration |
+
+Supporting commands: `doctor`, `setup`, `audit`, `summarize`, `context`,
+`diff`, `conflicts`, `commands`, `schema`, `completions`.
+
+Seventeen thin wrappers over `git` and `gh` (`log`, `show`, `status`, `stash`,
+`tag`, `pick`, `undo`, `branches`, `sync`, `merge`, `pr`, `clean`, `optimize`,
+`health`, `suggest`, `snapshot`, `update`) are deprecated. They still work and
+are hidden from `--help`; `gitwise commands --json` reports each one with its
+replacement. They will be removed in 1.0.
 
 For all commands, examples, aliases, and JSON usage, see:
 
 - [Command reference (English)](docs/reference/commands.md)
 - [Referencia de comandos (Español)](docs/es/reference/commands.md)
+- [Policy guard (English)](docs/reference/guard.md)
+- [Cortafuegos de políticas (Español)](docs/es/reference/guard.md)
 
 ## Documentation
 

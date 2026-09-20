@@ -86,32 +86,38 @@ uv tool uninstall gitwise-cli          # si se instaló via uv (cualquier OS)
 
 ```bash
 gitwise doctor
-gitwise setup --dry-run
 gitwise setup-agents --local --dry-run
-gitwise summarize
+gitwise guard install --dry-run
+gitwise guard check --json
 ```
 
-## Comandos más usados
+## Los cuatro pilares
 
-| Comando | Propósito |
+gitwise es una capa de política, no un frontal de Git. Cuatro comandos
+sostienen el producto; el resto es soporte.
+
+| Comando | Para qué sirve |
 |---|---|
-| `gitwise doctor` | Verifica Python, git, plataforma y herramientas opcionales |
-| `gitwise setup` | Aplica defaults modernos de Git de forma segura |
-| `gitwise setup-agents` | Instala layout canónico de agentes + configuración opcional de providers |
-| `gitwise audit` | Detecta ramas stale, gaps de graph/cache, blobs grandes |
-| `gitwise summarize` | Contexto compacto para humanos y agentes |
-| `gitwise diff` | Vista enfocada de cambios (`--stat`, `--staged`, `--patch`) |
-| `gitwise worktree` | Crea y limpia flujos por worktree |
-| `gitwise status` | Status mejorado con staged/unstaged y ahead/behind |
-| `gitwise commands --json` | Lista subcomandos con aliases y metadata |
-| `gitwise schema <command> --json` | Retorna JSON Schema versionado para inputs de comandos |
-| `gitwise completions <shell>` | Genera scripts de completions (bash/zsh/fish) |
-| `gitwise pr` | Lista/check/view de PRs con GitHub CLI |
+| `gitwise guard` | Evalúa la política del repositorio e instala los hooks que la aplican, para que la protección no dependa de que el agente decida preguntar |
+| `gitwise commit` | La vía de escritura segura: formato conventional, GPG, escaneo de secretos, protección de amend |
+| `gitwise worktree` | Aísla agentes paralelos en worktrees propios y limpia los huérfanos |
+| `gitwise setup-agents` | Instala el layout canónico de agentes y la configuración por provider |
+
+Comandos de soporte: `doctor`, `setup`, `audit`, `summarize`, `context`,
+`diff`, `conflicts`, `commands`, `schema`, `completions`.
+
+Diecisiete wrappers finos sobre `git` y `gh` (`log`, `show`, `status`, `stash`,
+`tag`, `pick`, `undo`, `branches`, `sync`, `merge`, `pr`, `clean`, `optimize`,
+`health`, `suggest`, `snapshot`, `update`) están deprecados. Siguen
+funcionando y están ocultos de `--help`; `gitwise commands --json` informa de
+cada uno con su reemplazo. Se eliminarán en 1.0.
 
 Para todos los comandos, ejemplos, aliases y uso JSON:
 
 - [Command reference (English)](docs/reference/commands.md)
 - [Referencia de comandos (Español)](docs/es/reference/commands.md)
+- [Policy guard (English)](docs/reference/guard.md)
+- [Cortafuegos de políticas (Español)](docs/es/reference/guard.md)
 
 ## Documentación
 

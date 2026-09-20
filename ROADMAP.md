@@ -6,13 +6,17 @@ Living roadmap for turning gitwise into a practical Git hub for humans and codin
 
 ## Current state (v0.15.0)
 
-gitwise currently ships 27 commands (with aliases): `doctor`, `setup-agents`, `setup`,
-`audit`, `summarize`, `snapshot`, `clean` (`branch-clean`), `optimize`, `worktree`,
-`diff`, `log`, `show`, `commit`, `branches`, `sync`, `pr`, `undo`, `context`,
-`health`, `stash`, `tag`, `merge`, `conflicts`, `suggest` (`commit-suggest`),
-`pick` (`cherry-pick`), `status`, `update`.
+gitwise is built around four pillars: `guard`, `commit`, `worktree` and
+`setup-agents`. Supporting them: `doctor`, `setup`, `audit`, `summarize`,
+`context`, `diff`, `conflicts`, `commands`, `schema`, `completions`.
 
-Completed through Phase 12. Current baseline: 737 tests collected, 550 i18n keys (es/en),
+Seventeen wrappers over `git` and `gh` are deprecated and hidden from `--help`
+(`log`, `show`, `status`, `stash`, `tag`, `pick`, `undo`, `branches`, `sync`,
+`merge`, `pr`, `clean`, `optimize`, `health`, `suggest`, `snapshot`, `update`).
+They remain dispatchable, report a replacement in `gitwise commands --json`,
+and are scheduled for removal in 1.0.
+
+Completed through Phase 12. Current baseline: 810 tests collected, 569 i18n keys (es/en),
 one runtime dependency (`rich>=13.0`).
 
 ---
