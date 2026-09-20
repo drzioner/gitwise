@@ -294,15 +294,36 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "action",
-        choices=["check"],
+        choices=["check", "install"],
         nargs="?",
-        metavar="check",
+        metavar="check|install",
     )
     p.add_argument(
         "--push",
         action="store_true",
         help="evaluate a push, reading pre-push ref updates from stdin",
     )
+    p.add_argument(
+        "--commit-msg",
+        type=str,
+        default=None,
+        dest="commit_msg",
+        metavar="PATH",
+        help="evaluate the commit message in PATH against the policy",
+    )
+    p.add_argument(
+        "--hooks-mode",
+        choices=["preserve", "native", "legacy", "skip"],
+        default="preserve",
+        help="hooks strategy for install: preserve (default), native, legacy, or skip",
+    )
+    p.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="remove the policy hooks instead of installing them (install only)",
+    )
+    p.add_argument("--dry-run", action="store_true", help="show actions without executing")
+    p.add_argument("--yes", "-y", action="store_true", help="skip confirmation")
 
     p = sub.add_parser("branches", help="branch intelligence dashboard", parents=[parent])
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")

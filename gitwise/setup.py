@@ -171,7 +171,11 @@ def _active_hooks_dir(repo_root: Path) -> Path | None:
     return repository_git_dir / "hooks"
 
 
-def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
+def _detect_existing_hook_events(
+    repo_root: Path,
+    hooks_dir: Path,
+    hooks: tuple[tuple[str, str], ...] = _NATIVE_HOOKS,
+) -> list[str]:
     """Return hook events already scripted outside the gitwise hooks dir."""
     active_dir = _active_hooks_dir(repo_root)
     if active_dir is None:
@@ -180,15 +184,23 @@ def _detect_existing_hook_events(repo_root: Path, hooks_dir: Path) -> list[str]:
         return []
 
     existing_events: list[str] = []
-    for _, event in _NATIVE_HOOKS:
+    for _, event in hooks:
         hook_file = active_dir / event
         if hook_file.exists() or hook_file.is_symlink():
             existing_events.append(event)
     return existing_events
 
 
-def _plan_native_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
-    """Plan gitwise hook scripts via ``hook.<name>.command`` config."""
+def _plan_native_hooks(
+    cwd: Path,
+    hooks_dir: Path,
+    hooks: tuple[tuple[str, str], ...] = _NATIVE_HOOKS,
+) -> list[SetupChange]:
+    """Plan gitwise hook scripts via ``hook.<name>.command`` config.
+
+    ``hooks`` is parameterised so ``guard install`` can register its own set
+    against the same backend decision, without a second implementation of it.
+    """
     changes: list[SetupChange] = []
 
     current_hookspath = git_config("core.hooksPath", cwd=cwd)
@@ -203,7 +215,7 @@ def _plan_native_hooks(cwd: Path, hooks_dir: Path) -> list[SetupChange]:
             }
         )
 
-    for name, event in _NATIVE_HOOKS:
+    for name, event in hooks:
         hook_script = str(hooks_dir / event)
         command_key = f"hook.{name}.command"
         event_key = f"hook.{name}.event"

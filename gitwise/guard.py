@@ -14,6 +14,7 @@ matched and where.
 from __future__ import annotations
 
 import fnmatch
+import re
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -22,7 +23,7 @@ from typing import Literal, TypedDict
 from gitwise.git import current_branch, gpg_status, require_root
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import error, ok, print_json, report_error, status, warn
+from gitwise.output import confirm, error, info, ok, print_json, report_error, status, warn
 from gitwise.policy import Policy, PolicyError, load_policy, policy_source
 from gitwise.utils.in_progress import InProgressInfo, detect_in_progress
 from gitwise.utils.json_envelope import ok_envelope
@@ -211,6 +212,45 @@ def evaluate_commit(policy: Policy, context: CommitContext) -> list[Violation]:
     return violations
 
 
+_GENERATED_MESSAGE_PREFIXES = ("merge ", "revert ", "fixup!", "squash!", "amend!")
+
+
+def message_subject(message: str) -> str:
+    """Return the first meaningful line of a commit message.
+
+    git prepends blank lines and `#` comments to the message file; the subject
+    is the first line that is neither.
+    """
+    for line in message.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            return stripped
+    return ""
+
+
+def evaluate_message(policy: Policy, message: str) -> list[Violation]:
+    """Return violations for a commit message against the policy's allowed types.
+
+    Messages git authors itself (merge, revert, fixup, squash) are exempt: they
+    are not authored subjects, and holding them to the conventional-commit
+    contract would block ordinary merges.
+    """
+    subject = message_subject(message)
+    if subject.lower().startswith(_GENERATED_MESSAGE_PREFIXES):
+        return []
+    types = "|".join(re.escape(commit_type) for commit_type in policy["commit_types"])
+    if types and re.match(rf"^({types})(\(.+\))?!?: .{{1,72}}$", subject):
+        return []
+    return [
+        _violation(
+            "commit_type",
+            "block",
+            "commit subject does not start with a type allowed by the repository policy",
+            detail=subject or "(empty subject)",
+        )
+    ]
+
+
 def parse_push_stdin(text: str) -> list[tuple[str, str, str, str]]:
     """Parse the pre-push hook's stdin into ref-update tuples.
 
@@ -303,6 +343,7 @@ def _violations_payload(violations: list[Violation]) -> list[dict[str, object]]:
 def run_guard_check(
     *,
     push: bool = False,
+    commit_msg: str | None = None,
     stdin_text: str | None = None,
     as_json: bool = False,
 ) -> int:
@@ -328,14 +369,27 @@ def run_guard_check(
             hint=t("guard_policy_invalid_hint"),
         )
 
-    with status(t("status_guard_check")):
-        if push:
-            text = stdin_text if stdin_text is not None else sys.stdin.read()
-            violations = evaluate_push(policy, collect_push_context(root, text))
-            scope = "push"
-        else:
-            violations = evaluate_commit(policy, collect_commit_context(root))
-            scope = "commit"
+    if commit_msg is not None:
+        try:
+            message = Path(commit_msg).read_text(encoding="utf-8")
+        except OSError as exc:
+            return report_error(
+                "guard",
+                as_json=as_json,
+                msg=t("guard_message_unreadable", path=commit_msg, error=str(exc)),
+                code="message_unreadable",
+            )
+        violations = evaluate_message(policy, message)
+        scope = "message"
+    else:
+        with status(t("status_guard_check")):
+            if push:
+                text = stdin_text if stdin_text is not None else sys.stdin.read()
+                violations = evaluate_push(policy, collect_push_context(root, text))
+                scope = "push"
+            else:
+                violations = evaluate_commit(policy, collect_commit_context(root))
+                scope = "commit"
 
     blockers = blocking(violations)
     warnings = [v for v in violations if v["severity"] == "warn"]
@@ -376,6 +430,11 @@ def run_guard(
     action: str | None,
     *,
     push: bool = False,
+    commit_msg: str | None = None,
+    hooks_mode: str = "preserve",
+    uninstall: bool = False,
+    dry_run: bool = False,
+    yes: bool = False,
     as_json: bool = False,
 ) -> int:
     """Entry point for the ``gitwise guard`` command."""
@@ -387,10 +446,192 @@ def run_guard(
             code="action_required",
         )
     if action == "check":
-        return run_guard_check(push=push, as_json=as_json)
+        return run_guard_check(push=push, commit_msg=commit_msg, as_json=as_json)
+    if action == "install":
+        return run_guard_install(
+            hooks_mode=hooks_mode,
+            uninstall=uninstall,
+            dry_run=dry_run,
+            yes=yes,
+            as_json=as_json,
+        )
     return report_error(
         "guard",
         as_json=as_json,
         msg=t("guard_unknown_action", action=action),
         code="unknown_action",
     )
+
+
+GUARD_HOOKS: tuple[tuple[str, str], ...] = (
+    ("gitwise-guard-commit", "pre-commit"),
+    ("gitwise-guard-message", "commit-msg"),
+    ("gitwise-guard-push", "pre-push"),
+)
+
+
+def guard_hooks_dir() -> Path:
+    """Return the directory holding the guard hook scripts."""
+    from gitwise._paths import share_dir
+
+    return share_dir() / "hooks" / "guard"
+
+
+def hook_scripts_executable(hooks_dir: Path) -> list[str]:
+    """Return the names of guard hook scripts that are missing the executable bit.
+
+    A hook git cannot execute is protection that silently does not run, and
+    wheels do not reliably preserve mode bits, so this is checked at install
+    time instead of being assumed from the packaging.
+    """
+    import os
+
+    missing: list[str] = []
+    for _name, event in GUARD_HOOKS:
+        script = hooks_dir / event
+        if not script.is_file() or not os.access(script, os.X_OK):
+            missing.append(event)
+    return sorted(missing)
+
+
+def _plan_uninstall(root: Path) -> list[dict[str, object]]:
+    """Plan removal of every config key guard install writes."""
+    from gitwise.git import config as git_config
+
+    changes: list[dict[str, object]] = []
+    for name, _event in GUARD_HOOKS:
+        for suffix in ("command", "event"):
+            key = f"hook.{name}.{suffix}"
+            if git_config(key, cwd=root) is not None:
+                changes.append({"op": "unset", "key": key, "desired": "", "current": None})
+    hooks_dir = str(guard_hooks_dir())
+    if git_config("core.hooksPath", cwd=root) == hooks_dir:
+        changes.append(
+            {"op": "unset", "key": "core.hooksPath", "desired": "", "current": hooks_dir}
+        )
+    return changes
+
+
+def run_guard_install(
+    *,
+    hooks_mode: str = "preserve",
+    uninstall: bool = False,
+    dry_run: bool = False,
+    yes: bool = False,
+    as_json: bool = False,
+) -> int:
+    """Install (or remove) the git hooks that enforce the policy.
+
+    The hooks are what make the policy unavoidable: without them the engine
+    only runs when the caller chooses to run it, which is exactly the caller
+    the policy exists to constrain.
+
+    The backend decision is delegated to setup's ``_choose_hooks_backend``, so
+    a repository already driven by husky, lefthook or pre-commit is left alone
+    rather than silently taken over.
+    """
+    from gitwise.setup import (
+        _apply_change,
+        _choose_hooks_backend,
+        _detect_existing_hook_events,
+        _detect_hook_managers,
+        _plan_legacy_hooks,
+        _plan_native_hooks,
+    )
+
+    root = require_root(as_json=as_json, command="guard")
+    if root is None:
+        return 1
+
+    hooks_dir = guard_hooks_dir()
+
+    if not uninstall:
+        not_executable = hook_scripts_executable(hooks_dir)
+        if not_executable:
+            return report_error(
+                "guard",
+                as_json=as_json,
+                msg=t("guard_hooks_not_executable", hooks=", ".join(not_executable)),
+                code="hooks_not_executable",
+                hint=t("guard_hooks_not_executable_hint", path=str(hooks_dir)),
+            )
+
+    if uninstall:
+        changes = _plan_uninstall(root)
+        backend = "uninstall"
+        warnings: list[str] = []
+    else:
+        managers = _detect_hook_managers(root)
+        existing = _detect_existing_hook_events(root, hooks_dir, GUARD_HOOKS)
+        backend, warnings = _choose_hooks_backend(
+            cwd=root,
+            hooks_mode=hooks_mode,  # type: ignore[arg-type]
+            hooks_dir=hooks_dir,
+            managers=managers,
+            existing_events=existing,
+        )
+        if backend == "native":
+            changes = list(_plan_native_hooks(root, hooks_dir, GUARD_HOOKS))
+        elif backend == "legacy":
+            changes = list(_plan_legacy_hooks(root, hooks_dir))
+        else:
+            changes = []
+
+    for warning in warnings:
+        if not as_json:
+            warn(warning)
+
+    if dry_run or (backend == "skip" and not changes):
+        if as_json:
+            print_json(
+                ok_envelope(
+                    "guard",
+                    data={
+                        "action": "install",
+                        "dry_run": dry_run,
+                        "backend": backend,
+                        "changes": changes,
+                        "warnings": warnings,
+                        "hooks_dir": str(hooks_dir),
+                    },
+                )
+            )
+        elif backend == "skip":
+            warn(t("guard_hooks_skipped", reason="; ".join(warnings) or backend))
+        else:
+            ok(t("guard_hooks_plan", count=str(len(changes)), backend=backend))
+        return 0
+
+    if not yes and not as_json and not confirm(t("guard_confirm_install")):
+        info(t("aborted"))
+        return 0
+
+    failed = [change for change in changes if not _apply_change(change, root)]  # type: ignore[arg-type]
+    if failed:
+        return report_error(
+            "guard",
+            as_json=as_json,
+            msg=t("guard_hooks_skipped", reason=str(len(failed))),
+            code="install_failed",
+            data={"failed": failed},
+        )
+
+    if as_json:
+        print_json(
+            ok_envelope(
+                "guard",
+                data={
+                    "action": "install",
+                    "dry_run": False,
+                    "backend": backend,
+                    "changes": changes,
+                    "warnings": warnings,
+                    "hooks_dir": str(hooks_dir),
+                },
+            )
+        )
+    elif uninstall:
+        ok(t("guard_hooks_uninstalled"))
+    else:
+        ok(t("guard_hooks_installed", backend=backend))
+    return 0

@@ -396,3 +396,259 @@ def test_guard_check_outside_a_repo_reports_not_a_git_repo(tmp_path: Path) -> No
     result = run_gitwise("guard", "check", "--json", cwd=tmp_path)
     assert result.returncode == 1
     assert json.loads(result.stdout)["errors"][0]["code"] == "not_a_git_repo"
+
+
+# --- commit message -------------------------------------------------------
+
+
+def test_message_with_allowed_type_passes() -> None:
+    from gitwise.guard import evaluate_message
+
+    assert evaluate_message(_policy(), "feat(guard): add the engine") == []
+
+
+def test_message_with_disallowed_type_blocks() -> None:
+    from gitwise.guard import evaluate_message
+
+    violations = evaluate_message(_policy(commit_types=["feat", "fix"]), "chore: tidy up")
+    assert "commit_type" in _rules(violations)
+    assert _blocking(violations)
+
+
+def test_message_without_conventional_prefix_blocks() -> None:
+    from gitwise.guard import evaluate_message
+
+    assert "commit_type" in _rules(evaluate_message(_policy(), "tidy up the thing"))
+
+
+def test_breaking_marker_is_accepted() -> None:
+    from gitwise.guard import evaluate_message
+
+    assert evaluate_message(_policy(), "feat!: rotate the contract") == []
+
+
+def test_merge_and_revert_messages_are_exempt() -> None:
+    """git authors these itself; holding them to the contract blocks merges."""
+    from gitwise.guard import evaluate_message
+
+    assert evaluate_message(_policy(), "Merge branch 'main' into feat/x") == []
+    assert evaluate_message(_policy(), 'Revert "feat: something"') == []
+
+
+def test_comments_and_blank_lines_are_skipped() -> None:
+    from gitwise.guard import evaluate_message
+
+    message = "\n# a comment git adds\nfeat: real subject\n"
+    assert evaluate_message(_policy(), message) == []
+
+
+def test_empty_message_blocks() -> None:
+    from gitwise.guard import evaluate_message
+
+    assert "commit_type" in _rules(evaluate_message(_policy(), "\n# only comments\n"))
+
+
+def test_guard_check_commit_msg_reads_the_file(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    message_file = tmp_git_repo / "MSG"
+    message_file.write_text("nope: not a type\n", encoding="utf-8")
+
+    result = run_gitwise(
+        "guard", "check", "--commit-msg", str(message_file), "--json", cwd=tmp_git_repo
+    )
+    assert result.returncode == 2
+    payload = json.loads(result.stdout)
+    assert payload["data"]["scope"] == "message"
+    assert _rules(payload["data"]["violations"]) == {"commit_type"}
+
+
+def test_guard_check_commit_msg_missing_file_is_an_error(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    result = run_gitwise(
+        "guard", "check", "--commit-msg", str(tmp_git_repo / "absent"), "--json", cwd=tmp_git_repo
+    )
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["errors"][0]["code"] == "message_unreadable"
+
+
+# --- install --------------------------------------------------------------
+
+
+def _gitwise_shim(directory: Path) -> Path:
+    """Create a `gitwise` executable on PATH that runs this checkout.
+
+    The hooks invoke the real binary by name; a test that stubbed the call out
+    would prove the config was written, not that the hook refuses a commit.
+    """
+    import sys
+
+    from conftest import PROJECT_ROOT
+
+    shim = directory / "gitwise"
+    shim.write_text(
+        f'#!/bin/sh\nPYTHONPATH="{PROJECT_ROOT}" exec "{sys.executable}" -m gitwise "$@"\n',
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+    return shim
+
+
+def test_guard_install_dry_run_writes_nothing(tmp_git_repo: Path) -> None:
+    import json
+
+    from gitwise.git import config as git_config
+
+    from conftest import run_gitwise
+
+    result = run_gitwise(
+        "guard", "install", "--hooks-mode", "legacy", "--dry-run", "--json", cwd=tmp_git_repo
+    )
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["data"]["dry_run"] is True
+    assert payload["data"]["changes"]
+    assert git_config("core.hooksPath", cwd=tmp_git_repo) is None
+
+
+def test_guard_install_legacy_sets_hooks_path(tmp_git_repo: Path) -> None:
+    from gitwise.git import config as git_config
+    from gitwise.guard import guard_hooks_dir
+
+    from conftest import run_gitwise
+
+    result = run_gitwise(
+        "guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo
+    )
+    assert result.returncode == 0, result.stdout
+    assert git_config("core.hooksPath", cwd=tmp_git_repo) == str(guard_hooks_dir())
+
+
+def test_guard_uninstall_removes_the_hooks_path(tmp_git_repo: Path) -> None:
+    from gitwise.git import config as git_config
+
+    from conftest import run_gitwise
+
+    run_gitwise("guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo)
+    result = run_gitwise("guard", "install", "--uninstall", "--yes", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 0, result.stdout
+    assert git_config("core.hooksPath", cwd=tmp_git_repo) is None
+
+
+def test_guard_install_skips_when_another_hook_manager_owns_the_repo(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    (tmp_git_repo / "lefthook.yml").write_text("pre-commit:\n", encoding="utf-8")
+    result = run_gitwise("guard", "install", "--json", cwd=tmp_git_repo)
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["data"]["backend"] == "skip"
+    assert payload["data"]["changes"] == []
+    assert payload["data"]["warnings"]
+
+
+def test_installed_hook_blocks_a_forbidden_commit(tmp_git_repo: Path, tmp_path: Path) -> None:
+    """End to end: the hook refuses a `git commit` the policy forbids."""
+    import json
+    import os
+    import subprocess as sp
+
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/hooked"], tmp_git_repo)
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text(
+        json.dumps({"version": 1, "forbidden_paths": ["*.pem"]}), encoding="utf-8"
+    )
+    run_gitwise("guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo)
+
+    bin_dir = tmp_path / "shim-bin"
+    bin_dir.mkdir()
+    _gitwise_shim(bin_dir)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}"}
+
+    _stage(tmp_git_repo, "deploy/key.pem", "-----BEGIN-----\n")
+    result = sp.run(
+        ["git", "commit", "--no-gpg-sign", "-m", "feat: add key"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    head = sp.run(
+        ["git", "log", "--oneline"], cwd=tmp_git_repo, capture_output=True, text=True, check=True
+    )
+    assert "add key" not in head.stdout
+
+
+def test_installed_hook_allows_a_compliant_commit(tmp_git_repo: Path, tmp_path: Path) -> None:
+    import json
+    import os
+    import subprocess as sp
+
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/ok"], tmp_git_repo)
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text(
+        json.dumps({"version": 1, "forbidden_paths": ["*.pem"]}), encoding="utf-8"
+    )
+    run_gitwise("guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo)
+
+    bin_dir = tmp_path / "shim-bin2"
+    bin_dir.mkdir()
+    _gitwise_shim(bin_dir)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}"}
+
+    _stage(tmp_git_repo, "src/ok.py", "print('ok')\n")
+    result = sp.run(
+        ["git", "commit", "--no-gpg-sign", "-m", "feat: add module"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_install_refuses_when_a_hook_script_is_not_executable(
+    tmp_git_repo: Path, monkeypatch, capsys
+) -> None:
+    """A hook without +x is protection that silently does not run.
+
+    Wheels do not reliably preserve the executable bit, so install verifies it
+    instead of trusting the packaging.
+    """
+    import shutil
+
+    import gitwise.guard as guard_mod
+    from gitwise.git import config as git_config
+
+    staging = tmp_git_repo.parent / "hooks-staging"
+    shutil.copytree(guard_mod.guard_hooks_dir(), staging)
+    for script in staging.iterdir():
+        script.chmod(0o644)
+    monkeypatch.setattr(guard_mod, "guard_hooks_dir", lambda: staging)
+    monkeypatch.chdir(tmp_git_repo)
+
+    assert guard_mod.hook_scripts_executable(staging) == ["commit-msg", "pre-commit", "pre-push"]
+    assert guard_mod.run_guard_install(hooks_mode="legacy", yes=True, as_json=False) == 1
+    assert git_config("core.hooksPath", cwd=tmp_git_repo) is None
+
+
+def test_shipped_hook_scripts_are_executable() -> None:
+    """The scripts in the source tree carry +x, so a checkout install works."""
+    from gitwise.guard import guard_hooks_dir, hook_scripts_executable
+
+    assert hook_scripts_executable(guard_hooks_dir()) == []
