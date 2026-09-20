@@ -6,6 +6,31 @@ from gitwise import __version__
 from gitwise.design import GitwiseRichHelpFormatter
 from gitwise.i18n import t
 
+# Wrappers kept working but no longer part of the product surface. gitwise's
+# value is the policy layer -- guard, commit, worktree, setup-agents -- not
+# parity with git or gh, and these each restate a command the user already
+# has. They stay dispatchable and are hidden from the human help; machine
+# consumers still see them, marked, via `gitwise commands --json`.
+DEPRECATED_COMMANDS: dict[str, str] = {
+    "branches": "git branch -vv",
+    "clean": "git branch --merged / git remote prune",
+    "health": "gitwise audit",
+    "log": "git log",
+    "merge": "git merge",
+    "optimize": "git gc / git maintenance",
+    "pick": "git cherry-pick / git revert",
+    "pr": "gh pr",
+    "show": "git show",
+    "snapshot": "gitwise context",
+    "stash": "git stash",
+    "status": "git status",
+    "suggest": "gitwise commit",
+    "sync": "git pull --rebase / git push",
+    "tag": "git tag",
+    "undo": "git reflog / git reset",
+    "update": "brew upgrade gitwise, or uv tool install --upgrade gitwise-cli",
+}
+
 
 def _root_help_epilog() -> str:
     """Return the localized environment-variable epilog for root help."""
@@ -545,4 +570,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="command name used inside completion script (default: gitwise)",
     )
 
+    _hide_deprecated_from_help(sub)
+
     return parser
+
+
+def _hide_deprecated_from_help(sub: argparse._SubParsersAction) -> None:
+    """Drop deprecated commands from the human help listing.
+
+    The subparser stays registered and dispatchable; only the row argparse
+    renders in ``gitwise --help`` is removed. The original one-line help moves
+    to the parser's description so machine introspection keeps reporting it.
+    """
+    hidden = [pseudo for pseudo in sub._choices_actions if str(pseudo.dest) in DEPRECATED_COMMANDS]
+    for pseudo in hidden:
+        command_parser = sub.choices.get(str(pseudo.dest))
+        if command_parser is not None and not command_parser.description:
+            command_parser.description = pseudo.help or ""
+        # argparse only honours SUPPRESS for arguments, not for subparser
+        # choices: the formatter would print the literal sentinel. Removing the
+        # pseudo-action is what drops the row, and it leaves sub.choices -- the
+        # dispatch table -- untouched.
+        sub._choices_actions.remove(pseudo)

@@ -5,7 +5,7 @@ import time
 
 from ._cli_dispatch import DISPATCH
 from ._cli_introspection import extract_command_token, help_data, help_payload
-from ._cli_parser import _parse_global_options, build_parser
+from ._cli_parser import DEPRECATED_COMMANDS, _parse_global_options, build_parser
 from .i18n import t
 from .output import print_dim, print_json, set_json_mode, set_json_pretty
 
@@ -56,6 +56,23 @@ def _ensure_utf8_stdio() -> None:
             except (TypeError, ValueError):
                 # Stream does not accept these kwargs or is closed; ignore.
                 pass
+
+
+def _warn_if_deprecated(command: str) -> None:
+    """Print a deprecation notice for a retired wrapper, on stderr only.
+
+    stdout carries the JSON envelope. A notice written there would corrupt it
+    for every machine consumer, so the notice goes to stderr regardless of
+    output mode; the structured signal lives in `gitwise commands --json`,
+    which reports `deprecated` and `replacement` per command.
+    """
+    replacement = DEPRECATED_COMMANDS.get(command)
+    if replacement is None:
+        return
+    print(
+        f"gitwise: `{command}` is deprecated and will be removed in 1.0; use: {replacement}",
+        file=sys.stderr,
+    )
 
 
 def main() -> int:
@@ -120,6 +137,8 @@ def main() -> int:
         set_locale(args.lang)
 
     start = time.monotonic()
+
+    _warn_if_deprecated(args.command)
 
     handler = DISPATCH.get(args.command)
     if handler is not None:
