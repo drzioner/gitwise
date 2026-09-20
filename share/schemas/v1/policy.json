@@ -16,7 +16,7 @@
       "items": {
         "type": "string"
       },
-      "description": "branches that must not receive direct commits, amends, or force pushes",
+      "description": "branches protected against history rewrites: force pushes and deletions (direct commits are governed by block_direct_commits)",
       "default": [
         "main",
         "master"
@@ -50,6 +50,11 @@
     "allow_force_push": {
       "type": "boolean",
       "description": "allow non-fast-forward pushes to protected branches",
+      "default": false
+    },
+    "block_direct_commits": {
+      "type": "boolean",
+      "description": "block commits made directly on a protected branch",
       "default": false
     }
   }

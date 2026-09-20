@@ -36,6 +36,7 @@ class Policy(TypedDict):
     require_gpg: bool
     block_secrets: bool
     allow_force_push: bool
+    block_direct_commits: bool
 
 
 class PolicyError(ValueError):
@@ -62,10 +63,16 @@ DEFAULT_POLICY: Policy = {
     "require_gpg": False,
     "block_secrets": True,
     "allow_force_push": False,
+    "block_direct_commits": False,
 }
 
 _LIST_KEYS: tuple[str, ...] = ("protected_branches", "forbidden_paths", "commit_types")
-_BOOL_KEYS: tuple[str, ...] = ("require_gpg", "block_secrets", "allow_force_push")
+_BOOL_KEYS: tuple[str, ...] = (
+    "require_gpg",
+    "block_secrets",
+    "allow_force_push",
+    "block_direct_commits",
+)
 
 
 def policy_path(root: Path) -> Path:

@@ -59,9 +59,21 @@ def test_commit_on_protected_branch_blocks(tmp_git_repo: Path) -> None:
     from gitwise.guard import collect_commit_context, evaluate_commit
 
     ctx = collect_commit_context(tmp_git_repo)
-    violations = evaluate_commit(_policy(protected_branches=["main"]), ctx)
+    policy = _policy(protected_branches=["main"], block_direct_commits=True)
+    violations = evaluate_commit(policy, ctx)
     assert "protected_branch" in _rules(violations)
     assert _blocking(violations)
+
+
+def test_direct_commit_on_protected_branch_is_allowed_by_default(tmp_git_repo: Path) -> None:
+    """Protecting a branch means no rewrites, not no commits; that is opt-in."""
+    _stage(tmp_git_repo, "src/app.py")
+
+    from gitwise.guard import collect_commit_context, evaluate_commit
+
+    ctx = collect_commit_context(tmp_git_repo)
+    policy = _policy(protected_branches=["main"])
+    assert "protected_branch" not in _rules(evaluate_commit(policy, ctx))
 
 
 def test_unprotected_branch_is_allowed(tmp_git_repo: Path) -> None:
