@@ -40,9 +40,7 @@ Este índice organiza la documentación de usuario y contribución de gitwise.
 
 Se conservan como análisis y snapshots históricos:
 
-- [Action plan](../action-plan.md)
-- [Action plan v0.12](../action-plan-v0.12.md)
-- [Review analysis report](../review-analysis-report.md)
+- [Archivo](archive/README.md)
 - [Labels](../labels.md)
 
 ## Planes activos
