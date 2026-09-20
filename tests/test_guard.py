@@ -312,3 +312,87 @@ def test_deleting_an_unprotected_branch_is_allowed(tmp_git_repo: Path) -> None:
 
     ctx = collect_push_context(tmp_git_repo, f"(delete) {ZERO} refs/heads/scratch {'a' * 40}\n")
     assert evaluate_push(_policy(protected_branches=["main"]), ctx) == []
+
+
+# --- CLI surface ----------------------------------------------------------
+
+
+def test_guard_check_emits_v3_envelope(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    result = run_gitwise("guard", "check", "--json", cwd=tmp_git_repo)
+    payload = json.loads(result.stdout)
+    assert payload["v"] == 3
+    assert payload["command"] == "guard"
+    assert payload["data"]["policy_source"] == "default"
+
+
+def test_guard_check_output_validates_against_schema(tmp_git_repo: Path) -> None:
+    import json
+
+    from gitwise.schema import load_command_output_schema
+    from jsonschema import Draft202012Validator
+
+    from conftest import run_gitwise
+
+    schema = load_command_output_schema(command="guard", version="v1")
+    assert schema is not None
+    result = run_gitwise("guard", "check", "--json", cwd=tmp_git_repo)
+    Draft202012Validator(schema).validate(json.loads(result.stdout))
+
+
+def test_guard_check_exits_2_on_blocking_violation(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/cli"], tmp_git_repo)
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text(
+        json.dumps({"version": 1, "forbidden_paths": [".env"]}), encoding="utf-8"
+    )
+    _stage(tmp_git_repo, ".env", "SECRET=1\n")
+
+    result = run_gitwise("guard", "check", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 2, result.stdout
+    payload = json.loads(result.stdout)
+    assert payload["data"]["allowed"] is False
+    assert payload["data"]["policy_source"] == ".gitwise/policy.json"
+    assert _rules(payload["data"]["violations"]) == {"forbidden_path"}
+
+
+def test_guard_check_exits_1_on_invalid_policy(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text("{nope", encoding="utf-8")
+
+    result = run_gitwise("guard", "check", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["errors"][0]["code"] == "policy_invalid"
+
+
+def test_guard_without_action_reports_an_error(tmp_git_repo: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    result = run_gitwise("guard", "--json", cwd=tmp_git_repo)
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["errors"][0]["code"] == "action_required"
+
+
+def test_guard_check_outside_a_repo_reports_not_a_git_repo(tmp_path: Path) -> None:
+    import json
+
+    from conftest import run_gitwise
+
+    result = run_gitwise("guard", "check", "--json", cwd=tmp_path)
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["errors"][0]["code"] == "not_a_git_repo"

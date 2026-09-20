@@ -14,14 +14,18 @@ matched and where.
 from __future__ import annotations
 
 import fnmatch
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Literal, TypedDict
 
-from gitwise.git import current_branch, gpg_status
+from gitwise.git import current_branch, gpg_status, require_root
 from gitwise.git import run as git_run
-from gitwise.policy import Policy
+from gitwise.i18n import t
+from gitwise.output import error, ok, print_json, report_error, status, warn
+from gitwise.policy import Policy, PolicyError, load_policy, policy_source
 from gitwise.utils.in_progress import InProgressInfo, detect_in_progress
+from gitwise.utils.json_envelope import ok_envelope
 from gitwise.utils.secret_scan import SecretScanUnavailable, scan_staged_diff
 
 ZERO_OBJECT_NAME = "0" * 40
@@ -289,3 +293,104 @@ def evaluate_push(policy: Policy, context: PushContext) -> list[Violation]:
 def blocking(violations: list[Violation]) -> list[Violation]:
     """Return only the violations that must stop the operation."""
     return [violation for violation in violations if violation["severity"] == "block"]
+
+
+def _violations_payload(violations: list[Violation]) -> list[dict[str, object]]:
+    """Return violations as plain dicts for the JSON envelope."""
+    return [dict(violation) for violation in violations]
+
+
+def run_guard_check(
+    *,
+    push: bool = False,
+    stdin_text: str | None = None,
+    as_json: bool = False,
+) -> int:
+    """Evaluate the repository policy and report the verdict without side effects.
+
+    Exit codes: 0 when nothing blocks, 2 when the policy blocks the operation,
+    1 on an operational failure (not a repository, unreadable policy). The
+    distinct 2 lets a caller tell "policy stopped me" from "the tool broke",
+    which a hook collapses into a single non-zero but an agent must not.
+    """
+    root = require_root(as_json=as_json, command="guard")
+    if root is None:
+        return 1
+
+    try:
+        policy = load_policy(root)
+    except PolicyError as exc:
+        return report_error(
+            "guard",
+            as_json=as_json,
+            msg=t("guard_policy_invalid", error=str(exc)),
+            code="policy_invalid",
+            hint=t("guard_policy_invalid_hint"),
+        )
+
+    with status(t("status_guard_check")):
+        if push:
+            text = stdin_text if stdin_text is not None else sys.stdin.read()
+            violations = evaluate_push(policy, collect_push_context(root, text))
+            scope = "push"
+        else:
+            violations = evaluate_commit(policy, collect_commit_context(root))
+            scope = "commit"
+
+    blockers = blocking(violations)
+    warnings = [v for v in violations if v["severity"] == "warn"]
+
+    if as_json:
+        print_json(
+            ok_envelope(
+                "guard",
+                data={
+                    "action": "check",
+                    "scope": scope,
+                    "allowed": not blockers,
+                    "violations": _violations_payload(violations),
+                    "blocking_count": len(blockers),
+                    "warning_count": len(warnings),
+                    "policy_source": policy_source(root),
+                },
+            )
+        )
+    else:
+        for violation in violations:
+            line = t("guard_violation", rule=violation["rule"], message=violation["message"])
+            if violation["severity"] == "block":
+                error(line)
+            else:
+                warn(line)
+        if blockers:
+            error(t("guard_blocked", count=str(len(blockers))))
+        elif warnings:
+            warn(t("guard_warnings", count=str(len(warnings))))
+        else:
+            ok(t("guard_allowed"))
+
+    return 2 if blockers else 0
+
+
+def run_guard(
+    action: str | None,
+    *,
+    push: bool = False,
+    as_json: bool = False,
+) -> int:
+    """Entry point for the ``gitwise guard`` command."""
+    if action is None:
+        return report_error(
+            "guard",
+            as_json=as_json,
+            msg=t("guard_action_required"),
+            code="action_required",
+        )
+    if action == "check":
+        return run_guard_check(push=push, as_json=as_json)
+    return report_error(
+        "guard",
+        as_json=as_json,
+        msg=t("guard_unknown_action", action=action),
+        code="unknown_action",
+    )

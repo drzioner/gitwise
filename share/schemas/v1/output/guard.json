@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/output/guard.json",
+  "title": "gitwise guard cli output",
+  "description": "v3 envelope for `gitwise guard --json`. data fields enumerated; data is permissive (additional fields allowed) to stay forward-compatible.",
+  "type": "object",
+  "required": [
+    "v",
+    "ok",
+    "command",
+    "data",
+    "hints",
+    "errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 3
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "command": {
+      "const": "guard"
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "check",
+            "install"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "commit",
+            "push"
+          ]
+        },
+        "allowed": {
+          "type": "boolean",
+          "description": "false when at least one blocking violation was found"
+        },
+        "blocking_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warning_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policy_source": {
+          "type": "string",
+          "description": "\"default\" or the repository-relative policy path"
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "rule",
+              "severity",
+              "message"
+            ],
+            "properties": {
+              "rule": {
+                "type": "string",
+                "enum": [
+                  "in_progress",
+                  "protected_branch",
+                  "forbidden_path",
+                  "secret",
+                  "secret_scan_unavailable",
+                  "gpg",
+                  "force_push",
+                  "protected_branch_delete"
+                ]
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "block",
+                  "warn"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "detail": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

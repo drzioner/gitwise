@@ -262,6 +262,17 @@ def _run_commit(args: argparse.Namespace) -> int:
     )
 
 
+def _run_guard(args: argparse.Namespace) -> int:
+    """Dispatch to ``guard`` subcommand."""
+    from gitwise.guard import run_guard
+
+    return run_guard(
+        getattr(args, "action", None),
+        push=getattr(args, "push", False),
+        as_json=args.json,
+    )
+
+
 def _run_branches(args: argparse.Namespace) -> int:
     """Dispatch to ``branches`` subcommand."""
     from gitwise.branches import run_branches
@@ -625,6 +636,7 @@ DISPATCH: dict[str, Callable[[argparse.Namespace], int]] = {
     "log": _run_log,
     "show": _run_show,
     "commit": _run_commit,
+    "guard": _run_guard,
     "branches": _run_branches,
     "sync": _run_sync,
     "pr": _run_pr,
