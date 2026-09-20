@@ -9,18 +9,18 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import cast
 
-from gitwise.policy import DEFAULT_POLICY
+from gitwise.policy import DEFAULT_POLICY, Policy
 
 from conftest import _git
 
 ZERO = "0" * 40
 
 
-def _policy(**overrides) -> dict:
+def _policy(**overrides: object) -> Policy:
     """Return the default policy with *overrides* applied."""
-    policy = dict(DEFAULT_POLICY)
-    policy.update(overrides)
+    policy = cast("Policy", {**DEFAULT_POLICY, **overrides})
     return policy
 
 
@@ -157,17 +157,20 @@ def test_secret_violation_never_carries_the_credential(tmp_git_repo: Path) -> No
 
 def test_unreadable_staged_diff_blocks(tmp_path: Path) -> None:
     """Fail closed: a scan that cannot run is not a clean scan."""
-    from gitwise.guard import evaluate_commit
+    from gitwise.guard import CommitContext, evaluate_commit
 
-    ctx = {
-        "branch": "feat/x",
-        "staged_paths": [],
-        "secret_findings": [],
-        "secret_scan_error": "index unreadable",
-        "in_progress": {"state": "none", "ref": None},
-        "gpg": {"ready": True, "gpgsign_enabled": True},
-        "amend": False,
-    }
+    ctx = cast(
+        "CommitContext",
+        {
+            "branch": "feat/x",
+            "staged_paths": [],
+            "secret_findings": [],
+            "secret_scan_error": "index unreadable",
+            "in_progress": {"state": "none", "ref": None},
+            "gpg": {"ready": True, "gpgsign_enabled": True},
+            "amend": False,
+        },
+    )
     violations = evaluate_commit(_policy(), ctx)
     assert "secret_scan_unavailable" in _rules(violations)
     assert _blocking(violations)
