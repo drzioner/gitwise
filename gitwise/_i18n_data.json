@@ -2198,5 +2198,61 @@
   "invalid_sort_field": {
     "es": "campo de ordenamiento no válido: {field}. Campos válidos: refname, committerdate, creatordate, authordate",
     "en": "invalid sort field: {field}. Valid fields: refname, committerdate, creatordate, authordate"
+  },
+  "guard_allowed": {
+    "es": "sin violaciones de política",
+    "en": "no policy violations"
+  },
+  "guard_blocked": {
+    "es": "{count} violación(es) bloquean la operación",
+    "en": "{count} violation(s) block the operation"
+  },
+  "guard_warnings": {
+    "es": "{count} advertencia(s)",
+    "en": "{count} warning(s)"
+  },
+  "guard_violation": {
+    "es": "[{rule}] {message}",
+    "en": "[{rule}] {message}"
+  },
+  "guard_policy_invalid": {
+    "es": "política inválida: {error}",
+    "en": "invalid policy: {error}"
+  },
+  "guard_policy_invalid_hint": {
+    "es": "corrige .gitwise/policy.json; gitwise falla cerrado ante una política que no puede leer",
+    "en": "fix .gitwise/policy.json; gitwise fails closed on a policy it cannot read"
+  },
+  "guard_unknown_action": {
+    "es": "acción desconocida: {action}",
+    "en": "unknown action: {action}"
+  },
+  "guard_action_required": {
+    "es": "indica una acción: check o install",
+    "en": "an action is required: check or install"
+  },
+  "guard_hooks_installed": {
+    "es": "hooks de política instalados ({backend})",
+    "en": "policy hooks installed ({backend})"
+  },
+  "guard_hooks_skipped": {
+    "es": "instalación omitida: {reason}",
+    "en": "installation skipped: {reason}"
+  },
+  "guard_hooks_plan": {
+    "es": "se instalarán {count} hook(s) mediante {backend}",
+    "en": "would install {count} hook(s) via {backend}"
+  },
+  "guard_hooks_uninstalled": {
+    "es": "hooks de política desinstalados",
+    "en": "policy hooks uninstalled"
+  },
+  "guard_missing_binary": {
+    "es": "el binario gitwise no está en el PATH del hook",
+    "en": "the gitwise binary is not on the hook's PATH"
+  },
+  "status_guard_check": {
+    "es": "evaluando política",
+    "en": "evaluating policy"
   }
 }

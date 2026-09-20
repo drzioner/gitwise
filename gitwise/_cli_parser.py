@@ -287,6 +287,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="proceed past a high-severity secret finding (with confirmation)",
     )
 
+    p = sub.add_parser(
+        "guard",
+        help="evaluate the repository policy before git writes",
+        parents=[parent],
+    )
+    p.add_argument(
+        "action",
+        choices=["check"],
+        nargs="?",
+        metavar="check",
+    )
+    p.add_argument(
+        "--push",
+        action="store_true",
+        help="evaluate a push, reading pre-push ref updates from stdin",
+    )
+
     p = sub.add_parser("branches", help="branch intelligence dashboard", parents=[parent])
     p.add_argument("--stale", action="store_true", help="show stale [gone] branches only")
     p.add_argument("--remote", action="store_true", help="show remote branches")
