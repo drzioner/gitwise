@@ -33,39 +33,18 @@ def _run_doctor(args: argparse.Namespace) -> int:
 
 def _run_setup_agents(args: argparse.Namespace) -> int:
     """Dispatch to ``setup-agents`` subcommand, handling provider listing."""
-    if getattr(args, "list_providers", False) or getattr(args, "list_adapters", False):
+    if getattr(args, "list_providers", False):
         from gitwise.i18n import t as _t
-        from gitwise.setup_agents.format import (
-            _SETUP_AGENTS_SCHEMA_COMPAT,
-            _SETUP_AGENTS_SCHEMA_VERSION,
-        )
         from gitwise.setup_agents.providers import list_providers
 
         adapter_list = list_providers()
         if args.json:
-            print_json(
-                {
-                    "v": _SETUP_AGENTS_SCHEMA_VERSION,
-                    "v_compat": _SETUP_AGENTS_SCHEMA_COMPAT,
-                    "command": "setup-agents",
-                    "hints": [],
-                    "errors": [],
-                    "ok": True,
-                    "providers": adapter_list,
-                    "adapters": adapter_list,
-                }
-            )
+            print_json(ok_envelope("setup-agents", data={"providers": adapter_list}))
         else:
             from gitwise.output import info
 
             info(_t("providers_available", list=", ".join(adapter_list)))
         return 0
-
-    providers: list[str] | None = args.providers
-    adapters_legacy_used = False
-    if args.adapters is not None:
-        adapters_legacy_used = True
-        providers = args.adapters if providers is None else providers + args.adapters
 
     from gitwise._cli_setup_agents import run_setup_agents
 
@@ -81,8 +60,7 @@ def _run_setup_agents(args: argparse.Namespace) -> int:
         migrate_legacy_claude=args.migrate_legacy_claude,
         frozen_time=args.frozen_time,
         no_git_files=args.no_git_files,
-        providers=providers,
-        adapters_legacy_used=adapters_legacy_used,
+        providers=args.providers,
     )
 
 

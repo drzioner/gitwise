@@ -146,23 +146,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="install config for coding providers (comma-separated: claude,cursor or multiple: --providers claude cursor)",
     )
     p.add_argument(
-        "--adapters",
-        nargs="*",
-        default=None,
-        dest="adapters",
-        help=argparse.SUPPRESS,
-    )
-    p.add_argument(
         "--list-providers",
         action="store_true",
         dest="list_providers",
         help="list available providers and exit",
-    )
-    p.add_argument(
-        "--list-adapters",
-        action="store_true",
-        dest="list_adapters",
-        help=argparse.SUPPRESS,
     )
 
     p = sub.add_parser("setup", help="apply modern git defaults", parents=[parent])

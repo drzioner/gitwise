@@ -125,3 +125,19 @@ def test_policy_schema_rejects_unknown_key() -> None:
     payload = json.loads((schema_root("v1") / "policy.json").read_text(encoding="utf-8"))
     with pytest.raises(ValidationError):
         Draft202012Validator(payload).validate({"version": 1, "blok_secrets": True})
+
+
+def test_setup_agents_output_validates_against_its_schema(tmp_git_repo) -> None:
+    """The schema documented the old flat contract; keep it and the producer aligned."""
+    import json
+
+    from jsonschema import Draft202012Validator
+
+    from conftest import run_gitwise
+
+    schema = load_command_output_schema(command="setup-agents", version="v1")
+    assert schema is not None
+    result = run_gitwise(
+        "setup-agents", "--local", "--dry-run", "--yes", "--json", cwd=tmp_git_repo
+    )
+    Draft202012Validator(schema).validate(json.loads(result.stdout))

@@ -89,19 +89,9 @@
         "description": "install config for coding providers (comma-separated: claude,cursor or multiple: --providers claude cursor)"
       }
     },
-    "adapters": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
     "list_providers": {
       "type": "boolean",
       "description": "list available providers and exit",
-      "default": false
-    },
-    "list_adapters": {
-      "type": "boolean",
       "default": false
     }
   }

@@ -16,7 +16,7 @@ Seventeen wrappers over `git` and `gh` are deprecated and hidden from `--help`
 They remain dispatchable, report a replacement in `gitwise commands --json`,
 and are scheduled for removal in 1.0.
 
-Completed through Phase 12. Current baseline: 843 tests collected, 571 i18n keys (es/en),
+Completed through Phase 12. Current baseline: 847 tests collected, 569 i18n keys (es/en),
 one runtime dependency (`rich>=13.0`).
 
 ---

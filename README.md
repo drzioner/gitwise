@@ -103,6 +103,10 @@ product; everything else is support.
 Supporting commands: `doctor`, `setup`, `audit`, `summarize`, `context`,
 `diff`, `conflicts`, `commands`, `schema`, `completions`.
 
+Every command answers `--json` with the same v3 envelope
+(`{v, ok, command, data, hints, errors}`), including its error paths and
+invalid-argument failures. One parser reads all 31.
+
 Seventeen thin wrappers over `git` and `gh` (`log`, `show`, `status`, `stash`,
 `tag`, `pick`, `undo`, `branches`, `sync`, `merge`, `pr`, `clean`, `optimize`,
 `health`, `suggest`, `snapshot`, `update`) are deprecated. They still work and
@@ -115,6 +119,7 @@ For all commands, examples, aliases, and JSON usage, see:
 - [Referencia de comandos (Español)](docs/es/reference/commands.md)
 - [Policy guard (English)](docs/reference/guard.md)
 - [Cortafuegos de políticas (Español)](docs/es/reference/guard.md)
+- [Migration guide (0.36)](docs/MIGRATION-0.36.md)
 
 ## Documentation
 
