@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitwise.dev/schemas/v1/policy.json",
+  "title": "gitwise repository policy",
+  "description": "Contents of .gitwise/policy.json, the declarative policy gitwise enforces at commit and push time.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "policy schema version; gitwise refuses any other value"
+    },
+    "protected_branches": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "branches that must not receive direct commits, amends, or force pushes",
+      "default": [
+        "main",
+        "master"
+      ]
+    },
+    "forbidden_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "fnmatch patterns; a staged path matching any of them blocks the commit",
+      "default": []
+    },
+    "commit_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "allowed conventional-commit types"
+    },
+    "require_gpg": {
+      "type": "boolean",
+      "description": "block commits when GPG signing is not configured and ready",
+      "default": false
+    },
+    "block_secrets": {
+      "type": "boolean",
+      "description": "block on high-severity secret findings; when false they are reported as warnings",
+      "default": true
+    },
+    "allow_force_push": {
+      "type": "boolean",
+      "description": "allow non-fast-forward pushes to protected branches",
+      "default": false
+    }
+  }
+}
