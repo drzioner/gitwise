@@ -253,8 +253,20 @@ def version() -> tuple[int, int, int]:
 
 
 def supports_config_hooks(cwd: Path | None = None) -> bool:
-    """Return True if ``git hook run`` is available (git >= 2.36)."""
-    if version() < (2, 36, 0):
+    """Return True if git fires hooks declared via ``hook.<name>.command`` config.
+
+    The floor is 2.54, not 2.36. ``git hook run`` shipped in 2.36, but until
+    2.54 it only ran hooks on demand: git itself did not consult
+    ``hook.<name>.command`` during ``git commit`` or ``git push``. Gating on
+    the subcommand alone made ``setup --hooks-mode native`` write configuration
+    that never executed on 2.36-2.53 -- a silent failure, since the repo looks
+    protected and is not.
+
+    Verified 2026-09-20: git-config(1) for 2.53.0 does not document
+    ``hook.<friendly-name>.command``; 2.54 does, and an empirical run on 2.55.0
+    confirmed a configured pre-commit hook blocks the commit.
+    """
+    if version() < (2, 54, 0):
         return False
     result = run(["hook", "run", "--ignore-missing", "pre-commit"], cwd=cwd, check=False)
     return result.returncode == 0

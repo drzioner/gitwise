@@ -212,3 +212,34 @@ def test_build_git_env_scrubs_config_and_ssh():
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+def test_supports_config_hooks_requires_254(monkeypatch):
+    """git 2.36-2.53 ships `git hook run` but never fires configured hooks."""
+    import gitwise.git as git_mod
+
+    calls: list[list[str]] = []
+
+    def _fake_run(args, **kwargs):
+        calls.append(args)
+        raise AssertionError("must not probe git when the version floor fails")
+
+    monkeypatch.setattr(git_mod, "version", lambda: (2, 53, 0))
+    monkeypatch.setattr(git_mod, "run", _fake_run)
+    assert git_mod.supports_config_hooks() is False
+    assert calls == []
+
+
+def test_supports_config_hooks_probes_from_254(monkeypatch):
+    """From 2.54 the floor passes and the probe decides."""
+    import subprocess
+
+    import gitwise.git as git_mod
+
+    monkeypatch.setattr(git_mod, "version", lambda: (2, 54, 0))
+    monkeypatch.setattr(
+        git_mod,
+        "run",
+        lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "", ""),
+    )
+    assert git_mod.supports_config_hooks() is True
