@@ -3,8 +3,8 @@
 from gitwise.git import require_root, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import error, ok, print_json, warn
-from gitwise.utils.json_envelope import error_envelope, ok_envelope
+from gitwise.output import ok, print_json, report_error
+from gitwise.utils.json_envelope import ok_envelope
 
 
 def _pick_mode_args(*, revert: bool, continue_: bool, abort: bool) -> list[str] | None:
@@ -21,8 +21,7 @@ def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
     """Execute a cherry-pick/revert continue or abort."""
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
-        error(result.stderr.strip())
-        return 1
+        return report_error("pick", as_json=as_json, msg=result.stderr.strip(), code="pick_failed")
     if as_json:
         if args[-1] == "--continue":
             print_json(ok_envelope("pick", continued=True))
@@ -39,15 +38,12 @@ def _run_pick_mode(*, root, args: list[str], as_json: bool) -> int:
 def _validate_pick_refs(refs: list[str], *, as_json: bool) -> int:
     """Validate that refs are non-empty and all pass ``validate_ref``."""
     if not refs:
-        if as_json:
-            print_json(error_envelope("pick", error=t("pick_no_refs"), code="pick_no_refs"))
-            return 1
-        error(t("pick_no_refs"))
-        return 1
+        return report_error("pick", as_json=as_json, msg=t("pick_no_refs"), code="pick_no_refs")
     for ref in refs:
         if not validate_ref(ref):
-            error(t("invalid_ref", ref=ref))
-            return 1
+            return report_error(
+                "pick", as_json=as_json, msg=t("invalid_ref", ref=ref), code="invalid_ref"
+            )
     return 0
 
 
@@ -65,10 +61,10 @@ def _run_pick_execute(*, root, action: str, refs: list[str], as_json: bool) -> i
     result = git_run([action, "--"] + refs, cwd=root, check=False)
     if result.returncode != 0:
         if "CONFLICT" in result.stdout or "CONFLICT" in result.stderr:
-            warn(t("pick_conflicts"))
-        else:
-            error(result.stderr.strip())
-        return 1
+            return report_error(
+                "pick", as_json=as_json, msg=t("pick_conflicts"), code="pick_conflicts"
+            )
+        return report_error("pick", as_json=as_json, msg=result.stderr.strip(), code="pick_failed")
     if as_json:
         print_json(ok_envelope("pick", action=action, refs=refs))
         return 0

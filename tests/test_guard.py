@@ -176,7 +176,12 @@ def test_unreadable_staged_diff_blocks(tmp_path: Path) -> None:
     assert _blocking(violations)
 
 
-def test_in_progress_merge_blocks(tmp_git_repo: Path) -> None:
+def test_paused_merge_does_not_block_the_engine(tmp_git_repo: Path) -> None:
+    """The commit that closes a conflicted merge is the one git runs the hook for.
+
+    Refusing it would leave the user unable to finish or abort the merge
+    without --no-verify. `gitwise commit` still refuses on its own.
+    """
     _git(["switch", "-c", "feat/a"], tmp_git_repo)
     (tmp_git_repo / "f.txt").write_text("a\n", encoding="utf-8")
     _git(["add", "f.txt"], tmp_git_repo)
@@ -191,8 +196,7 @@ def test_in_progress_merge_blocks(tmp_git_repo: Path) -> None:
 
     ctx = collect_commit_context(tmp_git_repo)
     assert ctx["in_progress"]["state"] == "merge"
-    violations = evaluate_commit(_policy(protected_branches=[]), ctx)
-    assert "in_progress" in _rules(violations)
+    assert "in_progress" not in _rules(evaluate_commit(_policy(), ctx))
 
 
 def test_require_gpg_blocks_when_not_ready(tmp_git_repo: Path) -> None:
@@ -737,3 +741,130 @@ def test_push_check_without_stdin_reports_instead_of_hanging(tmp_git_repo: Path)
     # DEVNULL is not a tty, so this path reads an empty stdin and finds no refs.
     assert result.returncode == 0
     assert json.loads(result.stdout)["data"]["violations"] == []
+
+
+def test_non_ascii_path_is_still_matched(tmp_git_repo: Path) -> None:
+    """git quotes non-ASCII paths by default; a quoted name matches no glob.
+
+    Without `-z`, `git diff --cached --name-only` returns
+    `"configuraci\\303\\263n/.env"`, so putting a secret under an accented
+    directory walked straight past forbidden_paths.
+    """
+    _git(["switch", "-c", "feat/uni"], tmp_git_repo)
+    target = tmp_git_repo / "configuración"
+    target.mkdir()
+    (target / ".env").write_text("SECRET=1\n", encoding="utf-8")
+    _git(["add", "--", "configuración/.env"], tmp_git_repo)
+
+    from gitwise.guard import collect_commit_context, evaluate_commit, staged_paths
+
+    assert staged_paths(tmp_git_repo) == ["configuración/.env"]
+    ctx = collect_commit_context(tmp_git_repo)
+    violations = evaluate_commit(_policy(forbidden_paths=[".env"]), ctx)
+    assert "forbidden_path" in _rules(violations)
+
+
+def test_path_with_spaces_is_matched(tmp_git_repo: Path) -> None:
+    _git(["switch", "-c", "feat/spaces"], tmp_git_repo)
+    target = tmp_git_repo / "mi carpeta"
+    target.mkdir()
+    (target / "clave privada.pem").write_text("k\n", encoding="utf-8")
+    _git(["add", "--", "mi carpeta/clave privada.pem"], tmp_git_repo)
+
+    from gitwise.guard import collect_commit_context, evaluate_commit
+
+    ctx = collect_commit_context(tmp_git_repo)
+    assert "forbidden_path" in _rules(evaluate_commit(_policy(forbidden_paths=["*.pem"]), ctx))
+
+
+def test_installed_hook_lets_a_conflicted_merge_be_completed(
+    tmp_git_repo: Path, tmp_path: Path
+) -> None:
+    """Regression: the hook made conflicted merges impossible to finish.
+
+    The user resolved the conflict, staged it, and `git commit` was refused
+    because a merge was in progress -- by the very commit that ends it.
+    """
+    import os
+    import subprocess as sp
+
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/m"], tmp_git_repo)
+    (tmp_git_repo / "f.txt").write_text("branch\n", encoding="utf-8")
+    _git(["add", "f.txt"], tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "feat: branch"], tmp_git_repo)
+    _git(["switch", "main"], tmp_git_repo)
+    (tmp_git_repo / "f.txt").write_text("main\n", encoding="utf-8")
+    _git(["add", "f.txt"], tmp_git_repo)
+    _git(["commit", "--no-gpg-sign", "-m", "feat: main"], tmp_git_repo)
+
+    run_gitwise("guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo)
+    bin_dir = tmp_path / "merge-bin"
+    bin_dir.mkdir()
+    _gitwise_shim(bin_dir)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}"}
+
+    merge = sp.run(
+        ["git", "merge", "feat/m"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert "CONFLICT" in merge.stdout
+
+    (tmp_git_repo / "f.txt").write_text("resolved\n", encoding="utf-8")
+    sp.run(["git", "add", "f.txt"], cwd=tmp_git_repo, env=env, check=True, capture_output=True)
+    result = sp.run(
+        ["git", "commit", "--no-gpg-sign", "-m", "fix: resolve the conflict"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_hook_output_is_silent_on_success(tmp_git_repo: Path, tmp_path: Path) -> None:
+    """A pre-commit hook that prints on every commit is a hook people uninstall."""
+    import os
+    import subprocess as sp
+
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/quiet"], tmp_git_repo)
+    run_gitwise("guard", "install", "--hooks-mode", "legacy", "--yes", "--json", cwd=tmp_git_repo)
+    bin_dir = tmp_path / "quiet-bin"
+    bin_dir.mkdir()
+    _gitwise_shim(bin_dir)
+    env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}"}
+
+    _stage(tmp_git_repo, "src/ok.py", "x = 1\n")
+    result = sp.run(
+        ["git", "commit", "--no-gpg-sign", "-m", "feat: add"],
+        cwd=tmp_git_repo,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "policy violations" not in result.stderr
+    assert "policy violations" not in result.stdout
+
+
+def test_quiet_still_reports_violations(tmp_git_repo: Path) -> None:
+    from conftest import run_gitwise
+
+    _git(["switch", "-c", "feat/quiet2"], tmp_git_repo)
+    (tmp_git_repo / ".gitwise").mkdir()
+    (tmp_git_repo / ".gitwise" / "policy.json").write_text(
+        '{"version": 1, "forbidden_paths": ["*.pem"]}', encoding="utf-8"
+    )
+    _stage(tmp_git_repo, "k.pem", "k\n")
+    result = run_gitwise("guard", "check", "--quiet", cwd=tmp_git_repo)
+    assert result.returncode == 2
+    assert "forbidden_path" in result.stdout + result.stderr

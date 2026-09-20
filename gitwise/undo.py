@@ -3,22 +3,37 @@
 from gitwise.git import require_root, validate_ref
 from gitwise.git import run as git_run
 from gitwise.i18n import t
-from gitwise.output import confirm, error, print_bracket, print_dim, print_header, print_json
+from gitwise.output import (
+    confirm,
+    error,
+    print_bracket,
+    print_dim,
+    print_header,
+    print_json,
+    report_error,
+)
 from gitwise.utils.json_envelope import ok_envelope
 
 
 def _resolve_undo_target(
-    *, ref: str | None, entries: list[dict[str, str]], steps: int
+    *, ref: str | None, entries: list[dict[str, str]], steps: int, as_json: bool = False
 ) -> str | None:
     """Resolve the target commit hash from an explicit ref or N steps back in reflog."""
     if ref:
         if not validate_ref(ref):
-            error(t("invalid_ref", ref=ref))
+            report_error(
+                "undo", as_json=as_json, msg=t("invalid_ref", ref=ref), code="invalid_ref"
+            )
             return None
         return ref
     if len(entries) >= steps + 1:
         return entries[steps]["hash"]
-    error(t("undo_not_enough_history"))
+    report_error(
+        "undo",
+        as_json=as_json,
+        msg=t("undo_not_enough_history", steps=str(steps)),
+        code="undo_not_enough_history",
+    )
     return None
 
 
@@ -130,7 +145,7 @@ def run_undo(
     if entries is None:
         return 1
 
-    target = _resolve_undo_target(ref=ref, entries=entries, steps=steps)
+    target = _resolve_undo_target(ref=ref, entries=entries, steps=steps, as_json=as_json)
     if target is None:
         return 1
 

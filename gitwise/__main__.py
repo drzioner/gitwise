@@ -105,7 +105,28 @@ def main() -> int:
         print_json(help_payload(parser, command))
         return 0
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        # argparse writes usage to stderr and exits 2 on a bad argument. In
+        # machine mode that leaves stdout empty, so an agent gets a non-zero
+        # exit with nothing to parse. Re-report it as a v3 envelope; --help
+        # (code 0) still exits normally.
+        if exc.code not in (None, 0) and (
+            "--json" in raw_argv or "--json-pretty" in raw_argv or "--pretty" in raw_argv
+        ):
+            from .utils.json_envelope import error_envelope
+
+            print_json(
+                error_envelope(
+                    extract_command_token(raw_argv) or "gitwise",
+                    error="invalid arguments: see stderr for the usage message",
+                    code="invalid_arguments",
+                    hint="run the command with --help for the accepted arguments",
+                )
+            )
+            return 2
+        raise
     for dest in ("lang", "theme", "json", "json_pretty"):
         value = getattr(global_options, dest)
         if value is not None and value is not False:

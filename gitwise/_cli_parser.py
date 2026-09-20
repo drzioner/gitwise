@@ -329,6 +329,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="evaluate a push, reading pre-push ref updates from stdin",
     )
     p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="print nothing when the policy allows the operation (used by the hooks)",
+    )
+    p.add_argument(
         "--commit-msg",
         type=str,
         default=None,

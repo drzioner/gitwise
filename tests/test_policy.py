@@ -79,3 +79,25 @@ def test_policy_source_reports_file_when_present(tmp_path):
     assert policy_source(tmp_path) == "default"
     _write_policy(tmp_path, {"version": 1})
     assert policy_source(tmp_path) == ".gitwise/policy.json"
+
+
+def test_directory_at_the_policy_path_fails_closed(tmp_path):
+    """A directory named policy.json must not read as "no policy at all"."""
+    (tmp_path / ".gitwise" / "policy.json").mkdir(parents=True)
+    with pytest.raises(PolicyError, match="not a regular file"):
+        load_policy(tmp_path)
+
+
+def test_duplicate_key_fails_closed(tmp_path):
+    """json.loads keeps the last value; a reviewer reads the first."""
+    (tmp_path / ".gitwise").mkdir()
+    (tmp_path / ".gitwise" / "policy.json").write_text(
+        '{"version": 1, "block_secrets": true, "block_secrets": false}', encoding="utf-8"
+    )
+    with pytest.raises(PolicyError, match="duplicate key"):
+        load_policy(tmp_path)
+
+
+def test_absent_policy_still_returns_defaults(tmp_path):
+    """The fail-closed checks must not break the no-policy case."""
+    assert load_policy(tmp_path) == DEFAULT_POLICY

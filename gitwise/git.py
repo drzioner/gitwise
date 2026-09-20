@@ -96,6 +96,12 @@ def run(
     locale-stable and git never prompts for credentials.  Returns
     returncode 127 with a descriptive stderr when the ``git`` binary
     is not found in ``PATH``.
+
+    Forces ``core.quotePath=false``. With git's default, any path holding a
+    non-ASCII byte comes back wrapped in quotes and octal-escaped
+    (``"configuraci\303\263n/.env"``), which is neither the real path nor
+    something a caller can match or open. Every gitwise command that reports
+    file names was affected, and in the policy engine it was a bypass.
     """
     from .output import debug
 
@@ -104,7 +110,7 @@ def run(
     debug(f"git {' '.join(args)}")
     try:
         return subprocess.run(
-            ["git"] + args,
+            ["git", "-c", "core.quotePath=false"] + args,
             capture_output=True,
             text=True,
             encoding="utf-8",

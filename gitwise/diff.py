@@ -15,6 +15,7 @@ from gitwise.output import (
     print_file_status,
     print_header,
     print_json,
+    report_error,
     status,
     warn,
 )
@@ -492,8 +493,12 @@ def _render_secret_scan_output(
         args.extend(paths)
     result = git_run(args, cwd=root, check=False)
     if result.returncode != 0:
-        error(t("git_diff_failed", error=result.stderr.strip()))
-        return 1
+        return report_error(
+            "diff",
+            as_json=as_json,
+            msg=t("git_diff_failed", error=result.stderr.strip()),
+            code="git_diff_failed",
+        )
     findings = secret_scan(result.stdout)
     if as_json:
         safe_findings = redact_findings(findings)
@@ -631,8 +636,12 @@ def run_diff(
     with status(t("status_reading_diff")):
         result = git_run(cmd, cwd=cwd, check=False)
     if result.returncode != 0:
-        error(t("git_diff_failed", error=result.stderr.strip()))
-        return 1
+        return report_error(
+            "diff",
+            as_json=as_json,
+            msg=t("git_diff_failed", error=result.stderr.strip()),
+            code="git_diff_failed",
+        )
 
     if full:
         if as_json:

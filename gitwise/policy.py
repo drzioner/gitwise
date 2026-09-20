@@ -75,6 +75,30 @@ _BOOL_KEYS: tuple[str, ...] = (
 )
 
 
+class _DuplicateKey(ValueError):
+    """Internal marker for a repeated key inside the policy document."""
+
+    def __init__(self, key: str) -> None:
+        super().__init__(key)
+        self.key = key
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Build a dict from *pairs*, refusing repeated keys.
+
+    ``json.loads`` keeps the last value for a repeated key, so a document that
+    declares ``block_secrets`` twice silently honours the second one while a
+    reviewer reads the first. For a policy that is a rejected document, not a
+    quirk.
+    """
+    seen: dict[str, object] = {}
+    for key, value in pairs:
+        if key in seen:
+            raise _DuplicateKey(key)
+        seen[key] = value
+    return seen
+
+
 def policy_path(root: Path) -> Path:
     """Return the absolute path of the policy file for *root*."""
     return root / POLICY_RELATIVE_PATH
@@ -95,14 +119,23 @@ def load_policy(root: Path) -> Policy:
     the wrong type.
     """
     path = policy_path(root)
-    if not path.is_file():
+    if not path.exists():
         return copy.deepcopy(DEFAULT_POLICY)
+    if not path.is_file():
+        # A directory (or socket, or dangling link) at the policy path is not
+        # "no policy": treating it as absent would let anyone disable the
+        # repository's rules by creating a directory with that name.
+        raise PolicyError(f"{path}: policy path exists but is not a regular file")
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(
+            path.read_text(encoding="utf-8"), object_pairs_hook=_reject_duplicate_keys
+        )
     except OSError as exc:
         raise PolicyError(f"{path}: cannot read policy file: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise PolicyError(f"{path}: invalid JSON: {exc}") from exc
+    except _DuplicateKey as exc:
+        raise PolicyError(f"{path}: duplicate key {exc.key!r}") from exc
 
     if not isinstance(raw, dict):
         raise PolicyError(f"{path}: top-level value must be a JSON object")
